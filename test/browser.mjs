@@ -331,7 +331,7 @@ try {
   await noJS.close();
   console.log("Copied HTML endnotes and occurrence links worked with JavaScript disabled.");
 
-  const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: "reduce" });
+  const phone = await browser.newContext({ viewport: { width: 390, height: 580 }, isMobile: true, hasTouch: true, reducedMotion: "reduce" });
   const mobile = await phone.newPage();
   await mobile.goto(origin + "/demos/static/");
   await mobile.getByRole("button", { name: /Inspect citation: Simas/ }).first().tap();
@@ -339,10 +339,25 @@ try {
   await sheet.waitFor();
   assert.equal(await sheet.evaluate(node => node.matches(":modal")), true);
   const mobileBox = await sheet.boundingBox();
-  assert.ok(mobileBox.width <= 390 && mobileBox.y + mobileBox.height <= 845);
+  assert.ok(mobileBox.width <= 390 && mobileBox.y + mobileBox.height <= 581);
+  assert.ok(mobileBox.height <= 580 * 0.6 + 1);
+  assert.ok(await sheet.evaluate(node => node.scrollHeight > node.clientHeight));
   assert.equal(await mobile.evaluate(() => document.documentElement.scrollWidth), 390);
   const touchPadding = await sheet.locator(".citation-panel-content").boundingBox();
   const touch = await phone.newCDPSession(mobile);
+  await touch.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1.5 });
+  await mobile.waitForFunction(() => {
+    const viewport = window.visualViewport;
+    const panel = document.querySelector("citation-inspector").shadowRoot.querySelector(".citation-panel");
+    const box = panel.getBoundingClientRect();
+    return viewport.scale === 1.5 && box.height <= viewport.height * 0.6 + 1 &&
+      box.bottom <= viewport.offsetTop + viewport.height;
+  });
+  await touch.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
+  await mobile.waitForFunction(expectedTop => {
+    const panel = document.querySelector("citation-inspector").shadowRoot.querySelector(".citation-panel");
+    return Math.abs(panel.getBoundingClientRect().top - expectedTop) < 1;
+  }, mobileBox.y);
   const touchPoint = { x: touchPadding.x + 5, y: touchPadding.y + 26 };
   await touch.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [touchPoint] });
   await touch.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ ...touchPoint, y: touchPoint.y - 75 }] });
@@ -353,10 +368,11 @@ try {
   await sheet.getByLabel("Panel options", { exact: true }).tap();
   await sheet.getByRole("button", { name: "Move panel", exact: true }).tap();
   await mobilePlacement.waitFor();
-  await mobile.touchscreen.tap(5, 160);
+  await mobile.touchscreen.tap(5, 24);
   await mobilePlacement.waitFor({ state: "hidden" });
   const placedSheet = await sheet.boundingBox();
-  assert.ok(Math.abs(placedSheet.y - 160) < 1);
+  assert.ok(Math.abs(placedSheet.y - 24) < 1);
+  assert.ok(mobileBox.y - placedSheet.y > 180);
   if (evidence) await mobile.screenshot({ path: join(evidence, "mobile-sheet.png") });
   await mobile.getByRole("button", { name: "Go to endnote" }).tap();
   await sheet.waitFor({ state: "hidden" });
@@ -372,7 +388,7 @@ try {
   await dismiss.press("Enter");
   await sheet.waitFor({ state: "hidden" });
   await phone.close();
-  console.log("390 px touch and rotated sheet opened, navigated and closed.");
+  console.log("Short phone sheet moved over 180 px, scrolled to its endnote action, and dismissed after rotation.");
 
   await page.setViewportSize({ width: 320, height: 720 });
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });

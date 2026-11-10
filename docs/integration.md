@@ -107,6 +107,8 @@ For an abstract, provide an object with `text`, `source`, an optional HTTPS `url
 
 Use `activation="hover"` on the element to enable mouse previews. Click or keyboard activation can keep a preview open. Touch uses tap. The setting also applies to Citation evidence and Citation credit. Choose **Move panel** from **Panel options**, then click or tap where the panel’s top-left corner should go. Escape or **Cancel move** exits without moving it. You can also drag from a blank area of the panel. Use the arrow keys while the panel heading has focus. Home resets its position. Press Escape or click or tap outside to dismiss the panel.
 
+On compact screens the sheet uses up to 60% of the visible height and scrolls internally, leaving room to move it and reveal the page underneath.
+
 The panel title defaults to `citation.inator`. Set `panel-title="Your publication"` and `panel-icon="/assets/logo.svg"` on the element to supply a custom title and a same-origin icon. Allow `img-src 'self'` in your content security policy when using an icon.
 
 Set the CSS properties `--citation-paper`, `--citation-ink`, `--citation-accent`, `--citation-line`, `--citation-wash`, `--citation-panel-radius`, `--citation-icon-radius`, `--citation-heading-font` and `--citation-endnote-font` on the custom element to scope the theme to its citation content. Use `--citation-inline-color` and `--citation-inline-active` for the inline links.

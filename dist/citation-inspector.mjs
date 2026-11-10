@@ -661,8 +661,8 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
         this.shadowRoot.activeElement.blur();
         previousFocus?.focus({ preventScroll: true });
       }
-      this.#position();
     }
+    this.#position();
     if (!hover) this.#heading.focus({ preventScroll: true });
   }
   #clearOpen() {
@@ -689,7 +689,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     if (restore && trigger.isConnected) trigger.focus();
   }
   #schedulePosition() {
-    if (!this.#trigger || this.#modal && !this.#manualPosition || this.#frame) return;
+    if (!this.#trigger || this.#frame) return;
     this.#frame = requestAnimationFrame(() => {
       this.#frame = null;
       this.#position();
@@ -743,7 +743,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   #resetPosition() {
     this.#manualPosition = null;
     this.#dialog.removeAttribute("data-ci-moved");
-    if (!this.#modal) this.#position();
+    this.#position();
   }
   #nudge(dx, dy) {
     const { left, top } = this.#dialog.getBoundingClientRect();
@@ -756,13 +756,17 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   }
   #position() {
     if (!this.#trigger) return;
-    const anchor = this.#trigger.getBoundingClientRect();
-    const panel = this.#dialog.getBoundingClientRect();
     const viewport = window.visualViewport;
     const x = viewport?.offsetLeft ?? 0;
     const y = viewport?.offsetTop ?? 0;
     const width = viewport?.width ?? this.ownerDocument.documentElement.clientWidth;
     const height = viewport?.height ?? this.ownerDocument.documentElement.clientHeight;
+    if (this.#modal) {
+      this.#dialog.style.setProperty("--ci-sheet-width", `${Math.max(1, width - 16)}px`);
+      this.#dialog.style.setProperty("--ci-sheet-height", `${height * (this.#media.matches ? 0.6 : 0.8)}px`);
+    }
+    const panel = this.#dialog.getBoundingClientRect();
+    const anchor = this.#trigger.getBoundingClientRect();
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const gap = this.#hovering ? 1 : 9;
     const below = anchor.bottom + gap;
@@ -771,8 +775,8 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     const fitsAbove = above >= y + 12;
     const side = anchor.right + gap;
     const fitsBeside = side + panel.width <= x + width - 12;
-    const left = this.#manualPosition?.left ?? (!fitsBelow && !fitsAbove && fitsBeside ? side : anchor.left);
-    const top = this.#manualPosition?.top ?? (fitsBelow ? below : fitsAbove ? above : anchor.top);
+    const left = this.#manualPosition?.left ?? (this.#modal ? x + (width - panel.width) / 2 : !fitsBelow && !fitsAbove && fitsBeside ? side : anchor.left);
+    const top = this.#manualPosition?.top ?? (this.#modal ? y + height - panel.height - 8 : fitsBelow ? below : fitsAbove ? above : anchor.top);
     const clampedLeft = clamp(left, x + 8, x + width - panel.width - 8);
     const clampedTop = clamp(top, y + 8, y + height - panel.height - 8);
     this.#dialog.style.setProperty("--ci-left", `${clampedLeft}px`);

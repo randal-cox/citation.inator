@@ -73,10 +73,8 @@ citation-inspector { display: contents; }
   overflow-wrap: anywhere;
 }
 [data-citation-part~="panel"][open] {
-  inset: auto 0 0;
-  width: min(42rem, calc(100% - 16px));
-  max-height: min(36rem, 80dvh);
-  margin-inline: auto;
+  width: min(42rem, var(--ci-sheet-width, calc(100% - 16px)));
+  max-height: min(36rem, var(--ci-sheet-height, 60dvh));
   padding-bottom: env(safe-area-inset-bottom);
   border-radius: 14px 14px 0 0;
 }
@@ -215,10 +213,6 @@ citation-inspector { display: contents; }
   outline-offset: 2px;
 }
 [data-citation-part~="panel"][open][data-ci-moved] {
-  inset: auto;
-  top: var(--ci-top);
-  left: var(--ci-left);
-  margin: 0;
   border-radius: var(--citation-panel-radius, 10px);
 }
 [data-citation-part~="panel-toolbar"] {
