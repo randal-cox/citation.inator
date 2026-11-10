@@ -1,0 +1,5 @@
+body { margin: .75rem; overflow-wrap: anywhere; }
+.site { position: sticky; top: 0; z-index: 200; background: white; }
+button { color: white !important; background: darkred !important; font: 2rem fantasy !important; }
+dialog { display: none !important; }
+.clipped { height: 17rem; overflow: auto; contain: paint; border: 1px solid black; }

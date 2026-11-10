@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resolution bench. | citation.inator</title>
+  <link rel="stylesheet" href="../../dist/citation-inspector.css">
+  <link rel="stylesheet" href="../static/demo.css">
+  <script type="module" src="../../dist/citation-inspector.mjs"></script>
+  <script type="module" src="../static/preferences.mjs"></script>
+  <script type="module" src="./dynamic.mjs"></script>
+</head>
+<body>
+  <header class="site"><a class="brand" href="./">citation.inator</a>
+  <nav aria-label="Demos">
+    <a href="../static/" >Reading room</a>
+    <a href="../dynamic/" aria-current="page">Resolution bench</a>
+    <a href="../christopher-drop-in/">Plain HTML</a>
+    <a class="guide-link" href="../static/guide.html" >Guide</a>
+  </nav></header>
+  <main>
+    <h1>Resolution bench.</h1>
+    <p class="intro">Resolve a DOI on demand or rehearse what a reader sees when the provider sends incomplete metadata or goes offline.</p>
+    <div class="demo-preferences" data-demo-preferences role="group" aria-label="Demo preferences" hidden>
+  <label><input type="checkbox" name="activation"> Hover</label>
+  <label>Style
+    <select name="theme">
+      <option value="reading">Reading room</option>
+      <option value="field">Field notes</option>
+      <option value="midnight">Midnight</option>
+    </select>
+  </label>
+</div>
+    <form id="resolve-form">
+    <label for="identifier">Identifier or single citation directive</label>
+    <input id="identifier" name="identifier" required maxlength="2048" value="doi:10.1017/s0003055419000534" spellcheck="false" autocapitalize="off">
+    <p class="resolve-examples">Try <button type="button" data-example="doi:10.1111/spc3.12501">another article</button> or <button type="button" data-example="isbn:9780593656433">a cached book</button>.</p>
+    <div class="controls">
+      <div><label for="mode">Provider mode</label>
+      <select name="mode" id="mode">
+        <option value="live">Live Crossref</option>
+        <option value="offline">Simulate outage with stale cache</option>
+        <option value="partial">Simulate partial metadata</option>
+        <option value="slow">Simulate slow cached response</option>
+      </select></div>
+      <button type="submit" name="intent" value="resolve" disabled>Resolve</button>
+      <button type="submit" name="intent" value="refresh" disabled>Force refresh</button>
+    </div>
+    <noscript><p>Enable JavaScript to request a refresh. The sample and endnote are ready to read below.</p></noscript>
+  </form>
+  <div class="resolution-result">
+    <p id="resolution-status" class="runtime-status" role="status">Ready to resolve. The reader shows a sample from the editorial cache.</p>
+    <button type="button" id="show-result" hidden>Show updated citation</button>
+  </div>
+  <article class="reading" aria-labelledby="live-title">
+    <h2 id="live-title">Reader view</h2>
+    <citation-inspector id="live-reader" data-cache="./citations.json"><p>Start with the journal article <span class="citation-cluster" data-citation-part="cluster">(<a class="citation-cite" data-citation-part="cite" id="live-cite-simas-clifford-kirkland-2020-empathy-polarization-1" href="#live-note-simas-clifford-kirkland-2020-empathy-polarization" data-ci-record="simas-clifford-kirkland-2020-empathy-polarization" data-ci-bibliography="Simas, E. N., Clifford, S., &amp; Kirkland, J. H. (2020). How empathic concern fuels political polarization. American Political Science Review, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534" dir="auto">Simas et al., 2020</a>)</span>.</p>
+<p><a class="citation-cite citation-annotation" data-citation-part="cite annotation" href="#live-evidence" data-ci-panel="evidence">Citation evidence</a> · <a class="citation-cite citation-annotation" data-citation-part="cite annotation" href="#live-credit" data-ci-panel="credit">Citation credit</a></p>
+<section class="citation-endnotes" data-citation-part="endnotes" aria-labelledby="live-endnotes"><h2 id="live-endnotes">Endnotes</h2><ol><li id="live-note-simas-clifford-kirkland-2020-empathy-polarization" tabindex="-1"><span dir="auto">Simas, E. N., Clifford, S., &amp; Kirkland, J. H. (2020). How empathic concern fuels political polarization. American Political Science Review, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534</span><div class="citation-note-actions" data-citation-part="note-actions"><a class="citation-icon" data-citation-part="icon" href="https://doi.org/10.1017/s0003055419000534" aria-label="Open DOI" title="Open DOI
+https://doi.org/10.1017/s0003055419000534" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 15 6-6 M8 16l-1 1a3 3 0 0 1-4-4l5-5a3 3 0 0 1 4 0 M16 8l1-1a3 3 0 0 1 4 4l-5 5a3 3 0 0 1-4 0"/></svg></a><a class="citation-icon" data-citation-part="icon" href="https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E" aria-label="Open publisher page" title="Open publisher page
+https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 9 12 4l9 5z M5 20h14 M7 11v7m5-7v7m5-7v7"/></svg></a><a class="citation-icon" data-citation-part="icon" href="https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf" aria-label="Open preprint (author preprint)" title="Open preprint (author preprint)
+https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf" target="_blank" rel="noopener noreferrer" download=""><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3h8l4 4v14H6z M14 3v5h4"/><path d="m8 17 3-5 2 4 3 1-4 1z"/></svg></a><span class="citation-backlinks" data-citation-part="backlinks"><a class="citation-icon" data-citation-part="icon" href="#live-cite-simas-clifford-kirkland-2020-empathy-polarization-1" aria-label="Return to “Start with the journal article [Simas et al.].”" title="Return to “Start with the journal article [Simas et al.].”"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m10 6-6 6 6 6 M4 12h11a4 4 0 0 0 4-4"/></svg></a></span></div></li></ol></section>
+<section class="citation-annotation-content" data-citation-part="annotation-content" id="live-evidence" tabindex="-1" aria-label="Citation evidence"><h2>Citation evidence</h2><div data-ci-annotation-body><p data-ci-evidence-summary>Sources for the citations on this page.</p><details><summary>Source metadata</summary><pre data-ci-evidence-details tabindex="0" aria-label="Source metadata">[
+  {
+    &quot;title&quot;: &quot;How Empathic Concern Fuels Political Polarization&quot;,
+    &quot;state&quot;: &quot;resolved&quot;,
+    &quot;identifiers&quot;: [
+      {
+        &quot;scheme&quot;: &quot;doi&quot;,
+        &quot;value&quot;: &quot;10.1017/s0003055419000534&quot;
+      }
+    ],
+    &quot;version&quot;: &quot;version of record&quot;,
+    &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+    &quot;provenance&quot;: [
+      {
+        &quot;provider&quot;: &quot;citation.inator editorial handoff&quot;,
+        &quot;url&quot;: &quot;&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+        &quot;note&quot;: &quot;Original citation and curation preserved in the source fixtures.&quot;
+      },
+      {
+        &quot;provider&quot;: &quot;Cambridge University Press&quot;,
+        &quot;url&quot;: &quot;https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E&quot;,
+        &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+        &quot;note&quot;: &quot;&quot;
+      },
+      {
+        &quot;provider&quot;: &quot;Author website&quot;,
+        &quot;url&quot;: &quot;https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf&quot;,
+        &quot;retrievedAt&quot;: null,
+        &quot;note&quot;: &quot;Separate author preprint PDF. The DOI identifies the journal article.&quot;
+      }
+    ]
+  }
+]</pre></details></div></section>
+<section class="citation-annotation-content" data-citation-part="annotation-content" id="live-credit" tabindex="-1" aria-label="Citation credit"><h2>Citation credit</h2><div data-ci-annotation-body><p>citation.inator · Portable Citation Inspector</p><p>The software uses the MIT license. Cited material retains its own terms.</p><h3>How to cite this software</h3><p>citation.inator contributors. (2026). citation.inator (Version 0.1.1) [Computer software].</p></div></section></citation-inspector>
+  </article>
+  </main>
+  <footer class="site">citation.inator · Portable Citation Inspector 0.1.1</footer>
+</body>
+</html>

@@ -1,0 +1,695 @@
+{
+  "schema": "citation-inator.cache.v1",
+  "records": [
+    {
+      "id": "synthetic-related",
+      "type": "article-journal",
+      "state": "resolved",
+      "title": "Zebra test of same-year ordering",
+      "authors": [
+        {
+          "literal": "研究者 1"
+        },
+        {
+          "literal": "研究者 2"
+        },
+        {
+          "literal": "研究者 3"
+        },
+        {
+          "literal": "研究者 4"
+        },
+        {
+          "literal": "研究者 5"
+        },
+        {
+          "literal": "研究者 6"
+        },
+        {
+          "literal": "研究者 7"
+        },
+        {
+          "literal": "研究者 8"
+        },
+        {
+          "literal": "研究者 9"
+        },
+        {
+          "literal": "研究者 10"
+        },
+        {
+          "literal": "研究者 11"
+        },
+        {
+          "literal": "研究者 12"
+        },
+        {
+          "literal": "研究者 13"
+        },
+        {
+          "literal": "研究者 14"
+        },
+        {
+          "literal": "研究者 15"
+        },
+        {
+          "literal": "研究者 16"
+        },
+        {
+          "literal": "研究者 17"
+        },
+        {
+          "literal": "研究者 18"
+        },
+        {
+          "literal": "研究者 19"
+        },
+        {
+          "literal": "研究者 20"
+        },
+        {
+          "literal": "研究者 21"
+        },
+        {
+          "literal": "研究者 22"
+        },
+        {
+          "literal": "研究者 23"
+        },
+        {
+          "literal": "研究者 24"
+        },
+        {
+          "literal": "研究者 25"
+        },
+        {
+          "literal": "研究者 26"
+        },
+        {
+          "literal": "研究者 27"
+        },
+        {
+          "literal": "研究者 28"
+        },
+        {
+          "literal": "研究者 29"
+        },
+        {
+          "literal": "研究者 30"
+        },
+        {
+          "literal": "研究者 31"
+        },
+        {
+          "literal": "研究者 32"
+        },
+        {
+          "literal": "研究者 33"
+        },
+        {
+          "literal": "研究者 34"
+        },
+        {
+          "literal": "研究者 35"
+        },
+        {
+          "literal": "研究者 36"
+        },
+        {
+          "literal": "研究者 37"
+        },
+        {
+          "literal": "研究者 38"
+        },
+        {
+          "literal": "研究者 39"
+        },
+        {
+          "literal": "研究者 40"
+        },
+        {
+          "literal": "研究者 41"
+        },
+        {
+          "literal": "研究者 42"
+        },
+        {
+          "literal": "研究者 43"
+        },
+        {
+          "literal": "研究者 44"
+        },
+        {
+          "literal": "研究者 45"
+        },
+        {
+          "literal": "研究者 46"
+        },
+        {
+          "literal": "研究者 47"
+        },
+        {
+          "literal": "研究者 48"
+        },
+        {
+          "literal": "研究者 49"
+        },
+        {
+          "literal": "研究者 50"
+        },
+        {
+          "literal": "研究者 51"
+        },
+        {
+          "literal": "研究者 52"
+        },
+        {
+          "literal": "研究者 53"
+        },
+        {
+          "literal": "研究者 54"
+        },
+        {
+          "literal": "研究者 55"
+        },
+        {
+          "literal": "研究者 56"
+        },
+        {
+          "literal": "研究者 57"
+        },
+        {
+          "literal": "研究者 58"
+        },
+        {
+          "literal": "研究者 59"
+        },
+        {
+          "literal": "研究者 60"
+        },
+        {
+          "literal": "研究者 61"
+        },
+        {
+          "literal": "研究者 62"
+        },
+        {
+          "literal": "研究者 63"
+        },
+        {
+          "literal": "研究者 64"
+        },
+        {
+          "literal": "研究者 65"
+        },
+        {
+          "literal": "研究者 66"
+        },
+        {
+          "literal": "研究者 67"
+        },
+        {
+          "literal": "研究者 68"
+        },
+        {
+          "literal": "研究者 69"
+        },
+        {
+          "literal": "研究者 70"
+        },
+        {
+          "literal": "研究者 71"
+        },
+        {
+          "literal": "研究者 72"
+        },
+        {
+          "literal": "研究者 73"
+        },
+        {
+          "literal": "研究者 74"
+        },
+        {
+          "literal": "研究者 75"
+        },
+        {
+          "literal": "研究者 76"
+        },
+        {
+          "literal": "研究者 77"
+        },
+        {
+          "literal": "研究者 78"
+        },
+        {
+          "literal": "研究者 79"
+        },
+        {
+          "literal": "研究者 80"
+        },
+        {
+          "literal": "研究者 81"
+        },
+        {
+          "literal": "研究者 82"
+        },
+        {
+          "literal": "研究者 83"
+        },
+        {
+          "literal": "研究者 84"
+        },
+        {
+          "literal": "研究者 85"
+        },
+        {
+          "literal": "研究者 86"
+        },
+        {
+          "literal": "研究者 87"
+        },
+        {
+          "literal": "研究者 88"
+        },
+        {
+          "literal": "研究者 89"
+        },
+        {
+          "literal": "研究者 90"
+        },
+        {
+          "literal": "研究者 91"
+        },
+        {
+          "literal": "研究者 92"
+        },
+        {
+          "literal": "研究者 93"
+        },
+        {
+          "literal": "研究者 94"
+        },
+        {
+          "literal": "研究者 95"
+        },
+        {
+          "literal": "研究者 96"
+        },
+        {
+          "literal": "研究者 97"
+        },
+        {
+          "literal": "研究者 98"
+        },
+        {
+          "literal": "研究者 99"
+        },
+        {
+          "literal": "研究者 100"
+        }
+      ],
+      "identifiers": [],
+      "locations": [],
+      "provenance": [
+        {
+          "provider": "Local test fixture",
+          "url": "",
+          "retrievedAt": null,
+          "note": "Synthetic record. External identifiers are illustrative and should not be followed."
+        }
+      ],
+      "issued": [
+        2020
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": null,
+      "integrity": {
+        "state": "retracted",
+        "source": "Simulated status evidence",
+        "url": ""
+      },
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "",
+      "note": "",
+      "citationText": ""
+    },
+    {
+      "id": "synthetic-long",
+      "type": "article-journal",
+      "state": "resolved",
+      "title": "اختبار الاستشهادات · 微細構造と記録 · <img src=x onerror=alert(1)> · p < 0.01 · unbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbrokenunbroken",
+      "authors": [
+        {
+          "literal": "研究者 1"
+        },
+        {
+          "literal": "研究者 2"
+        },
+        {
+          "literal": "研究者 3"
+        },
+        {
+          "literal": "研究者 4"
+        },
+        {
+          "literal": "研究者 5"
+        },
+        {
+          "literal": "研究者 6"
+        },
+        {
+          "literal": "研究者 7"
+        },
+        {
+          "literal": "研究者 8"
+        },
+        {
+          "literal": "研究者 9"
+        },
+        {
+          "literal": "研究者 10"
+        },
+        {
+          "literal": "研究者 11"
+        },
+        {
+          "literal": "研究者 12"
+        },
+        {
+          "literal": "研究者 13"
+        },
+        {
+          "literal": "研究者 14"
+        },
+        {
+          "literal": "研究者 15"
+        },
+        {
+          "literal": "研究者 16"
+        },
+        {
+          "literal": "研究者 17"
+        },
+        {
+          "literal": "研究者 18"
+        },
+        {
+          "literal": "研究者 19"
+        },
+        {
+          "literal": "研究者 20"
+        },
+        {
+          "literal": "研究者 21"
+        },
+        {
+          "literal": "研究者 22"
+        },
+        {
+          "literal": "研究者 23"
+        },
+        {
+          "literal": "研究者 24"
+        },
+        {
+          "literal": "研究者 25"
+        },
+        {
+          "literal": "研究者 26"
+        },
+        {
+          "literal": "研究者 27"
+        },
+        {
+          "literal": "研究者 28"
+        },
+        {
+          "literal": "研究者 29"
+        },
+        {
+          "literal": "研究者 30"
+        },
+        {
+          "literal": "研究者 31"
+        },
+        {
+          "literal": "研究者 32"
+        },
+        {
+          "literal": "研究者 33"
+        },
+        {
+          "literal": "研究者 34"
+        },
+        {
+          "literal": "研究者 35"
+        },
+        {
+          "literal": "研究者 36"
+        },
+        {
+          "literal": "研究者 37"
+        },
+        {
+          "literal": "研究者 38"
+        },
+        {
+          "literal": "研究者 39"
+        },
+        {
+          "literal": "研究者 40"
+        },
+        {
+          "literal": "研究者 41"
+        },
+        {
+          "literal": "研究者 42"
+        },
+        {
+          "literal": "研究者 43"
+        },
+        {
+          "literal": "研究者 44"
+        },
+        {
+          "literal": "研究者 45"
+        },
+        {
+          "literal": "研究者 46"
+        },
+        {
+          "literal": "研究者 47"
+        },
+        {
+          "literal": "研究者 48"
+        },
+        {
+          "literal": "研究者 49"
+        },
+        {
+          "literal": "研究者 50"
+        },
+        {
+          "literal": "研究者 51"
+        },
+        {
+          "literal": "研究者 52"
+        },
+        {
+          "literal": "研究者 53"
+        },
+        {
+          "literal": "研究者 54"
+        },
+        {
+          "literal": "研究者 55"
+        },
+        {
+          "literal": "研究者 56"
+        },
+        {
+          "literal": "研究者 57"
+        },
+        {
+          "literal": "研究者 58"
+        },
+        {
+          "literal": "研究者 59"
+        },
+        {
+          "literal": "研究者 60"
+        },
+        {
+          "literal": "研究者 61"
+        },
+        {
+          "literal": "研究者 62"
+        },
+        {
+          "literal": "研究者 63"
+        },
+        {
+          "literal": "研究者 64"
+        },
+        {
+          "literal": "研究者 65"
+        },
+        {
+          "literal": "研究者 66"
+        },
+        {
+          "literal": "研究者 67"
+        },
+        {
+          "literal": "研究者 68"
+        },
+        {
+          "literal": "研究者 69"
+        },
+        {
+          "literal": "研究者 70"
+        },
+        {
+          "literal": "研究者 71"
+        },
+        {
+          "literal": "研究者 72"
+        },
+        {
+          "literal": "研究者 73"
+        },
+        {
+          "literal": "研究者 74"
+        },
+        {
+          "literal": "研究者 75"
+        },
+        {
+          "literal": "研究者 76"
+        },
+        {
+          "literal": "研究者 77"
+        },
+        {
+          "literal": "研究者 78"
+        },
+        {
+          "literal": "研究者 79"
+        },
+        {
+          "literal": "研究者 80"
+        },
+        {
+          "literal": "研究者 81"
+        },
+        {
+          "literal": "研究者 82"
+        },
+        {
+          "literal": "研究者 83"
+        },
+        {
+          "literal": "研究者 84"
+        },
+        {
+          "literal": "研究者 85"
+        },
+        {
+          "literal": "研究者 86"
+        },
+        {
+          "literal": "研究者 87"
+        },
+        {
+          "literal": "研究者 88"
+        },
+        {
+          "literal": "研究者 89"
+        },
+        {
+          "literal": "研究者 90"
+        },
+        {
+          "literal": "研究者 91"
+        },
+        {
+          "literal": "研究者 92"
+        },
+        {
+          "literal": "研究者 93"
+        },
+        {
+          "literal": "研究者 94"
+        },
+        {
+          "literal": "研究者 95"
+        },
+        {
+          "literal": "研究者 96"
+        },
+        {
+          "literal": "研究者 97"
+        },
+        {
+          "literal": "研究者 98"
+        },
+        {
+          "literal": "研究者 99"
+        },
+        {
+          "literal": "研究者 100"
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "pmid",
+          "value": "12345678"
+        },
+        {
+          "scheme": "doi",
+          "value": "10.99999/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+      ],
+      "locations": [],
+      "provenance": [
+        {
+          "provider": "Local test fixture",
+          "url": "",
+          "retrievedAt": null,
+          "note": "Synthetic record. External identifiers are illustrative and should not be followed."
+        }
+      ],
+      "issued": [
+        2020
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": null,
+      "integrity": null,
+      "abstract": {
+        "text": "Synthetic safety fixture. x < 1; x > 0. <script>alert(1)</script>",
+        "source": "Local test fixture"
+      },
+      "containerTitle": "",
+      "publisher": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "",
+      "note": "",
+      "citationText": ""
+    }
+  ]
+}

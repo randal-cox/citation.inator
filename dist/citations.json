@@ -1,0 +1,626 @@
+{
+  "schema": "citation-inator.cache.v1",
+  "records": [
+    {
+      "id": "farneth-2023-politics-ritual",
+      "type": "book",
+      "state": "resolved",
+      "title": "The Politics of Ritual",
+      "authors": [
+        {
+          "family": "Farneth",
+          "given": "Molly"
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "isbn",
+          "value": "9780691198927"
+        }
+      ],
+      "locations": [
+        {
+          "kind": "publisher",
+          "url": "https://press.princeton.edu/books/paperback/9780691198927/the-politics-of-ritual",
+          "provider": "Princeton University Press",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": "Original citation and curation preserved in the source fixtures."
+        },
+        {
+          "provider": "Princeton University Press",
+          "url": "https://press.princeton.edu/books/paperback/9780691198927/the-politics-of-ritual",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": ""
+        }
+      ],
+      "issued": [
+        2023
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": "2026-11-10T00:00:00.000Z",
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Princeton University Press",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "The Politics of Ritual, Molly Farneth, Princeton University Press (2023)",
+      "note": "Publisher ISBN record. JSTOR assigns a separate DOI to its digital book record.",
+      "citationText": "Farneth, M. (2023). The politics of ritual. Princeton University Press."
+    },
+    {
+      "id": "farneth-2023-politics-ritual-jstor",
+      "type": "book",
+      "state": "resolved",
+      "title": "The Politics of Ritual",
+      "authors": [
+        {
+          "family": "Farneth",
+          "given": "Molly"
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "doi",
+          "value": "10.2307/j.ctv2wr4wbd"
+        }
+      ],
+      "locations": [
+        {
+          "kind": "repository",
+          "url": "https://www.jstor.org/stable/j.ctv2wr4wbd",
+          "provider": "JSTOR",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": "Original citation and curation preserved in the source fixtures."
+        },
+        {
+          "provider": "JSTOR book metadata",
+          "url": "https://www.jstor.org/stable/j.ctv2wr4wbd",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": ""
+        }
+      ],
+      "issued": [
+        2023
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": "2026-11-10T00:00:00.000Z",
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Princeton University Press",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "The Politics of Ritual, Molly Farneth, Princeton University Press (2023)",
+      "note": "Digital book record identified by JSTOR. The print ISBN is tracked separately.",
+      "citationText": "Farneth, M. (2023). The politics of ritual. Princeton University Press. https://doi.org/10.2307/j.ctv2wr4wbd"
+    },
+    {
+      "id": "unresolved-ritual-politics-reconciliation-2022",
+      "type": "document",
+      "state": "unresolved",
+      "title": "",
+      "authors": [],
+      "identifiers": [],
+      "locations": [],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": null,
+          "note": "Original citation and curation preserved in the source fixtures."
+        }
+      ],
+      "issued": null,
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "Ritual and the Politics of Reconciliation, in Ethnic Conflict and Peacemaking, OUP (2022)",
+      "note": "No matching work verified; do not substitute a handbook or adjacent title.",
+      "citationText": ""
+    },
+    {
+      "id": "feiler-2026-time-gather",
+      "type": "book",
+      "state": "resolved",
+      "title": "A Time to Gather: How Ritual Created the World—and How It Can Save Us",
+      "authors": [
+        {
+          "family": "Feiler",
+          "given": "Bruce"
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "isbn",
+          "value": "9780593656433"
+        }
+      ],
+      "locations": [
+        {
+          "kind": "publisher",
+          "url": "https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/",
+          "provider": "Penguin Random House",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": "Original citation and curation preserved in the source fixtures."
+        },
+        {
+          "provider": "Penguin Random House",
+          "url": "https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": ""
+        }
+      ],
+      "issued": [
+        2026,
+        5,
+        19
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": "2026-11-10T00:00:00.000Z",
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Penguin Press",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "Hardcover",
+      "original": "A Time to Gather: How Ritual Created the World—and How It Can Save Us, Bruce Feiler, Penguin Press (2026)",
+      "note": "",
+      "citationText": "Feiler, B. (2026). A time to gather: How ritual created the world—and how it can save us. Penguin Press."
+    },
+    {
+      "id": "frost-2020-modern-not-meaningless",
+      "type": "thesis",
+      "state": "partial",
+      "title": "Modern but Not Meaningless: Nonreligious Cultures and Communities in the United States",
+      "authors": [
+        {
+          "family": "Frost",
+          "given": "Jacqueline"
+        }
+      ],
+      "identifiers": [],
+      "locations": [
+        {
+          "kind": "pdf",
+          "url": "https://conservancy.umn.edu/bitstreams/a9ef5019-29d1-45ad-9bb1-a8d97bde44f5/download",
+          "provider": "University of Minnesota Digital Conservancy",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": "repository dissertation"
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": "Original citation and curation preserved in the source fixtures."
+        },
+        {
+          "provider": "University of Minnesota Digital Conservancy",
+          "url": "https://conservancy.umn.edu/bitstreams/a9ef5019-29d1-45ad-9bb1-a8d97bde44f5/download",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": ""
+        }
+      ],
+      "issued": [
+        2020,
+        6
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": "2026-11-10T00:00:00.000Z",
+      "version": "repository dissertation",
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "University of Minnesota",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "Modern But Not Meaningless: Nonreligious Cultures and Communities in the United States, Jacqui Frost (dissertation, University of Minnesota)",
+      "note": "No DOI or stable landing-page identifier confirmed; do not treat the bitstream download URL as the work identity.",
+      "citationText": "Frost, J. (2020). Modern but not meaningless: Nonreligious cultures and communities in the United States [Doctoral dissertation, University of Minnesota]. University of Minnesota Digital Conservancy."
+    },
+    {
+      "id": "simas-clifford-kirkland-2020-empathy-polarization",
+      "type": "article-journal",
+      "state": "resolved",
+      "title": "How Empathic Concern Fuels Political Polarization",
+      "authors": [
+        {
+          "family": "Simas",
+          "given": "Elizabeth N."
+        },
+        {
+          "family": "Clifford",
+          "given": "Scott"
+        },
+        {
+          "family": "Kirkland",
+          "given": "Justin H."
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "doi",
+          "value": "10.1017/s0003055419000534"
+        }
+      ],
+      "locations": [
+        {
+          "kind": "publisher",
+          "url": "https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E",
+          "provider": "Cambridge University Press",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        },
+        {
+          "kind": "preprint",
+          "url": "https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf",
+          "provider": "Author website",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": "author preprint"
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": "Original citation and curation preserved in the source fixtures."
+        },
+        {
+          "provider": "Cambridge University Press",
+          "url": "https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": ""
+        },
+        {
+          "provider": "Author website",
+          "url": "https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf",
+          "retrievedAt": null,
+          "note": "Separate author preprint PDF. The DOI identifies the journal article."
+        }
+      ],
+      "issued": [
+        2020
+      ],
+      "online": [
+        2019,
+        10,
+        31
+      ],
+      "print": [
+        2020,
+        2
+      ],
+      "retrievedAt": "2026-11-10T00:00:00.000Z",
+      "version": "version of record",
+      "integrity": null,
+      "abstract": {
+        "text": "Over the past two decades, there has been a marked increase in partisan social polarization, leaving scholars in search of solutions to partisan conflict.",
+        "source": "Cambridge University Press",
+        "kind": "excerpt",
+        "url": "https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E"
+      },
+      "containerTitle": "American Political Science Review",
+      "publisher": "",
+      "volume": "114",
+      "issue": "1",
+      "pages": "258-269",
+      "articleNumber": "",
+      "edition": "",
+      "original": "How Empathic Concern Fuels Political Polarization, Simas, Clifford and Kirkland, American Political Science Review 114(1), 2020",
+      "note": "",
+      "citationText": "Simas, E. N., Clifford, S., & Kirkland, J. H. (2020). How empathic concern fuels political polarization. American Political Science Review, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534"
+    },
+    {
+      "id": "feinberg-willer-2019-moral-reframing",
+      "type": "article-journal",
+      "state": "resolved",
+      "title": "Moral Reframing: A Technique for Effective and Persuasive Communication across Political Divides",
+      "authors": [
+        {
+          "family": "Feinberg",
+          "given": "Matthew"
+        },
+        {
+          "family": "Willer",
+          "given": "Robb"
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "doi",
+          "value": "10.1111/spc3.12501"
+        }
+      ],
+      "locations": [
+        {
+          "kind": "publisher",
+          "url": "https://compass.onlinelibrary.wiley.com/doi/10.1111/spc3.12501",
+          "provider": "Wiley",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": "Original citation and curation preserved in the source fixtures."
+        },
+        {
+          "provider": "Wiley",
+          "url": "https://compass.onlinelibrary.wiley.com/doi/10.1111/spc3.12501",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": ""
+        }
+      ],
+      "issued": [
+        2019,
+        12,
+        9
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": "2026-11-10T00:00:00.000Z",
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "Social and Personality Psychology Compass",
+      "publisher": "",
+      "volume": "13",
+      "issue": "12",
+      "pages": "",
+      "articleNumber": "e12501",
+      "edition": "",
+      "original": "Moral Reframing: A Technique for Effective and Persuasive Communication across Political Divides, Matthew Feinberg and Robb Willer, Social and Personality Psychology Compass (2019)",
+      "note": "",
+      "citationText": "Feinberg, M., & Willer, R. (2019). Moral reframing: A technique for effective and persuasive communication across political divides. Social and Personality Psychology Compass, 13(12), e12501. https://doi.org/10.1111/spc3.12501"
+    },
+    {
+      "id": "givens-2021-radical-empathy",
+      "type": "book",
+      "state": "resolved",
+      "title": "Radical Empathy: Finding a Path to Bridging Racial Divides",
+      "authors": [
+        {
+          "family": "Givens",
+          "given": "Terri E."
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "doi",
+          "value": "10.46692/9781447357278"
+        }
+      ],
+      "locations": [
+        {
+          "kind": "publisher",
+          "url": "https://www.cambridge.org/core/books/radical-empathy/A8D8622ACC131496580E045D73168A01",
+          "provider": "Policy Press",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": "Original citation and curation preserved in the source fixtures."
+        },
+        {
+          "provider": "Policy Press",
+          "url": "https://www.cambridge.org/core/books/radical-empathy/A8D8622ACC131496580E045D73168A01",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": ""
+        }
+      ],
+      "issued": [
+        2021
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": "2026-11-10T00:00:00.000Z",
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Policy Press",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "Radical Empathy: Finding a Path to Bridging Racial Divides, Terri E. Givens, Policy Press (2021)",
+      "note": "Additional ISBNs and the JSTOR DOI remain in the original fixtures for edition review.",
+      "citationText": "Givens, T. E. (2021). Radical empathy: Finding a path to bridging racial divides. Policy Press. https://doi.org/10.46692/9781447357278"
+    },
+    {
+      "id": "norton-2024-ritual-effect",
+      "type": "book",
+      "state": "resolved",
+      "title": "The Ritual Effect: From Habit to Ritual, Harness the Surprising Power of Everyday Actions",
+      "authors": [
+        {
+          "family": "Norton",
+          "given": "Michael I."
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "isbn",
+          "value": "9781982153021"
+        }
+      ],
+      "locations": [
+        {
+          "kind": "publisher",
+          "url": "https://www.simonandschuster.com/books/The-Ritual-Effect/Michael-Norton/9781982153021",
+          "provider": "Simon & Schuster",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": "Original citation and curation preserved in the source fixtures."
+        },
+        {
+          "provider": "Simon & Schuster",
+          "url": "https://www.simonandschuster.com/books/The-Ritual-Effect/Michael-Norton/9781982153021",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": ""
+        }
+      ],
+      "issued": [
+        2024,
+        4,
+        9
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": "2026-11-10T00:00:00.000Z",
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Scribner",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "The Ritual Effect: From Habit to Ritual, Harness the Surprising Power of Everyday Actions, Michael Norton, Scribner (2024)",
+      "note": "",
+      "citationText": "Norton, M. I. (2024). The ritual effect: From habit to ritual, harness the surprising power of everyday actions. Scribner."
+    },
+    {
+      "id": "unresolved-deep-citizenship-2023",
+      "type": "document",
+      "state": "unresolved",
+      "title": "",
+      "authors": [],
+      "identifiers": [],
+      "locations": [],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": null,
+          "note": "Original citation and curation preserved in the source fixtures."
+        }
+      ],
+      "issued": null,
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "Deep Citizenship: Structural Rituals of Engagement, Cinema and Boggs (2023)",
+      "note": "No matching work verified.",
+      "citationText": ""
+    },
+    {
+      "id": "unresolved-spaces-others-2024",
+      "type": "document",
+      "state": "unresolved",
+      "title": "",
+      "authors": [],
+      "identifiers": [],
+      "locations": [],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": null,
+          "note": "Original citation and curation preserved in the source fixtures."
+        }
+      ],
+      "issued": null,
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "original": "The Spaces of Others: Heterotopias and Peace Building, M. Al-Farabi (2024)",
+      "note": "No matching work verified.",
+      "citationText": ""
+    }
+  ]
+}

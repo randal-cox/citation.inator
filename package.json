@@ -1,0 +1,50 @@
+{
+  "name": "citation-inator",
+  "version": "0.1.1",
+  "description": "Portable, progressively enhanced author-year citations and source inspection",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/randal-cox/citation.inator.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": "./src/compiler.mjs",
+    "./records": "./src/records.mjs",
+    "./crossref": "./src/crossref.mjs",
+    "./browser": "./dist/citation-inspector.mjs",
+    "./style.css": "./dist/citation-inspector.css",
+    "./citations.json": "./dist/citations.json",
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "citation-inator": "./scripts/compile.mjs"
+  },
+  "files": [
+    "src",
+    "dist/citation-inspector.mjs",
+    "dist/citation-inspector.css",
+    "dist/citations.json",
+    "scripts/compile.mjs",
+    "docs/integration.md",
+    "docs/claude-handoff.md",
+    "ROADMAP.md",
+    "CHANGELOG.md",
+    "CITATION.cff"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:browser": "node test/browser.mjs",
+    "start": "node scripts/serve.mjs",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "axe-core": "4.14.0",
+    "esbuild": "0.25.12",
+    "playwright-core": "1.55.0"
+  }
+}
