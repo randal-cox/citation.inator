@@ -1,10 +1,25 @@
 # citation.inator
 
-A small, progressively enhanced citation library. Write citations in plain text, compile them into linked references and endnotes, and add an optional browser inspector.
+A small citation library. Write citations in plain text, compile them into linked references and endnotes, and add an optional browser inspector.
 
 ## Load and initialize
 
-Copy `citation-inspector.mjs` and `citation-inspector.css` from the ZIP or npm package to your public assets. Load them on the page, wrap the compiled fragment in `<citation-inspector>`, and point its `data-cache` attribute to your JSON. Set `class-prefix` on the element or pass `classPrefix` to the browser initializer if your site needs a different class prefix. [Loading and initialization examples](docs/integration.md#load-and-initialize)
+**Without npm.** Download or clone the repository. Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
+
+**With npm.** The instructions below use the current source checkout, which includes changes beyond the previously shared 0.1.1 archives. Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.1.1.tgz` there. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
+
+```html
+<link rel="stylesheet" href="./citation-inspector.css">
+<script type="module" src="./citation-inspector.mjs"></script>
+
+<citation-inspector data-cache="./article.html.json" class-prefix="essay"
+  panel-title="Source details" panel-icon="/assets/logo.svg"
+  evidence-title="Metadata trail" credit-title="Software credits">
+  <!-- Insert the compiled article fragment here. -->
+</citation-inspector>
+```
+
+To write `{ref …}` instead of `{citation …}` and emit classes such as `essay-cite`, set `citationKeyword: "ref"` and `classPrefix: "essay"` when compiling. Match the browser’s `class-prefix` to the compiler’s setting. The browser initializer also accepts `classPrefix`, `panelTitle`, `panelIcon`, `evidenceTitle`, `evidenceIcon`, `creditTitle` and `creditIcon`. [Configuration examples](docs/integration.md#load-and-initialize)
 
 ## Write a citation
 
@@ -16,22 +31,22 @@ Empathic concern can deepen partisan polarization {citation doi:10.1017/S0003055
 {citation endnote}
 ```
 
-## Try it
+![An open citation window beside the reading and its linked endnotes](docs/citation-example.png)
 
-**Plain HTML.** Extract the standalone ZIP and serve the extracted directory with a static server. Its `index.html` and endnotes are also readable directly from disk.
+## Compile a page
 
-**Compile your own text.** With Node.js 22 or later, install the local npm tarball. From the same directory, use the ZIP’s `reading.txt` and `citations.json` to compile your first page fragment.
+With Node.js 22 or later, run this command from the downloaded repository. It writes `article.html` and its matching `article.html.json` cache.
 
 ```sh
-npm install ./citation-inator-0.1.1.tgz
-npm exec -- citation-inator reading.txt citations.json article.html
+node scripts/compile.mjs --style chicago-author-date --endnotes-heading References \
+  demos/drop-in/reading.txt demos/drop-in/citations.json article.html my-article
 ```
 
-See the [integration guide](docs/integration.md) to assemble a page, change the notation keyword, and customize the inspector.
+The named styles are `chicago-author-date`, `apa`, `mla`, `harvard` and `vancouver`. Existing integrations can keep the `default` style. For prose that already has markup, install dependencies and use `--format html` or `--format markdown`. For Python and other build tools, `--json` reads a request from standard input and writes one JSON result.
 
-Use the [Claude handoff](docs/claude-handoff.md) to migrate references on an existing website.
+Write `{citation isbn:9780593656433 | prefix:see also | locator:34}` for an affix and locator. Use `citationParts` for editorial italics or bold. Use `library` and `full-text` locations for access links and `accessProviders` to apply the reader’s preferred order. The panel exposes an `open` attribute while visible.
 
-See the [roadmap](ROADMAP.md) for the next integration and accessibility checks.
+See the [integration guide](docs/integration.md) for HTML and Markdown examples, reused fragments, the Python command, ISBN resolution, and the browser API. See the [roadmap](ROADMAP.md) for follow-up work.
 
 ## Work on the source checkout
 
@@ -45,7 +60,7 @@ npm run build
 npm test
 ```
 
-Run `npm start` to open the [reading room](http://127.0.0.1:4187/) and find the notation guide and Resolution bench. `npm run test:browser` runs the browser checks with a local Chrome installation.
+Run `npm start` to open the [reading room](http://127.0.0.1:4187/) and find the notation guide and Resolution bench. The reading room’s **CSS** and **Style** selectors preview appearance and citation formatting separately. The help buttons beside **Hover**, **CSS**, and **Style** show the corresponding configuration. `npm run test:browser` runs the browser checks with a local Chrome installation. Run the [adversarial review](https://github.com/randal-cox/citation.inator/blob/main/docs/adversarial-testing.md) at every milestone and when a change warrants it.
 
 ## Credit and license
 

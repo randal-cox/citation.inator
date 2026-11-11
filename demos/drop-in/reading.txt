@@ -4,6 +4,10 @@ Empathy sounds like a natural antidote to political hostility. Yet empathic conc
 
 A reading list can hold several kinds of evidence side by side {citation doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}. It can also preserve {citation unresolved-ritual-politics-reconciliation-2022 | label:"a reference still under review"} until an editor verifies it.
 
+Try a page locator on Molly Farneth’s print edition {citation isbn:9780691198927 | locator:34}. Open the citation to see two library services for the print edition.
+
+Related reading can share the same parentheses {citation isbn:9780691198927; isbn:9780593656433 | prefix:see also}. The lettered links in Farneth’s endnote return to either mention.
+
 {citation endnote}
 
 {citation evidence} · {citation credit}

@@ -4,7 +4,7 @@ Assay date 2026-11-10. Build 0.1.0. The checked artifacts were freshly built, wi
 
 Run `npm test` for compiler, schema, identifier and resolver tests. Run `npm run build && npm run test:browser` for browser checks. The browser script starts temporary loopback servers, uses the installed Google Chrome by default, and cleans up on exit. Set `CITATION_CHROME` to another Chromium executable, `CITATION_ZOOM_CHROME` to a Chrome for Testing executable that supports temporary extensions, `CITATION_LIVE_CHECK=1` for one Crossref request through the form, and `CITATION_EVIDENCE` to a screenshot directory.
 
-## Adversarial evidence
+## Adversarial evidence for 0.1.0
 
 | Scenario | Result and coverage |
 | --- | --- |
@@ -25,16 +25,16 @@ Run `npm test` for compiler, schema, identifier and resolver tests. Run `npm run
 | Skeptical deployer | The separately copied ESM and CSS were byte-identical to `dist/`. The copied origin passed the restrictive CSP and remove/reinsert checks. The browser made only same-origin asset and cache requests for the copied consumer. |
 | Untrusted metadata | Literal markup and scientific inequalities remained text. A supplied JavaScript URL did not become a link. DOI mismatch, identifier collisions and malformed records were exercised in the core suite. |
 
-## Live and simulated resolution
+## Live and simulated resolution in 0.1.0
 
 The live resolution form returned HTTP 200 for the Simas DOI. The cache retained the raw Crossref response and the merge log. The response supplied separate 2019 online and 2020 print dates, while the curated citation kept the 2020 issue year. A publisher abstract was present in raw provider evidence and excluded from public redistribution. Outage, backoff, negative caching, partial metadata and identity mismatches were exercised with synthetic responses. Reconciliation across providers remains outside this slice.
 
-Screenshots from the assay include the reading room, 390 px sheet and stale-cache simulation. The host browser and assistant did not test VoiceOver, WebKit/Safari or a physical touch device.
+Screenshots from the assay include the reading room, 390 px sheet and stale-cache simulation. VoiceOver, Safari and physical touch devices were outside the assay.
 
 
 ## Reader interface revision
 
-Re-ran the copied-consumer and Chrome tab-zoom checks with compact icons, contextual endnote links and the attributed Cambridge abstract excerpt. The reading-room test toggled hover, crossed into the pane, confirmed it closed on departure, pinned it by clicking and verified no hover-time network requests. It also checked Field notes endnote typography, Midnight panel styling and axe on the reading room in Midnight. The PDF and publisher controls carry their respective download and new-context attributes. The author-hosted preprint response served `application/pdf` without an attachment header during the header check, so the browser can display the remote file inline. Physical pointer visibility in the Codex side browser was not reproduced by the automated tests.
+Re-ran the copied-consumer and Chrome tab-zoom checks with compact icons, contextual endnote links and the attributed Cambridge abstract excerpt. The reading-room test toggled hover, crossed into the pane, confirmed it closed on departure, pinned it by clicking and verified no hover-time network requests. It also checked Field notes endnote typography, Midnight panel styling and axe on the reading room in Midnight. The PDF and publisher controls carry their respective download and new-context attributes. The author-hosted preprint response served `application/pdf` without an attachment header during the header check, so the browser can display the remote file inline.
 
 ## 0.1.1 local preview
 
@@ -45,3 +45,18 @@ The local preview keeps both archive names versioned and records their SHA-256 c
 The software credit uses the project collective and the package version. The MIT license covers the software. The bundled abstract excerpt is identified and attributed separately in the record. The archives contain normalized data and no raw provider responses.
 
 The final interaction checks covered dragging from blank panel space on desktop and emulated touch, selecting abstract text without moving the panel, tapping outside the sheet, and keyboard dismissal. Evidence and credit follow the same hover setting as citations and remain available through click or keyboard activation. A custom same-origin icon loaded successfully with the configured panel title.
+
+## Unreleased integration candidate
+
+The Node 22 suite and Chromium browser suite covered named styles, HTML and Markdown, the JSON CLI, formatted references, branded panels, help controls, and the standalone divider. Chromium covered phone movement, placement after pinch zoom, and desktop popover sizing. A live Open Library lookup returned the same Farneth edition for the equivalent ISBNs, and the second lookup reused its cache entry.
+
+| Review | Verdict and evidence |
+| --- | --- |
+| Distribution, deployment and versioning | Passed. A clean Node 22 offline install resolved the package exports. The installed compiler regenerated the extracted standalone fragment and cache. Browser assets matched between the archives. The earlier 0.1.1 archives remain the prior preview. |
+| UX and accessibility | Passed the Chromium review, including keyboard focus, CSS and Style independence, phone pinch and placement, and occurrence links. |
+| Testing | Passed the Node 22, CLI and Chromium checks. The reviewer reproduced issues with locators, HTML controls, APA suffixes and MLA titles. Regression tests cover the fixes. |
+| Documentation and roadmap | Passed a fresh-checkout walkthrough and npm install. The project keeps existing-site and physical-device verification open. |
+| Citation and authorship | Passed. Equivalent ISBNs identify the same print edition, the JSTOR DOI identifies its separate digital record, and the software credit matches the package and CFF. |
+| Non sequitur | Passed. The public docs and generated Guide use the standalone demo name, distinguish historical behavior and omit one-off checkout logistics. |
+
+Verification on an actual host site, physical phones, Safari, Firefox and screen readers remains open.

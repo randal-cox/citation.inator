@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Added Chicago author–date, APA, MLA, Cite Them Right Harvard and Vancouver formats for common books and journal articles.
+- Added prefix and locator syntax, editable endnote headings, formatted reference parts and lettered occurrence links.
+- Added HTML and Markdown compilation, fragment rebasing and a JSON command for build tools.
+- Added library and full-text locations, provider preference ordering and ISBN edition resolution through Open Library.
+- Added a reflected panel open state, a default mark and separate panel title and icon settings.
+- Added separate CSS and citation Style previews, configuration help, and examples of page locators, prefixes and library links.
+- Documented npm-free use, existing-site integration and recurring adversarial testing.
+
 ## 0.1.1 · 2026-11-10
 
 - Added a configurable citation keyword with endnote, evidence and credit directives. The original `{cite …}` and `{endnotes}` syntax remains supported.

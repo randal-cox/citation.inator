@@ -9,11 +9,11 @@
   <script type="module" src="../../dist/citation-inspector.mjs"></script>
 </head>
 <body>
-  <header class="site"><a class="brand" href="./">citation.inator</a>
+  <header class="site"><a class="brand" href="./"><svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg><span>citation.inator</span></a>
   <nav aria-label="Demos">
     <a href="../static/" >Reading room</a>
     <a href="../dynamic/" >Resolution bench</a>
-    <a href="../christopher-drop-in/">Plain HTML</a>
+    <a href="../drop-in/">Plain HTML</a>
     <a class="guide-link" href="../static/guide.html" aria-current="page">Guide</a>
   </nav></header>
   <main>
@@ -22,7 +22,10 @@
     <article class="reading guide">
     <section aria-labelledby="guide-load">
       <h2 id="guide-load">Load and initialize</h2>
-      <p>Copy the browser module and its adjacent CSS to your site. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
+      <p>Without npm, download or clone the <a href="https://github.com/randal-cox/citation.inator">repository</a> and serve the prebuilt <code>demos/drop-in/</code> example. Open <a href="http://127.0.0.1:8080/">the local example</a> after starting the server. The standalone ZIP works the same way.</p>
+      <pre><code>cd citation.inator/demos/drop-in
+python3 -m http.server --bind 127.0.0.1 8080</code></pre>
+      <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/citation-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
       <pre><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;./citation-inspector.css&quot;&gt;
 &lt;script type=&quot;module&quot; src=&quot;./citation-inspector.mjs&quot;&gt;&lt;/script&gt;
 
@@ -34,13 +37,25 @@
 
 initializeCitationInspector(document.querySelector(&quot;citation-inspector&quot;), {
   classPrefix: &quot;my-site-citation&quot;,
-  activation: &quot;hover&quot;
+  activation: &quot;hover&quot;,
+  panelTitle: &quot;Source details&quot;,
+  panelIcon: &quot;/assets/logo.svg&quot;,
+  evidenceTitle: &quot;Metadata trail&quot;,
+  evidenceIcon: &quot;/assets/evidence.svg&quot;,
+  creditTitle: &quot;Software credits&quot;,
+  creditIcon: &quot;none&quot;,
+  accessProviders: [&quot;WorldCat&quot;, &quot;Open Library&quot;]
 });</code></pre>
+      <p>The matching HTML attributes are <code>panel-title</code>, <code>panel-icon</code>, <code>evidence-title</code>, <code>evidence-icon</code>, <code>credit-title</code>, <code>credit-icon</code>, and <code>access-providers</code>. Icons use a same-origin URL, the built-in mark, or <code>none</code>. The <code>open</code> attribute is present on the host while any panel is visible.</p>
+      <p>To compile plain text directly from the checkout with Node.js 22 or later, run this from the repository root. The CLI writes <code>article.html</code> and <code>article.html.json</code>.</p>
+      <pre><code>node scripts/compile.mjs --style chicago-author-date --endnotes-heading References \
+  demos/drop-in/reading.txt demos/drop-in/citations.json article.html my-article</code></pre>
     </section>
     <section aria-labelledby="guide-use">
       <h2 id="guide-use">Using the demo</h2>
-      <p>Click a reference to inspect it. Enable <strong>Hover</strong> to preview citations, evidence, and credit with the mouse. To reposition the panel, choose <strong>Move panel</strong> from the three-dot menu and click or tap the destination. You can also drag from a blank area. You can still select text and use links and buttons. When the panel opens from a click or keyboard activation, its heading has focus. Use the arrow keys to move it or Home to reset. Press Escape or click or tap outside to dismiss it. Each return arrow in the endnotes leads to its own occurrence in the text.</p>
-      <p>On the <a href="../dynamic/">Resolution bench</a>, enter an identifier or choose a sample. <strong>Resolve</strong> can reuse a fresh cache. <strong>Force refresh</strong> asks Crossref again for a DOI. Open <strong>Citation evidence</strong> to see the provider response and how the result was assembled.</p>
+      <p>Use <strong>CSS</strong> to change the appearance of citation content and <strong>Style</strong> to change citation and endnote formatting. The help buttons beside the settings show the matching code. The demo also chooses References or Works Cited for named styles. Set <code>endnotesHeading</code> separately in your own site.</p>
+      <p>Click a reference to inspect it. Enable <strong>Hover</strong> to preview citations, evidence, and credit with the mouse. To reposition the panel, choose <strong>Move panel</strong> from the three-dot menu and click or tap the destination. You can also drag from a blank area. You can still select text and use links and buttons. When the panel opens from a click or keyboard activation, its heading has focus. Use the arrow keys to move it or Home to reset. Press Escape or click or tap outside to dismiss it. Each lettered return link in the endnotes leads to its own occurrence. Its tooltip identifies the surrounding text.</p>
+      <p>On the <a href="../dynamic/">Resolution bench</a>, enter an identifier or choose a sample. <strong>Resolve</strong> can reuse a fresh cache. <strong>Force refresh</strong> asks Crossref for a DOI or Open Library for an ISBN. Open <strong>Citation evidence</strong> to see the provider response and how the result was assembled.</p>
     </section>
     <section aria-labelledby="guide-source">
       <h2 id="guide-source">Exact source of the reading room</h2>
@@ -51,17 +66,50 @@ initializeCitationInspector(document.querySelector(&quot;citation-inspector&quot
 
 A reading list can hold several kinds of evidence side by side {citation doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}. It can also preserve {citation unresolved-ritual-politics-reconciliation-2022 | label:&quot;a reference still under review&quot;} until an editor verifies it.
 
+Try a page locator on Molly Farneth’s print edition {citation isbn:9780691198927 | locator:34}. Open the citation to see two library services for the print edition.
+
+Related reading can share the same parentheses {citation isbn:9780691198927; isbn:9780593656433 | prefix:see also}. The lettered links in Farneth’s endnote return to either mention.
+
 {citation endnote}
 
 {citation evidence} · {citation credit}</code></pre>
     </section>
     <section aria-labelledby="guide-notation">
       <h2 id="guide-notation">Complete notation</h2>
-      <dl><dt><code>{citation doi:10.1017/S0003055419000534}</code></dt><dd>An inline author–year citation. Replace DOI with an identifier or a local record key.</dd><dt><code>{citation DOI; ISBN}</code></dt><dd>Group parenthetical citations. A semicolon separates items.</dd><dt><code>{citation DOI | label:&quot;the study&quot;}</code></dt><dd>Supply the words readers see. Quoted labels can contain pipes and semicolons.</dd><dt><code>{citation DOI | fallback words}</code></dt><dd>Supply the text to show when the identifier cannot be resolved.</dd><dt><code>{citation DOI | form:parenthetical}</code></dt><dd>Author and year inside parentheses. This is the default.</dd><dt><code>{citation DOI | form:narrative}</code></dt><dd>Author in the sentence, followed by the year in parentheses.</dd><dt><code>{citation DOI | form:author-only}</code></dt><dd>Author with no date and no parentheses.</dd><dt><code>{citation DOI | form:suppress-author}</code></dt><dd>Year alone in parentheses.</dd><dt><code>{citation DOI | form:suppress-year}</code></dt><dd>Author alone in parentheses.</dd><dt><code>{citation endnote}</code></dt><dd>Place the bibliography. Give it its own paragraph. The compiler appends endnotes when this marker is absent.</dd><dt><code>{citation evidence}</code></dt><dd>Show cited source metadata or the Resolution bench’s latest provider response and merge decisions when available.</dd><dt><code>{citation credit}</code></dt><dd>Show the software credit, license and suggested citation.</dd></dl>
+      <dl><dt><code>{citation doi:10.1017/S0003055419000534}</code></dt><dd>An inline author–year citation. Replace DOI with an identifier or a local record key.</dd><dt><code>{citation DOI; ISBN}</code></dt><dd>Group parenthetical citations. A semicolon separates items.</dd><dt><code>{citation DOI | prefix:see also | locator:&quot;p. 34&quot;}</code></dt><dd>Add words before the citation and supply a locator. A bare number adapts to the selected style.</dd><dt><code>{citation DOI | label:&quot;the study&quot;}</code></dt><dd>Supply the words readers see. Quoted labels can contain pipes and semicolons.</dd><dt><code>{citation DOI | fallback words}</code></dt><dd>Supply the text to show when the identifier cannot be resolved.</dd><dt><code>{citation DOI | form:parenthetical}</code></dt><dd>Author and year inside parentheses. This is the default.</dd><dt><code>{citation DOI | form:narrative}</code></dt><dd>Author in the sentence, followed by the year in parentheses.</dd><dt><code>{citation DOI | form:author-only}</code></dt><dd>Author with no date and no parentheses.</dd><dt><code>{citation DOI | form:suppress-author}</code></dt><dd>Year alone in parentheses.</dd><dt><code>{citation DOI | form:suppress-year}</code></dt><dd>Author alone in parentheses.</dd><dt><code>{citation endnote}</code></dt><dd>Place the bibliography. Give it its own paragraph. The compiler appends endnotes when this marker is absent.</dd><dt><code>{citation evidence}</code></dt><dd>Show cited source metadata or the Resolution bench’s latest provider response and merge decisions when available.</dd><dt><code>{citation credit}</code></dt><dd>Show the software credit, license and suggested citation.</dd></dl>
       <p>Use <code>doi:</code>, <code>isbn:</code>, <code>pmid:</code>, <code>pmcid:</code>, <code>arxiv:</code>, <code>url:</code>, <code>dataset:</code>, <code>software:</code>, a recognized HTTPS URL or an ID from the local cache. Bare DOIs also work. A missing record is marked unresolved.</p>
       <p>Keep each directive on one line. Use a backslash to escape literal braces. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. Legacy <code>{cite …}</code> and <code>{endnotes}</code> also work.</p>
       <h3>Set your keyword</h3>
-      <p>The default keyword is <code>citation</code>. To use <code>ref</code>, create a compiler with <code>createCitationCompiler({ citationKeyword: "ref" })</code>. Then write <code>{ref DOI}</code>, <code>{ref endnote}</code>, <code>{ref evidence}</code>, and <code>{ref credit}</code>. Use 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter.</p>
+      <p>With <code>citationKeyword: "ref"</code>, write <code>{ref DOI}</code>, <code>{ref endnote}</code>, <code>{ref evidence}</code>, and <code>{ref credit}</code>. The keyword and class prefix accept 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter. Use the same class prefix in the browser if you initialize it separately.</p>
+      <pre><code>import { createCitationCompiler } from &quot;citation-inator&quot;;
+
+const compiler = createCitationCompiler({
+  citationKeyword: &quot;ref&quot;,
+  classPrefix: &quot;my-site-citation&quot;,
+  citationStyle: &quot;chicago-author-date&quot;,
+  endnotesHeading: &quot;References&quot;
+});
+const result = compiler.compile(
+  &quot;{ref isbn:9780593656433}\n\n{ref endnote}&quot;, cache, { namespace: &quot;article-one&quot; }
+);</code></pre>
+    </section>
+    <section aria-labelledby="guide-formats">
+      <h2 id="guide-formats">Styles and existing markup</h2>
+      <p>Choose <code>chicago-author-date</code>, <code>apa</code>, <code>mla</code>, <code>harvard</code> (Cite Them Right), <code>vancouver</code>, or <code>default</code>. The named styles cover common books and journal articles. Set <code>endnotesHeading</code> to a heading such as References or Works Cited.</p>
+      <p>With npm dependencies installed, compile trusted HTML or Markdown using <code>citation-inator/markup</code>, or pass <code>--format html</code> or <code>--format markdown</code> to the CLI. Each directive must stay inside one text node. Use a distinct namespace for each copy of a fragment on the same page.</p>
+      <pre><code>import { compileHTML, compileMarkdown, rebaseCitationFragment } from &quot;citation-inator/markup&quot;;
+
+const options = { namespace: &quot;essay&quot;, citationStyle: &quot;chicago-author-date&quot;, endnotesHeading: &quot;References&quot; };
+const result = compileHTML(&quot;&lt;p&gt;&lt;em&gt;Consent&lt;/em&gt; has a history {citation local:consent}.&lt;/p&gt;&quot;, cache, options);
+const anotherCopy = rebaseCitationFragment(result.html, &quot;essay&quot;, &quot;essay-copy&quot;);
+// For Markdown sources, call compileMarkdown(source, cache, options).</code></pre>
+      <p>For a build tool such as Python, run the CLI with <code>--json</code> and send <code>{ paragraphs, cache, options }</code> on standard input. It returns <code>{ html, cache, diagnostics }</code>. For HTML or Markdown send <code>{ source, format, cache, options }</code>.</p>
+    </section>
+    <section aria-labelledby="guide-cache">
+      <h2 id="guide-cache">Format references and add access links</h2>
+      <p>For curated reference text, put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
+      <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. The application can reuse its own preference settings.</p>
+      <p>The <a href="https://github.com/randal-cox/citation.inator/blob/main/docs/integration.md">integration guide</a> has complete record, Python and ISBN resolver examples.</p>
     </section>
   </article>
   </main>

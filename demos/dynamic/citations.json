@@ -62,6 +62,7 @@
           "note": "Separate author preprint PDF. The DOI identifies the journal article."
         }
       ],
+      "citationParts": [],
       "issued": [
         2020
       ],
@@ -90,6 +91,9 @@
       "pages": "258-269",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "How empathic concern fuels political polarization",
       "original": "How Empathic Concern Fuels Political Polarization, Simas, Clifford and Kirkland, American Political Science Review 114(1), 2020",
       "note": "",
       "citationText": "Simas, E. N., Clifford, S., & Kirkland, J. H. (2020). How empathic concern fuels political polarization. American Political Science Review, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534"

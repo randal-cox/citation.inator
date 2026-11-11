@@ -7,7 +7,7 @@ const doi = value => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value
 const kinds = new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "document"]);
 const versions = new Set(["version of record", "accepted manuscript", "author preprint", "preprint", "repository dissertation", "dataset", "software release"]);
 const integrityStates = new Set(["retracted", "corrected", "expression of concern"]);
-const locationKinds = new Set(["publisher", "repository", "pdf", "preprint", "status"]);
+const locationKinds = new Set(["publisher", "repository", "pdf", "preprint", "status", "full-text", "library"]);
 
 export function httpsURL(value) {
   try {
@@ -15,6 +15,16 @@ export function httpsURL(value) {
     if (url.protocol === "https:" && !url.username && !url.password) return url.href;
   } catch { /* Invalid URL. */ }
   return "";
+}
+
+function validISBN10(value) {
+  return /^\d{9}[\dX]$/.test(value) &&
+    [...value].reduce((sum, digit, index) => sum + (digit === "X" ? 10 : Number(digit)) * (10 - index), 0) % 11 === 0;
+}
+
+function isbn13CheckDigit(stem) {
+  const total = [...stem].reduce((sum, digit, index) => sum + Number(digit) * (index % 2 ? 3 : 1), 0);
+  return (10 - total % 10) % 10;
 }
 
 export function normalizeIdentifier(input) {
@@ -41,8 +51,8 @@ export function normalizeIdentifier(input) {
       return /^(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*\/\d{7})(?:v[1-9]\d*)?$/i.test(value) ? { scheme, value } : null;
     case "isbn": {
       value = value.replace(/[\s-]/g, "").toUpperCase();
-      if (/^97[89]\d{10}$/.test(value) && [...value].reduce((sum, n, i) => sum + Number(n) * (i % 2 ? 3 : 1), 0) % 10 === 0) return { scheme, value };
-      if (/^\d{9}[\dX]$/.test(value) && [...value].reduce((sum, n, i) => sum + (n === "X" ? 10 : Number(n)) * (10 - i), 0) % 11 === 0) return { scheme, value };
+      if (/^97[89]\d{10}$/.test(value) && isbn13CheckDigit(value.slice(0, -1)) === Number(value.at(-1))) return { scheme, value };
+      if (validISBN10(value)) return { scheme, value };
       return null;
     }
     case "dataset":
@@ -85,6 +95,13 @@ export function localRecordId(prefix, key) {
 }
 
 export const identifierKey = ({ scheme, value }) => `${scheme}:${value}`;
+
+export function canonicalIdentifierKey(identifier) {
+  const { scheme, value } = identifier;
+  if (scheme !== "isbn" || !validISBN10(value)) return identifierKey(identifier);
+  const stem = "978" + value.slice(0, -1);
+  return `isbn:${stem}${isbn13CheckDigit(stem)}`;
+}
 
 export function identifierURL(id) {
   if (!id) return "";
@@ -150,12 +167,14 @@ export function normalizeRecord(input) {
   const abstract = cleanText(input.abstract?.text);
   const abstractSource = cleanText(input.abstract?.source);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
-  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "original", "note", "citationText"];
+  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText"];
   return {
     id: input.id.trim(),
     type: kinds.has(input.type) ? input.type : "document",
     state: title ? state : "unresolved",
     title, authors, identifiers: [...identifiers.values()], locations, provenance,
+    citationParts: array(input.citationParts).flatMap(part => typeof part?.text === "string" && part.text
+      ? [{ text: part.text, ...(["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }) }] : []),
     issued: dateParts(input.issued),
     online: dateParts(input.online),
     print: dateParts(input.print),
@@ -182,9 +201,11 @@ export function readCache(input) {
     if (byId.has(record.id)) throw new Error(`Duplicate record ID ${record.id}.`);
     byId.set(record.id, record);
     for (const identifier of record.identifiers) {
-      const key = identifierKey(identifier);
-      if (byIdentifier.has(key)) throw new Error(`Conflicting records for ${key}.`);
+      const key = canonicalIdentifierKey(identifier);
+      const existing = byIdentifier.get(key);
+      if (existing && existing !== record) throw new Error(`Conflicting records for ${key}.`);
       byIdentifier.set(key, record);
+      byIdentifier.set(identifierKey(identifier), record);
     }
   }
   return { byId, byIdentifier };

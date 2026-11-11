@@ -56,9 +56,9 @@ citation-inspector { display: contents; }
   top: var(--ci-top, 12px);
   left: var(--ci-left, 12px);
   margin: 0;
-  width: min(33rem, calc(100% - 24px));
+  width: min(33rem, var(--ci-panel-width, calc(100% - 24px)));
   max-width: none;
-  max-height: min(42rem, calc(100dvh - 24px));
+  max-height: min(42rem, var(--ci-panel-height, calc(100dvh - 24px)));
   padding: 0;
   overflow: auto;
   overscroll-behavior: contain;
@@ -73,8 +73,8 @@ citation-inspector { display: contents; }
   overflow-wrap: anywhere;
 }
 [data-citation-part~="panel"][open] {
-  width: min(42rem, var(--ci-sheet-width, calc(100% - 16px)));
-  max-height: min(36rem, var(--ci-sheet-height, 60dvh));
+  width: min(42rem, var(--ci-panel-width, calc(100% - 16px)));
+  max-height: min(36rem, var(--ci-panel-height, 60dvh));
   padding-bottom: env(safe-area-inset-bottom);
   border-radius: 14px 14px 0 0;
 }
@@ -148,6 +148,7 @@ citation-inspector { display: contents; }
 
 [data-citation-part~="brand"] { min-width: 0; display: flex; align-items: center; gap: .45rem; }
 [data-citation-part~="brand-icon"] { width: 1.5rem; height: 1.5rem; object-fit: contain; }
+[data-citation-part~="brand-icon"][hidden] { display: none; }
 [data-citation-part~="panel-header"] { cursor: grab; }
 [data-citation-part~="panel-header"] h2 { cursor: text; }
 [data-citation-part~="panel"] [data-citation-part~="panel-menu"] {
@@ -178,10 +179,12 @@ citation-inspector { display: contents; }
 }
 [data-citation-part~="panel-placement"] {
   position: fixed;
-  inset: 0;
+  inset: auto;
+  top: var(--ci-placement-top, 0);
+  left: var(--ci-placement-left, 0);
   box-sizing: border-box;
-  width: 100%;
-  height: 100%;
+  width: var(--ci-placement-width, 100%);
+  height: var(--ci-placement-height, 100%);
   max-width: none;
   max-height: none;
   margin: 0;
@@ -198,6 +201,8 @@ citation-inspector { display: contents; }
   justify-content: center;
   gap: .5rem .85rem;
   width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
   margin-inline: auto;
   padding: .45rem .7rem;
   background: var(--citation-paper, #fff);
@@ -265,3 +270,5 @@ citation-inspector { display: contents; }
   border: 0;
   white-space: nowrap;
 }
+
+[data-citation-part~="backlinks"] a { font-size: .82em; font-weight: 650; }

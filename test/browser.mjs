@@ -7,6 +7,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromium } from "playwright-core";
 import axe from "axe-core";
+import { compileHTML } from "../src/markup.mjs";
+import { makeCache } from "../src/records.mjs";
 
 const executablePath = process.env.CITATION_CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const evidence = process.env.CITATION_EVIDENCE;
@@ -34,7 +36,7 @@ try {
   ]);
   const origin = stdout.toString().match(/http:\/\/127\.0\.0\.1:\d+/)?.[0];
   assert.ok(origin);
-  await cp(process.env.CITATION_DROP_IN_DIR || "demos/christopher-drop-in", temporary, { recursive: true });
+  await cp(process.env.CITATION_DROP_IN_DIR || "demos/drop-in", temporary, { recursive: true });
   for (const name of ["adversaries.html", "adversaries.json", "hostile.css"]) {
     const contents = await readFile(`demos/static/${name}`, "utf8");
     await writeFile(join(temporary, name), name.endsWith(".html") ? contents.replaceAll("../../dist/", "./") : contents);
@@ -72,9 +74,12 @@ try {
   };
 
   await page.goto(origin + "/demos/static/");
+  assert.equal(await page.getByRole("link", { name: "citation.inator", exact: true }).locator("svg").count(), 1);
   await primary.and(page.getByRole("button")).waitFor();
   await primary.click();
   await panel.waitFor();
+  assert.equal(await page.locator("citation-inspector").getAttribute("open"), "");
+  assert.equal(await panel.locator('[data-citation-part~="brand-icon"] svg').count(), 1);
   const pdf = panel.getByRole("link", { name: "Download PDF (author preprint)" });
   assert.equal(await pdf.getAttribute("download"), "");
   assert.match(await pdf.getAttribute("title"), /https:\/\/scottaclifford.com\//);
@@ -85,8 +90,50 @@ try {
   assert.ok(await panel.getByText(/marked increase in partisan social polarization/).isVisible());
   if (evidence) await page.screenshot({ path: join(evidence, "reading-room.png") });
   await page.keyboard.press("Escape");
+  assert.equal(await page.locator("citation-inspector").getAttribute("open"), null);
+  await page.setViewportSize({ width: 1000, height: 700 });
+  const desktopPinch = await context.newCDPSession(page);
+  await primary.click();
+  await desktopPinch.send("Emulation.setPageScaleFactor", { pageScaleFactor: 2 });
+  await page.waitForFunction(() => {
+    const viewport = window.visualViewport;
+    const inspector = document.querySelector("citation-inspector");
+    const panel = inspector.shadowRoot.querySelector(".citation-panel");
+    const box = panel.getBoundingClientRect();
+    return viewport.scale === 2 && panel.matches(":popover-open") &&
+      box.right <= viewport.offsetLeft + viewport.width &&
+      box.bottom <= viewport.offsetTop + viewport.height;
+  });
+  await panel.getByRole("button", { name: "Go to endnote" }).scrollIntoViewIfNeeded();
+  await desktopPinch.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
+  await desktopPinch.detach();
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 1440, height: 960 });
+  const citationStyle = page.getByLabel("Style", { exact: true });
+  const citationStyleHelp = page.getByRole("button", { name: "Configure Style" });
+  await citationStyle.selectOption("chicago-author-date");
+  await page.getByRole("heading", { name: "References", exact: true }).waitFor();
+  assert.equal(await primary.textContent(), "Simas et al. 2020");
+  await citationStyleHelp.hover();
+  await page.getByRole("tooltip").getByText('createCitationCompiler({ citationStyle: "chicago-author-date" })', { exact: true }).waitFor();
+  await page.keyboard.press("Escape");
+  await page.getByRole("tooltip").waitFor({ state: "hidden" });
+  await citationStyle.selectOption("mla");
+  await page.getByRole("heading", { name: "Works Cited" }).waitFor();
+  await citationStyle.selectOption("vancouver");
+  assert.equal(await primary.textContent(), "1");
+  await citationStyle.selectOption("default");
+  await page.getByRole("heading", { name: "Endnotes", exact: true }).waitFor();
+  const cssHelp = page.getByRole("button", { name: "Configure CSS" });
+  await cssHelp.focus();
+  await page.getByRole("tooltip").getByText('<citation-inspector data-citation-theme="reading">', { exact: true }).waitFor();
+  await page.keyboard.press("Escape");
+  await page.getByRole("tooltip").waitFor({ state: "hidden" });
+  await page.getByRole("button", { name: "Configure Hover" }).hover();
+  await page.getByRole("tooltip").getByText('initializeCitationInspector(element, { activation: "hover" })', { exact: true }).waitFor();
+  await page.mouse.move(2, 2);
   const enableHover = page.getByRole("checkbox", { name: "Hover" });
-  const style = page.getByLabel("Style");
+  const style = page.getByLabel("CSS", { exact: true });
   const hostAppearance = () => page.evaluate(() => ["html", ".site", "h1", ".intro", ".reading", "footer.site"].map(selector => {
     const css = getComputedStyle(document.querySelector(selector));
     return [css.color, css.backgroundColor, css.fontFamily, css.borderColor];
@@ -353,6 +400,15 @@ try {
     return viewport.scale === 1.5 && box.height <= viewport.height * 0.6 + 1 &&
       box.bottom <= viewport.offsetTop + viewport.height;
   });
+  await sheet.getByLabel("Panel options", { exact: true }).tap();
+  await sheet.getByRole("button", { name: "Move panel", exact: true }).tap();
+  const zoomedCancel = mobile.getByRole("button", { name: "Cancel move" });
+  assert.ok(await zoomedCancel.evaluate(button => {
+    const box = button.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    return box.right <= viewport.offsetLeft + viewport.width && box.bottom <= viewport.offsetTop + viewport.height;
+  }));
+  await zoomedCancel.tap();
   await touch.send("Emulation.setPageScaleFactor", { pageScaleFactor: 1 });
   await mobile.waitForFunction(expectedTop => {
     const panel = document.querySelector("citation-inspector").shadowRoot.querySelector(".citation-panel");
@@ -496,9 +552,66 @@ try {
   await page.waitForFunction(() => document.querySelector("#resolution-status").dataset.state === "cached");
   assert.match(await status.textContent(), /Cache hit.*A Time to Gather/);
   assert.ok(await page.getByRole("button", { name: /Inspect citation: Feiler/ }).isVisible());
+  const liveStyle = page.getByLabel("Style", { exact: true });
+  await liveStyle.selectOption("chicago-author-date");
+  assert.equal(await page.locator("#live-reader a[data-ci-record]").textContent(), "Feiler 2026");
+  await liveStyle.selectOption("default");
+
   await page.getByRole("button", { name: "Citation evidence" }).press("Enter");
   assert.ok(await page.getByRole("dialog", { name: "Citation evidence" }).getByText("Cached source metadata").isVisible());
   await page.keyboard.press("Escape");
+
+  const adoptionRecord = {
+    id: "adoption-book", type: "book", state: "resolved", issued: [1990],
+    title: "Governing the Commons", authors: [{ given: "Elinor", family: "Ostrom" }],
+    citationParts: [{ text: "Ostrom, Elinor. 1990. " }, { text: "Governing the Commons", emphasis: "italic" }, { text: "." }],
+    locations: [
+      { kind: "library", provider: "WorldCat", url: "https://search.worldcat.org/search?q=bn%3A9780521405997" },
+      { kind: "library", provider: "Open Library", url: "https://openlibrary.org/isbn/9780521405997" }
+    ]
+  };
+  const adoption = compileHTML("<p><em>Claim</em> {ref adoption-book | locator:34}; again {ref adoption-book}.</p><p>{ref evidence} · {ref credit}</p><p>{ref endnote}</p>",
+    makeCache([adoptionRecord]), { namespace: "adoption", classPrefix: "adoption", citationKeyword: "ref",
+      citationStyle: "chicago-author-date", endnotesHeading: "References" });
+  await page.evaluate(async ({ html, cache }) => {
+    const { initializeCitationInspector } = await import("/dist/citation-inspector.mjs");
+    const reader = document.createElement("citation-inspector");
+    reader.id = "adoption";
+    reader.innerHTML = html;
+    initializeCitationInspector(reader, {
+      cache, classPrefix: "adoption", panelTitle: "Source details", evidenceTitle: "Metadata trail",
+      creditTitle: "Software credits", creditIcon: "none", accessProviders: ["Open Library", "WorldCat"]
+    });
+    document.querySelector("main").replaceChildren(reader);
+  }, adoption);
+  const adopter = page.locator("#adoption");
+  const occurrence = adopter.getByRole("button", { name: "Inspect citation: Ostrom 1990, 34" });
+  const endnotes = adopter.locator(".adoption-endnotes");
+  assert.ok(await endnotes.getByRole("heading", { name: "References" }).isVisible());
+  assert.equal(await endnotes.locator("em").textContent(), adoptionRecord.title);
+  assert.deepEqual(await endnotes.locator(".adoption-backlinks a").allTextContents(), ["a", "b"]);
+  const serviceOrder = () => endnotes.locator("[data-ci-access-provider]").evaluateAll(links => links.map(link => link.dataset.ciAccessProvider));
+  assert.deepEqual(await serviceOrder(), ["Open Library", "WorldCat"]);
+  await occurrence.click();
+  const sourceDetails = adopter.getByRole("dialog", { name: "Source details" });
+  assert.equal(await sourceDetails.locator(".adoption-citation em").textContent(), adoptionRecord.title);
+  const sourceOrder = () => sourceDetails.getByRole("list", { name: "Source links" }).getByRole("link")
+    .evaluateAll(links => links.map(link => link.getAttribute("aria-label")));
+  assert.deepEqual(await sourceOrder(), ["Find at Open Library", "Find at WorldCat"]);
+  await adopter.evaluate(reader => { reader.accessProviders = []; });
+  assert.deepEqual(await serviceOrder(), ["WorldCat", "Open Library"]);
+  assert.deepEqual(await sourceOrder(), ["Find at WorldCat", "Find at Open Library"]);
+  await page.keyboard.press("Escape");
+  await adopter.getByRole("button", { name: "Citation evidence" }).click();
+  assert.ok(await adopter.getByRole("dialog", { name: "Metadata trail" }).isVisible());
+  await page.keyboard.press("Escape");
+  await adopter.getByRole("button", { name: "Citation credit" }).click();
+  const softwareCredits = adopter.getByRole("dialog", { name: "Software credits" });
+  assert.ok(await softwareCredits.isVisible());
+  assert.equal(await softwareCredits.locator(".adoption-brand-icon:visible").count(), 0);
+  await page.keyboard.press("Escape");
+  assert.equal(await adopter.getAttribute("open"), null);
+  await page.goto(origin + "/demos/dynamic/");
 
   if (process.env.CITATION_ZOOM_CHROME) {
     const extension = join(temporary, "zoom-extension");

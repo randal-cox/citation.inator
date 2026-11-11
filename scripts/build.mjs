@@ -1,17 +1,19 @@
 import { build } from "esbuild";
 import { cp, mkdir, readFile, writeFile } from "node:fs/promises";
 import { compileCitations, escapeHTML } from "../src/compiler.mjs";
+import { brandIconMarkup } from "../src/icons.mjs";
 import { makeCache } from "../src/records.mjs";
 import { demoCache } from "./demo-cache.mjs";
+import { compileDemoStyles, demoStyles } from "./demo-styles.mjs";
 
 const version = JSON.parse(await readFile("package.json", "utf8")).version;
 const fixtures = JSON.parse(await readFile("fixtures/citation-demo-cases.json", "utf8"));
 const cache = demoCache(fixtures);
 const prose = await readFile("demos/static/reading.txt", "utf8");
-const article = compileCitations(prose, cache, { namespace: "reading" });
+const article = compileDemoStyles(prose, cache, "reading");
 const json = value => JSON.stringify(value, null, 2) + "\n";
 const simas = "doi:10.1017/s0003055419000534";
-const seed = compileCitations(`Start with the journal article {citation ${simas}}.\n\n{citation evidence} · {citation credit}\n\n{citation endnote}`, cache, { namespace: "live" });
+const seed = compileDemoStyles(`Start with the journal article {citation ${simas}}.\n\n{citation evidence} · {citation credit}\n\n{citation endnote}`, cache, "live");
 
 await mkdir("dist", { recursive: true });
 await build({
@@ -25,15 +27,33 @@ await Promise.all([
   writeFile("dist/citations.json", json(cache))
 ]);
 
+const preferenceHelp = (id, label, code, note = "") => `<span class="demo-help">
+    <button type="button" aria-label="Configure ${label}" aria-describedby="demo-help-${id}">?</button>
+    <span role="tooltip" id="demo-help-${id}"><code>${escapeHTML(code)}</code>${note ? `<span>${note}</span>` : ""}</span>
+  </span>`;
+
 const preferences = `<div class="demo-preferences" data-demo-preferences role="group" aria-label="Demo preferences" hidden>
-  <label><input type="checkbox" name="activation"> Hover</label>
-  <label>Style
-    <select name="theme">
+  <span class="demo-setting">
+    <label><input type="checkbox" name="activation"> Hover</label>
+    ${preferenceHelp("hover", "Hover", 'initializeCitationInspector(element, { activation: "hover" })')}
+  </span>
+  <span class="demo-setting">
+    <label for="demo-css">CSS</label>
+    ${preferenceHelp("css", "CSS", '<citation-inspector data-citation-theme="reading">', "Use with demos/static/demo.css. For a custom theme, set the --citation-* properties on the element.")}
+    <select name="theme" id="demo-css">
       <option value="reading">Reading room</option>
       <option value="field">Field notes</option>
       <option value="midnight">Midnight</option>
     </select>
-  </label>
+  </span>
+  <span class="demo-setting">
+    <label for="demo-style">Style</label>
+    ${preferenceHelp("style", "Style", 'createCitationCompiler({ citationStyle: "default" })')}
+    <select name="citation-style" id="demo-style">
+      ${Object.entries(demoStyles).map(([value, label]) => `<option value="${value}">${label}</option>`).join("\n      ")}
+    </select>
+  </span>
+  <span data-style-status role="status"></span>
 </div>`;
 
 function document({ title, intro, content, active, showPreferences = active && active !== "guide", assets = "../../dist/", style = "../static/demo.css", script = "", nav = true }) {
@@ -48,11 +68,11 @@ function document({ title, intro, content, active, showPreferences = active && a
   <script type="module" src="${assets}citation-inspector.mjs"></script>
 ${showPreferences ? '  <script type="module" src="../static/preferences.mjs"></script>\n' : ""}${script ? `  ${script}\n` : ""}</head>
 <body>
-  <header class="site"><a class="brand" href="./">citation.inator</a>
+  <header class="site"><a class="brand" href="./">${brandIconMarkup}<span>citation.inator</span></a>
   ${nav ? `<nav aria-label="Demos">
     <a href="../static/" ${active === "static" ? 'aria-current="page"' : ""}>Reading room</a>
     <a href="../dynamic/" ${active === "dynamic" ? 'aria-current="page"' : ""}>Resolution bench</a>
-    <a href="../christopher-drop-in/">Plain HTML</a>
+    <a href="../drop-in/">Plain HTML</a>
     <a class="guide-link" href="../static/guide.html" ${active === "guide" ? 'aria-current="page"' : ""}>Guide</a>
   </nav>` : ""}</header>
   <main>
@@ -76,20 +96,21 @@ await writeFile("demos/static/index.html", document({
   </article>`
 }));
 await writeFile("demos/static/citations.json", json(article.cache));
+await writeFile("demos/static/styles.json", json(article.styles));
 
 await writeFile("demos/dynamic/index.html", document({
   title: "Resolution bench.",
-  intro: "Resolve a DOI on demand or rehearse what a reader sees when the provider sends incomplete metadata or goes offline.",
+  intro: "Resolve a DOI or ISBN on demand, or rehearse what a reader sees when the provider sends incomplete metadata or goes offline.",
   active: "dynamic",
   script: '<script type="module" src="./dynamic.mjs"></script>',
   content: `<form id="resolve-form">
     <label for="identifier">Identifier or single citation directive</label>
     <input id="identifier" name="identifier" required maxlength="2048" value="${simas}" spellcheck="false" autocapitalize="off">
-    <p class="resolve-examples">Try <button type="button" data-example="doi:10.1111/spc3.12501">another article</button> or <button type="button" data-example="isbn:9780593656433">a cached book</button>.</p>
+    <p class="resolve-examples">Try <button type="button" data-example="doi:10.1111/spc3.12501">another article</button>, <button type="button" data-example="isbn:9780593656433">a cached book</button>, or <button type="button" data-example="isbn:9780140328721">another ISBN</button>.</p>
     <div class="controls">
       <div><label for="mode">Provider mode</label>
       <select name="mode" id="mode">
-        <option value="live">Live Crossref</option>
+        <option value="live">Live DOI or ISBN</option>
         <option value="offline">Simulate outage with stale cache</option>
         <option value="partial">Simulate partial metadata</option>
         <option value="slow">Simulate slow cached response</option>
@@ -109,10 +130,12 @@ await writeFile("demos/dynamic/index.html", document({
   </article>`
 }));
 await writeFile("demos/dynamic/citations.json", json(seed.cache));
+await writeFile("demos/dynamic/styles.json", json(seed.styles));
 
 const notation = [
   ["{citation doi:10.1017/S0003055419000534}", "An inline author–year citation. Replace DOI with an identifier or a local record key."],
   ["{citation DOI; ISBN}", "Group parenthetical citations. A semicolon separates items."],
+  ['{citation DOI | prefix:see also | locator:"p. 34"}', "Add words before the citation and supply a locator. A bare number adapts to the selected style."],
   ['{citation DOI | label:"the study"}', "Supply the words readers see. Quoted labels can contain pipes and semicolons."],
   ["{citation DOI | fallback words}", "Supply the text to show when the identifier cannot be resolved."],
   ["{citation DOI | form:parenthetical}", "Author and year inside parentheses. This is the default."],
@@ -136,8 +159,40 @@ const initExample = `import { initializeCitationInspector } from "./citation-ins
 
 initializeCitationInspector(document.querySelector("citation-inspector"), {
   classPrefix: "my-site-citation",
-  activation: "hover"
+  activation: "hover",
+  panelTitle: "Source details",
+  panelIcon: "/assets/logo.svg",
+  evidenceTitle: "Metadata trail",
+  evidenceIcon: "/assets/evidence.svg",
+  creditTitle: "Software credits",
+  creditIcon: "none",
+  accessProviders: ["WorldCat", "Open Library"]
 });`;
+
+const plainInstall = `cd citation.inator/demos/drop-in
+python3 -m http.server --bind 127.0.0.1 8080`;
+
+const compileExample = `import { createCitationCompiler } from "citation-inator";
+
+const compiler = createCitationCompiler({
+  citationKeyword: "ref",
+  classPrefix: "my-site-citation",
+  citationStyle: "chicago-author-date",
+  endnotesHeading: "References"
+});
+const result = compiler.compile(
+  "{ref isbn:9780593656433}\\n\\n{ref endnote}", cache, { namespace: "article-one" }
+);`;
+
+const checkoutCompile = `node scripts/compile.mjs --style chicago-author-date --endnotes-heading References \\
+  demos/drop-in/reading.txt demos/drop-in/citations.json article.html my-article`;
+
+const markupExample = `import { compileHTML, compileMarkdown, rebaseCitationFragment } from "citation-inator/markup";
+
+const options = { namespace: "essay", citationStyle: "chicago-author-date", endnotesHeading: "References" };
+const result = compileHTML("<p><em>Consent</em> has a history {citation local:consent}.</p>", cache, options);
+const anotherCopy = rebaseCitationFragment(result.html, "essay", "essay-copy");
+// For Markdown sources, call compileMarkdown(source, cache, options).`;
 
 await writeFile("demos/static/guide.html", document({
   title: "Citation guide",
@@ -146,15 +201,21 @@ await writeFile("demos/static/guide.html", document({
   content: `<article class="reading guide">
     <section aria-labelledby="guide-load">
       <h2 id="guide-load">Load and initialize</h2>
-      <p>Copy the browser module and its adjacent CSS to your site. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
+      <p>Without npm, download or clone the <a href="https://github.com/randal-cox/citation.inator">repository</a> and serve the prebuilt <code>demos/drop-in/</code> example. Open <a href="http://127.0.0.1:8080/">the local example</a> after starting the server. The standalone ZIP works the same way.</p>
+      <pre><code>${escapeHTML(plainInstall)}</code></pre>
+      <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/citation-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
       <pre><code>${escapeHTML(loadingExample)}</code></pre>
       <p>Set options on the element or in your site's browser module. The default classes start with <code>citation-</code>. Use <code>class-prefix</code> or <code>classPrefix</code> to give them your own prefix.</p>
       <pre><code>${escapeHTML(initExample)}</code></pre>
+      <p>The matching HTML attributes are <code>panel-title</code>, <code>panel-icon</code>, <code>evidence-title</code>, <code>evidence-icon</code>, <code>credit-title</code>, <code>credit-icon</code>, and <code>access-providers</code>. Icons use a same-origin URL, the built-in mark, or <code>none</code>. The <code>open</code> attribute is present on the host while any panel is visible.</p>
+      <p>To compile plain text directly from the checkout with Node.js 22 or later, run this from the repository root. The CLI writes <code>article.html</code> and <code>article.html.json</code>.</p>
+      <pre><code>${escapeHTML(checkoutCompile)}</code></pre>
     </section>
     <section aria-labelledby="guide-use">
       <h2 id="guide-use">Using the demo</h2>
-      <p>Click a reference to inspect it. Enable <strong>Hover</strong> to preview citations, evidence, and credit with the mouse. To reposition the panel, choose <strong>Move panel</strong> from the three-dot menu and click or tap the destination. You can also drag from a blank area. You can still select text and use links and buttons. When the panel opens from a click or keyboard activation, its heading has focus. Use the arrow keys to move it or Home to reset. Press Escape or click or tap outside to dismiss it. Each return arrow in the endnotes leads to its own occurrence in the text.</p>
-      <p>On the <a href="../dynamic/">Resolution bench</a>, enter an identifier or choose a sample. <strong>Resolve</strong> can reuse a fresh cache. <strong>Force refresh</strong> asks Crossref again for a DOI. Open <strong>Citation evidence</strong> to see the provider response and how the result was assembled.</p>
+      <p>Use <strong>CSS</strong> to change the appearance of citation content and <strong>Style</strong> to change citation and endnote formatting. The help buttons beside the settings show the matching code. The demo also chooses References or Works Cited for named styles. Set <code>endnotesHeading</code> separately in your own site.</p>
+      <p>Click a reference to inspect it. Enable <strong>Hover</strong> to preview citations, evidence, and credit with the mouse. To reposition the panel, choose <strong>Move panel</strong> from the three-dot menu and click or tap the destination. You can also drag from a blank area. You can still select text and use links and buttons. When the panel opens from a click or keyboard activation, its heading has focus. Use the arrow keys to move it or Home to reset. Press Escape or click or tap outside to dismiss it. Each lettered return link in the endnotes leads to its own occurrence. Its tooltip identifies the surrounding text.</p>
+      <p>On the <a href="../dynamic/">Resolution bench</a>, enter an identifier or choose a sample. <strong>Resolve</strong> can reuse a fresh cache. <strong>Force refresh</strong> asks Crossref for a DOI or Open Library for an ISBN. Open <strong>Citation evidence</strong> to see the provider response and how the result was assembled.</p>
     </section>
     <section aria-labelledby="guide-source">
       <h2 id="guide-source">Exact source of the reading room</h2>
@@ -167,12 +228,26 @@ await writeFile("demos/static/guide.html", document({
       <p>Use <code>doi:</code>, <code>isbn:</code>, <code>pmid:</code>, <code>pmcid:</code>, <code>arxiv:</code>, <code>url:</code>, <code>dataset:</code>, <code>software:</code>, a recognized HTTPS URL or an ID from the local cache. Bare DOIs also work. A missing record is marked unresolved.</p>
       <p>Keep each directive on one line. Use a backslash to escape literal braces. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. Legacy <code>{cite …}</code> and <code>{endnotes}</code> also work.</p>
       <h3>Set your keyword</h3>
-      <p>The default keyword is <code>citation</code>. To use <code>ref</code>, create a compiler with <code>createCitationCompiler({ citationKeyword: "ref" })</code>. Then write <code>{ref DOI}</code>, <code>{ref endnote}</code>, <code>{ref evidence}</code>, and <code>{ref credit}</code>. Use 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter.</p>
+      <p>With <code>citationKeyword: "ref"</code>, write <code>{ref DOI}</code>, <code>{ref endnote}</code>, <code>{ref evidence}</code>, and <code>{ref credit}</code>. The keyword and class prefix accept 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter. Use the same class prefix in the browser if you initialize it separately.</p>
+      <pre><code>${escapeHTML(compileExample)}</code></pre>
+    </section>
+    <section aria-labelledby="guide-formats">
+      <h2 id="guide-formats">Styles and existing markup</h2>
+      <p>Choose <code>chicago-author-date</code>, <code>apa</code>, <code>mla</code>, <code>harvard</code> (Cite Them Right), <code>vancouver</code>, or <code>default</code>. The named styles cover common books and journal articles. Set <code>endnotesHeading</code> to a heading such as References or Works Cited.</p>
+      <p>With npm dependencies installed, compile trusted HTML or Markdown using <code>citation-inator/markup</code>, or pass <code>--format html</code> or <code>--format markdown</code> to the CLI. Each directive must stay inside one text node. Use a distinct namespace for each copy of a fragment on the same page.</p>
+      <pre><code>${escapeHTML(markupExample)}</code></pre>
+      <p>For a build tool such as Python, run the CLI with <code>--json</code> and send <code>{ paragraphs, cache, options }</code> on standard input. It returns <code>{ html, cache, diagnostics }</code>. For HTML or Markdown send <code>{ source, format, cache, options }</code>.</p>
+    </section>
+    <section aria-labelledby="guide-cache">
+      <h2 id="guide-cache">Format references and add access links</h2>
+      <p>For curated reference text, put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
+      <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. The application can reuse its own preference settings.</p>
+      <p>The <a href="https://github.com/randal-cox/citation.inator/blob/main/docs/integration.md">integration guide</a> has complete record, Python and ISBN resolver examples.</p>
     </section>
   </article>`
 }));
 
-const portable = "demos/christopher-drop-in/";
+const portable = "demos/drop-in/";
 await Promise.all(["citation-inspector.mjs", "citation-inspector.css", "LICENSE"].map(name => cp(`dist/${name}`, portable + name)));
 await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
@@ -190,8 +265,9 @@ await writeFile(portable + "index.html", `<!doctype html>
 </head>
 <body>
   <main>
-    <h1>Sources in plain HTML</h1>
+    <h1 data-citation-part="brand">${brandIconMarkup}<span>Sources in plain HTML</span></h1>
     <p>Click a citation to inspect it. Without JavaScript, it links directly to its endnote.</p>
+    <hr>
     <citation-inspector data-cache="./citations.json">${article.html}</citation-inspector>
   </main>
 </body>

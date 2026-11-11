@@ -32,6 +32,7 @@ var paths = {
 function iconMarkup(name) {
   return `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${Object.hasOwn(paths, name) ? paths[name] : paths.link}</svg>`;
 }
+var brandIconMarkup = '<svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg>';
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -41,7 +42,7 @@ var doi = (value) => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value
 var kinds = /* @__PURE__ */ new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "document"]);
 var versions = /* @__PURE__ */ new Set(["version of record", "accepted manuscript", "author preprint", "preprint", "repository dissertation", "dataset", "software release"]);
 var integrityStates = /* @__PURE__ */ new Set(["retracted", "corrected", "expression of concern"]);
-var locationKinds = /* @__PURE__ */ new Set(["publisher", "repository", "pdf", "preprint", "status"]);
+var locationKinds = /* @__PURE__ */ new Set(["publisher", "repository", "pdf", "preprint", "status", "full-text", "library"]);
 function httpsURL(value) {
   try {
     const url = new URL(cleanText(value));
@@ -49,6 +50,13 @@ function httpsURL(value) {
   } catch {
   }
   return "";
+}
+function validISBN10(value) {
+  return /^\d{9}[\dX]$/.test(value) && [...value].reduce((sum, digit, index) => sum + (digit === "X" ? 10 : Number(digit)) * (10 - index), 0) % 11 === 0;
+}
+function isbn13CheckDigit(stem) {
+  const total = [...stem].reduce((sum, digit, index) => sum + Number(digit) * (index % 2 ? 3 : 1), 0);
+  return (10 - total % 10) % 10;
 }
 function normalizeIdentifier(input) {
   if (typeof input !== "string") return null;
@@ -73,8 +81,8 @@ function normalizeIdentifier(input) {
       return /^(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*\/\d{7})(?:v[1-9]\d*)?$/i.test(value) ? { scheme, value } : null;
     case "isbn": {
       value = value.replace(/[\s-]/g, "").toUpperCase();
-      if (/^97[89]\d{10}$/.test(value) && [...value].reduce((sum, n, i) => sum + Number(n) * (i % 2 ? 3 : 1), 0) % 10 === 0) return { scheme, value };
-      if (/^\d{9}[\dX]$/.test(value) && [...value].reduce((sum, n, i) => sum + (n === "X" ? 10 : Number(n)) * (10 - i), 0) % 11 === 0) return { scheme, value };
+      if (/^97[89]\d{10}$/.test(value) && isbn13CheckDigit(value.slice(0, -1)) === Number(value.at(-1))) return { scheme, value };
+      if (validISBN10(value)) return { scheme, value };
       return null;
     }
     case "dataset":
@@ -113,6 +121,12 @@ function normalizeIdentifier(input) {
   }
 }
 var identifierKey = ({ scheme, value }) => `${scheme}:${value}`;
+function canonicalIdentifierKey(identifier) {
+  const { scheme, value } = identifier;
+  if (scheme !== "isbn" || !validISBN10(value)) return identifierKey(identifier);
+  const stem = "978" + value.slice(0, -1);
+  return `isbn:${stem}${isbn13CheckDigit(stem)}`;
+}
 function identifierURL(id) {
   if (!id) return "";
   const valid = normalizeIdentifier(identifierKey(id));
@@ -179,7 +193,7 @@ function normalizeRecord(input) {
   const abstract = cleanText(input.abstract?.text);
   const abstractSource = cleanText(input.abstract?.source);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
-  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "original", "note", "citationText"];
+  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText"];
   return {
     id: input.id.trim(),
     type: kinds.has(input.type) ? input.type : "document",
@@ -189,6 +203,7 @@ function normalizeRecord(input) {
     identifiers: [...identifiers.values()],
     locations,
     provenance,
+    citationParts: array(input.citationParts).flatMap((part) => typeof part?.text === "string" && part.text ? [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis } }] : []),
     issued: dateParts(input.issued),
     online: dateParts(input.online),
     print: dateParts(input.print),
@@ -217,9 +232,11 @@ function readCache(input) {
     if (byId.has(record.id)) throw new Error(`Duplicate record ID ${record.id}.`);
     byId.set(record.id, record);
     for (const identifier of record.identifiers) {
-      const key = identifierKey(identifier);
-      if (byIdentifier.has(key)) throw new Error(`Conflicting records for ${key}.`);
+      const key = canonicalIdentifierKey(identifier);
+      const existing = byIdentifier.get(key);
+      if (existing && existing !== record) throw new Error(`Conflicting records for ${key}.`);
       byIdentifier.set(key, record);
+      byIdentifier.set(identifierKey(identifier), record);
     }
   }
   return { byId, byIdentifier };
@@ -228,7 +245,8 @@ function readCache(input) {
 // src/compiler.mjs
 var titleFor = (record) => record.title || record.original || "Unresolved citation";
 var yearFor = (record) => record.issued?.[0] ?? "n.d.";
-function bibliographyText(record, suffix = "") {
+var suffixFor = (year, suffix, style) => style === "apa" && year === "n.d." && suffix ? `-${suffix}` : suffix;
+function defaultBibliography(record, suffix = "") {
   if (record.state === "unresolved") return titleFor(record);
   const year = yearFor(record);
   if (record.citationText && (!suffix || record.citationText.includes(` (${year}).`))) {
@@ -247,6 +265,143 @@ function bibliographyText(record, suffix = "") {
     authors ? `${authors} (${year}${suffix}). ${titleFor(record)}.` : `${titleFor(record)}. (${year}${suffix}).`,
     ...details.map((item) => item.startsWith("https://") ? item : `${item}.`)
   ].join(" ");
+}
+function chicagoBibliography(record, suffix) {
+  const { authors, type, containerTitle, publisher, edition } = record;
+  const parts = [];
+  const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
+  const fullName = (author, first) => author.literal || (first ? [author.family, author.given].filter(Boolean).join(", ") : [author.given, author.family].filter(Boolean).join(" "));
+  if (authors.length) {
+    const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullName(author, index === 0));
+    const head = names.slice(0, -1).join(", ");
+    const byline = names.length === 1 ? names[0] : authors.length > 6 ? `${names.join(", ")}, et al` : `${head}${names.length > 2 ? "," : ""} and ${names.at(-1)}`;
+    add(`${byline}. ${yearFor(record)}${suffix}. `);
+  }
+  const title = titleFor(record);
+  const quoted = ["article-journal", "article", "chapter", "webpage", "thesis"].includes(type);
+  if (quoted) add(`\u201C${title}${/[.?!]$/.test(title) ? "" : "."}\u201D`);
+  else {
+    add(title, "italic");
+    if (!/[.?!]$/.test(title)) add(".");
+  }
+  if (!authors.length) add(` ${yearFor(record)}${suffix}.`);
+  if (containerTitle) {
+    add(type === "chapter" ? " In " : " ");
+    add(containerTitle, "italic");
+    if (record.volume) add(` ${record.volume}`);
+    if (record.issue) add(` (${record.issue})`);
+    if (record.pages || record.articleNumber) add(`${type === "chapter" ? ", " : ": "}${record.pages || record.articleNumber}`);
+    add(".");
+  }
+  if (edition) add(` ${edition.replace(/\.$/, "")}.`);
+  if (publisher) add(` ${publisher.replace(/\.$/, "")}.`);
+  const url = identifierURL(record.identifiers.find((item) => item.scheme === "doi" || item.scheme === "url"));
+  if (url) add(` ${url}`);
+  return parts;
+}
+function styledBibliography(record, suffix, style) {
+  const parts = [];
+  const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
+  const { authors, containerTitle, volume, issue, publisher, publisherPlace, edition } = record;
+  const title = style === "apa" && record.apaTitle || titleFor(record);
+  const baseYear = yearFor(record);
+  const year = baseYear + suffixFor(baseYear, suffix, style);
+  const pages = record.pages || record.articleNumber;
+  const url = identifierURL(record.identifiers.find((id) => ["doi", "url"].includes(id.scheme)));
+  const initials = (given, separator = ". ") => (given?.match(/\p{L}[\p{L}\p{M}]*/gu) || []).map((word) => [...word][0]).join(separator);
+  const abbreviated = (author) => author.literal || [author.family, author.given && `${initials(author.given)}.`].filter(Boolean).join(", ");
+  const fullName = (author, first) => author.literal || (first ? [author.family, author.given].filter(Boolean).join(", ") : [author.given, author.family].filter(Boolean).join(" "));
+  const period = (text) => /[.?!]$/.test(text) ? text : `${text}.`;
+  const locator = pages && `${/[-–—]/.test(pages) ? "pp." : "p."} ${pages}`;
+  if (style === "vancouver") {
+    const names2 = authors.slice(0, 6).map((author) => author.literal || [author.family, initials(author.given, "")].filter(Boolean).join(" "));
+    if (names2.length) add(`${names2.join(", ")}${authors.length > 6 ? ", et al" : ""}. `);
+    add(period(title));
+    if (containerTitle) {
+      const journal = period(record.containerAbbreviation || containerTitle);
+      const issueText = issue ? `(${issue})` : "";
+      add(` ${journal} ${year}${volume || issue ? `;${volume}${issueText}` : ""}${pages ? `:${pages}` : ""}.`);
+    } else {
+      if (edition) add(` ${period(edition)}`);
+      add(` ${publisherPlace || "[place unknown]"}: ${publisher || "[publisher unknown]"}; ${year}.`);
+    }
+    const doi2 = record.identifiers.find((item) => item.scheme === "doi");
+    if (doi2) add(` doi: ${doi2.value}`);
+    return parts;
+  }
+  if (style === "mla") {
+    if (authors.length) {
+      const byline = fullName(authors[0], true);
+      add(`${byline}${authors.length > 2 ? ", et al" : authors.length === 2 ? `, and ${fullName(authors[1])}` : ""}. `);
+    }
+    if (containerTitle) {
+      add(`\u201C${period(title)}\u201D `);
+      add(containerTitle, "italic");
+      const details = [volume && `vol. ${volume}`, issue && `no. ${issue}`, record.issued && year, locator, url].filter(Boolean);
+      add(details.length ? period(`, ${details.join(", ")}`) : ".");
+    } else {
+      add(title, "italic");
+      const details = [edition, publisher, record.issued && year, url].filter(Boolean);
+      add(details.length ? `. ${period(details.join(", "))}` : ".");
+    }
+    return parts;
+  }
+  const apa = style === "apa";
+  const names = authors.map(abbreviated);
+  if (names.length) {
+    const tail = names.at(-1);
+    const byline = apa && names.length > 20 ? `${names.slice(0, 19).join(", ")}, \u2026 ${tail}` : names.length === 1 ? tail : `${names.slice(0, -1).join(", ")}${apa ? ", &" : " and"} ${tail}`;
+    add(apa ? `${period(byline)} (${year}). ` : `${byline} (${year}) `);
+  }
+  if (containerTitle) {
+    add(apa ? `${period(title)} ` : `\u2018${title}\u2019, `);
+    if (!names.length) add(`(${year})${apa ? "." : ","} `);
+    add(apa && volume ? `${containerTitle}, ${volume}` : containerTitle, "italic");
+    if (!apa && volume) add(`, ${volume}`);
+    if (issue) add(`${apa ? "" : " "}(${issue})`);
+    if (pages) add(`, ${apa ? record.pages || `Article ${record.articleNumber}` : record.pages ? locator : `article ${record.articleNumber}`}`);
+    add(".");
+  } else {
+    add(title, "italic");
+    if (edition) add(apa ? ` (${edition})` : `. ${edition}`);
+    if (!/[.?!]$/.test(edition || title)) add(".");
+    if (!names.length) add(` (${year}).`);
+    if (publisher) add(` ${!apa && publisherPlace ? `${publisherPlace}: ` : ""}${period(publisher)}`);
+  }
+  if (url) add(` ${apa ? "" : "Available at: "}${url}`);
+  return parts;
+}
+function bibliographyParts(record, suffix, style) {
+  if (record.state === "unresolved") return [{ text: titleFor(record) }];
+  if (record.citationParts?.length) {
+    if (!suffix || style === "mla" || style === "vancouver") return record.citationParts;
+    const year = String(yearFor(record));
+    const marker = style === "chicago-author-date" ? `${year}.` : `(${year})`;
+    const text2 = record.citationParts.map((part) => part.text).join("");
+    const at2 = text2.indexOf(marker);
+    if (at2 >= 0) {
+      const insertion = at2 + marker.indexOf(year) + year.length;
+      let offset = 0;
+      return record.citationParts.map((part) => {
+        const local = insertion - offset;
+        offset += part.text.length;
+        return local > 0 && local <= part.text.length ? { ...part, text: part.text.slice(0, local) + suffixFor(year, suffix, style) + part.text.slice(local) } : part;
+      });
+    }
+  }
+  if (style === "chicago-author-date") return chicagoBibliography(record, suffix);
+  if (style !== "default") return styledBibliography(record, suffix, style);
+  const text = defaultBibliography(record, suffix);
+  const title = record.containerTitle || (["book", "report", "thesis"].includes(record.type) ? record.title : "");
+  const at = title ? text.toLowerCase().lastIndexOf(title.toLowerCase()) : -1;
+  return at < 0 ? [{ text }] : [
+    { text: text.slice(0, at) },
+    { text: text.slice(at, at + title.length), emphasis: "italic" },
+    { text: text.slice(at + title.length) }
+  ];
+}
+function bibliographyText(record, suffix = "", style = "default") {
+  return bibliographyParts(record, suffix, style).map((part) => part.text).join("");
 }
 
 // src/browser.mjs
@@ -300,7 +455,7 @@ ${url}`);
   list.append(row);
 }
 var CitationInspector = class _CitationInspector extends HTMLElement {
-  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix"];
+  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
   #hovering = false;
   #hoverOpenTimer;
   #hoverCloseTimer;
@@ -315,12 +470,14 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   #panelSize;
   #enhanced = /* @__PURE__ */ new Map();
   #appliedPrefixes = /* @__PURE__ */ new WeakMap();
+  #accessOrder = /* @__PURE__ */ new WeakMap();
   #trigger;
   #modal = false;
   #frame;
   #media;
   #heading;
   #brandIcon;
+  #defaultIcon;
   #modalDismiss;
   #panelMenu;
   #panelMenuTrigger;
@@ -345,11 +502,14 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     this.#brandIcon = element("img", "", "brand-icon");
     this.#brandIcon.alt = "";
     this.#brandIcon.hidden = true;
+    this.#defaultIcon = element("span", "", "brand-icon");
+    this.#defaultIcon.innerHTML = brandIconMarkup;
     this.#brandIcon.addEventListener("error", () => {
       this.#brandIcon.hidden = true;
+      this.#defaultIcon.hidden = false;
     });
     const brand = element("div", "", "brand");
-    brand.append(this.#brandIcon, this.#heading);
+    brand.append(this.#brandIcon, this.#defaultIcon, this.#heading);
     this.#modalDismiss = element("button", "Dismiss", "modal-dismiss");
     this.#modalDismiss.type = "button";
     this.#modalDismiss.hidden = true;
@@ -398,8 +558,27 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     this.#hasInlineCache = true;
     if (this.isConnected) this.#enhance();
   }
+  set accessProviders(providers) {
+    if (!Array.isArray(providers) || providers.some((provider) => typeof provider !== "string" || !provider.trim() || provider.includes(","))) {
+      throw new TypeError("Supply an ordered array of provider names without commas.");
+    }
+    this.setAttribute("access-providers", providers.join(","));
+  }
   attributeChangedCallback(name, before, after) {
     if (before === after) return;
+    if (name === "access-providers") {
+      this.#orderEndnoteLinks();
+      const record = this.#cache?.byId.get(this.#trigger?.dataset.ciRecord);
+      if (record) {
+        const actionName = this.shadowRoot.activeElement?.getAttribute("aria-label");
+        const scroll = this.#dialog.scrollTop;
+        this.#render(record, this.#trigger);
+        this.#applyClassPrefix();
+        if (actionName) [...this.#content.querySelectorAll("[aria-label]")].find((node) => node.getAttribute("aria-label") === actionName)?.focus({ preventScroll: true });
+        this.#dialog.scrollTop = scroll;
+      }
+      return;
+    }
     if (name === "class-prefix") {
       this.#applyClassPrefix();
       return;
@@ -590,7 +769,32 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   #canOpen(trigger) {
     return this.#cache?.byId.has(trigger.dataset.ciRecord) || this.#annotationTarget(trigger);
   }
+  #providerRank(provider) {
+    const preferences = (this.getAttribute("access-providers") || "").split(",").map((name) => name.trim().toLowerCase());
+    const index = preferences.indexOf(provider.toLowerCase());
+    return index < 0 ? Infinity : index;
+  }
+  #orderEndnoteLinks() {
+    for (const row of this.querySelectorAll('[data-citation-part~="note-actions"]')) {
+      if (row.closest(componentName) !== this) continue;
+      const links = [...row.querySelectorAll(":scope > [data-ci-access-provider]")];
+      links.forEach((link, index) => {
+        if (!this.#accessOrder.has(link)) this.#accessOrder.set(link, index);
+      });
+      const sorted = [...links].sort((a, b) => this.#providerRank(a.dataset.ciAccessProvider) - this.#providerRank(b.dataset.ciAccessProvider) || this.#accessOrder.get(a) - this.#accessOrder.get(b));
+      if (links.every((link, index) => link === sorted[index])) continue;
+      const slots = links.map((link) => {
+        const marker = this.ownerDocument.createComment("");
+        link.before(marker);
+        return marker;
+      });
+      const focused = this.ownerDocument.activeElement;
+      slots.forEach((slot, index) => slot.replaceWith(sorted[index]));
+      if (links.includes(focused)) focused.focus({ preventScroll: true });
+    }
+  }
   #enhance() {
+    this.#orderEndnoteLinks();
     if (!this.#style.sheet || typeof this.#dialog.showModal !== "function") return;
     for (const [trigger, attributes] of this.#enhanced) {
       if (this.contains(trigger) && this.#canOpen(trigger)) continue;
@@ -662,10 +866,12 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
         previousFocus?.focus({ preventScroll: true });
       }
     }
+    this.setAttribute("open", "");
     this.#position();
     if (!hover) this.#heading.focus({ preventScroll: true });
   }
   #clearOpen() {
+    this.removeAttribute("open");
     this.#trigger?.setAttribute("aria-expanded", "false");
     this.#trigger = null;
     this.#hovering = false;
@@ -735,6 +941,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     this.#hovering = false;
     this.#panelMenu.open = false;
     this.#placement.showModal();
+    this.#position();
   }
   #cancelPlacement() {
     this.#placement.close();
@@ -761,10 +968,16 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     const y = viewport?.offsetTop ?? 0;
     const width = viewport?.width ?? this.ownerDocument.documentElement.clientWidth;
     const height = viewport?.height ?? this.ownerDocument.documentElement.clientHeight;
-    if (this.#modal) {
-      this.#dialog.style.setProperty("--ci-sheet-width", `${Math.max(1, width - 16)}px`);
-      this.#dialog.style.setProperty("--ci-sheet-height", `${height * (this.#media.matches ? 0.6 : 0.8)}px`);
+    if (this.#placement.open) {
+      this.#placement.style.setProperty("--ci-placement-left", `${x}px`);
+      this.#placement.style.setProperty("--ci-placement-top", `${y}px`);
+      this.#placement.style.setProperty("--ci-placement-width", `${width}px`);
+      this.#placement.style.setProperty("--ci-placement-height", `${height}px`);
     }
+    const widthLimit = width - (this.#modal ? 16 : 24);
+    const heightLimit = this.#modal ? height * (this.#media.matches ? 0.6 : 0.8) : height - 24;
+    this.#dialog.style.setProperty("--ci-panel-width", `${Math.max(1, widthLimit)}px`);
+    this.#dialog.style.setProperty("--ci-panel-height", `${Math.max(1, heightLimit)}px`);
     const panel = this.#dialog.getBoundingClientRect();
     const anchor = this.#trigger.getBoundingClientRect();
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -784,10 +997,11 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     if (this.#manualPosition) this.#manualPosition = { left: clampedLeft, top: clampedTop };
   }
   #updateHeader(annotation) {
-    this.#heading.textContent = annotation?.getAttribute("aria-label") || this.getAttribute("panel-title")?.trim() || "citation.inator";
-    const icon = this.getAttribute("panel-icon")?.trim();
+    const panel = annotation ? this.#trigger?.dataset.ciPanel : "panel";
+    this.#heading.textContent = this.getAttribute(`${panel}-title`)?.trim() || annotation?.getAttribute("aria-label") || "citation.inator";
+    const icon = (this.getAttribute(`${panel}-icon`) ?? this.getAttribute("panel-icon"))?.trim();
     let source;
-    if (icon) {
+    if (icon && icon !== "none") {
       try {
         const url = new URL(icon, this.baseURI);
         if (["http:", "https:"].includes(url.protocol) && url.origin === this.ownerDocument.location.origin && !url.username && !url.password) {
@@ -798,12 +1012,14 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     }
     if (source) {
       if (this.#brandIcon.getAttribute("src") !== source) {
+        this.#defaultIcon.hidden = true;
         this.#brandIcon.hidden = false;
         this.#brandIcon.src = source;
       }
     } else {
       this.#brandIcon.hidden = true;
       this.#brandIcon.removeAttribute("src");
+      this.#defaultIcon.hidden = icon === "none";
     }
   }
   #render(record, trigger) {
@@ -823,16 +1039,29 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     }
     const doi2 = record.identifiers.find((item) => item.scheme === "doi");
     const doiURL = identifierURL(doi2);
-    const doiAt = doiURL ? bibliography.toLowerCase().indexOf(doiURL.toLowerCase()) : -1;
-    const citation = element("p", doiAt < 0 ? bibliography : "", "citation");
-    if (doiAt >= 0) {
-      const end = doiAt + doiURL.length;
-      citation.append(bibliography.slice(0, doiAt), external(doiURL, bibliography.slice(doiAt, end)), bibliography.slice(end));
+    const citation = element("p", "", "citation");
+    let parts;
+    try {
+      parts = JSON.parse(trigger.dataset.ciBibliographyParts || "null");
+    } catch {
+    }
+    if (!Array.isArray(parts) || !parts.every((part) => typeof part?.text === "string") || parts.map((part) => part.text).join("") !== bibliography) parts = [{ text: bibliography }];
+    let linkedDOI = false;
+    for (const { text, emphasis } of parts) {
+      const node = emphasis === "italic" ? element("em") : emphasis === "bold" ? element("strong") : citation;
+      const doiAt = !linkedDOI && doiURL ? text.toLowerCase().indexOf(doiURL.toLowerCase()) : -1;
+      if (doiAt < 0) node.append(text);
+      else {
+        const end = doiAt + doiURL.length;
+        node.append(text.slice(0, doiAt), external(doiURL, text.slice(doiAt, end)), text.slice(end));
+        linkedDOI = true;
+      }
+      if (node !== citation) citation.append(node);
     }
     citation.dir = "auto";
     fragment.append(names.length > 8 ? disclosure("Show formatted citation", citation) : citation);
     for (const identifier of record.identifiers) {
-      if (identifier.scheme !== "isbn" && (identifier !== doi2 || doiAt >= 0)) continue;
+      if (identifier.scheme !== "isbn" && (identifier !== doi2 || linkedDOI)) continue;
       const line = element("p", "", "identifier");
       line.append(`${identifier.scheme.toUpperCase()} `, external(identifierURL(identifier), identifier.value));
       fragment.append(line);
@@ -861,6 +1090,16 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     destination(list, "Open PubMed Central", "repository", id("pmcid"));
     const preprintURL = id("arxiv") || preprint?.url;
     if (preprintURL !== pdf?.url) destination(list, "Open preprint", "external", preprintURL);
+    const services = record.locations.filter((item) => item.kind === "library" || item.kind === "full-text").sort((a, b) => this.#providerRank(a.provider) - this.#providerRank(b.provider));
+    for (const service of services) {
+      const fullText = service.kind === "full-text";
+      destination(
+        list,
+        `${fullText ? "Read full text at" : "Find at"} ${service.provider}`,
+        fullText ? "article" : "library",
+        service.url
+      );
+    }
     if (typeof this.institutionalURL === "function") destination(list, "Open library resolver", "library", this.#institutionalLink(record));
     if (record.integrity) destination(list, "Open status record", "status", record.integrity.url || location("status")?.url);
     const footer = element("footer", "", "panel-actions");
@@ -917,7 +1156,12 @@ function initializeCitationInspector(element2, {
   cache,
   activation,
   panelTitle,
-  panelIcon
+  panelIcon,
+  accessProviders,
+  evidenceTitle,
+  evidenceIcon,
+  creditTitle,
+  creditIcon
 } = {}) {
   if (element2?.localName !== componentName) throw new TypeError("Pass a citation-inspector element.");
   if (classPrefix !== void 0) {
@@ -927,6 +1171,11 @@ function initializeCitationInspector(element2, {
   if (activation !== void 0) element2.setAttribute("activation", activation);
   if (panelTitle !== void 0) element2.setAttribute("panel-title", panelTitle);
   if (panelIcon !== void 0) element2.setAttribute("panel-icon", panelIcon);
+  if (evidenceTitle !== void 0) element2.setAttribute("evidence-title", evidenceTitle);
+  if (evidenceIcon !== void 0) element2.setAttribute("evidence-icon", evidenceIcon);
+  if (creditTitle !== void 0) element2.setAttribute("credit-title", creditTitle);
+  if (creditIcon !== void 0) element2.setAttribute("credit-icon", creditIcon);
+  if (accessProviders !== void 0) element2.accessProviders = accessProviders;
   if (cache !== void 0) element2.cache = cache;
   return element2;
 }

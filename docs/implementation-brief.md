@@ -83,7 +83,7 @@ packages/
 demos/
   static/
   dynamic/
-  christopher-drop-in/
+  drop-in/
 fixtures/
 docs/
 ```
@@ -106,7 +106,7 @@ Offer both:
 1. an npm package for normal development; and
 2. a versioned ESM bundle plus CSS and cache JSON for copy/drop-in use.
 
-Avoid a CDN-only dependency. Christopher must be able to vendor the assets locally.
+Make the assets available for adopters to host locally.
 
 ## Demo pages
 
@@ -130,7 +130,7 @@ Avoid a CDN-only dependency. Christopher must be able to vendor the assets local
 - separate plain HTML directory with no monorepo imports
 - concise integration instructions
 - one script, one stylesheet, one data file
-- use this exact artifact for Christopher's acceptance test
+- use this exact artifact for integration testing on an adopting site
 
 ## First questions the implementation should answer empirically
 
@@ -141,9 +141,9 @@ Avoid a CDN-only dependency. Christopher must be able to vendor the assets local
 5. How often do providers disagree on titles, dates, authors, and abstracts?
 6. How should book-level DOIs and ISBN editions coexist?
 7. How should author preprints differ visually from versions of record?
-8. What is the smallest integration Christopher can deploy confidently?
+8. What is the smallest integration an adopting site can deploy confidently?
 
 
 ## Adversarial UX acceptance
 
-Use [UX adversaries](ux-adversaries.md) alongside the citation/data adversaries. Start with the first eight scenarios in the initial vertical slice and complete the applicable matrix against the actual standalone artifact before Christopher’s handoff. Record failures and untested cases explicitly.
+Use [UX adversaries](ux-adversaries.md) alongside the citation/data adversaries. Start with the first eight scenarios in the initial vertical slice and complete the applicable matrix against the actual standalone artifact before sharing it with adopters. Record failures and untested cases explicitly.

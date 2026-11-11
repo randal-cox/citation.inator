@@ -2,6 +2,84 @@
   "schema": "citation-inator.cache.v1",
   "records": [
     {
+      "id": "farneth-2023-politics-ritual",
+      "type": "book",
+      "state": "resolved",
+      "title": "The Politics of Ritual",
+      "authors": [
+        {
+          "family": "Farneth",
+          "given": "Molly"
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "isbn",
+          "value": "9780691198927"
+        }
+      ],
+      "locations": [
+        {
+          "kind": "publisher",
+          "url": "https://press.princeton.edu/books/paperback/9780691198927/the-politics-of-ritual",
+          "provider": "Princeton University Press",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        },
+        {
+          "kind": "library",
+          "url": "https://search.worldcat.org/search?q=bn%3A9780691198927",
+          "provider": "WorldCat",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        },
+        {
+          "kind": "library",
+          "url": "https://openlibrary.org/books/OL39279248M/Politics_of_Ritual",
+          "provider": "Open Library",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "citation.inator editorial handoff",
+          "url": "",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": "Original citation and curation preserved in the source fixtures."
+        },
+        {
+          "provider": "Princeton University Press",
+          "url": "https://press.princeton.edu/books/paperback/9780691198927/the-politics-of-ritual",
+          "retrievedAt": "2026-11-10T00:00:00.000Z",
+          "note": ""
+        }
+      ],
+      "citationParts": [],
+      "issued": [
+        2023
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": "2026-11-10T00:00:00.000Z",
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Princeton University Press",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "The politics of ritual",
+      "original": "The Politics of Ritual, Molly Farneth, Princeton University Press (2023)",
+      "note": "Publisher ISBN record. JSTOR assigns a separate DOI to its digital book record.",
+      "citationText": "Farneth, M. (2023). The politics of ritual. Princeton University Press."
+    },
+    {
       "id": "feiler-2026-time-gather",
       "type": "book",
       "state": "resolved",
@@ -41,6 +119,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2026,
         5,
@@ -59,6 +138,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "Hardcover",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "A time to gather: How ritual created the world—and how it can save us",
       "original": "A Time to Gather: How Ritual Created the World—and How It Can Save Us, Bruce Feiler, Penguin Press (2026)",
       "note": "",
       "citationText": "Feiler, B. (2026). A time to gather: How ritual created the world—and how it can save us. Penguin Press."
@@ -107,6 +189,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2019,
         12,
@@ -125,6 +208,9 @@
       "pages": "",
       "articleNumber": "e12501",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "Moral reframing: A technique for effective and persuasive communication across political divides",
       "original": "Moral Reframing: A Technique for Effective and Persuasive Communication across Political Divides, Matthew Feinberg and Robb Willer, Social and Personality Psychology Compass (2019)",
       "note": "",
       "citationText": "Feinberg, M., & Willer, R. (2019). Moral reframing: A technique for effective and persuasive communication across political divides. Social and Personality Psychology Compass, 13(12), e12501. https://doi.org/10.1111/spc3.12501"
@@ -164,6 +250,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2020,
         6
@@ -181,6 +268,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "Modern but not meaningless: Nonreligious cultures and communities in the United States",
       "original": "Modern But Not Meaningless: Nonreligious Cultures and Communities in the United States, Jacqui Frost (dissertation, University of Minnesota)",
       "note": "No DOI or stable landing-page identifier confirmed; do not treat the bitstream download URL as the work identity.",
       "citationText": "Frost, J. (2020). Modern but not meaningless: Nonreligious cultures and communities in the United States [Doctoral dissertation, University of Minnesota]. University of Minnesota Digital Conservancy."
@@ -246,6 +336,7 @@
           "note": "Separate author preprint PDF. The DOI identifies the journal article."
         }
       ],
+      "citationParts": [],
       "issued": [
         2020
       ],
@@ -274,6 +365,9 @@
       "pages": "258-269",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "How empathic concern fuels political polarization",
       "original": "How Empathic Concern Fuels Political Polarization, Simas, Clifford and Kirkland, American Political Science Review 114(1), 2020",
       "note": "",
       "citationText": "Simas, E. N., Clifford, S., & Kirkland, J. H. (2020). How empathic concern fuels political polarization. American Political Science Review, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534"
@@ -294,6 +388,7 @@
           "note": "Original citation and curation preserved in the source fixtures."
         }
       ],
+      "citationParts": [],
       "issued": null,
       "online": null,
       "print": null,
@@ -308,6 +403,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "",
       "original": "Ritual and the Politics of Reconciliation, in Ethnic Conflict and Peacemaking, OUP (2022)",
       "note": "No matching work verified; do not substitute a handbook or adjacent title.",
       "citationText": ""

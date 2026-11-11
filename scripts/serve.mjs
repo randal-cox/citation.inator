@@ -3,9 +3,11 @@ import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { compileCitations, parseDirectives } from "../src/compiler.mjs";
+import { parseDirectives } from "../src/compiler.mjs";
 import { createCrossrefResolver } from "../src/crossref.mjs";
-import { identifierKey, makeCache, normalizeIdentifier, readCache } from "../src/records.mjs";
+import { compileDemoStyles } from "./demo-styles.mjs";
+import { createOpenLibraryResolver } from "../src/openlibrary.mjs";
+import { canonicalIdentifierKey, makeCache, normalizeIdentifier, readCache } from "../src/records.mjs";
 
 const root = new URL("../", import.meta.url);
 const seedCache = readCache(JSON.parse(await readFile(new URL("dist/citations.json", root), "utf8")));
@@ -33,6 +35,7 @@ const store = {
   }
 };
 const live = createCrossrefResolver({ store, mailto: process.env.CROSSREF_MAILTO || "" });
+const books = createOpenLibraryResolver({ store, mailto: process.env.OPENLIBRARY_MAILTO || "" });
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 function fromInput(input) {
@@ -50,13 +53,14 @@ async function resolution(url) {
   if (!identifier || !["live", "offline", "partial", "slow"].includes(mode)) {
     return { mode, state: "error", message: "Enter a valid identifier or a single citation directive.", record: null, ageSeconds: null };
   }
-  const key = identifierKey(identifier);
+  const key = canonicalIdentifierKey(identifier);
   const seed = identifier.scheme === "local" ? seedCache.byId.get(identifier.value) : seedCache.byIdentifier.get(key);
   let data;
   if (mode === "live") {
-    if (identifier.scheme === "local" && seed) {
+    const force = url.searchParams.get("force") === "true";
+    if (seed && (identifier.scheme === "local" || identifier.scheme === "isbn" && !force)) {
       data = { record: seed, state: "cached", message: "Showing a curated local record.", freshness: "unknown", ageSeconds: null };
-    } else data = await live.resolve(key, { seed, force: url.searchParams.get("force") === "true" });
+    } else data = await (identifier.scheme === "isbn" ? books : live).resolve(key, { seed, force });
   } else if (mode === "slow") {
     await delay(2200);
     data = { state: seed ? "cached" : "unresolved", record: seed ?? null, message: seed ? "Slow response finished. Showing editorial metadata." : "This identifier has no editorial cache entry.", freshness: "unknown", ageSeconds: null };
@@ -82,7 +86,7 @@ async function resolution(url) {
   }
   const use = identifier.scheme === "local" ? identifier.value : key;
   const escaped = use.replace(/[\\{};|"]/g, "\\$&");
-  const compiled = compileCitations(`Inspect the current citation {citation ${escaped}}.\n\n{citation evidence} · {citation credit}\n\n{citation endnote}`, makeCache(data.record ? [data.record] : []), { namespace: "live" });
+  const compiled = compileDemoStyles(`Inspect the current citation {citation ${escaped}}.\n\n{citation evidence} · {citation credit}\n\n{citation endnote}`, makeCache(data.record ? [data.record] : []), "live");
   return { ...data, mode, ...compiled };
 }
 
@@ -91,8 +95,8 @@ const types = new Map([
   [".json", "application/json; charset=utf-8"], [".md", "text/plain; charset=utf-8"], [".txt", "text/plain; charset=utf-8"]
 ]);
 const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
-const files = /^\/(?:dist|demos\/(?:static|dynamic|christopher-drop-in))\/[\w.-]+\.(html|css|mjs|json|md|txt)$/;
-const directories = /^\/demos\/(?:static|dynamic|christopher-drop-in)\/?$/;
+const files = /^\/(?:dist|demos\/(?:static|dynamic|drop-in))\/[\w.-]+\.(html|css|mjs|json|md|txt)$/;
+const directories = /^\/demos\/(?:static|dynamic|drop-in)\/?$/;
 const server = createServer(async (request, response) => {
   const send = (status, type, content) => {
     response.writeHead(status, { "Content-Type": type, "Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Cache-Control": "no-store" });

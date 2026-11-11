@@ -50,7 +50,7 @@ header.site {
   padding-block: 1rem;
   border-bottom: 1px solid var(--demo-line);
 }
-.brand { color: var(--demo-ink); text-decoration: none; font-weight: 700; }
+.brand { display: inline-flex; align-items: center; gap: .45rem; color: var(--demo-ink); text-decoration: none; font-weight: 700; }
 nav { display: flex; flex-wrap: wrap; gap: .45rem 1rem; font-size: .9rem; }
 nav .guide-link { border-inline-start: 1px solid var(--demo-line); padding-inline-start: .9rem; }
 nav [aria-current="page"] { color: var(--demo-ink); text-decoration-thickness: .15em; }
@@ -97,6 +97,7 @@ main button[type="submit"] { color: var(--demo-button-ink); background: var(--de
 pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--demo-surface); padding: 1rem; max-height: 24rem; overflow: auto; font-size: .85rem; }
 :focus-visible { outline: 2px solid var(--demo-accent); outline-offset: 3px; }
 .demo-preferences {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -116,6 +117,37 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--demo-sur
   color: var(--demo-ink);
   font: inherit;
 }
+.demo-setting { display: inline-flex; align-items: center; gap: .35rem; }
+.demo-help button {
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  border: 1px solid var(--demo-line);
+  border-radius: 50%;
+  color: var(--demo-accent);
+  background: var(--demo-surface);
+  font: inherit;
+  font-weight: 650;
+}
+.demo-help [role="tooltip"] {
+  position: absolute;
+  display: none;
+  z-index: 2;
+  inset: 100% auto auto 0;
+  width: max-content;
+  max-width: min(100%, 40rem);
+  padding: .65rem .8rem;
+  border: 1px solid var(--demo-line);
+  border-radius: 6px;
+  background: var(--demo-surface);
+  box-shadow: 0 6px 20px #182c5022;
+  overflow-wrap: anywhere;
+}
+.demo-help [role="tooltip"] span { display: block; margin-block-start: .35rem; }
+.demo-help[data-open] [role="tooltip"] { display: block; }
+[data-style-status]:empty { display: none; }
 citation-inspector:is([data-citation-theme="field"], [data-citation-theme="midnight"]) [data-citation-part~="endnotes"] {
   padding: 1rem;
   color: var(--citation-ink);

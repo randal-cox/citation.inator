@@ -1,6 +1,6 @@
 # Citation demo fixtures
 
-Verified 2026-11-10. Preserve the original input and verification status. These records are test cases, not a claim that every work supports the surrounding project's argument.
+Verified 2026-11-10. Preserve the original input and verification status. These records exercise citation identity, edition distinctions and source availability.
 
 ## 1. Verified book with ISBN and JSTOR book DOI
 

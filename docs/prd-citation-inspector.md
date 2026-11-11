@@ -517,7 +517,9 @@ The core owns the citation directive parser and an abstract syntax representatio
 
 ## Milestones
 
-### 0.1: deterministic core
+The original phases below describe planned sequencing. See the roadmap for current progress.
+
+### Deterministic core
 
 - grammar
 - DOI/PMID/arXiv/URL recognition
@@ -528,7 +530,7 @@ The core owns the citation directive parser and an abstract syntax representatio
 - CLI resolution
 - static inline citations and endnotes
 
-### 0.2: portable inspector
+### Portable inspector
 
 - Web Component
 - accessible click/focus interaction
@@ -538,7 +540,7 @@ The core owns the citation directive parser and an abstract syntax representatio
 - destination buttons
 - offline/degraded state
 
-### 0.3: access and integrity
+### Access and integrity
 
 - Unpaywall and PMC full-text resolution
 - version badges
@@ -547,17 +549,17 @@ The core owns the citation directive parser and an abstract syntax representatio
 - security validation
 - report callback/event
 
-### 0.4: Commons adoption
+### Commons adoption
 
 - Commons pane adapter
 - drag/resize behavior
 - shared status and control patterns
-- adoption in Christopher's project and one Inator consumer
+- adoption in an independent website and one Inator consumer
 
 ### Later
 
 - manual metadata editing and durable overrides
-- books/ISBN and broader source classes
+- broader source classes and additional book catalogs
 - comparison/pinning if real use demands it
 - collaborative correction workflow
 - citation graph and related-work exploration

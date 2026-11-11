@@ -1,5 +1,5 @@
 import { defaultClassPrefix, partClassNames, partSelector, validClassPrefix, validateClassPrefix } from "./class-names.mjs";
-import { iconMarkup } from "./icons.mjs";
+import { brandIconMarkup, iconMarkup } from "./icons.mjs";
 import { bibliographyText } from "./compiler.mjs";
 import { httpsURL, identifierURL, readCache } from "./records.mjs";
 
@@ -59,7 +59,7 @@ function destination(list, label, icon, url, { version, download = false } = {})
 }
 
 class CitationInspector extends HTMLElement {
-  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix"];
+  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
 
   #hovering = false;
   #hoverOpenTimer;
@@ -75,12 +75,14 @@ class CitationInspector extends HTMLElement {
   #panelSize;
   #enhanced = new Map();
   #appliedPrefixes = new WeakMap();
+  #accessOrder = new WeakMap();
   #trigger;
   #modal = false;
   #frame;
   #media;
   #heading;
   #brandIcon;
+  #defaultIcon;
   #modalDismiss;
   #panelMenu;
   #panelMenuTrigger;
@@ -107,9 +109,14 @@ class CitationInspector extends HTMLElement {
     this.#brandIcon = element("img", "", "brand-icon");
     this.#brandIcon.alt = "";
     this.#brandIcon.hidden = true;
-    this.#brandIcon.addEventListener("error", () => { this.#brandIcon.hidden = true; });
+    this.#defaultIcon = element("span", "", "brand-icon");
+    this.#defaultIcon.innerHTML = brandIconMarkup;
+    this.#brandIcon.addEventListener("error", () => {
+      this.#brandIcon.hidden = true;
+      this.#defaultIcon.hidden = false;
+    });
     const brand = element("div", "", "brand");
-    brand.append(this.#brandIcon, this.#heading);
+    brand.append(this.#brandIcon, this.#defaultIcon, this.#heading);
     this.#modalDismiss = element("button", "Dismiss", "modal-dismiss");
     this.#modalDismiss.type = "button";
     this.#modalDismiss.hidden = true;
@@ -161,8 +168,29 @@ class CitationInspector extends HTMLElement {
     if (this.isConnected) this.#enhance();
   }
 
+  set accessProviders(providers) {
+    if (!Array.isArray(providers) || providers.some(provider => typeof provider !== "string" || !provider.trim() || provider.includes(","))) {
+      throw new TypeError("Supply an ordered array of provider names without commas.");
+    }
+    this.setAttribute("access-providers", providers.join(","));
+  }
+
   attributeChangedCallback(name, before, after) {
     if (before === after) return;
+    if (name === "access-providers") {
+      this.#orderEndnoteLinks();
+      const record = this.#cache?.byId.get(this.#trigger?.dataset.ciRecord);
+      if (record) {
+        const actionName = this.shadowRoot.activeElement?.getAttribute("aria-label");
+        const scroll = this.#dialog.scrollTop;
+        this.#render(record, this.#trigger);
+        this.#applyClassPrefix();
+        if (actionName) [...this.#content.querySelectorAll("[aria-label]")]
+          .find(node => node.getAttribute("aria-label") === actionName)?.focus({ preventScroll: true });
+        this.#dialog.scrollTop = scroll;
+      }
+      return;
+    }
     if (name === "class-prefix") {
       this.#applyClassPrefix();
       return;
@@ -364,7 +392,35 @@ class CitationInspector extends HTMLElement {
     return this.#cache?.byId.has(trigger.dataset.ciRecord) || this.#annotationTarget(trigger);
   }
 
+  #providerRank(provider) {
+    const preferences = (this.getAttribute("access-providers") || "").split(",").map(name => name.trim().toLowerCase());
+    const index = preferences.indexOf(provider.toLowerCase());
+    return index < 0 ? Infinity : index;
+  }
+
+  #orderEndnoteLinks() {
+    for (const row of this.querySelectorAll('[data-citation-part~="note-actions"]')) {
+      if (row.closest(componentName) !== this) continue;
+      const links = [...row.querySelectorAll(":scope > [data-ci-access-provider]")];
+      links.forEach((link, index) => {
+        if (!this.#accessOrder.has(link)) this.#accessOrder.set(link, index);
+      });
+      const sorted = [...links].sort((a, b) => this.#providerRank(a.dataset.ciAccessProvider) -
+        this.#providerRank(b.dataset.ciAccessProvider) || this.#accessOrder.get(a) - this.#accessOrder.get(b));
+      if (links.every((link, index) => link === sorted[index])) continue;
+      const slots = links.map(link => {
+        const marker = this.ownerDocument.createComment("");
+        link.before(marker);
+        return marker;
+      });
+      const focused = this.ownerDocument.activeElement;
+      slots.forEach((slot, index) => slot.replaceWith(sorted[index]));
+      if (links.includes(focused)) focused.focus({ preventScroll: true });
+    }
+  }
+
   #enhance() {
+    this.#orderEndnoteLinks();
     if (!this.#style.sheet || typeof this.#dialog.showModal !== "function") return;
     for (const [trigger, attributes] of this.#enhanced) {
       if (this.contains(trigger) && this.#canOpen(trigger)) continue;
@@ -440,11 +496,13 @@ class CitationInspector extends HTMLElement {
         previousFocus?.focus({ preventScroll: true });
       }
     }
+    this.setAttribute("open", "");
     this.#position();
     if (!hover) this.#heading.focus({ preventScroll: true });
   }
 
   #clearOpen() {
+    this.removeAttribute("open");
     this.#trigger?.setAttribute("aria-expanded", "false");
     this.#trigger = null;
     this.#hovering = false;
@@ -522,6 +580,7 @@ class CitationInspector extends HTMLElement {
     this.#hovering = false;
     this.#panelMenu.open = false;
     this.#placement.showModal();
+    this.#position();
   }
 
   #cancelPlacement() {
@@ -553,11 +612,17 @@ class CitationInspector extends HTMLElement {
     const y = viewport?.offsetTop ?? 0;
     const width = viewport?.width ?? this.ownerDocument.documentElement.clientWidth;
     const height = viewport?.height ?? this.ownerDocument.documentElement.clientHeight;
-    if (this.#modal) {
-      // Pinch zoom can make the visible viewport smaller than CSS viewport units.
-      this.#dialog.style.setProperty("--ci-sheet-width", `${Math.max(1, width - 16)}px`);
-      this.#dialog.style.setProperty("--ci-sheet-height", `${height * (this.#media.matches ? 0.6 : 0.8)}px`);
+    // Pinch zoom can make the visible viewport smaller than CSS viewport units.
+    if (this.#placement.open) {
+      this.#placement.style.setProperty("--ci-placement-left", `${x}px`);
+      this.#placement.style.setProperty("--ci-placement-top", `${y}px`);
+      this.#placement.style.setProperty("--ci-placement-width", `${width}px`);
+      this.#placement.style.setProperty("--ci-placement-height", `${height}px`);
     }
+    const widthLimit = width - (this.#modal ? 16 : 24);
+    const heightLimit = this.#modal ? height * (this.#media.matches ? 0.6 : 0.8) : height - 24;
+    this.#dialog.style.setProperty("--ci-panel-width", `${Math.max(1, widthLimit)}px`);
+    this.#dialog.style.setProperty("--ci-panel-height", `${Math.max(1, heightLimit)}px`);
     const panel = this.#dialog.getBoundingClientRect();
     const anchor = this.#trigger.getBoundingClientRect();
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -582,11 +647,12 @@ class CitationInspector extends HTMLElement {
   }
 
   #updateHeader(annotation) {
-    this.#heading.textContent = annotation?.getAttribute("aria-label") ||
-      this.getAttribute("panel-title")?.trim() || "citation.inator";
-    const icon = this.getAttribute("panel-icon")?.trim();
+    const panel = annotation ? this.#trigger?.dataset.ciPanel : "panel";
+    this.#heading.textContent = this.getAttribute(`${panel}-title`)?.trim() ||
+      annotation?.getAttribute("aria-label") || "citation.inator";
+    const icon = (this.getAttribute(`${panel}-icon`) ?? this.getAttribute("panel-icon"))?.trim();
     let source;
-    if (icon) {
+    if (icon && icon !== "none") {
       try {
         const url = new URL(icon, this.baseURI);
         if (["http:", "https:"].includes(url.protocol) && url.origin === this.ownerDocument.location.origin && !url.username && !url.password) {
@@ -596,12 +662,14 @@ class CitationInspector extends HTMLElement {
     }
     if (source) {
       if (this.#brandIcon.getAttribute("src") !== source) {
+        this.#defaultIcon.hidden = true;
         this.#brandIcon.hidden = false;
         this.#brandIcon.src = source;
       }
     } else {
       this.#brandIcon.hidden = true;
       this.#brandIcon.removeAttribute("src");
+      this.#defaultIcon.hidden = icon === "none";
     }
   }
 
@@ -622,16 +690,27 @@ class CitationInspector extends HTMLElement {
     }
     const doi = record.identifiers.find(item => item.scheme === "doi");
     const doiURL = identifierURL(doi);
-    const doiAt = doiURL ? bibliography.toLowerCase().indexOf(doiURL.toLowerCase()) : -1;
-    const citation = element("p", doiAt < 0 ? bibliography : "", "citation");
-    if (doiAt >= 0) {
-      const end = doiAt + doiURL.length;
-      citation.append(bibliography.slice(0, doiAt), external(doiURL, bibliography.slice(doiAt, end)), bibliography.slice(end));
+    const citation = element("p", "", "citation");
+    let parts;
+    try { parts = JSON.parse(trigger.dataset.ciBibliographyParts || "null"); } catch { /* Fall back to plain text. */ }
+    if (!Array.isArray(parts) || !parts.every(part => typeof part?.text === "string") ||
+        parts.map(part => part.text).join("") !== bibliography) parts = [{ text: bibliography }];
+    let linkedDOI = false;
+    for (const { text, emphasis } of parts) {
+      const node = emphasis === "italic" ? element("em") : emphasis === "bold" ? element("strong") : citation;
+      const doiAt = !linkedDOI && doiURL ? text.toLowerCase().indexOf(doiURL.toLowerCase()) : -1;
+      if (doiAt < 0) node.append(text);
+      else {
+        const end = doiAt + doiURL.length;
+        node.append(text.slice(0, doiAt), external(doiURL, text.slice(doiAt, end)), text.slice(end));
+        linkedDOI = true;
+      }
+      if (node !== citation) citation.append(node);
     }
     citation.dir = "auto";
     fragment.append(names.length > 8 ? disclosure("Show formatted citation", citation) : citation);
     for (const identifier of record.identifiers) {
-      if (identifier.scheme !== "isbn" && (identifier !== doi || doiAt >= 0)) continue;
+      if (identifier.scheme !== "isbn" && (identifier !== doi || linkedDOI)) continue;
       const line = element("p", "", "identifier");
       line.append(`${identifier.scheme.toUpperCase()} `, external(identifierURL(identifier), identifier.value));
       fragment.append(line);
@@ -661,6 +740,13 @@ class CitationInspector extends HTMLElement {
     destination(list, "Open PubMed Central", "repository", id("pmcid"));
     const preprintURL = id("arxiv") || preprint?.url;
     if (preprintURL !== pdf?.url) destination(list, "Open preprint", "external", preprintURL);
+    const services = record.locations.filter(item => item.kind === "library" || item.kind === "full-text")
+      .sort((a, b) => this.#providerRank(a.provider) - this.#providerRank(b.provider));
+    for (const service of services) {
+      const fullText = service.kind === "full-text";
+      destination(list, `${fullText ? "Read full text at" : "Find at"} ${service.provider}`,
+        fullText ? "article" : "library", service.url);
+    }
     if (typeof this.institutionalURL === "function") destination(list, "Open library resolver", "library", this.#institutionalLink(record));
     if (record.integrity) destination(list, "Open status record", "status", record.integrity.url || location("status")?.url);
     const footer = element("footer", "", "panel-actions");
@@ -715,7 +801,7 @@ class CitationInspector extends HTMLElement {
 if (!customElements.get(componentName)) customElements.define(componentName, CitationInspector);
 
 export function initializeCitationInspector(element, {
-  classPrefix, cache, activation, panelTitle, panelIcon
+  classPrefix, cache, activation, panelTitle, panelIcon, accessProviders, evidenceTitle, evidenceIcon, creditTitle, creditIcon
 } = {}) {
   if (element?.localName !== componentName) throw new TypeError("Pass a citation-inspector element.");
   if (classPrefix !== undefined) {
@@ -725,6 +811,11 @@ export function initializeCitationInspector(element, {
   if (activation !== undefined) element.setAttribute("activation", activation);
   if (panelTitle !== undefined) element.setAttribute("panel-title", panelTitle);
   if (panelIcon !== undefined) element.setAttribute("panel-icon", panelIcon);
+  if (evidenceTitle !== undefined) element.setAttribute("evidence-title", evidenceTitle);
+  if (evidenceIcon !== undefined) element.setAttribute("evidence-icon", evidenceIcon);
+  if (creditTitle !== undefined) element.setAttribute("credit-title", creditTitle);
+  if (creditIcon !== undefined) element.setAttribute("credit-icon", creditIcon);
+  if (accessProviders !== undefined) element.accessProviders = accessProviders;
   if (cache !== undefined) element.cache = cache;
   return element;
 }

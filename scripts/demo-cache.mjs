@@ -9,6 +9,17 @@ const publisherByCase = {
   "norton-2024-ritual-effect": "Simon & Schuster"
 };
 
+// The editorial fixture references establish sentence casing for the APA preview.
+const apaTitleByCase = {
+  "farneth-2023-politics-ritual": "The politics of ritual",
+  "feiler-2026-time-gather": "A time to gather: How ritual created the world—and how it can save us",
+  "frost-2020-modern-not-meaningless": "Modern but not meaningless: Nonreligious cultures and communities in the United States",
+  "simas-clifford-kirkland-2020-empathy-polarization": "How empathic concern fuels political polarization",
+  "feinberg-willer-2019-moral-reframing": "Moral reframing: A technique for effective and persuasive communication across political divides",
+  "givens-2021-radical-empathy": "Radical empathy: Finding a path to bridging racial divides",
+  "norton-2024-ritual-effect": "The ritual effect: From habit to ritual, harness the surprising power of everyday actions"
+};
+
 export function demoCache(fixtures) {
   const verifiedAt = `${fixtures.verifiedAt}T00:00:00Z`;
   return makeCache(fixtures.cases.flatMap(item => {
@@ -23,7 +34,7 @@ export function demoCache(fixtures) {
       issued: item.issued ? String(item.issued).split("-").map(Number) : null,
       type: ({ "journal-article": "article-journal", "doctoral-dissertation": "thesis" })[item.type] || item.type,
       state: resolved ? (item.status === "verified-partial-identifier" ? "partial" : "resolved") : "unresolved",
-      original: item.original, note: item.note, citationText: item.apa,
+      original: item.original, note: item.note, citationText: item.apa, apaTitle: apaTitleByCase[item.id],
       publisher: item.publisher || item.institution, containerTitle: item.containerTitle, volume: item.volume,
       issue: item.issue, pages: item.pages, articleNumber: item.articleNumber,
       identifiers: ids, retrievedAt: resolved ? verifiedAt : null,
@@ -56,11 +67,15 @@ export function demoCache(fixtures) {
       const doi = ids.find(item => item.scheme === "doi");
       record.identifiers = ids.filter(item => item.scheme === "isbn");
       record.citationText = item.apa.split(" https://doi.org/")[0];
-      record.locations = record.locations.filter(item => item.kind === "publisher");
+      record.locations = [
+        ...record.locations.filter(item => item.kind === "publisher"),
+        { kind: "library", provider: "WorldCat", url: "https://search.worldcat.org/search?q=bn%3A9780691198927", verifiedAt },
+        { kind: "library", provider: "Open Library", url: "https://openlibrary.org/books/OL39279248M/Politics_of_Ritual", verifiedAt }
+      ];
       record.note = "Publisher ISBN record. JSTOR assigns a separate DOI to its digital book record.";
       const digital = {
         ...record, id: `${record.id}-jstor`, identifiers: [doi], citationText: item.apa,
-        locations: [{ kind: "repository", provider: "JSTOR", url: item.urls.jstor, verifiedAt }],
+        locations: [{ kind: "library", provider: "JSTOR", url: item.urls.jstor, verifiedAt }],
         provenance: [record.provenance[0], { provider: "JSTOR book metadata", url: item.urls.jstor, retrievedAt: verifiedAt }],
         note: "Digital book record identified by JSTOR. The print ISBN is tracked separately."
       };

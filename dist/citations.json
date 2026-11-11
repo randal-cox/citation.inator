@@ -25,6 +25,20 @@
           "provider": "Princeton University Press",
           "verifiedAt": "2026-11-10T00:00:00.000Z",
           "version": null
+        },
+        {
+          "kind": "library",
+          "url": "https://search.worldcat.org/search?q=bn%3A9780691198927",
+          "provider": "WorldCat",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
+        },
+        {
+          "kind": "library",
+          "url": "https://openlibrary.org/books/OL39279248M/Politics_of_Ritual",
+          "provider": "Open Library",
+          "verifiedAt": "2026-11-10T00:00:00.000Z",
+          "version": null
         }
       ],
       "provenance": [
@@ -41,6 +55,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2023
       ],
@@ -57,6 +72,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "The politics of ritual",
       "original": "The Politics of Ritual, Molly Farneth, Princeton University Press (2023)",
       "note": "Publisher ISBN record. JSTOR assigns a separate DOI to its digital book record.",
       "citationText": "Farneth, M. (2023). The politics of ritual. Princeton University Press."
@@ -80,7 +98,7 @@
       ],
       "locations": [
         {
-          "kind": "repository",
+          "kind": "library",
           "url": "https://www.jstor.org/stable/j.ctv2wr4wbd",
           "provider": "JSTOR",
           "verifiedAt": "2026-11-10T00:00:00.000Z",
@@ -101,6 +119,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2023
       ],
@@ -117,6 +136,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "The politics of ritual",
       "original": "The Politics of Ritual, Molly Farneth, Princeton University Press (2023)",
       "note": "Digital book record identified by JSTOR. The print ISBN is tracked separately.",
       "citationText": "Farneth, M. (2023). The politics of ritual. Princeton University Press. https://doi.org/10.2307/j.ctv2wr4wbd"
@@ -137,6 +159,7 @@
           "note": "Original citation and curation preserved in the source fixtures."
         }
       ],
+      "citationParts": [],
       "issued": null,
       "online": null,
       "print": null,
@@ -151,6 +174,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "",
       "original": "Ritual and the Politics of Reconciliation, in Ethnic Conflict and Peacemaking, OUP (2022)",
       "note": "No matching work verified; do not substitute a handbook or adjacent title.",
       "citationText": ""
@@ -195,6 +221,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2026,
         5,
@@ -213,6 +240,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "Hardcover",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "A time to gather: How ritual created the world—and how it can save us",
       "original": "A Time to Gather: How Ritual Created the World—and How It Can Save Us, Bruce Feiler, Penguin Press (2026)",
       "note": "",
       "citationText": "Feiler, B. (2026). A time to gather: How ritual created the world—and how it can save us. Penguin Press."
@@ -252,6 +282,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2020,
         6
@@ -269,6 +300,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "Modern but not meaningless: Nonreligious cultures and communities in the United States",
       "original": "Modern But Not Meaningless: Nonreligious Cultures and Communities in the United States, Jacqui Frost (dissertation, University of Minnesota)",
       "note": "No DOI or stable landing-page identifier confirmed; do not treat the bitstream download URL as the work identity.",
       "citationText": "Frost, J. (2020). Modern but not meaningless: Nonreligious cultures and communities in the United States [Doctoral dissertation, University of Minnesota]. University of Minnesota Digital Conservancy."
@@ -334,6 +368,7 @@
           "note": "Separate author preprint PDF. The DOI identifies the journal article."
         }
       ],
+      "citationParts": [],
       "issued": [
         2020
       ],
@@ -362,6 +397,9 @@
       "pages": "258-269",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "How empathic concern fuels political polarization",
       "original": "How Empathic Concern Fuels Political Polarization, Simas, Clifford and Kirkland, American Political Science Review 114(1), 2020",
       "note": "",
       "citationText": "Simas, E. N., Clifford, S., & Kirkland, J. H. (2020). How empathic concern fuels political polarization. American Political Science Review, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534"
@@ -410,6 +448,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2019,
         12,
@@ -428,6 +467,9 @@
       "pages": "",
       "articleNumber": "e12501",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "Moral reframing: A technique for effective and persuasive communication across political divides",
       "original": "Moral Reframing: A Technique for Effective and Persuasive Communication across Political Divides, Matthew Feinberg and Robb Willer, Social and Personality Psychology Compass (2019)",
       "note": "",
       "citationText": "Feinberg, M., & Willer, R. (2019). Moral reframing: A technique for effective and persuasive communication across political divides. Social and Personality Psychology Compass, 13(12), e12501. https://doi.org/10.1111/spc3.12501"
@@ -472,6 +514,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2021
       ],
@@ -488,6 +531,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "Radical empathy: Finding a path to bridging racial divides",
       "original": "Radical Empathy: Finding a Path to Bridging Racial Divides, Terri E. Givens, Policy Press (2021)",
       "note": "Additional ISBNs and the JSTOR DOI remain in the original fixtures for edition review.",
       "citationText": "Givens, T. E. (2021). Radical empathy: Finding a path to bridging racial divides. Policy Press. https://doi.org/10.46692/9781447357278"
@@ -532,6 +578,7 @@
           "note": ""
         }
       ],
+      "citationParts": [],
       "issued": [
         2024,
         4,
@@ -550,6 +597,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "The ritual effect: From habit to ritual, harness the surprising power of everyday actions",
       "original": "The Ritual Effect: From Habit to Ritual, Harness the Surprising Power of Everyday Actions, Michael Norton, Scribner (2024)",
       "note": "",
       "citationText": "Norton, M. I. (2024). The ritual effect: From habit to ritual, harness the surprising power of everyday actions. Scribner."
@@ -570,6 +620,7 @@
           "note": "Original citation and curation preserved in the source fixtures."
         }
       ],
+      "citationParts": [],
       "issued": null,
       "online": null,
       "print": null,
@@ -584,6 +635,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "",
       "original": "Deep Citizenship: Structural Rituals of Engagement, Cinema and Boggs (2023)",
       "note": "No matching work verified.",
       "citationText": ""
@@ -604,6 +658,7 @@
           "note": "Original citation and curation preserved in the source fixtures."
         }
       ],
+      "citationParts": [],
       "issued": null,
       "online": null,
       "print": null,
@@ -618,6 +673,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "",
       "original": "The Spaces of Others: Heterotopias and Peace Building, M. Al-Farabi (2024)",
       "note": "No matching work verified.",
       "citationText": ""

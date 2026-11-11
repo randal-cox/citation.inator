@@ -1,3 +1,5 @@
+import { setCitationVariants } from "../static/preferences.mjs";
+
 const form = document.querySelector("#resolve-form");
 const status = document.querySelector("#resolution-status");
 const reader = document.querySelector("#live-reader");
@@ -24,10 +26,12 @@ function updateEvidence(data) {
 }
 
 function render(data) {
-  reader.cache = data.cache;
-  // The same-origin demo server supplies HTML escaped by the compiler.
-  reader.innerHTML = data.html;
-  updateEvidence(data);
+  setCitationVariants(data.styles, html => {
+    reader.cache = data.cache;
+    // The same-origin demo server supplies HTML escaped by the compiler.
+    reader.innerHTML = html;
+    updateEvidence(data);
+  });
   next = null;
   showResult.hidden = true;
 }

@@ -318,6 +318,7 @@
           "note": "Synthetic record. External identifiers are illustrative and should not be followed."
         }
       ],
+      "citationParts": [],
       "issued": [
         2020
       ],
@@ -338,6 +339,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "",
       "original": "",
       "note": "",
       "citationText": ""
@@ -668,6 +672,7 @@
           "note": "Synthetic record. External identifiers are illustrative and should not be followed."
         }
       ],
+      "citationParts": [],
       "issued": [
         2020
       ],
@@ -687,6 +692,9 @@
       "pages": "",
       "articleNumber": "",
       "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "",
       "original": "",
       "note": "",
       "citationText": ""
