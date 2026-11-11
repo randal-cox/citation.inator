@@ -116,7 +116,7 @@ await writeFile("demos/static/index.html", document({
   intro: "Open a citation in the reading below to inspect its source. The endnotes also work when JavaScript is off.",
   active: "static",
   content: `<article class="reading" aria-labelledby="reading-title">
-    <h2 id="reading-title">Empathy, shared ritual, and citation examples</h2>
+    <h2 id="reading-title">Citation examples</h2>
     <citation-inspector data-cache="./citations.json">${article.html}</citation-inspector>
     ${notationExamples}
   </article>`
