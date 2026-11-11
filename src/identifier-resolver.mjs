@@ -38,14 +38,14 @@ function merge(prior, fresh, provider, fields, locationKind) {
   return { record: normalizeRecord(next), log };
 }
 
-function retryDelay(value, now) {
+export function retryDelay(value, now) {
   if (!value) return 60_000;
   const seconds = Number(value);
   const delay = Number.isFinite(seconds) ? seconds * 1000 : Date.parse(value) - now;
   return Number.isFinite(delay) ? Math.max(1000, delay) : 60_000;
 }
 
-async function readPayload(response) {
+export async function readPayload(response) {
   const reader = response.body?.getReader();
   if (!reader) return "";
   const decoder = new TextDecoder();

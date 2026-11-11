@@ -588,9 +588,11 @@ try {
     id: "adoption-book", type: "book", state: "resolved", issued: [1990],
     title: "Governing the Commons", authors: [{ given: "Elinor", family: "Ostrom" }],
     citationParts: [{ text: "Ostrom, Elinor. 1990. " }, { text: "Governing the Commons", emphasis: "italic" }, { text: "." }],
+    identifiers: [{ scheme: "isbn", value: "9780521405997" }],
     locations: [
       { kind: "library", provider: "WorldCat", url: "https://search.worldcat.org/search?q=bn%3A9780521405997" },
-      { kind: "library", provider: "Open Library", url: "https://openlibrary.org/isbn/9780521405997" }
+      { kind: "library", provider: "Open Library", url: "https://openlibrary.org/isbn/9780521405997" },
+      { kind: "full-text", provider: "Test Archive", url: "https://example.org/ostrom/full-text" }
     ]
   };
   const adoption = compileHTML("<p><em>Claim</em> {ref adoption-book | locator:34}; again {ref adoption-book}.</p><p>{ref evidence} · {ref credit}</p><p>{ref endnote}</p>",
@@ -614,16 +616,30 @@ try {
   assert.equal(await endnotes.locator("em").textContent(), adoptionRecord.title);
   assert.deepEqual(await endnotes.locator(".adoption-backlinks a").allTextContents(), ["a", "b"]);
   const serviceOrder = () => endnotes.locator("[data-ci-access-provider]").evaluateAll(links => links.map(link => link.dataset.ciAccessProvider));
-  assert.deepEqual(await serviceOrder(), ["Open Library", "WorldCat"]);
+  assert.deepEqual(await serviceOrder(), ["Open Library", "WorldCat", "Test Archive"]);
   await occurrence.click();
   const sourceDetails = adopter.getByRole("dialog", { name: "Source details" });
   assert.equal(await sourceDetails.locator(".adoption-citation em").textContent(), adoptionRecord.title);
   const sourceOrder = () => sourceDetails.getByRole("list", { name: "Source links" }).getByRole("link")
     .evaluateAll(links => links.map(link => link.getAttribute("aria-label")));
-  assert.deepEqual(await sourceOrder(), ["Find at Open Library", "Find at WorldCat"]);
+  assert.deepEqual(await sourceOrder(), ["Find at Open Library", "Find at WorldCat", "Read full text at Test Archive"]);
   await adopter.evaluate(reader => { reader.accessProviders = []; });
-  assert.deepEqual(await serviceOrder(), ["WorldCat", "Open Library"]);
-  assert.deepEqual(await sourceOrder(), ["Find at WorldCat", "Find at Open Library"]);
+  assert.deepEqual(await serviceOrder(), ["WorldCat", "Open Library", "Test Archive"]);
+  assert.deepEqual(await sourceOrder(), ["Find at WorldCat", "Find at Open Library", "Read full text at Test Archive"]);
+  await sourceDetails.getByRole("link", { name: "Find at WorldCat" }).focus();
+  await adopter.evaluate(reader => { reader.hiddenAccessProviders = ["worldcat"]; });
+  assert.deepEqual(await sourceOrder(), ["Find at Open Library", "Read full text at Test Archive"]);
+  assert.equal(await endnotes.getByRole("link", { name: "Find at WorldCat" }).count(), 0);
+  assert.equal(await sourceDetails.getByRole("heading", { name: "Source details", exact: true })
+    .evaluate(node => node === node.getRootNode().activeElement), true);
+  await adopter.evaluate(reader => { reader.hiddenAccessProviders = ["worldcat", "open library", "test archive"]; });
+  assert.equal(await sourceDetails.getByRole("list", { name: "Source links" }).count(), 0);
+  assert.equal(await sourceDetails.locator('a[href*="worldcat.org"]').count(), 0);
+  assert.match(await sourceDetails.locator(".adoption-identifier").textContent(), /ISBN 9780521405997/);
+  assert.equal(await endnotes.getByRole("link", { name: "Read full text at Test Archive" }).count(), 0);
+  await adopter.evaluate(reader => { reader.hiddenAccessProviders = []; });
+  assert.deepEqual(await sourceOrder(), ["Find at WorldCat", "Find at Open Library", "Read full text at Test Archive"]);
+  assert.equal(await endnotes.getByRole("link", { name: "Find at WorldCat" }).count(), 1);
   await page.keyboard.press("Escape");
   await adopter.getByRole("button", { name: "Citation evidence" }).click();
   assert.ok(await adopter.getByRole("dialog", { name: "Metadata trail" }).isVisible());

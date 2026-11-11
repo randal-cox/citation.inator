@@ -12,11 +12,13 @@ For an explicit parenthetical citation, use Farneth’s book {citation isbn:9780
 
 {citation isbn:9780691198927 | form:author-only} can also appear by name alone in a sentence. A parenthetical aside can give just the name {citation isbn:9780691198927 | form:suppress-year}.
 
-Write \{citation endnote\} to show the marker as literal text. A custom label can point to {citation doi:10.1017/S0003055419000534 | label:"the study | journal article; preprint available"}. An unresolved reference can display its supplied fallback {citation local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}.
+Here is a marker displayed as literal text: \{citation endnote\}. In the source, a backslash before each brace keeps it from inserting endnotes. A custom label can point to {citation doi:10.1017/S0003055419000534 | label:"the study | journal article; preprint available"}. An unresolved reference can display its supplied fallback {citation local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}.
 
 PubMed {citation pmid:16060722} and PubMed Central {citation pmcid:PMC1182327} lead to the same article. Its bare DOI {citation 10.1371/journal.pmed.0020124} and DOI URL {citation https://doi.org/10.1371/journal.pmed.0020124} share the same endnote.
 
 Other sources can use an arXiv ID {citation arxiv:1706.03762}, a dataset DOI {citation dataset:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f}, a software DOI {citation software:10.5281/zenodo.3960218}, or a URL {citation url:https://zenodo.org/records/3960218}.
+
+This edition carries both its original publication date and the year of the translation {citation isbn:9780029079379}.
 
 {citation endnote}
 

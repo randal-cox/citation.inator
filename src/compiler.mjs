@@ -95,6 +95,18 @@ const titleFor = record => record.title || record.original || "Unresolved citati
 const shortTitle = record => titleFor(record).split(/[:;]/, 1)[0];
 const yearFor = record => record.issued?.[0] ?? "n.d.";
 const suffixFor = (year, suffix, style) => style === "apa" && year === "n.d." && suffix ? `-${suffix}` : suffix;
+const originalYear = record => record.originalIssued?.[0];
+const hasReprintDate = record => originalYear(record) < record.issued?.[0];
+const bibliographyYear = (record, style) =>
+  (style === "chicago-author-date" && hasReprintDate(record) ? originalYear(record) : record.issued?.[0]) ?? 0;
+function citationYear(record, suffix, style, bibliography = false) {
+  const year = yearFor(record);
+  const dated = year + suffixFor(year, suffix, style);
+  if (!hasReprintDate(record)) return dated;
+  if (style === "chicago-author-date") return bibliography ? `(${originalYear(record)}) ${dated}` : `[${originalYear(record)}] ${dated}`;
+  if (!bibliography && ["apa", "default", "harvard"].includes(style)) return `${originalYear(record)}/${dated}`;
+  return dated;
+}
 const suffixAt = index => index < 26 ? String.fromCharCode(97 + index) : suffixAt(Math.floor(index / 26) - 1) + suffixAt(index % 26);
 
 export function authorLabel(record, narrative = false) {
@@ -139,7 +151,7 @@ function chicagoBibliography(record, suffix) {
     const byline = names.length === 1 ? names[0]
       : authors.length > 6 ? `${names.join(", ")}, et al`
       : `${head}${names.length > 2 ? "," : ""} and ${names.at(-1)}`;
-    add(`${byline}. ${yearFor(record)}${suffix}. `);
+    add(`${byline}. ${citationYear(record, suffix, "chicago-author-date", true)}. `);
   }
   const title = titleFor(record);
   const quoted = ["article-journal", "article", "chapter", "webpage", "thesis"].includes(type);
@@ -148,7 +160,7 @@ function chicagoBibliography(record, suffix) {
     add(title, "italic");
     if (!/[.?!]$/.test(title)) add(".");
   }
-  if (!authors.length) add(` ${yearFor(record)}${suffix}.`);
+  if (!authors.length) add(` ${citationYear(record, suffix, "chicago-author-date", true)}.`);
   if (containerTitle) {
     add(type === "chapter" ? " In " : " ");
     add(containerTitle, "italic");
@@ -171,8 +183,7 @@ function styledBibliography(record, suffix, style) {
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
   const { authors, containerTitle, volume, issue, publisher, publisherPlace, edition } = record;
   const title = style === "apa" && record.apaTitle || titleFor(record);
-  const baseYear = yearFor(record);
-  const year = baseYear + suffixFor(baseYear, suffix, style);
+  const year = citationYear(record, suffix, style, true);
   const pages = record.pages || record.articleNumber;
   const url = identifierURL(record.identifiers.find(id => ["doi", "url"].includes(id.scheme)));
   const initials = (given, separator = ". ") => (given?.match(/\p{L}[\p{L}\p{M}]*/gu) || [])
@@ -198,6 +209,7 @@ function styledBibliography(record, suffix, style) {
     }
     const doi = record.identifiers.find(item => item.scheme === "doi");
     if (doi) add(` doi: ${doi.value}`);
+    if (hasReprintDate(record)) add(` Originally published ${originalYear(record)}.`);
     return parts;
   }
   if (style === "mla") {
@@ -215,6 +227,7 @@ function styledBibliography(record, suffix, style) {
       const details = [edition, publisher, record.issued && year, url].filter(Boolean);
       add(details.length ? `. ${period(details.join(", "))}` : ".");
     }
+    if (hasReprintDate(record)) add(` Originally published ${originalYear(record)}.`);
     return parts;
   }
   const apa = style === "apa";
@@ -241,6 +254,7 @@ function styledBibliography(record, suffix, style) {
     if (publisher) add(` ${!apa && publisherPlace ? `${publisherPlace}: ` : ""}${period(publisher)}`);
   }
   if (url) add(` ${apa ? "" : "Available at: "}${url}`);
+  if (hasReprintDate(record)) add(` (Original work published ${originalYear(record)})`);
   return parts;
 }
 
@@ -265,7 +279,7 @@ function bibliographyParts(record, suffix, style) {
   }
   if (style === "chicago-author-date") return chicagoBibliography(record, suffix);
   if (style !== "default") return styledBibliography(record, suffix, style);
-  const text = defaultBibliography(record, suffix);
+  const text = defaultBibliography(record, suffix) + (hasReprintDate(record) ? ` (Original work published ${originalYear(record)})` : "");
   const title = record.containerTitle || (["book", "report", "thesis"].includes(record.type) ? record.title : "");
   const at = title ? text.toLowerCase().lastIndexOf(title.toLowerCase()) : -1;
   return at < 0 ? [{ text }] : [
@@ -299,8 +313,7 @@ function inlineText({ record, suffix, number, titleLabel }, item, style) {
   const qualify = text => `${item.prefix ? item.prefix + " " : ""}${text}`;
   if (style === "vancouver") return qualify(`${number}${pageLocator(item, style)}`);
   if (record.state === "unresolved") return qualify(item.hint || "Unresolved citation");
-  const baseYear = yearFor(record);
-  const year = baseYear + suffixFor(baseYear, suffix, style);
+  const year = citationYear(record, suffix, style);
   let author = styleAuthor(record, style, item.form !== "parenthetical");
   if (style === "mla") {
     const location = [titleLabel, item.locator].filter(Boolean).join(" ");
@@ -323,10 +336,11 @@ function iconLink(part, url, label, icon, title = label, attributes = "", text =
 
 function destinations(record, part) {
   const links = new Map();
+  const services = new Map();
   const identifierIcons = { isbn: "book", pmid: "article", pmcid: "repository", arxiv: "external" };
   for (const id of record.identifiers) {
     const label = id.scheme === "isbn" ? "Look up ISBN" : id.scheme === "url" ? "Open source" : `Open ${id.scheme.toUpperCase()}`;
-    links.set(identifierURL(id), { label, icon: identifierIcons[id.scheme] || "link" });
+    links.set(identifierURL(id), { label, icon: identifierIcons[id.scheme] || "link", ...(id.scheme === "isbn" && { provider: "WorldCat" }) });
   }
   const kinds = {
     publisher: ["Open publisher page", "publisher"], repository: ["Open repository", "repository"],
@@ -336,14 +350,17 @@ function destinations(record, part) {
   for (const location of record.locations) {
     const [action, icon] = kinds[location.kind];
     if (["library", "full-text"].includes(location.kind)) {
-      links.set(location.url, { label: `${action} ${location.provider}`, icon, provider: location.provider });
+      if (links.get(location.url)?.provider?.toLowerCase() === location.provider.toLowerCase()) links.delete(location.url);
+      services.set(JSON.stringify([location.url, location.provider.toLowerCase()]), [
+        location.url, { label: `${action} ${location.provider}`, icon, provider: location.provider }
+      ]);
       continue;
     }
     if (links.has(location.url)) continue;
     const label = location.version ? `${action} (${location.version})` : action;
     links.set(location.url, { label, icon, download: location.kind === "pdf" || location.kind === "preprint" && /\.pdf(?:[?#]|$)/i.test(location.url) });
   }
-  return [...links].filter(([url]) => url).map(([url, { label, icon, download, provider }]) =>
+  return [...links, ...services.values()].filter(([url]) => url).map(([url, { label, icon, download, provider }]) =>
     iconLink(part, url, label, icon, `${label}\n${url}`, ` target="_blank" rel="noopener noreferrer"${download ? ' download=""' : ""}${provider ? ` data-ci-access-provider="${escapeHTML(provider)}"` : ""}`)
   ).join("");
 }
@@ -368,6 +385,7 @@ function annotationContent(name, namespace, records, part) {
   } else {
     const sources = records.map(record => ({
       title: titleFor(record), state: record.state, identifiers: record.identifiers,
+      ...(record.originalIssued && { issued: record.issued, originalIssued: record.originalIssued }),
       version: record.version, retrievedAt: record.retrievedAt, provenance: record.provenance,
       ...(record.note && { note: record.note })
     }));
@@ -444,7 +462,7 @@ export function compileCitationBlocks(blocks, cache, {
   if (citationStyle !== "vancouver") entries.sort(({ record: a }, { record: b }) =>
     (a.state === "unresolved") - (b.state === "unresolved") ||
     compare(sortName(a), sortName(b)) ||
-    (a.issued?.[0] ?? 0) - (b.issued?.[0] ?? 0) ||
+    bibliographyYear(a, citationStyle) - bibliographyYear(b, citationStyle) ||
     compare(titleFor(a), titleFor(b)) || compare(a.id, b.id)
   );
   const groups = new Map();
@@ -454,7 +472,7 @@ export function compileCitationBlocks(blocks, cache, {
     if (record.state === "unresolved") continue;
     // The rendered author-year must also distinguish two different lists shortened to "et al."
     const label = styleAuthor(record, citationStyle);
-    const key = JSON.stringify([label.normalize("NFKC").toLowerCase(), citationStyle === "mla" ? null : yearFor(record)]);
+    const key = JSON.stringify([label.normalize("NFKC").toLowerCase(), citationStyle === "mla" ? null : citationYear(record, "", citationStyle)]);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(entry);
   }

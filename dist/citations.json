@@ -942,6 +942,75 @@
       "original": "",
       "note": "",
       "citationText": ""
+    },
+    {
+      "id": "durkheim-1995-fields",
+      "type": "book",
+      "state": "resolved",
+      "title": "The Elementary Forms of Religious Life",
+      "authors": [
+        {
+          "family": "Durkheim",
+          "given": "Émile"
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "isbn",
+          "value": "9780029079379"
+        }
+      ],
+      "locations": [
+        {
+          "kind": "publisher",
+          "url": "https://www.simonandschuster.biz/books/Elementary-Forms-Of-The-Religious-Life/Emile-Durkheim/9780029079379",
+          "provider": "Simon & Schuster",
+          "verifiedAt": null,
+          "version": null
+        }
+      ],
+      "provenance": [
+        {
+          "provider": "Simon & Schuster",
+          "url": "https://www.simonandschuster.biz/books/Elementary-Forms-Of-The-Religious-Life/Emile-Durkheim/9780029079379",
+          "retrievedAt": null,
+          "note": "The publisher lists this 1995 paperback and ISBN."
+        },
+        {
+          "provider": "Oregon State University Open Textbooks",
+          "url": "https://open.oregonstate.education/app/uploads/sites/13/2019/09/socio_p2_religious-life.pdf",
+          "retrievedAt": null,
+          "note": "Original 1912 publication and 1995 Karen Fields translation."
+        }
+      ],
+      "citationParts": [],
+      "issued": [
+        1995,
+        6,
+        1
+      ],
+      "originalIssued": [
+        1912
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Free Press",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "Translated by Karen E. Fields",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "The elementary forms of religious life",
+      "original": "",
+      "note": "",
+      "citationText": ""
     }
   ]
 }

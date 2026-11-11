@@ -45,9 +45,10 @@ initializeCitationInspector(document.querySelector(&quot;citation-inspector&quot
   evidenceIcon: &quot;/assets/evidence.svg&quot;,
   creditTitle: &quot;Software credits&quot;,
   creditIcon: &quot;none&quot;,
-  accessProviders: [&quot;WorldCat&quot;, &quot;Open Library&quot;]
+  accessProviders: [&quot;WorldCat&quot;, &quot;Open Library&quot;],
+  hiddenAccessProviders: [&quot;JSTOR&quot;]
 });</code></pre>
-      <p>The matching HTML attributes are <code>panel-title</code>, <code>panel-icon</code>, <code>evidence-title</code>, <code>evidence-icon</code>, <code>credit-title</code>, <code>credit-icon</code>, and <code>access-providers</code>. Icons use a same-origin URL, the built-in mark, or <code>none</code>. The <code>open</code> attribute is present on the host while any panel is visible.</p>
+      <p>The matching HTML attributes are <code>panel-title</code>, <code>panel-icon</code>, <code>evidence-title</code>, <code>evidence-icon</code>, <code>credit-title</code>, <code>credit-icon</code>, <code>access-providers</code>, and <code>hidden-access-providers</code>. Icons use a same-origin URL, the built-in mark, or <code>none</code>. The <code>open</code> attribute is present on the host while any panel is visible.</p>
       <p>To compile plain text directly from the checkout with Node.js 22 or later, run this from the repository root. The CLI writes <code>article.html</code> and <code>article.html.json</code>.</p>
       <pre><code>node scripts/compile.mjs --style chicago-author-date --endnotes-heading References \
   demos/drop-in/reading.txt demos/drop-in/citations.json article.html my-article</code></pre>
@@ -75,11 +76,13 @@ For an explicit parenthetical citation, use Farneth’s book {citation isbn:9780
 
 {citation isbn:9780691198927 | form:author-only} can also appear by name alone in a sentence. A parenthetical aside can give just the name {citation isbn:9780691198927 | form:suppress-year}.
 
-Write \{citation endnote\} to show the marker as literal text. A custom label can point to {citation doi:10.1017/S0003055419000534 | label:&quot;the study | journal article; preprint available&quot;}. An unresolved reference can display its supplied fallback {citation local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}.
+Here is a marker displayed as literal text: \{citation endnote\}. In the source, a backslash before each brace keeps it from inserting endnotes. A custom label can point to {citation doi:10.1017/S0003055419000534 | label:&quot;the study | journal article; preprint available&quot;}. An unresolved reference can display its supplied fallback {citation local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}.
 
 PubMed {citation pmid:16060722} and PubMed Central {citation pmcid:PMC1182327} lead to the same article. Its bare DOI {citation 10.1371/journal.pmed.0020124} and DOI URL {citation https://doi.org/10.1371/journal.pmed.0020124} share the same endnote.
 
 Other sources can use an arXiv ID {citation arxiv:1706.03762}, a dataset DOI {citation dataset:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f}, a software DOI {citation software:10.5281/zenodo.3960218}, or a URL {citation url:https://zenodo.org/records/3960218}.
+
+This edition carries both its original publication date and the year of the translation {citation isbn:9780029079379}.
 
 {citation endnote}
 
@@ -89,7 +92,7 @@ Other sources can use an arXiv ID {citation arxiv:1706.03762}, a dataset DOI {ci
       <h2 id="guide-notation">Complete notation</h2>
       <dl><dt><code>{citation doi:10.1017/S0003055419000534}</code></dt><dd>An inline citation with a DOI.</dd><dt><code>{citation isbn:9780593656433 | form:narrative}</code></dt><dd>A cached ISBN with the author in the sentence and the year in parentheses.</dd><dt><code>{citation doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}</code></dt><dd>Group citations. A semicolon separates items.</dd><dt><code>{citation isbn:9780691198927; isbn:9780593656433 | prefix:see also | locator:&quot;p. 34&quot;}</code></dt><dd>Add a prefix and a locator to one item in a group. A bare page number adapts to the selected style.</dd><dt><code>{citation doi:10.1017/S0003055419000534 | label:&quot;the study | journal article; preprint available&quot;}</code></dt><dd>Choose the visible label. Quotes protect literal pipes and semicolons.</dd><dt><code>{citation local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}</code></dt><dd>Supply a fallback to display for an unresolved record.</dd><dt><code>{citation isbn:9780691198927 | form:parenthetical}</code></dt><dd>Put the author and year in parentheses. This is the default.</dd><dt><code>{citation isbn:9780691198927 | form:author-only}</code></dt><dd>Show only the author, without parentheses.</dd><dt><code>{citation isbn:9780691198927 | form:suppress-author}</code></dt><dd>Show only the year, in parentheses.</dd><dt><code>{citation isbn:9780691198927 | form:suppress-year}</code></dt><dd>Show only the author, in parentheses.</dd><dt><code>{citation endnote}</code></dt><dd>Place the endnotes on their own paragraph. The compiler appends them when the marker is absent.</dd><dt><code>{citation evidence}</code></dt><dd>Show cited source metadata or the Resolution bench’s provider evidence.</dd><dt><code>{citation credit}</code></dt><dd>Show the software credit, license and suggested citation.</dd></dl>
       <p>The reading also demonstrates <code>doi:</code>, <code>isbn:</code>, <code>pmid:</code>, <code>pmcid:</code>, <code>arxiv:</code>, <code>url:</code>, <code>dataset:</code>, <code>software:</code>, a recognized HTTPS URL or an ID from the local cache. Bare DOIs also work. A missing record is marked unresolved.</p>
-      <p>Keep each directive on one line. Use a backslash to escape literal braces. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. Legacy <code>{cite …}</code> and <code>{endnotes}</code> also work. Expand <strong>Custom keyword and legacy notation</strong> below the reading in either demo to see both rendered alongside their source.</p>
+      <p>Keep each directive on one line. To display <code>{citation endnote}</code> as literal text, put <code>\{citation endnote\}</code> in the source. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. Legacy <code>{cite …}</code> and <code>{endnotes}</code> also work. Expand <strong>Custom keyword and legacy notation</strong> below the reading in either demo to see both rendered alongside their source.</p>
       <h3>Set your keyword</h3>
       <p>With <code>citationKeyword: "ref"</code>, write <code>{ref DOI}</code>, <code>{ref endnote}</code>, <code>{ref evidence}</code>, and <code>{ref credit}</code>. The keyword and class prefix accept 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter. Use the same class prefix in the browser if you initialize it separately.</p>
       <pre><code>import { createCitationCompiler } from &quot;citation-inator&quot;;
@@ -119,8 +122,9 @@ const anotherCopy = rebaseCitationFragment(result.html, &quot;essay&quot;, &quot
     <section aria-labelledby="guide-cache">
       <h2 id="guide-cache">Format references and add access links</h2>
       <p>For curated reference text, put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
-      <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. The application can reuse its own preference settings.</p>
-      <p>The <a href="https://github.com/randal-cox/citation.inator/blob/main/docs/integration.md">integration guide</a> has complete record, Python and ISBN resolver examples.</p>
+      <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. Set <code>hiddenAccessProviders</code> to hide services in the panel and endnotes. The application can reuse its own preference settings.</p>
+      <p>Use <code>originalIssued: [1912]</code> and <code>issued: [1995]</code> to store both dates for a translated or reprinted work. Try the Durkheim citation in the reading room with Chicago and APA selected.</p>
+      <p>The <a href="https://github.com/randal-cox/citation.inator/blob/main/docs/integration.md">integration guide</a> shows how to find ISBN candidates by title and author and review them before updating a cache.</p>
     </section>
   </article>
   </main>

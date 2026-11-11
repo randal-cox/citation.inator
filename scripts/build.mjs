@@ -195,7 +195,8 @@ initializeCitationInspector(document.querySelector("citation-inspector"), {
   evidenceIcon: "/assets/evidence.svg",
   creditTitle: "Software credits",
   creditIcon: "none",
-  accessProviders: ["WorldCat", "Open Library"]
+  accessProviders: ["WorldCat", "Open Library"],
+  hiddenAccessProviders: ["JSTOR"]
 });`;
 
 const demoServer = `cd citation.inator
@@ -237,7 +238,7 @@ await writeFile("demos/static/guide.html", document({
       <pre><code>${escapeHTML(loadingExample)}</code></pre>
       <p>Set options on the element or in your site's browser module. The default classes start with <code>citation-</code>. Use <code>class-prefix</code> or <code>classPrefix</code> to give them your own prefix.</p>
       <pre><code>${escapeHTML(initExample)}</code></pre>
-      <p>The matching HTML attributes are <code>panel-title</code>, <code>panel-icon</code>, <code>evidence-title</code>, <code>evidence-icon</code>, <code>credit-title</code>, <code>credit-icon</code>, and <code>access-providers</code>. Icons use a same-origin URL, the built-in mark, or <code>none</code>. The <code>open</code> attribute is present on the host while any panel is visible.</p>
+      <p>The matching HTML attributes are <code>panel-title</code>, <code>panel-icon</code>, <code>evidence-title</code>, <code>evidence-icon</code>, <code>credit-title</code>, <code>credit-icon</code>, <code>access-providers</code>, and <code>hidden-access-providers</code>. Icons use a same-origin URL, the built-in mark, or <code>none</code>. The <code>open</code> attribute is present on the host while any panel is visible.</p>
       <p>To compile plain text directly from the checkout with Node.js 22 or later, run this from the repository root. The CLI writes <code>article.html</code> and <code>article.html.json</code>.</p>
       <pre><code>${escapeHTML(checkoutCompile)}</code></pre>
     </section>
@@ -256,7 +257,7 @@ await writeFile("demos/static/guide.html", document({
       <h2 id="guide-notation">Complete notation</h2>
       <dl>${notation.map(([syntax, explanation]) => `<dt><code>${escapeHTML(syntax)}</code></dt><dd>${explanation}</dd>`).join("")}</dl>
       <p>The reading also demonstrates <code>doi:</code>, <code>isbn:</code>, <code>pmid:</code>, <code>pmcid:</code>, <code>arxiv:</code>, <code>url:</code>, <code>dataset:</code>, <code>software:</code>, a recognized HTTPS URL or an ID from the local cache. Bare DOIs also work. A missing record is marked unresolved.</p>
-      <p>Keep each directive on one line. Use a backslash to escape literal braces. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. Legacy <code>{cite …}</code> and <code>{endnotes}</code> also work. Expand <strong>Custom keyword and legacy notation</strong> below the reading in either demo to see both rendered alongside their source.</p>
+      <p>Keep each directive on one line. To display <code>{citation endnote}</code> as literal text, put <code>\\{citation endnote\\}</code> in the source. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. Legacy <code>{cite …}</code> and <code>{endnotes}</code> also work. Expand <strong>Custom keyword and legacy notation</strong> below the reading in either demo to see both rendered alongside their source.</p>
       <h3>Set your keyword</h3>
       <p>With <code>citationKeyword: "ref"</code>, write <code>{ref DOI}</code>, <code>{ref endnote}</code>, <code>{ref evidence}</code>, and <code>{ref credit}</code>. The keyword and class prefix accept 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter. Use the same class prefix in the browser if you initialize it separately.</p>
       <pre><code>${escapeHTML(compileExample)}</code></pre>
@@ -271,8 +272,9 @@ await writeFile("demos/static/guide.html", document({
     <section aria-labelledby="guide-cache">
       <h2 id="guide-cache">Format references and add access links</h2>
       <p>For curated reference text, put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
-      <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. The application can reuse its own preference settings.</p>
-      <p>The <a href="https://github.com/randal-cox/citation.inator/blob/main/docs/integration.md">integration guide</a> has complete record, Python and ISBN resolver examples.</p>
+      <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. Set <code>hiddenAccessProviders</code> to hide services in the panel and endnotes. The application can reuse its own preference settings.</p>
+      <p>Use <code>originalIssued: [1912]</code> and <code>issued: [1995]</code> to store both dates for a translated or reprinted work. Try the Durkheim citation in the reading room with Chicago and APA selected.</p>
+      <p>The <a href="https://github.com/randal-cox/citation.inator/blob/main/docs/integration.md">integration guide</a> shows how to find ISBN candidates by title and author and review them before updating a cache.</p>
     </section>
   </article>`
 }));

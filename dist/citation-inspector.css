@@ -272,3 +272,5 @@ citation-inspector { display: contents; }
 }
 
 [data-citation-part~="backlinks"] a { font-size: .82em; font-weight: 650; }
+
+[data-citation-part~="icon"][data-ci-access-provider][hidden] { display: none; }

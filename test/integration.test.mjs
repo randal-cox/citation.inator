@@ -4,8 +4,8 @@ import { test } from "node:test";
 import { parseFragment } from "parse5";
 import { compileCitations, createCitationCompiler } from "../src/compiler.mjs";
 import { compileHTML, compileMarkdown, rebaseCitationFragment } from "../src/markup.mjs";
-import { createOpenLibraryResolver } from "../src/openlibrary.mjs";
-import { makeCache } from "../src/records.mjs";
+import { createOpenLibraryResolver, createOpenLibrarySearch } from "../src/openlibrary.mjs";
+import { makeCache, toCSL } from "../src/records.mjs";
 
 const book = {
   id: "ostrom", type: "book", state: "resolved", title: "Governing the Commons", issued: [1990],
@@ -206,4 +206,63 @@ test("Open Library resolves an exact ISBN edition, shares cache semantics, and r
   assert.equal(second.record.id, first.record.id);
   assert.match(second.attempt.mergeLog[0], /did not verify this ISBN/);
   assert.equal(count, 2);
+});
+
+
+test("reprint records preserve both dates and styles disambiguate their displayed date pairs", () => {
+  const reprint = { ...book, id: "durkheim", title: "The Elementary Forms of Religious Life",
+    authors: [{ given: "Émile", family: "Durkheim" }], issued: [1995], originalIssued: [1912], identifiers: [] };
+  const normalized = makeCache([reprint]).records[0];
+  assert.deepEqual(normalized.originalIssued, [1912]);
+  assert.deepEqual(toCSL(normalized)["original-date"], { "date-parts": [[1912]] });
+  assert.deepEqual(toCSL(normalized).issued, { "date-parts": [[1995]] });
+  const chicago = compileCitations("{citation durkheim}", makeCache([reprint]), { citationStyle: "chicago-author-date" });
+  assert.deepEqual(labels(chicago.html), ["Durkheim [1912] 1995"]);
+  assert.match(chicago.html, /Durkheim, Émile\. \(1912\) 1995\./);
+  const apa = compileCitations("{citation durkheim}", makeCache([reprint]), { citationStyle: "apa" });
+  assert.deepEqual(labels(apa.html), ["Durkheim, 1912/1995"]);
+  assert.match(apa.html, /Original work published 1912/);
+  const another = { ...reprint, id: "another-original", originalIssued: [1900] };
+  const distinct = compileCitations("{citation durkheim; another-original}", makeCache([reprint, another]), { citationStyle: "chicago-author-date" });
+  assert.deepEqual(labels(distinct.html), ["Durkheim [1912] 1995", "Durkheim [1900] 1995"]);
+});
+
+test("ISBN search returns edition-level proposals, coalesces requests and preserves prior proposals through a rate limit", async () => {
+  let rateLimited = false;
+  let count = 0;
+  const search = createOpenLibrarySearch({
+    minInterval: 0,
+    fetch: async url => {
+      count++;
+      if (rateLimited) return new Response("pause", { status: 429, headers: { "Retry-After": "60" } });
+      if (url.pathname === "/search.json") {
+        assert.equal(url.searchParams.get("q"), 'title:"Governing the Commons" AND author:"Elinor Ostrom" AND publish_year:1990 AND language:eng');
+        return Response.json({ docs: [{ key: "/works/OL123W", author_name: ["Elinor Ostrom"],
+          isbn: ["9780593656433"], editions: { docs: [{ key: "/books/OL123M" }] } }] });
+      }
+      assert.equal(url.pathname, "/books/OL123M.json");
+      return Response.json({ key: "/books/OL123M", title: book.title, publish_date: "1990",
+        publishers: ["Cambridge University Press"], isbn_10: ["0521405998"], isbn_13: ["9780521405997"] });
+    }
+  });
+  const query = { title: book.title, author: "Elinor Ostrom", year: 1990, language: "eng" };
+  const [first, same] = await Promise.all([search.search(query), search.search(query)]);
+  assert.equal(count, 2);
+  assert.deepEqual(first, same);
+  assert.equal(first.state, "candidates");
+  assert.equal(first.candidates[0].requiresReview, true);
+  assert.deepEqual(first.candidates[0].identifiers, book.identifiers);
+  assert.equal(first.candidates[0].provenance.length, 2);
+  assert.equal(first.candidates[0].authorSource, "work");
+  assert.equal((await search.search(query)).state, "cached");
+  assert.equal(count, 2);
+  rateLimited = true;
+  const failure = await search.search(query, { force: true });
+  assert.equal(failure.state, "error");
+  assert.deepEqual(failure.candidates, first.candidates);
+  assert.match(failure.message, /429/);
+  assert.equal(count, 3);
+  assert.equal((await search.search(query, { force: true })).state, "error");
+  assert.equal(count, 3);
+  await assert.rejects(search.search({ title: book.title }), /title and author/);
 });

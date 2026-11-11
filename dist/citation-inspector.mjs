@@ -192,6 +192,7 @@ function normalizeRecord(input) {
   const title = cleanText(input.title);
   const abstract = cleanText(input.abstract?.text);
   const abstractSource = cleanText(input.abstract?.source);
+  const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
   const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText"];
   return {
@@ -205,6 +206,7 @@ function normalizeRecord(input) {
     provenance,
     citationParts: array(input.citationParts).flatMap((part) => typeof part?.text === "string" && part.text ? [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis } }] : []),
     issued: dateParts(input.issued),
+    ...originalIssued && { originalIssued },
     online: dateParts(input.online),
     print: dateParts(input.print),
     retrievedAt: stamp(input.retrievedAt),
@@ -246,6 +248,16 @@ function readCache(input) {
 var titleFor = (record) => record.title || record.original || "Unresolved citation";
 var yearFor = (record) => record.issued?.[0] ?? "n.d.";
 var suffixFor = (year, suffix, style) => style === "apa" && year === "n.d." && suffix ? `-${suffix}` : suffix;
+var originalYear = (record) => record.originalIssued?.[0];
+var hasReprintDate = (record) => originalYear(record) < record.issued?.[0];
+function citationYear(record, suffix, style, bibliography = false) {
+  const year = yearFor(record);
+  const dated = year + suffixFor(year, suffix, style);
+  if (!hasReprintDate(record)) return dated;
+  if (style === "chicago-author-date") return bibliography ? `(${originalYear(record)}) ${dated}` : `[${originalYear(record)}] ${dated}`;
+  if (!bibliography && ["apa", "default", "harvard"].includes(style)) return `${originalYear(record)}/${dated}`;
+  return dated;
+}
 function defaultBibliography(record, suffix = "") {
   if (record.state === "unresolved") return titleFor(record);
   const year = yearFor(record);
@@ -275,7 +287,7 @@ function chicagoBibliography(record, suffix) {
     const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullName(author, index === 0));
     const head = names.slice(0, -1).join(", ");
     const byline = names.length === 1 ? names[0] : authors.length > 6 ? `${names.join(", ")}, et al` : `${head}${names.length > 2 ? "," : ""} and ${names.at(-1)}`;
-    add(`${byline}. ${yearFor(record)}${suffix}. `);
+    add(`${byline}. ${citationYear(record, suffix, "chicago-author-date", true)}. `);
   }
   const title = titleFor(record);
   const quoted = ["article-journal", "article", "chapter", "webpage", "thesis"].includes(type);
@@ -284,7 +296,7 @@ function chicagoBibliography(record, suffix) {
     add(title, "italic");
     if (!/[.?!]$/.test(title)) add(".");
   }
-  if (!authors.length) add(` ${yearFor(record)}${suffix}.`);
+  if (!authors.length) add(` ${citationYear(record, suffix, "chicago-author-date", true)}.`);
   if (containerTitle) {
     add(type === "chapter" ? " In " : " ");
     add(containerTitle, "italic");
@@ -304,8 +316,7 @@ function styledBibliography(record, suffix, style) {
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
   const { authors, containerTitle, volume, issue, publisher, publisherPlace, edition } = record;
   const title = style === "apa" && record.apaTitle || titleFor(record);
-  const baseYear = yearFor(record);
-  const year = baseYear + suffixFor(baseYear, suffix, style);
+  const year = citationYear(record, suffix, style, true);
   const pages = record.pages || record.articleNumber;
   const url = identifierURL(record.identifiers.find((id) => ["doi", "url"].includes(id.scheme)));
   const initials = (given, separator = ". ") => (given?.match(/\p{L}[\p{L}\p{M}]*/gu) || []).map((word) => [...word][0]).join(separator);
@@ -327,6 +338,7 @@ function styledBibliography(record, suffix, style) {
     }
     const doi2 = record.identifiers.find((item) => item.scheme === "doi");
     if (doi2) add(` doi: ${doi2.value}`);
+    if (hasReprintDate(record)) add(` Originally published ${originalYear(record)}.`);
     return parts;
   }
   if (style === "mla") {
@@ -344,6 +356,7 @@ function styledBibliography(record, suffix, style) {
       const details = [edition, publisher, record.issued && year, url].filter(Boolean);
       add(details.length ? `. ${period(details.join(", "))}` : ".");
     }
+    if (hasReprintDate(record)) add(` Originally published ${originalYear(record)}.`);
     return parts;
   }
   const apa = style === "apa";
@@ -369,6 +382,7 @@ function styledBibliography(record, suffix, style) {
     if (publisher) add(` ${!apa && publisherPlace ? `${publisherPlace}: ` : ""}${period(publisher)}`);
   }
   if (url) add(` ${apa ? "" : "Available at: "}${url}`);
+  if (hasReprintDate(record)) add(` (Original work published ${originalYear(record)})`);
   return parts;
 }
 function bibliographyParts(record, suffix, style) {
@@ -391,7 +405,7 @@ function bibliographyParts(record, suffix, style) {
   }
   if (style === "chicago-author-date") return chicagoBibliography(record, suffix);
   if (style !== "default") return styledBibliography(record, suffix, style);
-  const text = defaultBibliography(record, suffix);
+  const text = defaultBibliography(record, suffix) + (hasReprintDate(record) ? ` (Original work published ${originalYear(record)})` : "");
   const title = record.containerTitle || (["book", "report", "thesis"].includes(record.type) ? record.title : "");
   const at = title ? text.toLowerCase().lastIndexOf(title.toLowerCase()) : -1;
   return at < 0 ? [{ text }] : [
@@ -455,7 +469,7 @@ ${url}`);
   list.append(row);
 }
 var CitationInspector = class _CitationInspector extends HTMLElement {
-  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
+  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "hidden-access-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
   #hovering = false;
   #hoverOpenTimer;
   #hoverCloseTimer;
@@ -471,6 +485,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   #enhanced = /* @__PURE__ */ new Map();
   #appliedPrefixes = /* @__PURE__ */ new WeakMap();
   #accessOrder = /* @__PURE__ */ new WeakMap();
+  #hiddenAccessLinks = /* @__PURE__ */ new WeakSet();
   #trigger;
   #modal = false;
   #frame;
@@ -564,17 +579,31 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     }
     this.setAttribute("access-providers", providers.join(","));
   }
+  set hiddenAccessProviders(providers) {
+    if (!Array.isArray(providers) || providers.some((provider) => typeof provider !== "string" || !provider.trim() || provider.includes(","))) {
+      throw new TypeError("Supply an array of hidden provider names without commas.");
+    }
+    this.setAttribute("hidden-access-providers", providers.join(","));
+  }
   attributeChangedCallback(name, before, after) {
     if (before === after) return;
-    if (name === "access-providers") {
+    if (name === "access-providers" || name === "hidden-access-providers") {
       this.#orderEndnoteLinks();
       const record = this.#cache?.byId.get(this.#trigger?.dataset.ciRecord);
       if (record) {
-        const actionName = this.shadowRoot.activeElement?.getAttribute("aria-label");
+        const focused = this.shadowRoot.activeElement;
+        const restoreFocus = focused && this.#content.contains(focused);
+        const actionName = focused?.getAttribute("aria-label");
+        const href = focused?.getAttribute("href");
         const scroll = this.#dialog.scrollTop;
         this.#render(record, this.#trigger);
         this.#applyClassPrefix();
-        if (actionName) [...this.#content.querySelectorAll("[aria-label]")].find((node) => node.getAttribute("aria-label") === actionName)?.focus({ preventScroll: true });
+        if (restoreFocus) {
+          const replacement = [...this.#content.querySelectorAll("a, button")].find(
+            (node) => actionName ? node.getAttribute("aria-label") === actionName : href && node.getAttribute("href") === href
+          );
+          (replacement || this.#heading).focus({ preventScroll: true });
+        }
         this.#dialog.scrollTop = scroll;
       }
       return;
@@ -774,13 +803,29 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     const index = preferences.indexOf(provider.toLowerCase());
     return index < 0 ? Infinity : index;
   }
+  #providerHidden(provider) {
+    return (this.getAttribute("hidden-access-providers") || "").split(",").some((name) => name.trim().toLowerCase() === provider.toLowerCase());
+  }
   #orderEndnoteLinks() {
     for (const row of this.querySelectorAll('[data-citation-part~="note-actions"]')) {
       if (row.closest(componentName) !== this) continue;
       const links = [...row.querySelectorAll(":scope > [data-ci-access-provider]")];
+      const active = this.ownerDocument.activeElement;
       links.forEach((link, index) => {
         if (!this.#accessOrder.has(link)) this.#accessOrder.set(link, index);
+        if (this.#providerHidden(link.dataset.ciAccessProvider)) {
+          if (!link.hidden) {
+            link.hidden = true;
+            this.#hiddenAccessLinks.add(link);
+          }
+        } else if (this.#hiddenAccessLinks.has(link)) {
+          link.hidden = false;
+          this.#hiddenAccessLinks.delete(link);
+        }
       });
+      if (links.includes(active) && active.hidden) {
+        (row.querySelector("a:not([hidden])") || row.closest("li"))?.focus({ preventScroll: true });
+      }
       const sorted = [...links].sort((a, b) => this.#providerRank(a.dataset.ciAccessProvider) - this.#providerRank(b.dataset.ciAccessProvider) || this.#accessOrder.get(a) - this.#accessOrder.get(b));
       if (links.every((link, index) => link === sorted[index])) continue;
       const slots = links.map((link) => {
@@ -1063,7 +1108,8 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     for (const identifier of record.identifiers) {
       if (identifier.scheme !== "isbn" && (identifier !== doi2 || linkedDOI)) continue;
       const line = element("p", "", "identifier");
-      line.append(`${identifier.scheme.toUpperCase()} `, external(identifierURL(identifier), identifier.value));
+      const value = identifier.scheme === "isbn" && this.#providerHidden("WorldCat") ? identifier.value : external(identifierURL(identifier), identifier.value);
+      line.append(`${identifier.scheme.toUpperCase()} `, value);
       fragment.append(line);
     }
     if (record.abstract) {
@@ -1090,7 +1136,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     destination(list, "Open PubMed Central", "repository", id("pmcid"));
     const preprintURL = id("arxiv") || preprint?.url;
     if (preprintURL !== pdf?.url) destination(list, "Open preprint", "external", preprintURL);
-    const services = record.locations.filter((item) => item.kind === "library" || item.kind === "full-text").sort((a, b) => this.#providerRank(a.provider) - this.#providerRank(b.provider));
+    const services = record.locations.filter((item) => ["library", "full-text"].includes(item.kind) && !this.#providerHidden(item.provider)).sort((a, b) => this.#providerRank(a.provider) - this.#providerRank(b.provider));
     for (const service of services) {
       const fullText = service.kind === "full-text";
       destination(
@@ -1158,6 +1204,7 @@ function initializeCitationInspector(element2, {
   panelTitle,
   panelIcon,
   accessProviders,
+  hiddenAccessProviders,
   evidenceTitle,
   evidenceIcon,
   creditTitle,
@@ -1176,6 +1223,7 @@ function initializeCitationInspector(element2, {
   if (creditTitle !== void 0) element2.setAttribute("credit-title", creditTitle);
   if (creditIcon !== void 0) element2.setAttribute("credit-icon", creditIcon);
   if (accessProviders !== void 0) element2.accessProviders = accessProviders;
+  if (hiddenAccessProviders !== void 0) element2.hiddenAccessProviders = hiddenAccessProviders;
   if (cache !== void 0) element2.cache = cache;
   return element2;
 }

@@ -35,6 +35,8 @@ initializeCitationInspector(inspector, {
 
 Generated classes default to names such as `citation-cite`, `citation-endnotes` and `citation-panel`. Set `classPrefix` to replace `citation` in those names. The built-in stylesheet still works with the new names. The prefix accepts 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter. Set the same option when compiling if you want your class names in the HTML before JavaScript loads.
 
+For assets served with a long cache lifetime, put each tested checkout in a path such as `/assets/citation-inator-0.1.1-<short-commit>/`. Copy the module and stylesheet into that same directory and update both URLs in your template. The module also loads its adjacent stylesheet. Publish the corresponding HTML and cache together under fresh URLs, or configure them to revalidate.
+
 ## Try the standalone HTML
 
 Run `npm start` from the repository root and open [Plain HTML](http://127.0.0.1:4187/demos/drop-in/). For an npm-free preview, serve `demos/drop-in/` or the extracted ZIP with any static server. For example, run `python3 -m http.server --bind 127.0.0.1 8080` in that folder and open [the example](http://127.0.0.1:8080/). With the Windows Python launcher, use `py -3` in place of `python3`.
@@ -181,6 +183,21 @@ The ZIP includes an example `citations.json`. The npm package exports a larger s
 
 Use `makeCache(records)` from `citation-inator/records` to produce the versioned cache and reject duplicate IDs and identifier collisions. Records can include structured authors, dates, identifiers, locations, version and integrity metadata, and provenance. Give PDF and preprint locations an HTTPS URL, a named source and a valid `verifiedAt` timestamp. Record the document version when known.
 
+### Original publication and edition dates
+
+Use `originalIssued` for the original work and `issued` for the edition you consulted. Both accept date-part arrays. CSL export maps them to `original-date` and `issued`. An existing note can remain as provenance or be removed if the fields already convey its information.
+
+```json
+{
+  "title": "The Elementary Forms of Religious Life",
+  "authors": [{"given": "Émile", "family": "Durkheim"}],
+  "originalIssued": [1912],
+  "issued": [1995]
+}
+```
+
+The Chicago preset produces `(Durkheim [1912] 1995)` inline and `Durkheim, Émile. (1912) 1995.` at the start of the reference. APA produces `(Durkheim, 1912/1995)` and an original-publication note. Supply `label` or `citationParts` for a house style with different punctuation.
+
 For editorial bibliography text, provide `citationParts` in the style the page uses. Each part has `text` and optional `emphasis: "italic"` or `"bold"`. Text is escaped and the same formatting appears in the panel and endnotes. For an author–date suffix, write the year as `1990.` in Chicago or `(1990)` in the other author–date formats so the compiler can insert the letter.
 
 ```json
@@ -197,7 +214,9 @@ For editorial bibliography text, provide `citationParts` in the style the page u
 }
 ```
 
-Use `full-text` for a link you have verified leads to the work’s full text, and `library` for a catalog, lending, or subscription service. These are fields on a record alongside its identifier and other metadata. Both kinds appear in the panel and static endnotes. Pass `accessProviders: ["Open Library", "WorldCat"]` to the initializer, assign `element.accessProviders`, or use `access-providers="Open Library,WorldCat"` on the element. Use the site’s own reader settings to store or load preferences. A preference orders supplied links, and an empty list restores their original order.
+Use `full-text` for a link you have verified leads to the work’s full text, and `library` for a catalog, lending, or subscription service. These are fields on a record alongside its identifier and other metadata. Both kinds appear in the panel and static endnotes. Pass `accessProviders: ["Open Library", "WorldCat"]` to the initializer, assign `element.accessProviders`, or use `access-providers="Open Library,WorldCat"` on the element. Use the site’s own reader settings to store or load preferences. An empty order list restores the supplied order.
+
+Use `hiddenAccessProviders` independently to hide named services from both the inspector and endnotes. Names match case-insensitively. Assign `element.hiddenAccessProviders = ["JSTOR", "WorldCat"]`, pass that option to the initializer, or write `hidden-access-providers="JSTOR,WorldCat"` on the element. Assign an empty list to show them again. Hiding WorldCat also disables the ISBN catalog shortcut. The ISBN remains visible and can still be copied. Static endnotes without JavaScript show all supplied links.
 
 For an abstract, provide an object with `text`, `source`, an optional HTTPS `url`, and optional `kind: "excerpt"`. The browser reads the text from the cache. Use excerpts or full text you have rights to distribute.
 
@@ -235,3 +254,41 @@ const result = await books.resolve("isbn:9780140328721");
 Equivalent ISBN-10 and ISBN-13 values refer to the same edition in the cache and resolver. Other edition identifiers stay distinct.
 
 The demo uses Crossref for DOI requests and Open Library for ISBN requests. The bench opens with a prefilled ISBN and its bundled citation. **Resolve** uses that cached record. **Force refresh** attempts the live ISBN lookup. Use **a live ISBN** to try a book outside the demo cache.
+
+
+### Find ISBN candidates by title and author
+
+Use the search API from a server or build tool. The result includes catalog-listed ISBNs, publisher and date when available, the matched work and edition URLs, and provider evidence. The author names come from the matched work. Check that the candidate matches the edition and binding you consulted before adding its ISBN to your own cache. A catalog record can list more than one ISBN.
+
+```js
+import { createOpenLibrarySearch } from "citation-inator/openlibrary";
+
+const finder = createOpenLibrarySearch({ mailto: "citations@example.org" });
+const result = await finder.search({
+  title: "The Elementary Forms of Religious Life",
+  author: "Durkheim",
+  year: 1995,
+  language: "eng"
+});
+for (const candidate of result.candidates) {
+  console.log(candidate.publicationDate, candidate.identifiers, candidate.editionURL);
+}
+```
+
+Supply the title and author. An edition year and three-letter language code are optional. Open Library proposes a matching edition per work. Follow the work link to inspect other editions when needed. The client serializes its requests, caches repeated searches, and respects provider retry intervals. Results can be empty or partial. A provider failure can return previously cached candidates for review.
+
+For a list, save a JSON object with a `books` array of search inputs and an optional `mailto`. The CLI queries the list sequentially and writes a result for each input. Save the output to keep the curator evidence.
+
+```json
+{
+  "books": [
+    {"title": "The Elementary Forms of Religious Life", "author": "Émile Durkheim", "year": 1995, "language": "eng"}
+  ]
+}
+```
+
+```sh
+node scripts/compile.mjs --find-isbns --json < books.json > isbn-candidates.json
+```
+
+With the npm package installed, use `npm exec -- citation-inator --find-isbns --json` in place of `node scripts/compile.mjs --find-isbns --json`.

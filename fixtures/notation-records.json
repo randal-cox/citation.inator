@@ -74,5 +74,53 @@
       { "scheme": "url", "value": "https://zenodo.org/records/3960218" }
     ],
     "provenance": [{ "provider": "Zenodo", "url": "https://zenodo.org/records/3960218" }]
+  },
+  {
+    "id": "durkheim-1995-fields",
+    "type": "book",
+    "state": "resolved",
+    "title": "The Elementary Forms of Religious Life",
+    "apaTitle": "The elementary forms of religious life",
+    "authors": [
+      {
+        "given": "Émile",
+        "family": "Durkheim"
+      }
+    ],
+    "originalIssued": [
+      1912
+    ],
+    "issued": [
+      1995,
+      6,
+      1
+    ],
+    "edition": "Translated by Karen E. Fields",
+    "publisher": "Free Press",
+    "identifiers": [
+      {
+        "scheme": "isbn",
+        "value": "9780029079379"
+      }
+    ],
+    "locations": [
+      {
+        "kind": "publisher",
+        "provider": "Simon & Schuster",
+        "url": "https://www.simonandschuster.biz/books/Elementary-Forms-Of-The-Religious-Life/Emile-Durkheim/9780029079379"
+      }
+    ],
+    "provenance": [
+      {
+        "provider": "Simon & Schuster",
+        "url": "https://www.simonandschuster.biz/books/Elementary-Forms-Of-The-Religious-Life/Emile-Durkheim/9780029079379",
+        "note": "The publisher lists this 1995 paperback and ISBN."
+      },
+      {
+        "provider": "Oregon State University Open Textbooks",
+        "url": "https://open.oregonstate.education/app/uploads/sites/13/2019/09/socio_p2_religious-life.pdf",
+        "note": "Original 1912 publication and 1995 Karen Fields translation."
+      }
+    ]
   }
 ]

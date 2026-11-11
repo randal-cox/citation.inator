@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Preserve original publication and edition dates and display both in reprint citations.
+- Hide selected access services in panels and endnotes, independently of preferred order.
+- Suggest edition ISBNs from title-and-author searches for curator review.
+
 - Added Chicago author–date, APA, MLA, Cite Them Right Harvard and Vancouver formats for common books and journal articles.
 - Added prefix and locator syntax, editable endnote headings, formatted reference parts and lettered occurrence links.
 - Added HTML and Markdown compilation, fragment rebasing and a JSON command for build tools.

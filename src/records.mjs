@@ -166,6 +166,7 @@ export function normalizeRecord(input) {
   const title = cleanText(input.title);
   const abstract = cleanText(input.abstract?.text);
   const abstractSource = cleanText(input.abstract?.source);
+  const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
   const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText"];
   return {
@@ -176,6 +177,7 @@ export function normalizeRecord(input) {
     citationParts: array(input.citationParts).flatMap(part => typeof part?.text === "string" && part.text
       ? [{ text: part.text, ...(["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }) }] : []),
     issued: dateParts(input.issued),
+    ...(originalIssued && { originalIssued }),
     online: dateParts(input.online),
     print: dateParts(input.print),
     retrievedAt: stamp(input.retrievedAt),
@@ -220,7 +222,7 @@ export function toCSL(record) {
   const date = parts => parts && { "date-parts": [parts] };
   return Object.fromEntries(Object.entries({
     id: record.id, type: record.type, title: record.title, author: record.authors,
-    issued: date(record.issued), "container-title": record.containerTitle, publisher: record.publisher,
+    issued: date(record.issued), "original-date": date(record.originalIssued), "container-title": record.containerTitle, publisher: record.publisher,
     volume: record.volume, issue: record.issue, page: record.pages || record.articleNumber,
     edition: record.edition, DOI: id("doi"), ISBN: id("isbn"), PMID: id("pmid"), PMCID: id("pmcid"),
     URL: record.locations.find(item => ["publisher", "repository"].includes(item.kind))?.url || id("url")
