@@ -111,6 +111,7 @@ const result = compiler.compile(
       <h2 id="guide-formats">Styles and existing markup</h2>
       <p>Choose <code>chicago-author-date</code>, <code>apa</code>, <code>mla</code>, <code>harvard</code> (Cite Them Right), <code>vancouver</code>, or <code>default</code>. The named styles cover common books and journal articles. Set <code>endnotesHeading</code> to a heading such as References or Works Cited.</p>
       <p>In Chicago author–date, set the same <code>id</code> on an author in each record to identify a single person across bylines such as Richard Wrangham and Richard W. Wrangham. The bibliography keeps each record’s spelling.</p>
+      <p>Keep the default <code>suffixScope: "fragment"</code> for articles with independent reference lists. Use <code>suffixScope: "cache"</code> for pages that share one bibliography, such as chapters of an online book. The compiler reports when a year letter in a page’s endnotes has a companion work outside those endnotes.</p>
       <p>With npm dependencies installed, compile trusted HTML or Markdown using <code>citation-inator/markup</code>, or pass <code>--format html</code> or <code>--format markdown</code> to the CLI. Each directive must stay inside one text node. Use a distinct namespace for each copy of a fragment on the same page.</p>
       <pre><code>import { compileHTML, compileMarkdown, rebaseCitationFragment } from &quot;citation-inator/markup&quot;;
 

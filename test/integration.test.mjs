@@ -420,7 +420,15 @@ test("cache-wide suffixes survive different citation subsets without expanding t
   assert.deepEqual(one.cache.records.map(record => record.id), ["ostrom"]);
   assert.doesNotMatch(one.html, /Another work/);
   assert.match(one.html, /1990b\./);
-  assert.deepEqual(labels(compileCitations("{citation ostrom}", data, { ...options, suffixScope: "fragment" }).html), ["Ostrom 1990"]);
+  assert.deepEqual(one.diagnostics.map(({ state, records, missingRecords }) => ({ state, records, missingRecords })), [
+    { state: "cache-suffix-missing-companions", records: ["ostrom"], missingRecords: ["ostrom-other"] }
+  ]);
+  assert.deepEqual(both.diagnostics, []);
+  assert.deepEqual(compileCitations("{citation ostrom}\n\n{citation nocite ostrom-other}", data, options).diagnostics, []);
+  assert.equal(compileCitations("{citation ostrom}\n\n{citation list ostrom-other}", data, options).diagnostics.length, 1);
+  const fragment = compileCitations("{citation ostrom}", data, { ...options, suffixScope: "fragment" });
+  assert.deepEqual(labels(fragment.html), ["Ostrom 1990"]);
+  assert.deepEqual(fragment.diagnostics, []);
 });
 
 test("reading list annotations stay with each record and are absent from endnotes", () => {

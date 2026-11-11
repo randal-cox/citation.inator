@@ -568,9 +568,16 @@ export function compileCitationBlocks(blocks, cache, {
     bibliographyYear(a, citationStyle) - bibliographyYear(b, citationStyle) ||
     compare(titleFor(a), titleFor(b)) || compare(a.id, b.id);
   if (citationStyle !== "vancouver") entries.sort(referenceOrder);
-  const numbering = suffixScope === "cache" && !["mla", "vancouver"].includes(citationStyle)
+  const cacheWideSuffixes = suffixScope === "cache" && !["mla", "vancouver"].includes(citationStyle);
+  const numbering = cacheWideSuffixes
     ? [...index.byId.values()].map(record => used.get(record.id) || { record, suffix: "" }).sort(referenceOrder)
     : entries;
+  const pageReferences = new Set();
+  if (cacheWideSuffixes) {
+    for (const local of localEntries.values()) {
+      for (const id of local.keys()) pageReferences.add(id);
+    }
+  }
   const shared = new Map();
   if (citationStyle === "chicago-author-date") {
     const surnames = new Map();
@@ -629,6 +636,17 @@ export function compileCitationBlocks(blocks, cache, {
       }
     } else if (citationStyle !== "vancouver") {
       group.forEach((entry, index) => { entry.suffix = suffixAt(index); });
+      if (cacheWideSuffixes) {
+        const ids = group.map(({ record }) => record.id);
+        const records = ids.filter(id => pageReferences.has(id));
+        const missingRecords = ids.filter(id => !pageReferences.has(id));
+        if (records.length && missingRecords.length) {
+          diagnostics.push({
+            state: "cache-suffix-missing-companions", records, missingRecords,
+            message: 'Cache-wide year letters refer to works outside this page’s endnotes. For an independent bibliography, use suffixScope: "fragment".'
+          });
+        }
+      }
     }
   }
 
