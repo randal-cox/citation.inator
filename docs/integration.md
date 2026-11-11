@@ -132,6 +132,20 @@ Set `citationStyle` in the compiler options, or pass `--style` on the CLI. Set `
 
 Use `locator:34` for a page or `locator:"34–36"` for a range. APA, Harvard and Vancouver supply `p.` or `pp.` for bare numbers and ranges. You can write a labeled locator such as `locator:"chap. 2"` to keep that wording. Vancouver numbers references by first mention and reuses that number for repeat mentions. Chicago, APA, Harvard and the default format add deterministic year suffixes where author–year labels collide. The named styles focus on books and journal articles. Titles keep their supplied spelling and capitalization. Set `apaTitle` for a sentence-cased title in APA while keeping the source title in `title`. Use editorial text for style-specific edge cases such as APA citations whose different author lists shorten to the same names. Check venue-specific rules and supply editorial formatting for source types or metadata beyond the built-in fields. For Vancouver, supply a journal’s established abbreviation as `containerAbbreviation` and a book’s publication city as `publisherPlace` where known.
 
+### Shared excerpts, scoped endnotes, and reading lists
+
+Compile a reusable card with `references: "isolated"`, or mark individual items with `| isolated`. These citations retain their configured style and inspector metadata. They emit no citation IDs, backlinks, or endnotes. Set `isolatedHref: "/references#{id}"` to link each citation to a host-provided fallback target. Without a template, citation.inator uses a known identifier URL or source location when available. Isolated fragments omit interactive evidence and credit links. Multiple inspectors with the same-origin `data-cache` URL share one fetch per page.
+
+Place `{citation endnote | scope:since-last}` on its own line or paragraph at the end of each entry. Its list and backlinks belong to that entry. When scoped markers are used, each endnote marker closes a scope and any trailing citations get a final list. The compiler assigns author-year suffixes across the fragment.
+
+Place `{citation list id1; id2; id3}` on its own line or paragraph to render a reading list. The list uses the chosen style, reference formatting, access links, and an **Inspect** action for each record. It preserves input order unless you add `| sort:author` or `| sort:year`. A list leaves the endnotes alone. Use `{citation nocite id1}` to add a source to the current endnotes without an inline citation.
+
+### Chicago names, groups, and legislation
+
+A literal author can supply an inline short form, for example `{"literal": "Office of the Director of National Intelligence", "short": "ODNI"}`. Chicago keeps the full name in references. It adds initials to distinguish different named authors with the same surname within a fragment. Set `inlineAuthor` on a record to override the inline byline. Adjacent Chicago citations of the same author in a group share the author name where the items have no locator, prefix, or custom label. Adjacent `form:suppress-author` items join their years with commas.
+
+For an act or bill, use `type: "legislation"`, `title`, and `issued`. Supply `jurisdiction`, `number`, and `session` as applicable. Use `legalCitation` for a complete legal locator such as `Pub. L. No. 103-43, 107 Stat. 122` and an HTTPS identifier for the official text. The Chicago author-date preset uses the law's name and year in prose and puts the locator in the reference. Use `inlineAuthor` for a familiar short title or `citationParts` for an editorial reference that follows local legal citation practice. [Chicago on laws, bills, and state legislation](https://www.chicagomanualofstyle.org/book/ed18/part3/ch14/toc.html)
+
 ## Compile existing HTML or Markdown
 
 With npm dependencies installed, use these Node imports. From a source checkout, the same functions are available in `src/markup.mjs`.
@@ -196,9 +210,9 @@ Use `originalIssued` for the original work and `issued` for the edition you cons
 }
 ```
 
-The Chicago preset produces `(Durkheim [1912] 1995)` inline and `Durkheim, Émile. (1912) 1995.` at the start of the reference. APA produces `(Durkheim, 1912/1995)` and an original-publication note. Supply `label` or `citationParts` for a house style with different punctuation.
+The Chicago preset produces `(Durkheim [1912] 1995)` inline and `Durkheim, Émile. (1912) 1995.` at the start of the reference. APA produces `(Durkheim, 1912/1995)` and an original-publication note. For Chicago, set `reprintYear: "original"` for `(Durkheim 1912)`, `"edition"` for `(Durkheim 1995)`, or `"both"` for the default bracketed form. The reference keeps both dates. Supply `label` or `citationParts` for a house style with different punctuation.
 
-For editorial bibliography text, provide `citationParts` in the style the page uses. Each part has `text` and optional `emphasis: "italic"` or `"bold"`. Text is escaped and the same formatting appears in the panel and endnotes. For an author–date suffix, write the year as `1990.` in Chicago or `(1990)` in the other author–date formats so the compiler can insert the letter.
+For editorial bibliography text, provide `citationParts` in the style the page uses. Each part has `text` and optional `emphasis: "italic"` or `"bold"`. Add an HTTPS `href` to link that part in both the reference and panel. Other schemes leave the text unlinked. Text is escaped and the same formatting appears in the panel and endnotes. For an author–date suffix, write the year as `1990.` in Chicago or `(1990)` in the other author–date formats so the compiler can insert the letter.
 
 ```json
 {
@@ -216,7 +230,7 @@ For editorial bibliography text, provide `citationParts` in the style the page u
 
 Use `full-text` for a link you have verified leads to the work’s full text, and `library` for a catalog, lending, or subscription service. These are fields on a record alongside its identifier and other metadata. Both kinds appear in the panel and static endnotes. Pass `accessProviders: ["Open Library", "WorldCat"]` to the initializer, assign `element.accessProviders`, or use `access-providers="Open Library,WorldCat"` on the element. Use the site’s own reader settings to store or load preferences. An empty order list restores the supplied order.
 
-Use `hiddenAccessProviders` independently to hide named services from both the inspector and endnotes. Names match case-insensitively. Assign `element.hiddenAccessProviders = ["JSTOR", "WorldCat"]`, pass that option to the initializer, or write `hidden-access-providers="JSTOR,WorldCat"` on the element. Assign an empty list to show them again. Hiding WorldCat also disables the ISBN catalog shortcut. The ISBN remains visible and can still be copied. Static endnotes without JavaScript show all supplied links.
+Use `hiddenAccessProviders` independently to hide named services from both the inspector and endnotes. Names match case-insensitively. The attribute `hidden-providers`, property `hiddenProviders`, and initializer option `hiddenProviders` are aliases. The shorter attribute takes precedence if both are present. Assign `element.hiddenAccessProviders = ["JSTOR", "WorldCat"]`, pass that option to the initializer, or write `hidden-access-providers="JSTOR,WorldCat"` on the element. Assign an empty list to show them again. Hiding WorldCat also disables the ISBN catalog shortcut. The ISBN remains visible and can still be copied. Static endnotes without JavaScript show all supplied links.
 
 For an abstract, provide an object with `text`, `source`, an optional HTTPS `url`, and optional `kind: "excerpt"`. The browser reads the text from the cache. Use excerpts or full text you have rights to distribute.
 
@@ -258,7 +272,7 @@ The demo uses Crossref for DOI requests and Open Library for ISBN requests. The 
 
 ### Find ISBN candidates by title and author
 
-Use the search API from a server or build tool. The result includes catalog-listed ISBNs, publisher and date when available, the matched work and edition URLs, and provider evidence. The author names come from the matched work. Check that the candidate matches the edition and binding you consulted before adding its ISBN to your own cache. A catalog record can list more than one ISBN.
+Use the search API from a server or build tool. Candidates are ranked on a 0–100 similarity score based on title, author, and requested year. The result includes catalog-listed ISBNs, publisher and date when available, the matched work and edition URLs, and provider evidence. The author names come from the matched work. Check that the candidate matches the edition and binding you consulted before adding its ISBN to your own cache. A catalog record can list more than one ISBN.
 
 ```js
 import { createOpenLibrarySearch } from "citation-inator/openlibrary";
@@ -292,3 +306,16 @@ node scripts/compile.mjs --find-isbns --json < books.json > isbn-candidates.json
 ```
 
 With the npm package installed, use `npm exec -- citation-inator --find-isbns --json` in place of `node scripts/compile.mjs --find-isbns --json`.
+
+
+### Audit citations across a site
+
+Pass a shared cache and the citation-bearing source files to the report command:
+
+```sh
+node scripts/compile.mjs --report citations.json essay.html lexicon.md bibliography.txt
+```
+
+The JSON report lists unused records, unresolved and malformed directives by fragment, duplicate DOI and ISBN claims, and same-title records by the same first author. It also identifies those title groups with differing edition years. The report flags records for review and leaves the source and cache intact. When a duplicate identifier appears in the input, the first claim supplies the lookup used by the report.
+
+For custom notation or mixed build inputs, use `--report --json` and send `{ cache, fragments }` on standard input. Each fragment can supply `name`, `source` or `paragraphs`, `format`, and compiler `options`.

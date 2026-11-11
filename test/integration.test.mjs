@@ -224,7 +224,7 @@ test("reprint records preserve both dates and styles disambiguate their displaye
   assert.match(apa.html, /Original work published 1912/);
   const another = { ...reprint, id: "another-original", originalIssued: [1900] };
   const distinct = compileCitations("{citation durkheim; another-original}", makeCache([reprint, another]), { citationStyle: "chicago-author-date" });
-  assert.deepEqual(labels(distinct.html), ["Durkheim [1912] 1995", "Durkheim [1900] 1995"]);
+  assert.deepEqual(labels(distinct.html), ["Durkheim [1912] 1995", "[1900] 1995"]);
 });
 
 test("ISBN search returns edition-level proposals, coalesces requests and preserves prior proposals through a rate limit", async () => {
@@ -265,4 +265,89 @@ test("ISBN search returns edition-level proposals, coalesces requests and preser
   assert.equal((await search.search(query, { force: true })).state, "error");
   assert.equal(count, 3);
   await assert.rejects(search.search({ title: book.title }), /title and author/);
+});
+
+test("isolated citations can be copied and never enter the enclosing endnotes", () => {
+  const copy = compileCitations("Term {citation ostrom}. {citation credit}", cache, {
+    references: "isolated", isolatedHref: "/references#{id}", citationStyle: "chicago-author-date"
+  });
+  assert.doesNotMatch(copy.html, /\bid=|data-ci-panel|citation-endnotes/);
+  assert.match(copy.html, /href="\/references#ostrom"/);
+  assert.deepEqual(copy.cache.records.map(record => record.id), ["ostrom"]);
+  const mixed = compileCitations("{citation ostrom | isolated} and {citation study}", cache);
+  assert.doesNotMatch(mixed.html, /cit-note-ostrom|cit-cite-ostrom/);
+  assert.match(mixed.html, /cit-note-study/);
+  assert.throws(() => compileCitations("{citation ostrom}", cache, { isolatedHref: "//example.org/" }), /relative path/);
+});
+
+test("scoped endnotes use local backlinks and a shared suffix table", () => {
+  const edition = { ...book, id: "ostrom-other", title: "Another work", identifiers: [] };
+  const source = "<section><p>{citation ostrom}</p><p>{citation endnote | scope:since-last}</p></section>" +
+    "<section><p>{citation ostrom; ostrom-other}</p><p>{citation endnote | scope:since-last}</p></section>";
+  const result = compileHTML(source, makeCache([book, edition]), { namespace: "terms", citationStyle: "chicago-author-date" });
+  assert.deepEqual(labels(result.html), ["Ostrom 1990b", "Ostrom 1990b", "1990a"]);
+  assert.match(result.html, /id="terms-note-ostrom"[^]*href="#terms-cite-ostrom-1"/);
+  const second = result.html.slice(result.html.indexOf('id="terms-scope-2-endnotes"'));
+  assert.match(second, /href="#terms-cite-ostrom-2"/);
+  assert.doesNotMatch(second, /href="#terms-cite-ostrom-1"/);
+  assert.match(rebaseCitationFragment(result.html, "terms", "copy"), /href="#copy-scope-2-note-ostrom"/);
+});
+
+test("reading lists and nocite share formatting without creating inline citations", () => {
+  const linked = { ...article, citationParts: [
+    { text: "Published entry ", emphasis: "italic" },
+    { text: "paper", href: "https://example.org/paper" },
+    { text: " unsafe link", href: "http://example.org/old" }
+  ] };
+  const result = compileMarkdown("{citation list ostrom; study | sort:year}\n\n{citation nocite ostrom}", makeCache([book, linked]), {
+    citationStyle: "chicago-author-date"
+  });
+  assert.match(result.html, /<ol class="citation-reference-list"/);
+  assert.ok(result.html.indexOf("Published entry") < result.html.indexOf("Governing the Commons"));
+  assert.match(result.html, /<a href="https:\/\/example.org\/paper"[^>]*>paper<\/a> unsafe link/);
+  assert.doesNotMatch(result.html, /http:\/\/example.org\/old|cit-cite-|cit-note-study/);
+  assert.match(result.html, /cit-note-ostrom/);
+  assert.doesNotMatch(result.html, /<p>\s*<ol/);
+});
+
+test("Chicago uses reprint house styles, organization short forms and surname initials", () => {
+  const law = { id: "law", type: "legislation", state: "resolved", title: "NIH Revitalization Act", issued: [1993],
+    number: "Pub. L. No. 103-43", legalCitation: "Pub. L. No. 103-43, 107 Stat. 122", jurisdiction: "United States" };
+  const org = { ...article, id: "agency", issued: [2015], authors: [{ literal: "Office of the Director of National Intelligence", short: "ODNI" }] };
+  const victor = { ...book, id: "victor", identifiers: [], issued: [1969], authors: [{ given: "Victor", family: "Turner" }] };
+  const edith = { ...victor, id: "edith", issued: [2012], authors: [{ given: "Edith", family: "Turner" }] };
+  const reprint = { ...victor, id: "reprint", issued: [1995], originalIssued: [1912], authors: [{ given: "Émile", family: "Durkheim" }] };
+  const options = { citationStyle: "chicago-author-date", reprintYear: "original" };
+  const data = makeCache([law, org, victor, edith, reprint]);
+  const result = compileCitations("{citation law; agency; victor; edith; reprint}. {citation victor | form:suppress-author; edith | form:suppress-author}.", data, options);
+  assert.deepEqual(labels(result.html), ["NIH Revitalization Act 1993", "ODNI 2015", "V. Turner 1969", "E. Turner 2012", "Durkheim 1912", "1969", "2012"]);
+  assert.match(result.html, /NIH Revitalization Act\. 1993\. Pub\. L\. No\. 103-43, 107 Stat\. 122/);
+  assert.match(result.html, /Office of the Director of National Intelligence\. 2015/);
+  assert.match(result.html, /Durkheim, Émile\. \(1912\) 1995\./);
+  assert.deepEqual(labels(compileCitations("{citation victor}", data, options).html), ["Turner 1969"]);
+  assert.deepEqual(labels(compileCitations("{citation reprint}", data, { ...options, reprintYear: "edition" }).html), ["Durkheim 1995"]);
+  const other = { ...reprint, id: "other-ref", title: "Earlier in the alphabet", issued: [2001] };
+  const collision = compileCitations("{citation other-ref; reprint}", makeCache([other, reprint]), options);
+  assert.deepEqual(labels(collision.html), ["Durkheim 1912a", "1912b"]);
+  assert.match(collision.html, /\(1912\) 2001a\./);
+  assert.match(collision.html, /\(1912\) 1995b\./);
+
+});
+
+test("cross-fragment CLI report finds duplicate ISBNs, unused records and conflicting years", () => {
+  const duplicate = { ...book, id: "other-edition", issued: [1991], identifiers: [{ scheme: "isbn", value: "0521405998" }] };
+  const input = {
+    cache: { ...cache, records: [...cache.records, duplicate] },
+    fragments: [
+      { name: "article.html", format: "html", source: "<p>{citation ostrom}</p><pre>{citation study}</pre>" },
+      { name: "terms.md", format: "markdown", source: "Unknown {citation missing}." }
+    ]
+  };
+  const run = spawnSync(process.execPath, ["scripts/compile.mjs", "--report", "--json"], { input: JSON.stringify(input), encoding: "utf8" });
+  assert.equal(run.status, 0, run.stderr);
+  const report = JSON.parse(run.stdout);
+  assert.deepEqual(report.unused.map(record => record.id), ["study", "other-edition"]);
+  assert.deepEqual(report.unresolved, [{ fragment: "terms.md", identifier: "local:missing" }]);
+  assert.ok(report.duplicates.some(group => group.identifier === "isbn:9780521405997"));
+  assert.deepEqual(report.yearConflicts[0].records.map(record => record.year), [1990, 1991]);
 });

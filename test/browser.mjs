@@ -74,6 +74,22 @@ try {
   };
 
   await page.goto(origin + "/demos/static/");
+  const geometry = await page.evaluate(() => {
+    const intro = document.querySelector(".intro");
+    const prose = document.querySelector(".reading citation-inspector > p");
+    const notes = document.querySelector(".reading .citation-endnotes");
+    const help = document.querySelector(".demo-help button");
+    const circle = getComputedStyle(help, "::before");
+    return {
+      introFillsMain: Math.abs(intro.offsetWidth - intro.parentElement.clientWidth) < 2,
+      notesMatchProse: Math.abs(notes.offsetWidth - prose.offsetWidth) < 2,
+      proseFillsArticle: prose.offsetWidth > prose.closest(".reading").clientWidth * .9,
+      circleWidth: circle.width, circleHeight: circle.height
+    };
+  });
+  assert.ok(geometry.introFillsMain && geometry.proseFillsArticle && geometry.notesMatchProse);
+  assert.equal(geometry.circleWidth, geometry.circleHeight);
+
   assert.equal(await page.getByRole("link", { name: "citation.inator", exact: true }).locator("svg").count(), 1);
   await primary.and(page.getByRole("button")).waitFor();
   await primary.click();
@@ -199,7 +215,11 @@ try {
   await dialogHeading.press("ArrowRight");
   assert.ok((await panel.boundingBox()).x > moved.x);
   await dialogHeading.press("Home");
-  assert.ok(Math.abs((await panel.boundingBox()).x - start.x) < 12);
+  const reset = await panel.boundingBox();
+  await page.keyboard.press("Escape");
+  await primary.click();
+  await panel.waitFor();
+  assert.ok(Math.abs((await panel.boundingBox()).x - reset.x) < 2, "Home resets to the click position");
   await page.keyboard.press("Escape");
   await style.selectOption("midnight");
   assert.deepEqual(await hostAppearance(), baseAppearance);
@@ -223,7 +243,7 @@ try {
   }
   await evidenceLink.click();
   await evidencePanel.waitFor();
-  await evidencePanel.getByText("Source metadata").click();
+  assert.ok(await evidencePanel.locator("pre").isVisible());
   assert.ok(await evidencePanel.getByText(/Cambridge University Press/).isVisible());
   assert.equal(await evidencePanel.locator("pre").getAttribute("tabindex"), "0");
   await page.keyboard.press("Escape");
@@ -487,7 +507,7 @@ try {
   assert.deepEqual(errors, []);
   await page.getByRole("button", { name: "Citation evidence" }).press("Enter");
   const hostileEvidence = page.getByRole("dialog", { name: "Citation evidence" });
-  await hostileEvidence.getByText("Source metadata").click();
+  assert.ok(await hostileEvidence.locator("pre").isVisible());
   assert.match(await hostileEvidence.locator("pre").textContent(), /<img src=x onerror=alert/);
   assert.equal(await hostileEvidence.locator("img:not(.citation-brand-icon)").count(), 0);
   await page.keyboard.press("Escape");
@@ -507,7 +527,7 @@ try {
   assert.match(await status.textContent(), /Cache stale/);
   await page.getByRole("button", { name: "Citation evidence" }).press("Enter");
   const runtimeEvidence = page.getByRole("dialog", { name: "Citation evidence" });
-  await runtimeEvidence.getByText("Provider response and merge decisions").click();
+  assert.equal(await runtimeEvidence.locator("pre").getAttribute("aria-label"), "Provider response and merge decisions");
   assert.ok(await runtimeEvidence.getByText(/Synthetic provider outage/).isVisible());
   await page.keyboard.press("Escape");
   assert.match(await page.locator("#live-reader").textContent(), /Simas/);
@@ -581,7 +601,9 @@ try {
   await liveStyle.selectOption("default");
 
   await page.getByRole("button", { name: "Citation evidence" }).press("Enter");
-  assert.ok(await page.getByRole("dialog", { name: "Citation evidence" }).getByText("Cached source metadata").isVisible());
+  const cachedEvidence = page.getByRole("dialog", { name: "Citation evidence" }).locator("pre");
+  assert.ok(await cachedEvidence.isVisible());
+  assert.equal(await cachedEvidence.getAttribute("aria-label"), "Cached source metadata");
   await page.keyboard.press("Escape");
 
   const adoptionRecord = {
@@ -650,6 +672,53 @@ try {
   assert.equal(await softwareCredits.locator(".adoption-brand-icon:visible").count(), 0);
   await page.keyboard.press("Escape");
   assert.equal(await adopter.getAttribute("open"), null);
+  const excerpt = compileHTML("<p>Repeated definition {citation adoption-book}</p>", makeCache([adoptionRecord]), {
+    references: "isolated", isolatedHref: "/lexicon.html#work", citationStyle: "chicago-author-date"
+  });
+  const linkedList = compileHTML("<p>{citation list adoption-book}</p>", makeCache([{
+    ...adoptionRecord, citationParts: [{ text: "Editorial reference: " }, { text: "source page", href: "https://example.org/source" }]
+  }]), { citationStyle: "chicago-author-date" });
+  await writeFile(join(temporary, "lexicon-cache.json"), JSON.stringify(linkedList.cache));
+  await writeFile(join(temporary, "lexicon.html"), `<!doctype html><html lang="en"><head>
+    <meta charset="utf-8"><title>Lexicon</title><link rel="stylesheet" href="./citation-inspector.css">
+    <script type="module" src="./citation-inspector.mjs"></script></head><body>
+    <main><h1>Lexicon</h1><p id="work">Work</p>
+    <citation-inspector data-cache="./lexicon-cache.json">${excerpt.html.repeat(2)}</citation-inspector>
+    <citation-inspector data-cache="./lexicon-cache.json" hidden-providers="WorldCat">${excerpt.html}${linkedList.html}</citation-inspector>
+    </main></body></html>`);
+  const beforeCopies = requests.length;
+  await page.goto(copied + "/lexicon.html");
+  const copies = page.getByRole("button", { name: "Inspect citation: Ostrom 1990", exact: true });
+  await copies.nth(2).waitFor();
+  assert.equal(await copies.count(), 3);
+  assert.equal(requests.slice(beforeCopies).filter(url => url.endsWith("/lexicon-cache.json")).length, 1);
+  assert.equal(await page.evaluate(() => document.querySelectorAll("citation-inspector [id]").length), 0);
+  assert.equal(await page.locator(".citation-endnotes").count(), 0);
+  for (const copy of await copies.all()) {
+    await copy.press("Enter");
+    assert.ok(await panel.getByRole("heading", { name: "Governing the Commons" }).isVisible());
+    assert.equal(await panel.getByRole("button", { name: "Go to endnote" }).count(), 0);
+    await page.keyboard.press("Escape");
+  }
+  const list = page.locator(".citation-reference-list");
+  assert.equal(await list.getByRole("link", { name: "Find at WorldCat" }).count(), 0);
+  await list.getByRole("button", { name: /Inspect reference: Governing/ }).click();
+  assert.equal(await panel.getByRole("link", { name: "source page" }).getAttribute("href"), "https://example.org/source");
+  await page.keyboard.press("Escape");
+  await page.locator("citation-inspector").last().evaluate(reader => reader.removeAttribute("hidden-providers"));
+  assert.equal(await list.getByRole("link", { name: "Find at WorldCat" }).count(), 1);
+  const staticContext = await browser.newContext({ javaScriptEnabled: false });
+  try {
+    const staticPage = await staticContext.newPage();
+    await staticPage.goto(copied + "/lexicon.html");
+    assert.equal(await staticPage.getByRole("link", { name: "Find at WorldCat" }).count(), 1);
+    const fallback = staticPage.getByRole("link", { name: "Ostrom 1990" }).last();
+    assert.equal(await fallback.getAttribute("href"), "/lexicon.html#work");
+    await fallback.click();
+    assert.match(staticPage.url(), /lexicon\.html#work$/);
+  } finally {
+    await staticContext.close();
+  }
   await page.goto(origin + "/demos/dynamic/");
 
   if (process.env.CITATION_ZOOM_CHROME) {

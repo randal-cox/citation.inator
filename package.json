@@ -4,6 +4,10 @@
   "description": "Portable citations, endnotes, and source inspection",
   "type": "module",
   "license": "MIT",
+  "author": {
+    "name": "Randal Cox",
+    "url": "https://orcid.org/0009-0002-3427-7190"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/randal-cox/citation.inator.git"

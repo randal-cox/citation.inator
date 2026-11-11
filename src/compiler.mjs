@@ -1,7 +1,7 @@
 import { defaultClassPrefix, partClassNames, validateClassPrefix } from "./class-names.mjs";
 import packageInfo from "../package.json" with { type: "json" };
 import { iconMarkup } from "./icons.mjs";
-import { canonicalIdentifierKey, identifierURL, localRecordId, normalizeIdentifier, normalizeRecord, readCache } from "./records.mjs";
+import { canonicalIdentifierKey, httpsURL, identifierURL, localRecordId, normalizeIdentifier, normalizeRecord, readCache } from "./records.mjs";
 
 const forms = new Set(["parenthetical", "narrative", "author-only", "suppress-author", "suppress-year"]);
 const parentheticalForms = new Set(["parenthetical", "suppress-author", "suppress-year"]);
@@ -28,8 +28,12 @@ function parseItem(text) {
   let hint = "";
   const affixes = {};
   let formSpecified = false;
+  let isolated = false;
   for (const option of options) {
-    if (option.startsWith("form:")) {
+    if (option === "isolated") {
+      if (isolated) return null;
+      isolated = true;
+    } else if (option.startsWith("form:")) {
       const requested = option.slice(5).trim();
       if (formSpecified || !forms.has(requested)) return null;
       form = requested;
@@ -50,7 +54,7 @@ function parseItem(text) {
     } else if (option && !hint) hint = unescape(option);
     else return null;
   }
-  return { identifier, form, label, hint, ...affixes };
+  return { identifier, form, label, hint, ...(isolated && { isolated }), ...affixes };
 }
 
 function validateKeyword(citationKeyword) {
@@ -70,7 +74,17 @@ export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
     cursor = match.index + raw.length;
     if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
     else if (raw === "{endnotes}") tokens.push({ type: "endnotes", raw });
-    else if (match[1] === citationKeyword && match[2].trim() === "endnote") tokens.push({ type: "endnotes", raw });
+    else if (match[1] === citationKeyword && /^endnote(?:\s*\|\s*scope:since-last)?$/.test(match[2].trim())) {
+      tokens.push({ type: "endnotes", scoped: match[2].includes("|"), raw });
+    } else if (match[1] === citationKeyword && /^(?:list|nocite)[ \t]/.test(match[2].trim())) {
+      const [, type, body] = /^(list|nocite)\s+(.+)$/.exec(match[2].trim()) || [];
+      const [keys, ...options] = split(body || "", "|");
+      const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
+      const identifiers = split(keys, ";").map(key => normalizeIdentifier(unescape(key)));
+      if (identifiers.every(Boolean) && (!options.length || type === "list" && options.length === 1 && sort)) {
+        tokens.push({ type, items: identifiers.map(identifier => ({ identifier })), sort, raw });
+      } else tokens.push({ type: "text", text: raw, malformed: true });
+    }
     else if (match[1] === citationKeyword && Object.hasOwn(annotationNames, match[2].trim())) {
       tokens.push({ type: "annotation", name: match[2].trim(), raw });
     } else {
@@ -85,7 +99,7 @@ export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
 }
 
 const name = author => author.literal || author.family;
-const sortName = record => record.authors.map(name).join("\u001f") || record.title || record.original;
+const sortName = record => (record.type === "legislation" ? record.title : record.authors.map(name).join("\u001f")) || record.title || record.original;
 const compare = (a, b) => {
   const left = a.normalize("NFKC").toLowerCase();
   const right = b.normalize("NFKC").toLowerCase();
@@ -99,11 +113,16 @@ const originalYear = record => record.originalIssued?.[0];
 const hasReprintDate = record => originalYear(record) < record.issued?.[0];
 const bibliographyYear = (record, style) =>
   (style === "chicago-author-date" && hasReprintDate(record) ? originalYear(record) : record.issued?.[0]) ?? 0;
-function citationYear(record, suffix, style, bibliography = false) {
+function citationYear(record, suffix, style, bibliography = false, reprintYear = "both") {
   const year = yearFor(record);
   const dated = year + suffixFor(year, suffix, style);
   if (!hasReprintDate(record)) return dated;
-  if (style === "chicago-author-date") return bibliography ? `(${originalYear(record)}) ${dated}` : `[${originalYear(record)}] ${dated}`;
+  if (style === "chicago-author-date") {
+    if (bibliography) return `(${originalYear(record)}) ${dated}`;
+    if (reprintYear === "original") return `${originalYear(record)}${suffix}`;
+    if (reprintYear === "edition") return dated;
+    return `[${originalYear(record)}] ${dated}`;
+  }
   if (!bibliography && ["apa", "default", "harvard"].includes(style)) return `${originalYear(record)}/${dated}`;
   return dated;
 }
@@ -140,6 +159,11 @@ function defaultBibliography(record, suffix = "") {
 
 function chicagoBibliography(record, suffix) {
   const { authors, type, containerTitle, publisher, edition } = record;
+  if (type === "legislation") {
+    const citation = [record.legalCitation || [record.number, record.session].filter(Boolean).join(", "), record.jurisdiction].filter(Boolean);
+    const url = identifierURL(record.identifiers.find(item => item.scheme === "url"));
+    return [{ text: `${titleFor(record)}. ${yearFor(record)}${suffix}.${citation.length ? ` ${citation.join(", ")}.` : ""}${url ? ` ${url}` : ""}` }];
+  }
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
   const fullName = (author, first) => author.literal || (first
@@ -292,7 +316,18 @@ export function bibliographyText(record, suffix = "", style = "default") {
   return bibliographyParts(record, suffix, style).map(part => part.text).join("");
 }
 
-function styleAuthor(record, style, narrative = false) {
+const identity = author => JSON.stringify([author.literal, author.family, author.given].map(value => (value || "").normalize("NFKC").toLowerCase()));
+function styleAuthor(record, style, narrative = false, shared = new Set()) {
+  if (record.inlineAuthor) return record.inlineAuthor;
+  if (record.type === "legislation") return titleFor(record);
+  if (style === "chicago-author-date" && record.authors.length) {
+    const names = record.authors.map(author => {
+      if (author.literal) return author.short || author.literal;
+      const initials = author.given?.match(/\p{L}[\p{L}\p{M}]*/gu)?.map(word => `${[...word][0]}.`).join(" ");
+      return shared.has(identity(author)) && initials ? `${initials} ${author.family}` : author.family;
+    });
+    return names.length > 2 ? `${names[0]} et al.` : names.join(" and ");
+  }
   if (style === "harvard" && record.authors.length === 3) {
     const [first, second, third] = record.authors.map(name);
     return `${first}, ${second} and ${third}`;
@@ -308,13 +343,13 @@ function pageLocator(item, style) {
   return location ? `, ${location}` : "";
 }
 
-function inlineText({ record, suffix, number, titleLabel }, item, style) {
+function inlineText({ record, suffix, number, titleLabel, chicagoAuthor }, item, style, reprintYear) {
   if (item.label) return item.label;
   const qualify = text => `${item.prefix ? item.prefix + " " : ""}${text}`;
   if (style === "vancouver") return qualify(`${number}${pageLocator(item, style)}`);
   if (record.state === "unresolved") return qualify(item.hint || "Unresolved citation");
-  const year = citationYear(record, suffix, style);
-  let author = styleAuthor(record, style, item.form !== "parenthetical");
+  const year = citationYear(record, suffix, style, false, reprintYear);
+  let author = chicagoAuthor ?? styleAuthor(record, style, item.form !== "parenthetical");
   if (style === "mla") {
     const location = [titleLabel, item.locator].filter(Boolean).join(" ");
     if (item.form === "suppress-author") return qualify(location || shortTitle(record));
@@ -380,8 +415,10 @@ function occurrenceContext(block, index, item, record) {
 function annotationContent(name, namespace, records, part) {
   let content;
   if (name === "credit") {
-    const citation = `citation.inator contributors. (2026). citation.inator (Version ${packageInfo.version}) [Computer software].`;
-    content = `<p>citation.inator · Portable Citation Inspector</p><p>The software uses the MIT license. Cited material retains its own terms.</p><h3>How to cite this software</h3><p>${escapeHTML(citation)}</p>`;
+    const repository = httpsURL(packageInfo.repository.url.replace(/^git\+/, "").replace(/\.git$/, ""));
+    const author = packageInfo.author;
+    const citation = `Cox, R. (2026). citation.inator (Version ${packageInfo.version}) [Computer software]. ${repository}`;
+    content = `<p>citation.inator · Portable Citation Inspector</p><p>The software uses the MIT license. Cited material retains its own terms.</p><h3>How to cite this software</h3><p>${escapeHTML(citation)}</p><p><a href="${escapeHTML(httpsURL(author.url))}">${escapeHTML(author.name)} (ORCID)</a> · <a href="${escapeHTML(repository)}">GitHub repository</a></p>`;
   } else {
     const sources = records.map(record => ({
       title: titleFor(record), state: record.state, identifiers: record.identifiers,
@@ -389,72 +426,120 @@ function annotationContent(name, namespace, records, part) {
       version: record.version, retrievedAt: record.retrievedAt, provenance: record.provenance,
       ...(record.note && { note: record.note })
     }));
-    const summary = records.length ? "Sources for the citations on this page." : "No citations on this page.";
-    content = `<p data-ci-evidence-summary>${summary}</p><details><summary>Source metadata</summary><pre data-ci-evidence-details tabindex="0" aria-label="Source metadata">${escapeHTML(JSON.stringify(sources, null, 2))}</pre></details>`;
+    content = `<pre data-ci-evidence-details tabindex="0" aria-label="Source metadata">${escapeHTML(JSON.stringify(sources, null, 2))}</pre>`;
   }
   return `<section ${part("annotation-content")} id="${namespace}-${name}" tabindex="-1" aria-label="${annotationNames[name]}"><h2>${annotationNames[name]}</h2><div data-ci-annotation-body>${content}</div></section>`;
 }
 
-export function createCitationCompiler({ citationKeyword = "citation", classPrefix = defaultClassPrefix, citationStyle = "default", endnotesHeading = "Endnotes" } = {}) {
+export function createCitationCompiler({ citationKeyword = "citation", classPrefix = defaultClassPrefix, ...defaults } = {}) {
   validateKeyword(citationKeyword);
   validateClassPrefix(classPrefix);
   return {
     parse: source => parseDirectives(source, { citationKeyword }),
-    compile: (source, cache, options) => compileCitations(source, cache, { citationStyle, endnotesHeading, ...options, citationKeyword, classPrefix })
+    compile: (source, cache, options) => compileCitations(source, cache, { ...defaults, ...options, citationKeyword, classPrefix })
   };
 }
 
 export function compileCitations(source, cache, options = {}) {
-  const { citationKeyword, namespace, classPrefix, citationStyle, endnotesHeading } = options;
+  const { citationKeyword } = options;
   const paragraphs = Array.isArray(source) ? source : typeof source === "string" ? source.trim().split(/\r?\n(?:[ \t]*\r?\n)+/) : null;
   if (!paragraphs || !paragraphs.every(paragraph => typeof paragraph === "string")) throw new TypeError("Supply text or an array of paragraphs.");
   const blocks = paragraphs.map(block => parseDirectives(block, { citationKeyword }));
-  return compileCitationBlocks(blocks, cache, { namespace, classPrefix, citationStyle, endnotesHeading });
+  return compileCitationBlocks(blocks, cache, options);
 }
 
 // The markup adapter supplies trusted markup tokens and text-node edits.
+function safeFallback(value) {
+  if (!value || /[\u0000-\u0020\u007f\\]/.test(value)) return "";
+  const absolute = httpsURL(value);
+  if (absolute) return absolute;
+  if (value.startsWith("//") || /^[a-z][a-z0-9+.-]*:/i.test(value)) return "";
+  return value;
+}
+
+function renderBibliographyPart({ text, emphasis, href }) {
+  const escaped = escapeHTML(text);
+  const formatted = emphasis === "italic" ? `<em>${escaped}</em>` : emphasis === "bold" ? `<strong>${escaped}</strong>` : escaped;
+  return href ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${formatted}</a>` : formatted;
+}
+
 export function compileCitationBlocks(blocks, cache, {
   namespace = "cit", classPrefix = defaultClassPrefix, citationStyle = "default",
-  endnotesHeading = "Endnotes", markup = false, closingMarkup = ""
+  endnotesHeading = "Endnotes", markup = false, closingMarkup = "",
+  references = "endnotes", isolatedHref, reprintYear = "both"
 } = {}) {
   if (!/^[a-z][a-z0-9-]{0,39}$/.test(namespace)) throw new TypeError("Use a stable lowercase document namespace.");
   validateClassPrefix(classPrefix);
   if (!citationStyles.has(citationStyle)) throw new TypeError("Unknown citation style.");
   if (typeof endnotesHeading !== "string" || !endnotesHeading.trim()) throw new TypeError("Supply a nonempty endnotes heading.");
+  if (!["endnotes", "isolated"].includes(references)) throw new TypeError("Use endnotes or isolated references.");
+  if (!["original", "edition", "both"].includes(reprintYear)) throw new TypeError("Use original, edition, or both for reprintYear.");
+  if (isolatedHref !== undefined && (typeof isolatedHref !== "string" || !safeFallback(isolatedHref.replaceAll("{id}", "record")))) {
+    throw new TypeError("Use an HTTPS URL or a relative path for isolatedHref.");
+  }
   const prefixAttribute = classPrefix === defaultClassPrefix ? "" : ` data-citation-prefix="${classPrefix}"`;
   const part = names => `class="${partClassNames(classPrefix, names).join(" ")}" data-citation-part="${names}"${prefixAttribute}`;
   const index = readCache(cache);
   const used = new Map();
   const diagnostics = [];
   const missing = new Map();
-  for (const block of blocks) for (const [indexInBlock, token] of block.entries()) {
-    if (token.malformed) {
-      diagnostics.push({ state: "malformed", source: token.text });
+  const markerFor = block => {
+    const tokens = block.filter(token => token.type !== "text" || token.text.trim());
+    return tokens.length === 1 && tokens[0].type === "endnotes" ? tokens[0] : null;
+  };
+  const scoped = references !== "isolated" && blocks.some(block => markerFor(block)?.scoped);
+  let scope = 0;
+  let nextReferenceNumber = 1;
+  const localEntries = new Map();
+  const includeInNotes = (entry, scope) => {
+    if (!localEntries.has(scope)) localEntries.set(scope, new Map());
+    const local = localEntries.get(scope);
+    if (!local.has(entry.record.id)) local.set(entry.record.id, []);
+    return local.get(entry.record.id);
+  };
+  for (const block of blocks) {
+    const marker = markerFor(block);
+    if (scoped && marker) {
+      marker.scope = scope++;
+      continue;
     }
-    if (token.type !== "citation") continue;
-    for (const item of token.items) {
-      const { identifier } = item;
-      const key = canonicalIdentifierKey(identifier);
-      let record = identifier.scheme === "local" ? index.byId.get(identifier.value) : index.byIdentifier.get(key);
-      if (!record) {
-        if (!missing.has(key)) {
-          const base = localRecordId("missing", key);
-          let id = base;
-          let collision = 0;
-          while (index.byId.has(id) || [...missing.values()].some(candidate => candidate.id === id)) id = `${base}-${++collision}`;
-          missing.set(key, normalizeRecord({
-            id, original: key, state: "unresolved",
-            identifiers: [identifier], note: "No matching record."
-          }));
+    for (const [indexInBlock, token] of block.entries()) {
+      if (token.malformed) diagnostics.push({ state: "malformed", source: token.text });
+      if (!["citation", "list", "nocite"].includes(token.type)) continue;
+      if (token.type === "list" && block.some(other => other !== token && (other.type !== "text" || other.text.trim()))) continue;
+      for (const item of token.items) {
+        const { identifier } = item;
+        const key = canonicalIdentifierKey(identifier);
+        let record = identifier.scheme === "local" ? index.byId.get(identifier.value) : index.byIdentifier.get(key);
+        if (!record) {
+          if (!missing.has(key)) {
+            const base = localRecordId("missing", key);
+            let id = base;
+            let collision = 0;
+            while (index.byId.has(id) || [...missing.values()].some(candidate => candidate.id === id)) id = `${base}-${++collision}`;
+            missing.set(key, normalizeRecord({
+              id, original: key, state: "unresolved",
+              identifiers: [identifier], note: "No matching record."
+            }));
+          }
+          record = missing.get(key);
         }
-        record = missing.get(key);
+        if (record.state === "unresolved") diagnostics.push({ state: "unresolved", identifier: key });
+        if (!used.has(record.id)) used.set(record.id, { record, occurrences: [], suffix: "" });
+        const entry = used.get(record.id);
+        item.entry = entry;
+        item.scope = scope;
+        const local = references !== "isolated" && !item.isolated && token.type !== "list";
+        const occurrences = local ? includeInNotes(entry, scope) : null;
+        if (local && !entry.number) entry.number = nextReferenceNumber++;
+        if (token.type === "citation") {
+          const occurrence = local ? `${namespace}-cite-${record.id}-${entry.occurrences.length + 1}` : null;
+          const detail = { id: occurrence, context: occurrenceContext(block, indexInBlock, item, record), label: item.label };
+          if (occurrence) entry.occurrences.push(detail);
+          occurrences?.push(detail);
+          item.occurrence = occurrence;
+        }
       }
-      if (record.state === "unresolved") diagnostics.push({ state: "unresolved", identifier: key });
-      if (!used.has(record.id)) used.set(record.id, { record, occurrences: [], suffix: "" });
-      const entry = used.get(record.id);
-      const occurrence = `${namespace}-cite-${record.id}-${entry.occurrences.length + 1}`;
-      entry.occurrences.push({ id: occurrence, context: occurrenceContext(block, indexInBlock, item, record), label: item.label });
-      Object.assign(item, { entry, occurrence });
     }
   }
 
@@ -465,14 +550,26 @@ export function compileCitationBlocks(blocks, cache, {
     bibliographyYear(a, citationStyle) - bibliographyYear(b, citationStyle) ||
     compare(titleFor(a), titleFor(b)) || compare(a.id, b.id)
   );
+  const shared = new Set();
+  if (citationStyle === "chicago-author-date") {
+    const surnames = new Map();
+    for (const { record } of entries) for (const author of record.authors) {
+      if (!author.family || !author.given) continue;
+      const key = author.family.normalize("NFKC").toLowerCase();
+      if (!surnames.has(key)) surnames.set(key, new Set());
+      surnames.get(key).add(identity(author));
+    }
+    for (const authors of surnames.values()) if (authors.size > 1) for (const author of authors) shared.add(author);
+  }
   const groups = new Map();
-  for (const [index, entry] of entries.entries()) {
+  for (const entry of entries) {
     const { record } = entry;
-    entry.number = index + 1;
+    entry.number ??= nextReferenceNumber++;
     if (record.state === "unresolved") continue;
     // The rendered author-year must also distinguish two different lists shortened to "et al."
-    const label = styleAuthor(record, citationStyle);
-    const key = JSON.stringify([label.normalize("NFKC").toLowerCase(), citationStyle === "mla" ? null : citationYear(record, "", citationStyle)]);
+    const label = styleAuthor(record, citationStyle, false, shared);
+    if (citationStyle === "chicago-author-date") entry.chicagoAuthor = label;
+    const key = JSON.stringify([label.normalize("NFKC").toLowerCase(), citationStyle === "mla" ? null : citationYear(record, "", citationStyle, false, reprintYear)]);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(entry);
   }
@@ -505,58 +602,100 @@ export function compileCitationBlocks(blocks, cache, {
     }
   }
 
-  const endnotes = `<section ${part("endnotes")} aria-labelledby="${namespace}-endnotes"><h2 id="${namespace}-endnotes">${escapeHTML(endnotesHeading)}</h2><ol>${entries.map(({ record, suffix, occurrences }) => {
-    const parts = bibliographyParts(record, suffix, citationStyle);
-    const text = parts.map(({ text, emphasis }) => {
-      const escaped = escapeHTML(text);
-      if (emphasis === "italic") return `<em>${escaped}</em>`;
-      if (emphasis === "bold") return `<strong>${escaped}</strong>`;
-      return escaped;
-    }).join("");
-    const status = [record.state === "unresolved" ? "Unresolved" : "", record.integrity?.state].filter(Boolean).join(" · ");
-    const links = destinations(record, part);
-    const backlinks = occurrences.map(({ id, context }, index) => {
-      const letter = suffixAt(index);
-      const label = `Return to “${context}” (occurrence ${letter})`;
-      return iconLink(part, `#${id}`, label, "", label, "", letter);
-    }).join("");
-    return `<li id="${namespace}-note-${record.id}" tabindex="-1"><span dir="auto">${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}<div ${part("note-actions")}>${links}<span ${part("backlinks")}>${backlinks}</span></div></li>`;
-  }).join("\n")}</ol></section>`;
+  const scopeName = scope => scope === 0 ? namespace : `${namespace}-scope-${scope + 1}`;
+  const noteID = (record, scope) => `${scopeName(scope)}-note-${record.id}`;
+  const bibliography = ({ record, suffix }) => bibliographyParts(record, suffix, citationStyle);
+  const trigger = (item, label, inspectLabel) => {
+    const { record } = item.entry;
+    const parts = bibliography(item.entry);
+    const text = parts.map(part => part.text).join("");
+    const formatting = parts.some(part => part.emphasis || part.href) ? ` data-ci-bibliography-parts="${escapeHTML(JSON.stringify(parts))}"` : "";
+    const fallback = isolatedHref && safeFallback(isolatedHref.replaceAll("{id}", encodeURIComponent(record.id))) ||
+      record.identifiers.map(identifierURL).find(Boolean) || record.locations[0]?.url;
+    const href = item.occurrence ? "#" + noteID(record, item.scope) : fallback;
+    return `<a ${part("cite")}${item.occurrence ? ` id="${item.occurrence}"` : ""}${href ? ` href="${escapeHTML(href)}"` : ""} data-ci-record="${record.id}"${inspectLabel ? ` data-ci-inspect-label="${escapeHTML(inspectLabel)}" aria-label="${escapeHTML(inspectLabel)}"` : ""} data-ci-bibliography="${escapeHTML(text)}"${formatting} dir="auto">${escapeHTML(label)}</a>`;
+  };
+
+  function referencesHTML(items, scope, list = false) {
+    const local = localEntries.get(scope);
+    if (!items.length) return "";
+    const heading = `${scopeName(scope)}-endnotes`;
+    const rows = items.map(item => {
+      const { record } = item.entry;
+      const text = bibliography(item.entry).map(renderBibliographyPart).join("");
+      const status = [record.state === "unresolved" ? "Unresolved" : "", record.integrity?.state].filter(Boolean).join(" · ");
+      const links = destinations(record, part);
+      const backlinks = (local?.get(record.id) || []).map(({ id, context }, index) => {
+        const letter = suffixAt(index);
+        const label = `Return to “${context}” (occurrence ${letter})`;
+        return iconLink(part, `#${id}`, label, "", label, "", letter);
+      }).join("");
+      const controls = list ? trigger(item, "Inspect", "Inspect reference: " + titleFor(record)) + links
+        : links + `<span ${part("backlinks")}>${backlinks}</span>`;
+      const attrs = list ? "" : ` id="${noteID(record, scope)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
+      return `<li${attrs}><span dir="auto">${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}<div ${part("note-actions")}>${controls}</div></li>`;
+    }).join("\n");
+    return list ? `<ol ${part("reference-list")}>${rows}</ol>` :
+      `<section ${part("endnotes")} aria-labelledby="${heading}"><h2 id="${heading}">${escapeHTML(endnotesHeading)}</h2><ol>${rows}</ol></section>`;
+  }
+  const scopeItems = scope => {
+    const items = entries.filter(entry => localEntries.get(scope)?.has(entry.record.id));
+    if (citationStyle === "vancouver") items.sort((a, b) => a.number - b.number);
+    return items.map(entry => ({ entry }));
+  };
 
   let emittedNotes = false;
   const annotations = new Set();
   const html = blocks.map(tokens => {
     const meaningful = tokens.filter(token => token.type !== "text" || token.text.trim());
-    if (meaningful.length === 1 && meaningful[0].type === "endnotes" && !emittedNotes) {
+    const marker = markerFor(tokens);
+    if (marker && references === "isolated") return "";
+    if (marker && (scoped || !emittedNotes)) {
       emittedNotes = true;
-      return entries.length ? endnotes : "";
+      return referencesHTML(scopeItems(marker.scope ?? 0), marker.scope ?? 0);
+    }
+    if (meaningful.length === 1 && meaningful[0].type === "list") {
+      const token = meaningful[0];
+      const items = [...token.items];
+      if (token.sort) items.sort(({ entry: a }, { entry: b }) => {
+        const byAuthor = compare(sortName(a.record), sortName(b.record));
+        const byYear = bibliographyYear(a.record, citationStyle) - bibliographyYear(b.record, citationStyle);
+        return (token.sort === "author" ? byAuthor || byYear : byYear || byAuthor) || compare(titleFor(a.record), titleFor(b.record));
+      });
+      return referencesHTML(items, 0, true);
     }
     const content = tokens.map(token => {
       if (token.type === "text") return escapeHTML(token.text);
       if (token.type === "markup") return token.text;
-      if (token.type === "endnotes") return escapeHTML(token.raw);
+      if (token.type === "nocite") return "";
+      if (token.type === "endnotes" || token.type === "list") return escapeHTML(token.raw);
       if (token.type === "annotation") {
+        if (references === "isolated") return escapeHTML(annotationNames[token.name]);
         annotations.add(token.name);
         return `<a ${part("cite annotation")} href="#${namespace}-${token.name}" data-ci-panel="${token.name}">${annotationNames[token.name]}</a>`;
       }
+      let previous;
       const citations = token.items.map(item => {
-        const { record, suffix } = item.entry;
-        const label = inlineText(item.entry, item, citationStyle);
-        const parts = bibliographyParts(record, suffix, citationStyle);
-        const text = parts.map(part => part.text).join("");
-        const formatting = parts.some(part => part.emphasis) ? ` data-ci-bibliography-parts="${escapeHTML(JSON.stringify(parts))}"` : "";
-        return `<a ${part("cite")} id="${item.occurrence}" href="#${namespace}-note-${record.id}" data-ci-record="${record.id}" data-ci-bibliography="${escapeHTML(text)}"${formatting} dir="auto">${escapeHTML(label)}</a>`;
-      }).join(citationStyle === "vancouver" ? ", " : "; ");
+        const collapsible = current => current.entry.record.state !== "unresolved" && !current.label && !current.prefix && !current.locator;
+        const sameAuthor = previous && item.form === "parenthetical" && previous.form === "parenthetical" &&
+          item.entry.record.authors.length && JSON.stringify(item.entry.record.authors.map(identity)) === JSON.stringify(previous.entry.record.authors.map(identity)) &&
+          item.entry.chicagoAuthor === previous.entry.chicagoAuthor;
+        const joined = citationStyle === "chicago-author-date" && previous && collapsible(item) && collapsible(previous) &&
+          (sameAuthor || item.form === "suppress-author" && previous.form === "suppress-author");
+        const label = inlineText(item.entry, joined ? { ...item, form: "suppress-author" } : item, citationStyle, reprintYear);
+        const separator = !previous ? "" : joined || citationStyle === "vancouver" ? ", " : "; ";
+        previous = item;
+        return separator + trigger(item, label);
+      }).join("");
       const { label, form } = token.items[0];
-      const parenthetical = token.items.length > 1 || !label && (citationStyle === "vancouver" ||
-        parentheticalForms.has(form));
+      const parenthetical = token.items.length > 1 || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
       return parenthetical ? `<span ${part("cluster")}>(${citations})</span>` : citations;
     }).join("");
-    return markup || !content ? content : `<p>${content}</p>`;
+    return markup || !content.trim() ? content : `<p>${content}</p>`;
   }).join(markup ? "" : "\n");
   const records = entries.map(({ record }) => record);
   const supplementary = [...annotations].map(name => annotationContent(name, namespace, records, part));
-  if (!emittedNotes && entries.length) supplementary.unshift(endnotes);
+  if ((scoped || !emittedNotes) && localEntries.get(scope)?.size) supplementary.unshift(referencesHTML(scopeItems(scope), scope));
   return {
     html: [html, ...supplementary].join("\n") + closingMarkup,
     cache: { schema: cache.schema, records },

@@ -14,7 +14,7 @@ try {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
     options: {
-      json: { type: "boolean" }, "find-isbns": { type: "boolean" }, format: { type: "string" },
+      json: { type: "boolean" }, report: { type: "boolean" }, "find-isbns": { type: "boolean" }, format: { type: "string" },
       style: { type: "string" }, "endnotes-heading": { type: "string" }
     }
   });
@@ -22,7 +22,7 @@ try {
     ...(values.style !== undefined && { citationStyle: values.style }),
     ...(values["endnotes-heading"] !== undefined && { endnotesHeading: values["endnotes-heading"] })
   };
-  if (values["find-isbns"] && (!values.json || values.format || values.style || values["endnotes-heading"])) {
+  if (values["find-isbns"] && (!values.json || values.report || values.format || values.style || values["endnotes-heading"])) {
     throw new TypeError("Use --find-isbns --json with a book list on standard input.");
   }
   if (values.json) {
@@ -44,6 +44,11 @@ try {
         }
       }
       process.stdout.write(JSON.stringify({ results }) + "\n");
+    } else if (values.report) {
+      const { reportCitations } = await import("../src/report.mjs");
+      const result = await reportCitations(request.cache, request.fragments,
+        (source, cache, options, format) => compile(source, cache, { ...options, ...overrides }, values.format ?? format));
+      process.stdout.write(JSON.stringify(result, null, 2) + "\n");
     } else {
       const { paragraphs, source, cache, options, format } = request;
       if ((paragraphs === undefined) === (source === undefined) ||
@@ -53,6 +58,18 @@ try {
       const output = await compile(paragraphs ?? source, cache, { ...options, ...overrides }, values.format ?? format);
       process.stdout.write(JSON.stringify(output) + "\n");
     }
+  } else if (values.report) {
+    const [cachePath, ...paths] = positionals;
+    if (!cachePath || !paths.length) throw new TypeError("Use --report CACHE SOURCE... or --report --json.");
+    const { reportCitations } = await import("../src/report.mjs");
+    const cache = JSON.parse(await readFile(cachePath, "utf8"));
+    const fragments = await Promise.all(paths.map(async path => ({
+      name: path, source: await readFile(path, "utf8"),
+      format: values.format ?? (/\.html?$/i.test(path) ? "html" : /\.md$/i.test(path) ? "markdown" : "text")
+    })));
+    const result = await reportCitations(cache, fragments,
+      (source, cache, options, format) => compile(source, cache, { ...options, ...overrides }, format));
+    process.stdout.write(JSON.stringify(result, null, 2) + "\n");
   } else {
     const [sourcePath, cachePath, outputPath, namespace = "cit", citationKeyword = "citation", classPrefix = "citation"] = positionals;
     if (!outputPath || positionals.length > 6) {

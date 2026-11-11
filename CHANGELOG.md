@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Compile isolated citations for reusable excerpts, scoped endnotes for entries, and standalone reading lists with optional uncited endnotes.
+- Add Chicago house-style dates, organization short names, surname initials, grouped years, and U.S. legislation reference fields.
+- Preserve HTTPS links in formatted reference parts and report citation gaps across multiple fragments.
+- Rank ISBN candidates, accept the `hiddenProviders` alias, and share a cache load across inspectors on the same page.
+- Credit Randal Cox in the software citation and link his ORCID and the repository.
+
 - Preserve original publication and edition dates and display both in reprint citations.
 - Hide selected access services in panels and endnotes, independently of preferred order.
 - Suggest edition ISBNs from title-and-author searches for curator review.

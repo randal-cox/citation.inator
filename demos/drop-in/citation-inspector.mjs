@@ -39,7 +39,7 @@ var CACHE_SCHEMA = "citation-inator.cache.v1";
 var cleanText = (value) => typeof value === "string" ? value.trim() : "";
 var stableId = /^[a-z0-9][a-z0-9.-]{0,159}$/;
 var doi = (value) => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value) && !value.split("/").some((part) => part === "." || part === "..");
-var kinds = /* @__PURE__ */ new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "document"]);
+var kinds = /* @__PURE__ */ new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document"]);
 var versions = /* @__PURE__ */ new Set(["version of record", "accepted manuscript", "author preprint", "preprint", "repository dissertation", "dataset", "software release"]);
 var integrityStates = /* @__PURE__ */ new Set(["retracted", "corrected", "expression of concern"]);
 var locationKinds = /* @__PURE__ */ new Set(["publisher", "repository", "pdf", "preprint", "status", "full-text", "library"]);
@@ -164,7 +164,8 @@ function normalizeRecord(input) {
     const literal = cleanText(author?.literal);
     const family = cleanText(author?.family);
     const given = cleanText(author?.given);
-    return literal ? [{ literal }] : family ? [{ family, ...given && { given } }] : [];
+    const short = cleanText(author?.short);
+    return literal ? [{ literal, ...short && { short } }] : family ? [{ family, ...given && { given } }] : [];
   });
   const locations = array(input.locations).flatMap((location) => {
     const url = httpsURL(location?.url);
@@ -192,6 +193,7 @@ function normalizeRecord(input) {
   const title = cleanText(input.title);
   const abstract = cleanText(input.abstract?.text);
   const abstractSource = cleanText(input.abstract?.source);
+  const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
   const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
   const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText"];
@@ -204,7 +206,12 @@ function normalizeRecord(input) {
     identifiers: [...identifiers.values()],
     locations,
     provenance,
-    citationParts: array(input.citationParts).flatMap((part) => typeof part?.text === "string" && part.text ? [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis } }] : []),
+    citationParts: array(input.citationParts).flatMap((part) => {
+      if (typeof part?.text !== "string" || !part.text) return [];
+      const href = httpsURL(part.href);
+      return [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
+    }),
+    ...Object.fromEntries(optional.map((field) => [field, cleanText(input[field])]).filter(([, value]) => value)),
     issued: dateParts(input.issued),
     ...originalIssued && { originalIssued },
     online: dateParts(input.online),
@@ -250,11 +257,16 @@ var yearFor = (record) => record.issued?.[0] ?? "n.d.";
 var suffixFor = (year, suffix, style) => style === "apa" && year === "n.d." && suffix ? `-${suffix}` : suffix;
 var originalYear = (record) => record.originalIssued?.[0];
 var hasReprintDate = (record) => originalYear(record) < record.issued?.[0];
-function citationYear(record, suffix, style, bibliography = false) {
+function citationYear(record, suffix, style, bibliography = false, reprintYear = "both") {
   const year = yearFor(record);
   const dated = year + suffixFor(year, suffix, style);
   if (!hasReprintDate(record)) return dated;
-  if (style === "chicago-author-date") return bibliography ? `(${originalYear(record)}) ${dated}` : `[${originalYear(record)}] ${dated}`;
+  if (style === "chicago-author-date") {
+    if (bibliography) return `(${originalYear(record)}) ${dated}`;
+    if (reprintYear === "original") return `${originalYear(record)}${suffix}`;
+    if (reprintYear === "edition") return dated;
+    return `[${originalYear(record)}] ${dated}`;
+  }
   if (!bibliography && ["apa", "default", "harvard"].includes(style)) return `${originalYear(record)}/${dated}`;
   return dated;
 }
@@ -280,6 +292,11 @@ function defaultBibliography(record, suffix = "") {
 }
 function chicagoBibliography(record, suffix) {
   const { authors, type, containerTitle, publisher, edition } = record;
+  if (type === "legislation") {
+    const citation = [record.legalCitation || [record.number, record.session].filter(Boolean).join(", "), record.jurisdiction].filter(Boolean);
+    const url2 = identifierURL(record.identifiers.find((item) => item.scheme === "url"));
+    return [{ text: `${titleFor(record)}. ${yearFor(record)}${suffix}.${citation.length ? ` ${citation.join(", ")}.` : ""}${url2 ? ` ${url2}` : ""}` }];
+  }
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
   const fullName = (author, first) => author.literal || (first ? [author.family, author.given].filter(Boolean).join(", ") : [author.given, author.family].filter(Boolean).join(" "));
@@ -422,7 +439,8 @@ function bibliographyText(record, suffix = "", style = "default") {
 var componentName = "citation-inspector";
 var stylesheetURL = new URL("./citation-inspector.css", import.meta.url);
 var triggerSelector = "a[data-ci-record], a[data-ci-panel]";
-var triggerAttributes = ["role", "aria-haspopup", "aria-expanded", "aria-label"];
+var triggerAttributes = ["role", "aria-haspopup", "aria-expanded", "aria-label", "tabindex"];
+var documentCaches = /* @__PURE__ */ new WeakMap();
 function element(tag, text, parts) {
   const node = document.createElement(tag);
   if (text) node.textContent = text;
@@ -469,7 +487,7 @@ ${url}`);
   list.append(row);
 }
 var CitationInspector = class _CitationInspector extends HTMLElement {
-  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "hidden-access-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
+  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "hidden-access-providers", "hidden-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
   #hovering = false;
   #hoverOpenTimer;
   #hoverCloseTimer;
@@ -585,9 +603,15 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     }
     this.setAttribute("hidden-access-providers", providers.join(","));
   }
+  set hiddenProviders(providers) {
+    if (!Array.isArray(providers) || providers.some((provider) => typeof provider !== "string" || !provider.trim() || provider.includes(","))) {
+      throw new TypeError("Supply an array of hidden provider names without commas.");
+    }
+    this.setAttribute("hidden-providers", providers.join(","));
+  }
   attributeChangedCallback(name, before, after) {
     if (before === after) return;
-    if (name === "access-providers" || name === "hidden-access-providers") {
+    if (name === "access-providers" || name === "hidden-access-providers" || name === "hidden-providers") {
       this.#orderEndnoteLinks();
       const record = this.#cache?.byId.get(this.#trigger?.dataset.ciRecord);
       if (record) {
@@ -696,7 +720,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     }, { signal });
     this.addEventListener("keydown", (event) => {
       const trigger = event.target.closest?.(triggerSelector);
-      if (event.key !== " " || !this.#enhanced.has(trigger) || event.defaultPrevented) return;
+      if (!this.#enhanced.has(trigger) || event.defaultPrevented || event.key !== " " && (event.key !== "Enter" || trigger.hasAttribute("href"))) return;
       event.preventDefault();
       if (!event.repeat) this.#open(trigger);
     }, { signal });
@@ -759,10 +783,24 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
       const location = this.getAttribute("data-cache");
       if (!location) return;
       const url = new URL(location, this.baseURI);
-      if (url.origin !== window.location.origin) return;
-      const response = await fetch(url, { signal, credentials: "same-origin", redirect: "error" });
-      if (!response.ok) return;
-      const cache = readCache(await response.json());
+      if (url.origin !== this.ownerDocument.location.origin) return;
+      url.hash = "";
+      let caches = documentCaches.get(this.ownerDocument);
+      if (!caches) {
+        caches = /* @__PURE__ */ new Map();
+        documentCaches.set(this.ownerDocument, caches);
+      }
+      if (!caches.has(url.href)) {
+        const request = fetch(url, { credentials: "same-origin", redirect: "error" }).then((response) => {
+          if (!response.ok) throw new Error("Citation cache unavailable.");
+          return response.json();
+        }).then(readCache).catch((error) => {
+          caches.delete(url.href);
+          throw error;
+        });
+        caches.set(url.href, request);
+      }
+      const cache = await caches.get(url.href);
       if (!signal.aborted && !this.#hasInlineCache) {
         this.#cache = cache;
         this.#enhance();
@@ -804,7 +842,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     return index < 0 ? Infinity : index;
   }
   #providerHidden(provider) {
-    return (this.getAttribute("hidden-access-providers") || "").split(",").some((name) => name.trim().toLowerCase() === provider.toLowerCase());
+    return (this.getAttribute("hidden-providers") ?? this.getAttribute("hidden-access-providers") ?? "").split(",").some((name) => name.trim().toLowerCase() === provider.toLowerCase());
   }
   #orderEndnoteLinks() {
     for (const row of this.querySelectorAll('[data-citation-part~="note-actions"]')) {
@@ -850,9 +888,10 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
       if (trigger.closest(componentName) !== this || this.#enhanced.has(trigger) || !this.#canOpen(trigger)) continue;
       this.#enhanced.set(trigger, new Map(triggerAttributes.map((key) => [key, trigger.getAttribute(key)])));
       trigger.setAttribute("role", "button");
+      if (!trigger.hasAttribute("href")) trigger.setAttribute("tabindex", "0");
       trigger.setAttribute("aria-haspopup", "dialog");
       trigger.setAttribute("aria-expanded", "false");
-      if (!trigger.dataset.ciPanel) trigger.setAttribute("aria-label", `Inspect citation: ${trigger.textContent.trim()}`);
+      if (!trigger.dataset.ciPanel) trigger.setAttribute("aria-label", trigger.dataset.ciInspectLabel || `Inspect citation: ${trigger.textContent.trim()}`);
     }
   }
   disconnectedCallback() {
@@ -1092,10 +1131,14 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     }
     if (!Array.isArray(parts) || !parts.every((part) => typeof part?.text === "string") || parts.map((part) => part.text).join("") !== bibliography) parts = [{ text: bibliography }];
     let linkedDOI = false;
-    for (const { text, emphasis } of parts) {
+    for (const { text, emphasis, href } of parts) {
       const node = emphasis === "italic" ? element("em") : emphasis === "bold" ? element("strong") : citation;
       const doiAt = !linkedDOI && doiURL ? text.toLowerCase().indexOf(doiURL.toLowerCase()) : -1;
-      if (doiAt < 0) node.append(text);
+      const link = httpsURL(href);
+      if (link) {
+        node.append(external(link, text));
+        if (link === doiURL) linkedDOI = true;
+      } else if (doiAt < 0) node.append(text);
       else {
         const end = doiAt + doiURL.length;
         node.append(text.slice(0, doiAt), external(doiURL, text.slice(doiAt, end)), text.slice(end));
@@ -1149,7 +1192,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     if (typeof this.institutionalURL === "function") destination(list, "Open library resolver", "library", this.#institutionalLink(record));
     if (record.integrity) destination(list, "Open status record", "status", record.integrity.url || location("status")?.url);
     const footer = element("footer", "", "panel-actions");
-    const endnote = trigger.hash && this.ownerDocument.getElementById(trigger.hash.slice(1));
+    const endnote = trigger.id && trigger.hash && this.ownerDocument.getElementById(trigger.hash.slice(1));
     if (endnote) {
       footer.append(action("Go to endnote", "endnote", () => {
         this.#dismiss(false);
@@ -1205,6 +1248,7 @@ function initializeCitationInspector(element2, {
   panelIcon,
   accessProviders,
   hiddenAccessProviders,
+  hiddenProviders,
   evidenceTitle,
   evidenceIcon,
   creditTitle,
@@ -1224,6 +1268,7 @@ function initializeCitationInspector(element2, {
   if (creditIcon !== void 0) element2.setAttribute("credit-icon", creditIcon);
   if (accessProviders !== void 0) element2.accessProviders = accessProviders;
   if (hiddenAccessProviders !== void 0) element2.hiddenAccessProviders = hiddenAccessProviders;
+  if (hiddenProviders !== void 0) element2.hiddenProviders = hiddenProviders;
   if (cache !== void 0) element2.cache = cache;
   return element2;
 }

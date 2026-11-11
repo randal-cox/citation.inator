@@ -47,6 +47,22 @@ export function createOpenLibraryResolver(options) {
 }
 
 
+const words = value => (value || "").normalize("NFKD").toLowerCase().replace(/\p{M}/gu, "")
+  .match(/[\p{L}\p{N}]+/gu) || [];
+
+function overlap(left, right) {
+  const a = new Set(words(left));
+  const b = new Set(words(right));
+  return a.size && b.size ? 2 * [...a].filter(word => b.has(word)).length / (a.size + b.size) : 0;
+}
+
+function matchScore(query, candidate) {
+  const title = overlap(query.title, candidate.title);
+  const author = Math.max(0, ...candidate.authors.map(name => overlap(query.author, name)));
+  const year = query.year && (candidate.publicationDate.match(/\b[1-9]\d{3}\b/g) || []).includes(String(query.year));
+  return Math.round((55 * title + 30 * author + (year ? 15 : 0)) / (query.year ? 1 : .85));
+}
+
 // Search results are proposals for a curator. They never enter the citation cache.
 export function createOpenLibrarySearch({
   fetch: request = globalThis.fetch, store = new Map(), now = Date.now,
@@ -139,6 +155,8 @@ export function createOpenLibrarySearch({
     } catch (error) {
       errors.push(error.message);
     }
+    for (const candidate of candidates) candidate.matchScore = matchScore(query, candidate);
+    candidates.sort((a, b) => b.matchScore - a.matchScore);
     const state = errors.length ? candidates.length ? "partial" : "error" : candidates.length ? "candidates" : "empty";
     const result = {
       state, query, candidates: candidates.length || !errors.length ? candidates : prior?.result.candidates || [],

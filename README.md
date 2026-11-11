@@ -66,4 +66,6 @@ Run `npm start` to open the [reading room](http://127.0.0.1:4187/) and find the 
 
 ## Credit and license
 
+Randal Cox maintains citation.inator. [ORCID](https://orcid.org/0009-0002-3427-7190) · [GitHub repository](https://github.com/randal-cox/citation.inator)
+
 The software uses the MIT license. Third-party source material retains its own terms. See [CITATION.cff](CITATION.cff) for the software citation and [CHANGELOG.md](CHANGELOG.md) for release changes. Source records carry their own attribution.

@@ -6,7 +6,8 @@ import { httpsURL, identifierURL, readCache } from "./records.mjs";
 const componentName = "citation-inspector";
 const stylesheetURL = new URL("./citation-inspector.css", import.meta.url);
 const triggerSelector = "a[data-ci-record], a[data-ci-panel]";
-const triggerAttributes = ["role", "aria-haspopup", "aria-expanded", "aria-label"];
+const triggerAttributes = ["role", "aria-haspopup", "aria-expanded", "aria-label", "tabindex"];
+const documentCaches = new WeakMap();
 
 function element(tag, text, parts) {
   const node = document.createElement(tag);
@@ -59,7 +60,7 @@ function destination(list, label, icon, url, { version, download = false } = {})
 }
 
 class CitationInspector extends HTMLElement {
-  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "hidden-access-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
+  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "hidden-access-providers", "hidden-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
 
   #hovering = false;
   #hoverOpenTimer;
@@ -183,9 +184,16 @@ class CitationInspector extends HTMLElement {
     this.setAttribute("hidden-access-providers", providers.join(","));
   }
 
+  set hiddenProviders(providers) {
+    if (!Array.isArray(providers) || providers.some(provider => typeof provider !== "string" || !provider.trim() || provider.includes(","))) {
+      throw new TypeError("Supply an array of hidden provider names without commas.");
+    }
+    this.setAttribute("hidden-providers", providers.join(","));
+  }
+
   attributeChangedCallback(name, before, after) {
     if (before === after) return;
-    if (name === "access-providers" || name === "hidden-access-providers") {
+    if (name === "access-providers" || name === "hidden-access-providers" || name === "hidden-providers") {
       this.#orderEndnoteLinks();
       const record = this.#cache?.byId.get(this.#trigger?.dataset.ciRecord);
       if (record) {
@@ -299,7 +307,8 @@ class CitationInspector extends HTMLElement {
     }, { signal });
     this.addEventListener("keydown", event => {
       const trigger = event.target.closest?.(triggerSelector);
-      if (event.key !== " " || !this.#enhanced.has(trigger) || event.defaultPrevented) return;
+      if (!this.#enhanced.has(trigger) || event.defaultPrevented ||
+          (event.key !== " " && (event.key !== "Enter" || trigger.hasAttribute("href")))) return;
       event.preventDefault();
       if (!event.repeat) this.#open(trigger);
     }, { signal });
@@ -364,10 +373,25 @@ class CitationInspector extends HTMLElement {
       const location = this.getAttribute("data-cache");
       if (!location) return;
       const url = new URL(location, this.baseURI);
-      if (url.origin !== window.location.origin) return;
-      const response = await fetch(url, { signal, credentials: "same-origin", redirect: "error" });
-      if (!response.ok) return;
-      const cache = readCache(await response.json());
+      if (url.origin !== this.ownerDocument.location.origin) return;
+      url.hash = "";
+      let caches = documentCaches.get(this.ownerDocument);
+      if (!caches) {
+        caches = new Map();
+        documentCaches.set(this.ownerDocument, caches);
+      }
+      if (!caches.has(url.href)) {
+        const request = fetch(url, { credentials: "same-origin", redirect: "error" })
+          .then(response => {
+            if (!response.ok) throw new Error("Citation cache unavailable.");
+            return response.json();
+          }).then(readCache).catch(error => {
+            caches.delete(url.href);
+            throw error;
+          });
+        caches.set(url.href, request);
+      }
+      const cache = await caches.get(url.href);
       if (!signal.aborted && !this.#hasInlineCache) {
         this.#cache = cache;
         this.#enhance();
@@ -414,7 +438,7 @@ class CitationInspector extends HTMLElement {
   }
 
   #providerHidden(provider) {
-    return (this.getAttribute("hidden-access-providers") || "").split(",")
+    return (this.getAttribute("hidden-providers") ?? this.getAttribute("hidden-access-providers") ?? "").split(",")
       .some(name => name.trim().toLowerCase() === provider.toLowerCase());
   }
 
@@ -464,9 +488,10 @@ class CitationInspector extends HTMLElement {
       if (trigger.closest(componentName) !== this || this.#enhanced.has(trigger) || !this.#canOpen(trigger)) continue;
       this.#enhanced.set(trigger, new Map(triggerAttributes.map(key => [key, trigger.getAttribute(key)])));
       trigger.setAttribute("role", "button");
+      if (!trigger.hasAttribute("href")) trigger.setAttribute("tabindex", "0");
       trigger.setAttribute("aria-haspopup", "dialog");
       trigger.setAttribute("aria-expanded", "false");
-      if (!trigger.dataset.ciPanel) trigger.setAttribute("aria-label", `Inspect citation: ${trigger.textContent.trim()}`);
+      if (!trigger.dataset.ciPanel) trigger.setAttribute("aria-label", trigger.dataset.ciInspectLabel || `Inspect citation: ${trigger.textContent.trim()}`);
     }
   }
 
@@ -729,10 +754,14 @@ class CitationInspector extends HTMLElement {
     if (!Array.isArray(parts) || !parts.every(part => typeof part?.text === "string") ||
         parts.map(part => part.text).join("") !== bibliography) parts = [{ text: bibliography }];
     let linkedDOI = false;
-    for (const { text, emphasis } of parts) {
+    for (const { text, emphasis, href } of parts) {
       const node = emphasis === "italic" ? element("em") : emphasis === "bold" ? element("strong") : citation;
       const doiAt = !linkedDOI && doiURL ? text.toLowerCase().indexOf(doiURL.toLowerCase()) : -1;
-      if (doiAt < 0) node.append(text);
+      const link = httpsURL(href);
+      if (link) {
+        node.append(external(link, text));
+        if (link === doiURL) linkedDOI = true;
+      } else if (doiAt < 0) node.append(text);
       else {
         const end = doiAt + doiURL.length;
         node.append(text.slice(0, doiAt), external(doiURL, text.slice(doiAt, end)), text.slice(end));
@@ -785,7 +814,7 @@ class CitationInspector extends HTMLElement {
     if (typeof this.institutionalURL === "function") destination(list, "Open library resolver", "library", this.#institutionalLink(record));
     if (record.integrity) destination(list, "Open status record", "status", record.integrity.url || location("status")?.url);
     const footer = element("footer", "", "panel-actions");
-    const endnote = trigger.hash && this.ownerDocument.getElementById(trigger.hash.slice(1));
+    const endnote = trigger.id && trigger.hash && this.ownerDocument.getElementById(trigger.hash.slice(1));
     if (endnote) {
       footer.append(action("Go to endnote", "endnote", () => {
         this.#dismiss(false);
@@ -836,7 +865,7 @@ class CitationInspector extends HTMLElement {
 if (!customElements.get(componentName)) customElements.define(componentName, CitationInspector);
 
 export function initializeCitationInspector(element, {
-  classPrefix, cache, activation, panelTitle, panelIcon, accessProviders, hiddenAccessProviders, evidenceTitle, evidenceIcon, creditTitle, creditIcon
+  classPrefix, cache, activation, panelTitle, panelIcon, accessProviders, hiddenAccessProviders, hiddenProviders, evidenceTitle, evidenceIcon, creditTitle, creditIcon
 } = {}) {
   if (element?.localName !== componentName) throw new TypeError("Pass a citation-inspector element.");
   if (classPrefix !== undefined) {
@@ -852,6 +881,7 @@ export function initializeCitationInspector(element, {
   if (creditIcon !== undefined) element.setAttribute("credit-icon", creditIcon);
   if (accessProviders !== undefined) element.accessProviders = accessProviders;
   if (hiddenAccessProviders !== undefined) element.hiddenAccessProviders = hiddenAccessProviders;
+  if (hiddenProviders !== undefined) element.hiddenProviders = hiddenProviders;
   if (cache !== undefined) element.cache = cache;
   return element;
 }

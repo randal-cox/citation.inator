@@ -63,7 +63,7 @@ test("the configured keyword applies to citations, endnotes, evidence and softwa
   assert.doesNotMatch(spaced.html, /\{ref endnote\}/);
   assert.equal(output.html.match(/id="custom-evidence"/g).length, 1);
   assert.equal(output.html.match(/href="#custom-evidence"/g).length, 2);
-  assert.match(output.html, /citation\.inator contributors.*Computer software/);
+  assert.match(output.html, /Cox, R\..*Computer software/);
   assert.equal(compiler.parse("{citation credit}")[0].type, "text");
   assert.equal(compiler.parse(String.raw`\{ref credit\}`).some(token => token.type === "annotation"), false);
   assert.equal(compiler.parse("{cite local-work}")[0].type, "citation");

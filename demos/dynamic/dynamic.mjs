@@ -13,14 +13,9 @@ let request;
 let next;
 
 function updateEvidence(data) {
-  const summary = reader.querySelector("[data-ci-evidence-summary]");
   const details = reader.querySelector("[data-ci-evidence-details]");
-  if (!summary || !details) return;
-  summary.textContent = data.state === "cached" && data.attempt
-    ? "This result came from the cache. The most recent provider attempt is shown below."
-    : data.message;
+  if (!details) return;
   const label = data.attempt ? "Provider response and merge decisions" : data.record ? "Cached source metadata" : "Lookup result";
-  details.previousElementSibling.textContent = label;
   details.setAttribute("aria-label", label);
   details.textContent = JSON.stringify(data.attempt ? { attempt: data.attempt, record: data.record } : data.record, null, 2);
 }

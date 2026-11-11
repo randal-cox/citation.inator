@@ -4,7 +4,7 @@ export const DAY = 86_400_000;
 export const cleanText = value => typeof value === "string" ? value.trim() : "";
 const stableId = /^[a-z0-9][a-z0-9.-]{0,159}$/;
 const doi = value => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value) && !value.split("/").some(part => part === "." || part === "..");
-const kinds = new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "document"]);
+const kinds = new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document"]);
 const versions = new Set(["version of record", "accepted manuscript", "author preprint", "preprint", "repository dissertation", "dataset", "software release"]);
 const integrityStates = new Set(["retracted", "corrected", "expression of concern"]);
 const locationKinds = new Set(["publisher", "repository", "pdf", "preprint", "status", "full-text", "library"]);
@@ -143,7 +143,8 @@ export function normalizeRecord(input) {
     const literal = cleanText(author?.literal);
     const family = cleanText(author?.family);
     const given = cleanText(author?.given);
-    return literal ? [{ literal }] : family ? [{ family, ...(given && { given }) }] : [];
+    const short = cleanText(author?.short);
+    return literal ? [{ literal, ...(short && { short }) }] : family ? [{ family, ...(given && { given }) }] : [];
   });
   const locations = array(input.locations).flatMap(location => {
     const url = httpsURL(location?.url);
@@ -166,6 +167,7 @@ export function normalizeRecord(input) {
   const title = cleanText(input.title);
   const abstract = cleanText(input.abstract?.text);
   const abstractSource = cleanText(input.abstract?.source);
+  const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
   const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
   const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText"];
@@ -174,8 +176,12 @@ export function normalizeRecord(input) {
     type: kinds.has(input.type) ? input.type : "document",
     state: title ? state : "unresolved",
     title, authors, identifiers: [...identifiers.values()], locations, provenance,
-    citationParts: array(input.citationParts).flatMap(part => typeof part?.text === "string" && part.text
-      ? [{ text: part.text, ...(["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }) }] : []),
+    citationParts: array(input.citationParts).flatMap(part => {
+      if (typeof part?.text !== "string" || !part.text) return [];
+      const href = httpsURL(part.href);
+      return [{ text: part.text, ...(["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }), ...(href && { href }) }];
+    }),
+    ...Object.fromEntries(optional.map(field => [field, cleanText(input[field])]).filter(([, value]) => value)),
     issued: dateParts(input.issued),
     ...(originalIssued && { originalIssued }),
     online: dateParts(input.online),
@@ -221,7 +227,9 @@ export function toCSL(record) {
   const id = scheme => record.identifiers.find(item => item.scheme === scheme)?.value;
   const date = parts => parts && { "date-parts": [parts] };
   return Object.fromEntries(Object.entries({
-    id: record.id, type: record.type, title: record.title, author: record.authors,
+    id: record.id, type: record.type, title: record.title,
+    author: record.authors.map(({ short, ...author }) => author),
+    jurisdiction: record.jurisdiction, number: record.number,
     issued: date(record.issued), "original-date": date(record.originalIssued), "container-title": record.containerTitle, publisher: record.publisher,
     volume: record.volume, issue: record.issue, page: record.pages || record.articleNumber,
     edition: record.edition, DOI: id("doi"), ISBN: id("isbn"), PMID: id("pmid"), PMCID: id("pmcid"),

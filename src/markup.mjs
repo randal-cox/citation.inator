@@ -20,7 +20,7 @@ const skip = node => excluded.has(node.tagName) || attr(node, "role")?.value.spl
   ["", "true", "plaintext-only"].includes(attr(node, "contenteditable")?.value.toLowerCase()) ||
   attr(node, "data-ci-record") || attr(node, "data-citation-part");
 const standalone = tokens => tokens.filter(token => token.type !== "text" || token.text.trim()).length === 1 &&
-  tokens.some(token => token.type === "endnotes");
+  tokens.some(token => token.type === "endnotes" || token.type === "list");
 
 function visit(node, callback) {
   if (callback(node) === false) return;
@@ -81,7 +81,7 @@ export function compileHTML(source, cache, options = {}) {
       edits.push({ ...parent.sourceCodeLocation, tokens });
     } else {
       if (standalone(tokens) && !blockParents.has(parent.nodeName)) {
-        const marker = tokens.find(token => token.type === "endnotes");
+        const marker = tokens.find(token => token.type === "endnotes" || token.type === "list");
         Object.assign(marker, { type: "text", text: marker.raw });
       }
       edits.push({ ...node.sourceCodeLocation, tokens });
@@ -130,7 +130,7 @@ export function rebaseCitationFragment(html, from, to) {
     }
   }
   const fragment = parseFragment(html);
-  const generated = new RegExp(`^${from}-(?:cite-.+-[0-9]+|note-.+|endnotes|evidence|credit)$`);
+  const generated = new RegExp(`^${from}-(?:scope-[0-9]+-)?(?:cite-.+-[0-9]+|note-.+|endnotes|evidence|credit)$`);
   const ids = new Set();
   const mapping = new Map();
   visit(fragment, node => {
