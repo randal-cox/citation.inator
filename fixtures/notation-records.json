@@ -1,0 +1,78 @@
+[
+  {
+    "id": "ioannidis-2005",
+    "type": "article-journal",
+    "state": "resolved",
+    "title": "Why Most Published Research Findings Are False",
+    "apaTitle": "Why most published research findings are false",
+    "authors": [{ "given": "John P. A.", "family": "Ioannidis" }],
+    "issued": [2005, 8, 30],
+    "containerTitle": "PLOS Medicine",
+    "volume": "2",
+    "issue": "8",
+    "articleNumber": "e124",
+    "identifiers": [
+      { "scheme": "doi", "value": "10.1371/journal.pmed.0020124" },
+      { "scheme": "pmid", "value": "16060722" },
+      { "scheme": "pmcid", "value": "PMC1182327" }
+    ],
+    "provenance": [
+      { "provider": "PubMed", "url": "https://pubmed.ncbi.nlm.nih.gov/16060722/" },
+      { "provider": "PLOS", "url": "https://doi.org/10.1371/journal.pmed.0020124" }
+    ]
+  },
+  {
+    "id": "vaswani-2017-arxiv",
+    "type": "article",
+    "state": "resolved",
+    "title": "Attention Is All You Need",
+    "apaTitle": "Attention is all you need",
+    "authors": [
+      { "given": "Ashish", "family": "Vaswani" },
+      { "given": "Noam", "family": "Shazeer" },
+      { "given": "Niki", "family": "Parmar" },
+      { "given": "Jakob", "family": "Uszkoreit" },
+      { "given": "Llion", "family": "Jones" },
+      { "given": "Aidan N.", "family": "Gomez" },
+      { "given": "Lukasz", "family": "Kaiser" },
+      { "given": "Illia", "family": "Polosukhin" }
+    ],
+    "issued": [2017, 6, 12],
+    "version": "preprint",
+    "identifiers": [{ "scheme": "arxiv", "value": "1706.03762" }],
+    "provenance": [{ "provider": "arXiv", "url": "https://arxiv.org/abs/1706.03762", "note": "Date of first submission. This identifier opens the current arXiv record." }]
+  },
+  {
+    "id": "adelie-penguins-2020",
+    "type": "dataset",
+    "state": "resolved",
+    "title": "Structural size measurements and isotopic signatures of foraging among adult male and female Adélie penguins (Pygoscelis adeliae) nesting along the Palmer Archipelago near Palmer Station, 2007–2009",
+    "authors": [{ "literal": "Palmer Station Antarctica LTER" }, { "given": "Kristen", "family": "Gorman" }],
+    "issued": [2020],
+    "edition": "Version 5",
+    "publisher": "Environmental Data Initiative",
+    "version": "dataset",
+    "identifiers": [{ "scheme": "doi", "value": "10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f" }],
+    "provenance": [{ "provider": "palmerpenguins data citations", "url": "https://allisonhorst.github.io/palmerpenguins/#references" }]
+  },
+  {
+    "id": "palmerpenguins-2020-software",
+    "type": "software",
+    "state": "resolved",
+    "title": "palmerpenguins: Palmer Archipelago (Antarctica) penguin data",
+    "authors": [
+      { "given": "Allison Marie", "family": "Horst" },
+      { "given": "Alison Presmanes", "family": "Hill" },
+      { "given": "Kristen B.", "family": "Gorman" }
+    ],
+    "issued": [2020, 7, 25],
+    "edition": "Version 0.1.0",
+    "publisher": "Zenodo",
+    "version": "software release",
+    "identifiers": [
+      { "scheme": "doi", "value": "10.5281/zenodo.3960218" },
+      { "scheme": "url", "value": "https://zenodo.org/records/3960218" }
+    ],
+    "provenance": [{ "provider": "Zenodo", "url": "https://zenodo.org/records/3960218" }]
+  }
+]

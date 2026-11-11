@@ -110,6 +110,9 @@ try {
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 1440, height: 960 });
   const citationStyle = page.getByLabel("Style", { exact: true });
+  assert.equal(await citationStyle.evaluate(select => select.nextElementSibling.className), "demo-help");
+  assert.equal(await page.getByLabel("CSS", { exact: true })
+    .evaluate(select => select.nextElementSibling.className), "demo-help");
   const citationStyleHelp = page.getByRole("button", { name: "Configure Style" });
   await citationStyle.selectOption("chicago-author-date");
   await page.getByRole("heading", { name: "References", exact: true }).waitFor();
@@ -497,6 +500,7 @@ try {
   const input = page.getByLabel("Identifier or single citation directive");
   const refresh = page.getByRole("button", { name: "Force refresh" });
   const status = page.locator("#resolution-status");
+  await page.getByRole("button", { name: "the journal article" }).click();
   await mode.selectOption("offline");
   await refresh.click();
   await page.waitForFunction(() => document.querySelector("#resolution-status").dataset.state === "error");
@@ -545,9 +549,28 @@ try {
   assert.ok(await page.getByRole("heading", { name: "Complete notation" }).isVisible());
   const original = await (await fetch(origin + "/demos/static/reading.txt")).text();
   assert.equal(await page.locator('#guide-source + p + pre code').textContent(), original.trim());
+  const guideExamples = await page.locator("#guide-notation + dl dt code").allTextContents();
+  assert.ok(guideExamples.length > 10);
+  assert.ok(guideExamples.every(example => original.includes(example)));
+  for (const demoURL of [origin + "/demos/static/", copied + "/"]) {
+    await page.goto(demoURL);
+    const content = page.locator("citation-inspector");
+    assert.ok(await content.getByText("ritual and reconciliation reference pending", { exact: true }).isVisible());
+    assert.ok(await content.getByText("the study | journal article; preprint available", { exact: true }).isVisible());
+    assert.equal(await content.locator('a[data-ci-record="ioannidis-2005"]').count(), 4);
+    assert.equal(await content.locator('a[data-ci-record="palmerpenguins-2020-software"]').count(), 2);
+    await page.getByText("Custom keyword and legacy notation", { exact: true }).click();
+    assert.equal(await page.getByRole("region", { name: "Rendered custom keyword example" })
+      .locator("a[data-ci-record]").count(), 3);
+    assert.ok(await page.getByRole("region", { name: "Rendered legacy endnotes example" })
+      .getByRole("heading", { name: "Endnotes" }).isVisible());
+  }
   await page.goto(origin + "/demos/dynamic/");
 
-  await page.getByRole("button", { name: "a cached book" }).click();
+  assert.equal(await input.inputValue(), "isbn:9780593656433");
+  await page.getByRole("button", { name: /Inspect citation: Feiler/ }).click();
+  assert.ok(await panel.getByRole("heading", { name: /A Time to Gather/ }).isVisible());
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Resolve", exact: true }).click();
   await page.waitForFunction(() => document.querySelector("#resolution-status").dataset.state === "cached");
   assert.match(await status.textContent(), /Cache hit.*A Time to Gather/);

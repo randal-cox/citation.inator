@@ -679,6 +679,269 @@
       "original": "The Spaces of Others: Heterotopias and Peace Building, M. Al-Farabi (2024)",
       "note": "No matching work verified.",
       "citationText": ""
+    },
+    {
+      "id": "ioannidis-2005",
+      "type": "article-journal",
+      "state": "resolved",
+      "title": "Why Most Published Research Findings Are False",
+      "authors": [
+        {
+          "family": "Ioannidis",
+          "given": "John P. A."
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "doi",
+          "value": "10.1371/journal.pmed.0020124"
+        },
+        {
+          "scheme": "pmid",
+          "value": "16060722"
+        },
+        {
+          "scheme": "pmcid",
+          "value": "PMC1182327"
+        }
+      ],
+      "locations": [],
+      "provenance": [
+        {
+          "provider": "PubMed",
+          "url": "https://pubmed.ncbi.nlm.nih.gov/16060722/",
+          "retrievedAt": null,
+          "note": ""
+        },
+        {
+          "provider": "PLOS",
+          "url": "https://doi.org/10.1371/journal.pmed.0020124",
+          "retrievedAt": null,
+          "note": ""
+        }
+      ],
+      "citationParts": [],
+      "issued": [
+        2005,
+        8,
+        30
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": null,
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "PLOS Medicine",
+      "publisher": "",
+      "volume": "2",
+      "issue": "8",
+      "pages": "",
+      "articleNumber": "e124",
+      "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "Why most published research findings are false",
+      "original": "",
+      "note": "",
+      "citationText": ""
+    },
+    {
+      "id": "vaswani-2017-arxiv",
+      "type": "article",
+      "state": "resolved",
+      "title": "Attention Is All You Need",
+      "authors": [
+        {
+          "family": "Vaswani",
+          "given": "Ashish"
+        },
+        {
+          "family": "Shazeer",
+          "given": "Noam"
+        },
+        {
+          "family": "Parmar",
+          "given": "Niki"
+        },
+        {
+          "family": "Uszkoreit",
+          "given": "Jakob"
+        },
+        {
+          "family": "Jones",
+          "given": "Llion"
+        },
+        {
+          "family": "Gomez",
+          "given": "Aidan N."
+        },
+        {
+          "family": "Kaiser",
+          "given": "Lukasz"
+        },
+        {
+          "family": "Polosukhin",
+          "given": "Illia"
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "arxiv",
+          "value": "1706.03762"
+        }
+      ],
+      "locations": [],
+      "provenance": [
+        {
+          "provider": "arXiv",
+          "url": "https://arxiv.org/abs/1706.03762",
+          "retrievedAt": null,
+          "note": "Date of first submission. This identifier opens the current arXiv record."
+        }
+      ],
+      "citationParts": [],
+      "issued": [
+        2017,
+        6,
+        12
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": "preprint",
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "Attention is all you need",
+      "original": "",
+      "note": "",
+      "citationText": ""
+    },
+    {
+      "id": "adelie-penguins-2020",
+      "type": "dataset",
+      "state": "resolved",
+      "title": "Structural size measurements and isotopic signatures of foraging among adult male and female Adélie penguins (Pygoscelis adeliae) nesting along the Palmer Archipelago near Palmer Station, 2007–2009",
+      "authors": [
+        {
+          "literal": "Palmer Station Antarctica LTER"
+        },
+        {
+          "family": "Gorman",
+          "given": "Kristen"
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "doi",
+          "value": "10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f"
+        }
+      ],
+      "locations": [],
+      "provenance": [
+        {
+          "provider": "palmerpenguins data citations",
+          "url": "https://allisonhorst.github.io/palmerpenguins/#references",
+          "retrievedAt": null,
+          "note": ""
+        }
+      ],
+      "citationParts": [],
+      "issued": [
+        2020
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": "dataset",
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Environmental Data Initiative",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "Version 5",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "",
+      "original": "",
+      "note": "",
+      "citationText": ""
+    },
+    {
+      "id": "palmerpenguins-2020-software",
+      "type": "software",
+      "state": "resolved",
+      "title": "palmerpenguins: Palmer Archipelago (Antarctica) penguin data",
+      "authors": [
+        {
+          "family": "Horst",
+          "given": "Allison Marie"
+        },
+        {
+          "family": "Hill",
+          "given": "Alison Presmanes"
+        },
+        {
+          "family": "Gorman",
+          "given": "Kristen B."
+        }
+      ],
+      "identifiers": [
+        {
+          "scheme": "doi",
+          "value": "10.5281/zenodo.3960218"
+        },
+        {
+          "scheme": "url",
+          "value": "https://zenodo.org/records/3960218"
+        }
+      ],
+      "locations": [],
+      "provenance": [
+        {
+          "provider": "Zenodo",
+          "url": "https://zenodo.org/records/3960218",
+          "retrievedAt": null,
+          "note": ""
+        }
+      ],
+      "citationParts": [],
+      "issued": [
+        2020,
+        7,
+        25
+      ],
+      "online": null,
+      "print": null,
+      "retrievedAt": null,
+      "version": "software release",
+      "integrity": null,
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Zenodo",
+      "volume": "",
+      "issue": "",
+      "pages": "",
+      "articleNumber": "",
+      "edition": "Version 0.1.0",
+      "publisherPlace": "",
+      "containerAbbreviation": "",
+      "apaTitle": "",
+      "original": "",
+      "note": "",
+      "citationText": ""
     }
   ]
 }

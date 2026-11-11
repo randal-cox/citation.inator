@@ -4,7 +4,9 @@ A small citation library. Write citations in plain text, compile them into linke
 
 ## Load and initialize
 
-**Without npm.** Download or clone the repository. Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
+To serve the demos from the checkout, run `npm start` from the repository root.
+
+**Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
 **With npm.** The instructions below use the current source checkout, which includes changes beyond the previously shared 0.1.1 archives. Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.1.1.tgz` there. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
 

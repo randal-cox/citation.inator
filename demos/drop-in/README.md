@@ -1,6 +1,8 @@
 # citation.inator in plain HTML
 
-Serve this folder from the downloaded repository or extracted ZIP as a static site. On a development machine with Python, run this command from the folder and open http://127.0.0.1:8080/:
+From the repository root, run `npm start` and open [Plain HTML](http://127.0.0.1:4187/demos/drop-in/).
+
+If you have only the standalone ZIP or want to run without npm, serve the extracted folder with a static server. For example, run this command from the folder and open [the local example](http://127.0.0.1:8080/).
 
 ```sh
 python3 -m http.server --bind 127.0.0.1 8080

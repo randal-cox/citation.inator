@@ -31,22 +31,18 @@
   </span>
   <span class="demo-setting">
     <label for="demo-css">CSS</label>
-    <span class="demo-help">
-    <button type="button" aria-label="Configure CSS" aria-describedby="demo-help-css">?</button>
-    <span role="tooltip" id="demo-help-css"><code>&lt;citation-inspector data-citation-theme=&quot;reading&quot;&gt;</code><span>Use with demos/static/demo.css. For a custom theme, set the --citation-* properties on the element.</span></span>
-  </span>
     <select name="theme" id="demo-css">
       <option value="reading">Reading room</option>
       <option value="field">Field notes</option>
       <option value="midnight">Midnight</option>
     </select>
+    <span class="demo-help">
+    <button type="button" aria-label="Configure CSS" aria-describedby="demo-help-css">?</button>
+    <span role="tooltip" id="demo-help-css"><code>&lt;citation-inspector data-citation-theme=&quot;reading&quot;&gt;</code><span>Use with demos/static/demo.css. For a custom theme, set the --citation-* properties on the element.</span></span>
+  </span>
   </span>
   <span class="demo-setting">
     <label for="demo-style">Style</label>
-    <span class="demo-help">
-    <button type="button" aria-label="Configure Style" aria-describedby="demo-help-style">?</button>
-    <span role="tooltip" id="demo-help-style"><code>createCitationCompiler({ citationStyle: &quot;default&quot; })</code></span>
-  </span>
     <select name="citation-style" id="demo-style">
       <option value="default">Default</option>
       <option value="chicago-author-date">Chicago author–date</option>
@@ -55,13 +51,18 @@
       <option value="harvard">Cite Them Right Harvard</option>
       <option value="vancouver">Vancouver</option>
     </select>
+    <span class="demo-help">
+    <button type="button" aria-label="Configure Style" aria-describedby="demo-help-style">?</button>
+    <span role="tooltip" id="demo-help-style"><code>createCitationCompiler({ citationStyle: &quot;default&quot; })</code></span>
+  </span>
   </span>
   <span data-style-status role="status"></span>
 </div>
     <form id="resolve-form">
     <label for="identifier">Identifier or single citation directive</label>
-    <input id="identifier" name="identifier" required maxlength="2048" value="doi:10.1017/s0003055419000534" spellcheck="false" autocapitalize="off">
-    <p class="resolve-examples">Try <button type="button" data-example="doi:10.1111/spc3.12501">another article</button>, <button type="button" data-example="isbn:9780593656433">a cached book</button>, or <button type="button" data-example="isbn:9780140328721">another ISBN</button>.</p>
+    <input id="identifier" name="identifier" required maxlength="2048" value="isbn:9780593656433" spellcheck="false" autocapitalize="off">
+    <p>The prefilled ISBN and the book below come from the bundled cache. Click <strong>Resolve</strong> to use that record without calling Open Library.</p>
+    <p class="resolve-examples">Try <button type="button" data-example="isbn:9780593656433">the cached book</button>, <button type="button" data-example="doi:10.1017/s0003055419000534">the journal article</button>, <button type="button" data-example="doi:10.1111/spc3.12501">another article</button>, or <button type="button" data-example="isbn:9780140328721">a live ISBN</button>.</p>
     <div class="controls">
       <div><label for="mode">Provider mode</label>
       <select name="mode" id="mode">
@@ -81,23 +82,22 @@
   </div>
   <article class="reading" aria-labelledby="live-title">
     <h2 id="live-title">Reader view</h2>
-    <citation-inspector id="live-reader" data-cache="./citations.json"><p>Start with the journal article <span class="citation-cluster" data-citation-part="cluster">(<a class="citation-cite" data-citation-part="cite" id="live-cite-simas-clifford-kirkland-2020-empathy-polarization-1" href="#live-note-simas-clifford-kirkland-2020-empathy-polarization" data-ci-record="simas-clifford-kirkland-2020-empathy-polarization" data-ci-bibliography="Simas, E. N., Clifford, S., &amp; Kirkland, J. H. (2020). How empathic concern fuels political polarization. American Political Science Review, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534" data-ci-bibliography-parts="[{&quot;text&quot;:&quot;Simas, E. N., Clifford, S., &amp; Kirkland, J. H. (2020). How empathic concern fuels political polarization. &quot;},{&quot;text&quot;:&quot;American Political Science Review&quot;,&quot;emphasis&quot;:&quot;italic&quot;},{&quot;text&quot;:&quot;, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534&quot;}]" dir="auto">Simas et al., 2020</a>)</span>.</p>
+    <citation-inspector id="live-reader" data-cache="./citations.json"><p>Open this book from the bundled cache <span class="citation-cluster" data-citation-part="cluster">(<a class="citation-cite" data-citation-part="cite" id="live-cite-feiler-2026-time-gather-1" href="#live-note-feiler-2026-time-gather" data-ci-record="feiler-2026-time-gather" data-ci-bibliography="Feiler, B. (2026). A time to gather: How ritual created the world—and how it can save us. Penguin Press." data-ci-bibliography-parts="[{&quot;text&quot;:&quot;Feiler, B. (2026). &quot;},{&quot;text&quot;:&quot;A time to gather: How ritual created the world—and how it can save us&quot;,&quot;emphasis&quot;:&quot;italic&quot;},{&quot;text&quot;:&quot;. Penguin Press.&quot;}]" dir="auto">Feiler, 2026</a>)</span>. The ISBN is already filled in above.</p>
 <p><a class="citation-cite citation-annotation" data-citation-part="cite annotation" href="#live-evidence" data-ci-panel="evidence">Citation evidence</a> · <a class="citation-cite citation-annotation" data-citation-part="cite annotation" href="#live-credit" data-ci-panel="credit">Citation credit</a></p>
-<section class="citation-endnotes" data-citation-part="endnotes" aria-labelledby="live-endnotes"><h2 id="live-endnotes">Endnotes</h2><ol><li id="live-note-simas-clifford-kirkland-2020-empathy-polarization" tabindex="-1"><span dir="auto">Simas, E. N., Clifford, S., &amp; Kirkland, J. H. (2020). How empathic concern fuels political polarization. <em>American Political Science Review</em>, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534</span><div class="citation-note-actions" data-citation-part="note-actions"><a class="citation-icon" data-citation-part="icon" href="https://doi.org/10.1017/s0003055419000534" aria-label="Open DOI" title="Open DOI
-https://doi.org/10.1017/s0003055419000534" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 15 6-6 M8 16l-1 1a3 3 0 0 1-4-4l5-5a3 3 0 0 1 4 0 M16 8l1-1a3 3 0 0 1 4 4l-5 5a3 3 0 0 1-4 0"/></svg></a><a class="citation-icon" data-citation-part="icon" href="https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E" aria-label="Open publisher page" title="Open publisher page
-https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 9 12 4l9 5z M5 20h14 M7 11v7m5-7v7m5-7v7"/></svg></a><a class="citation-icon" data-citation-part="icon" href="https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf" aria-label="Open preprint (author preprint)" title="Open preprint (author preprint)
-https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf" target="_blank" rel="noopener noreferrer" download=""><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 3h8l4 4v14H6z M14 3v5h4"/><path d="m8 17 3-5 2 4 3 1-4 1z"/></svg></a><span class="citation-backlinks" data-citation-part="backlinks"><a class="citation-icon" data-citation-part="icon" href="#live-cite-simas-clifford-kirkland-2020-empathy-polarization-1" aria-label="Return to “Start with the journal article [Simas et al.].” (occurrence a)" title="Return to “Start with the journal article [Simas et al.].” (occurrence a)">a</a></span></div></li></ol></section>
+<section class="citation-endnotes" data-citation-part="endnotes" aria-labelledby="live-endnotes"><h2 id="live-endnotes">Endnotes</h2><ol><li id="live-note-feiler-2026-time-gather" tabindex="-1"><span dir="auto">Feiler, B. (2026). <em>A time to gather: How ritual created the world—and how it can save us</em>. Penguin Press.</span><div class="citation-note-actions" data-citation-part="note-actions"><a class="citation-icon" data-citation-part="icon" href="https://search.worldcat.org/search?q=bn%3A9780593656433" aria-label="Look up ISBN" title="Look up ISBN
+https://search.worldcat.org/search?q=bn%3A9780593656433" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 4h14v16H7a2 2 0 0 1-2-2z M5 17h14 M8 8h8m-8 3h6"/></svg></a><a class="citation-icon" data-citation-part="icon" href="https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/" aria-label="Open publisher page" title="Open publisher page
+https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M3 9 12 4l9 5z M5 20h14 M7 11v7m5-7v7m5-7v7"/></svg></a><span class="citation-backlinks" data-citation-part="backlinks"><a class="citation-icon" data-citation-part="icon" href="#live-cite-feiler-2026-time-gather-1" aria-label="Return to “Open this book from the bundled cache [Feiler]. The ISBN is already filled in…” (occurrence a)" title="Return to “Open this book from the bundled cache [Feiler]. The ISBN is already filled in…” (occurrence a)">a</a></span></div></li></ol></section>
 <section class="citation-annotation-content" data-citation-part="annotation-content" id="live-evidence" tabindex="-1" aria-label="Citation evidence"><h2>Citation evidence</h2><div data-ci-annotation-body><p data-ci-evidence-summary>Sources for the citations on this page.</p><details><summary>Source metadata</summary><pre data-ci-evidence-details tabindex="0" aria-label="Source metadata">[
   {
-    &quot;title&quot;: &quot;How Empathic Concern Fuels Political Polarization&quot;,
+    &quot;title&quot;: &quot;A Time to Gather: How Ritual Created the World—and How It Can Save Us&quot;,
     &quot;state&quot;: &quot;resolved&quot;,
     &quot;identifiers&quot;: [
       {
-        &quot;scheme&quot;: &quot;doi&quot;,
-        &quot;value&quot;: &quot;10.1017/s0003055419000534&quot;
+        &quot;scheme&quot;: &quot;isbn&quot;,
+        &quot;value&quot;: &quot;9780593656433&quot;
       }
     ],
-    &quot;version&quot;: &quot;version of record&quot;,
+    &quot;version&quot;: null,
     &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
     &quot;provenance&quot;: [
       {
@@ -107,16 +107,10 @@ https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empa
         &quot;note&quot;: &quot;Original citation and curation preserved in the source fixtures.&quot;
       },
       {
-        &quot;provider&quot;: &quot;Cambridge University Press&quot;,
-        &quot;url&quot;: &quot;https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E&quot;,
+        &quot;provider&quot;: &quot;Penguin Random House&quot;,
+        &quot;url&quot;: &quot;https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/&quot;,
         &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
         &quot;note&quot;: &quot;&quot;
-      },
-      {
-        &quot;provider&quot;: &quot;Author website&quot;,
-        &quot;url&quot;: &quot;https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf&quot;,
-        &quot;retrievedAt&quot;: null,
-        &quot;note&quot;: &quot;Separate author preprint PDF. The DOI identifies the journal article.&quot;
       }
     ]
   }

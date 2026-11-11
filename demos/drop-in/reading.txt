@@ -2,11 +2,21 @@ Empathy sounds like a natural antidote to political hostility. Yet empathic conc
 
 {citation isbn:9780593656433 | form:narrative} writes about gatherings as occasions for social connection. An ethnography of secular communities gives a different view of how shared practices acquire meaning {citation frost-2020-modern-not-meaningless}. The first source is a hardcover edition. The second leads to a university repository PDF.
 
-A reading list can hold several kinds of evidence side by side {citation doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}. It can also preserve {citation unresolved-ritual-politics-reconciliation-2022 | label:"a reference still under review"} until an editor verifies it.
+A reading list can hold several kinds of evidence side by side {citation doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}.
 
 Try a page locator on Molly Farneth’s print edition {citation isbn:9780691198927 | locator:34}. Open the citation to see two library services for the print edition.
 
-Related reading can share the same parentheses {citation isbn:9780691198927; isbn:9780593656433 | prefix:see also}. The lettered links in Farneth’s endnote return to either mention.
+Related reading can share the same parentheses {citation isbn:9780691198927; isbn:9780593656433 | prefix:see also | locator:"p. 34"}. The lettered links in Farneth’s endnote return to each mention.
+
+For an explicit parenthetical citation, use Farneth’s book {citation isbn:9780691198927 | form:parenthetical}. If you have already written Farneth’s name, you can show just the year {citation isbn:9780691198927 | form:suppress-author}.
+
+{citation isbn:9780691198927 | form:author-only} can also appear by name alone in a sentence. A parenthetical aside can give just the name {citation isbn:9780691198927 | form:suppress-year}.
+
+Write \{citation endnote\} to show the marker as literal text. A custom label can point to {citation doi:10.1017/S0003055419000534 | label:"the study | journal article; preprint available"}. An unresolved reference can display its supplied fallback {citation local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}.
+
+PubMed {citation pmid:16060722} and PubMed Central {citation pmcid:PMC1182327} lead to the same article. Its bare DOI {citation 10.1371/journal.pmed.0020124} and DOI URL {citation https://doi.org/10.1371/journal.pmed.0020124} share the same endnote.
+
+Other sources can use an arXiv ID {citation arxiv:1706.03762}, a dataset DOI {citation dataset:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f}, a software DOI {citation software:10.5281/zenodo.3960218}, or a URL {citation url:https://zenodo.org/records/3960218}.
 
 {citation endnote}
 

@@ -37,7 +37,7 @@ Generated classes default to names such as `citation-cite`, `citation-endnotes` 
 
 ## Try the standalone HTML
 
-Extract the ZIP, or open `demos/drop-in/` in the downloaded repository, and serve that folder from a static site. For a local preview, run `python3 -m http.server --bind 127.0.0.1 8080` in the extracted folder and open [the example](http://127.0.0.1:8080/). With the Windows Python launcher, use `py -3` in place of `python3`.
+Run `npm start` from the repository root and open [Plain HTML](http://127.0.0.1:4187/demos/drop-in/). For an npm-free preview, serve `demos/drop-in/` or the extracted ZIP with any static server. For example, run `python3 -m http.server --bind 127.0.0.1 8080` in that folder and open [the example](http://127.0.0.1:8080/). With the Windows Python launcher, use `py -3` in place of `python3`.
 
 Serve `.mjs` as JavaScript and `.json` as JSON. Static links and endnotes work when opening the HTML directly from disk. The inspector uses a same-origin HTTP or HTTPS host to load its cache. Keep the MIT license with the JavaScript and CSS.
 
@@ -234,4 +234,4 @@ const result = await books.resolve("isbn:9780140328721");
 
 Equivalent ISBN-10 and ISBN-13 values refer to the same edition in the cache and resolver. Other edition identifiers stay distinct.
 
-The demo uses Crossref for DOI requests and Open Library for ISBN requests. A regular lookup for its curated book shows the supplied record immediately. **Force refresh** attempts the live ISBN lookup. Use **another ISBN** to try a book outside the demo cache.
+The demo uses Crossref for DOI requests and Open Library for ISBN requests. The bench opens with a prefilled ISBN and its bundled citation. **Resolve** uses that cached record. **Force refresh** attempts the live ISBN lookup. Use **a live ISBN** to try a book outside the demo cache.

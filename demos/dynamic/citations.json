@@ -2,44 +2,29 @@
   "schema": "citation-inator.cache.v1",
   "records": [
     {
-      "id": "simas-clifford-kirkland-2020-empathy-polarization",
-      "type": "article-journal",
+      "id": "feiler-2026-time-gather",
+      "type": "book",
       "state": "resolved",
-      "title": "How Empathic Concern Fuels Political Polarization",
+      "title": "A Time to Gather: How Ritual Created the World—and How It Can Save Us",
       "authors": [
         {
-          "family": "Simas",
-          "given": "Elizabeth N."
-        },
-        {
-          "family": "Clifford",
-          "given": "Scott"
-        },
-        {
-          "family": "Kirkland",
-          "given": "Justin H."
+          "family": "Feiler",
+          "given": "Bruce"
         }
       ],
       "identifiers": [
         {
-          "scheme": "doi",
-          "value": "10.1017/s0003055419000534"
+          "scheme": "isbn",
+          "value": "9780593656433"
         }
       ],
       "locations": [
         {
           "kind": "publisher",
-          "url": "https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E",
-          "provider": "Cambridge University Press",
+          "url": "https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/",
+          "provider": "Penguin Random House",
           "verifiedAt": "2026-11-10T00:00:00.000Z",
           "version": null
-        },
-        {
-          "kind": "preprint",
-          "url": "https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf",
-          "provider": "Author website",
-          "verifiedAt": "2026-11-10T00:00:00.000Z",
-          "version": "author preprint"
         }
       ],
       "provenance": [
@@ -50,53 +35,37 @@
           "note": "Original citation and curation preserved in the source fixtures."
         },
         {
-          "provider": "Cambridge University Press",
-          "url": "https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E",
+          "provider": "Penguin Random House",
+          "url": "https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/",
           "retrievedAt": "2026-11-10T00:00:00.000Z",
           "note": ""
-        },
-        {
-          "provider": "Author website",
-          "url": "https://scottaclifford.com/wp-content/uploads/2012/02/SimasCliffordKirkland_Empathy-and-Polarization_Preprint.pdf",
-          "retrievedAt": null,
-          "note": "Separate author preprint PDF. The DOI identifies the journal article."
         }
       ],
       "citationParts": [],
       "issued": [
-        2020
+        2026,
+        5,
+        19
       ],
-      "online": [
-        2019,
-        10,
-        31
-      ],
-      "print": [
-        2020,
-        2
-      ],
+      "online": null,
+      "print": null,
       "retrievedAt": "2026-11-10T00:00:00.000Z",
-      "version": "version of record",
+      "version": null,
       "integrity": null,
-      "abstract": {
-        "text": "Over the past two decades, there has been a marked increase in partisan social polarization, leaving scholars in search of solutions to partisan conflict.",
-        "source": "Cambridge University Press",
-        "kind": "excerpt",
-        "url": "https://www.cambridge.org/core/journals/american-political-science-review/article/how-empathic-concern-fuels-political-polarization/8115DB5BDE548FF6AB04DA661F83785E"
-      },
-      "containerTitle": "American Political Science Review",
-      "publisher": "",
-      "volume": "114",
-      "issue": "1",
-      "pages": "258-269",
+      "abstract": null,
+      "containerTitle": "",
+      "publisher": "Penguin Press",
+      "volume": "",
+      "issue": "",
+      "pages": "",
       "articleNumber": "",
-      "edition": "",
+      "edition": "Hardcover",
       "publisherPlace": "",
       "containerAbbreviation": "",
-      "apaTitle": "How empathic concern fuels political polarization",
-      "original": "How Empathic Concern Fuels Political Polarization, Simas, Clifford and Kirkland, American Political Science Review 114(1), 2020",
+      "apaTitle": "A time to gather: How ritual created the world—and how it can save us",
+      "original": "A Time to Gather: How Ritual Created the World—and How It Can Save Us, Bruce Feiler, Penguin Press (2026)",
       "note": "",
-      "citationText": "Simas, E. N., Clifford, S., & Kirkland, J. H. (2020). How empathic concern fuels political polarization. American Political Science Review, 114(1), 258–269. https://doi.org/10.1017/S0003055419000534"
+      "citationText": "Feiler, B. (2026). A time to gather: How ritual created the world—and how it can save us. Penguin Press."
     }
   ]
 }

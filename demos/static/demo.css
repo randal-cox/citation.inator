@@ -101,7 +101,7 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--demo-sur
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: .5rem 1.1rem;
+  gap: .5rem .65rem;
   font-size: .9rem;
   margin: 0 0 .85rem;
 }
@@ -118,19 +118,31 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; background: var(--demo-sur
   font: inherit;
 }
 .demo-setting { display: inline-flex; align-items: center; gap: .35rem; }
+@media (min-width: 40rem) {
+  .demo-setting + .demo-setting { border-inline-start: 1px solid var(--demo-line); padding-inline-start: .65rem; }
+}
 .demo-help button {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 1.65rem;
-  height: 1.65rem;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
   padding: 0;
-  border: 1px solid var(--demo-line);
+  border: 0;
   border-radius: 50%;
   color: var(--demo-accent);
-  background: var(--demo-surface);
-  font: inherit;
-  font-weight: 650;
+  background: transparent;
+  font: 650 .7rem/1 system-ui, sans-serif;
 }
+.demo-help button::before {
+  content: "";
+  position: absolute;
+  inset: .2rem;
+  border: 1px solid var(--demo-line);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.notation-examples { margin-block-start: 1.5rem; }
 .demo-help [role="tooltip"] {
   position: absolute;
   display: none;
