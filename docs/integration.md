@@ -35,7 +35,7 @@ initializeCitationInspector(inspector, {
 
 Generated classes default to names such as `citation-cite`, `citation-endnotes` and `citation-panel`. Set `classPrefix` to replace `citation` in those names. The built-in stylesheet still works with the new names. The prefix accepts 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter. Set the same option when compiling if you want your class names in the HTML before JavaScript loads.
 
-For assets served with a long cache lifetime, put each tested checkout in a path such as `/assets/citation-inator-0.1.2-<short-commit>/`. Copy the module and stylesheet into that same directory and update both URLs in your template. The module also loads its adjacent stylesheet. Publish the corresponding HTML and cache together under fresh URLs, or configure them to revalidate.
+For assets served with a long cache lifetime, put each tested checkout in a path such as `/assets/citation-inator-0.1.3-<short-commit>/`. Copy the module and stylesheet into that same directory and update both URLs in your template. The module also loads its adjacent stylesheet. Publish the corresponding HTML and cache together under fresh URLs, or configure them to revalidate.
 
 ## Try the standalone HTML
 
@@ -48,7 +48,7 @@ Serve `.mjs` as JavaScript and `.json` as JSON. Static links and endnotes work w
 Build the current tarball by running `npm ci` and `npm pack` in the downloaded library checkout with Node.js 22 or later. Install that tarball in your project. Copy `reading.txt` and `citations.json` from the ZIP into this directory for the example.
 
 ```sh
-npm install ./citation-inator-0.1.2.tgz
+npm install ./citation-inator-0.1.3.tgz
 npm exec -- citation-inator reading.txt citations.json article.html my-article
 ```
 

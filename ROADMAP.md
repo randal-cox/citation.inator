@@ -1,6 +1,6 @@
 # Roadmap
 
-Version 0.1.2 includes the site migration features. See the [changelog](CHANGELOG.md).
+Version 0.1.3 adds author IDs for Chicago and a diagnostic for cache-wide year letters. See the [changelog](CHANGELOG.md).
 
 ## Local preview
 

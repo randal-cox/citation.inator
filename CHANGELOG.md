@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.3 · 2026-11-10
 
 - Accept curated personal author IDs for Chicago surname disambiguation across variant bylines.
 - Report when cache-wide year letters have companion works outside a page’s endnotes.

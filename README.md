@@ -8,7 +8,7 @@ To serve the demos from the checkout, run `npm start` from the repository root.
 
 **Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
-**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.1.2.tgz` there. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
+**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.1.3.tgz` there. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">
