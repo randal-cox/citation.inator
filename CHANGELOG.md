@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.2 · 2026-11-10
 
 - Compile isolated citations for reusable excerpts, scoped endnotes for entries, and standalone reading lists with optional uncited endnotes.
 - Add Chicago house-style dates, organization short names, surname initials, grouped years, and U.S. legislation reference fields.

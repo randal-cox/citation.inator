@@ -1,4 +1,4 @@
-/*! citation-inator v0.1.1 | MIT | See LICENSE */
+/*! citation-inator v0.1.2 | MIT | See LICENSE */
 
 // src/class-names.mjs
 var defaultClassPrefix = "citation";

@@ -1,6 +1,6 @@
 # Roadmap
 
-The current source candidate contains the Unreleased changes. The existing 0.1.1 archives represent the earlier preview.
+Version 0.1.2 includes the site migration features. See the [changelog](CHANGELOG.md).
 
 ## Local preview
 
