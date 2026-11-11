@@ -20,5 +20,4 @@ export function iconMarkup(name) {
 }
 
 
-// The navy tile, cyan stroke and amber accent follow the Commons mark.
 export const brandIconMarkup = '<svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg>';

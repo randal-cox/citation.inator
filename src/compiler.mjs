@@ -328,15 +328,19 @@ export function bibliographyText(record, suffix = "", style = "default") {
   return bibliographyParts(record, suffix, style).map(part => part.text).join("");
 }
 
-const identity = author => JSON.stringify([author.literal, author.family, author.given, author.suffix].map(value => (value || "").normalize("NFKC").toLowerCase()));
-function styleAuthor(record, style, narrative = false, shared = new Set()) {
+const nameKey = value => (value || "").normalize("NFKC").toLowerCase();
+const identity = author => author.id
+  ? JSON.stringify([author.id])
+  : JSON.stringify([author.literal, author.family, author.given, author.suffix].map(nameKey));
+
+function styleAuthor(record, style, narrative = false, shared = new Map()) {
   if (record.inlineAuthor) return record.inlineAuthor;
   if (record.type === "legislation") return titleFor(record);
   if (style === "chicago-author-date" && record.authors.length) {
     const names = record.authors.map(author => {
       if (author.literal) return author.short || author.literal;
       const initials = author.given?.match(/\p{L}[\p{L}\p{M}]*/gu)?.map(word => `${[...word][0]}.`).join(" ");
-      return shared.has(identity(author)) && initials ? `${initials} ${author.family}` : author.family;
+      return shared.get(nameKey(author.family))?.has(identity(author)) && initials ? `${initials} ${author.family}` : author.family;
     });
     return names.length > 2 ? `${names[0]} et al.` : names.join(" and ");
   }
@@ -567,7 +571,7 @@ export function compileCitationBlocks(blocks, cache, {
   const numbering = suffixScope === "cache" && !["mla", "vancouver"].includes(citationStyle)
     ? [...index.byId.values()].map(record => used.get(record.id) || { record, suffix: "" }).sort(referenceOrder)
     : entries;
-  const shared = new Set();
+  const shared = new Map();
   if (citationStyle === "chicago-author-date") {
     const surnames = new Map();
     for (const { record } of numbering) {
@@ -576,15 +580,15 @@ export function compileCitationBlocks(blocks, cache, {
       const bylineKey = JSON.stringify(byline.map(identity));
       for (const author of byline) {
         if (!author.family || !author.given) continue;
-        const key = author.family.normalize("NFKC").toLowerCase();
+        const key = nameKey(author.family);
         if (!surnames.has(key)) surnames.set(key, { people: new Set(), bylines: new Set() });
         const entry = surnames.get(key);
         entry.people.add(identity(author));
         entry.bylines.add(bylineKey);
       }
     }
-    for (const { people, bylines } of surnames.values()) {
-      if (people.size > 1 && bylines.size > 1) for (const person of people) shared.add(person);
+    for (const [surname, { people, bylines }] of surnames) {
+      if (people.size > 1 && bylines.size > 1) shared.set(surname, people);
     }
   }
   const groups = new Map();

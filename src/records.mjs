@@ -159,7 +159,8 @@ export function normalizeRecord(input) {
     const given = cleanText(author?.given);
     const short = cleanText(author?.short);
     const suffix = cleanText(author?.suffix);
-    return literal ? [{ literal, ...(short && { short }) }] : family ? [{ family, ...(given && { given }), ...(suffix && { suffix }) }] : [];
+    const id = cleanText(author?.id);
+    return literal ? [{ literal, ...(short && { short }) }] : family ? [{ family, ...(given && { given }), ...(suffix && { suffix }), ...(id && { id }) }] : [];
   });
   const locations = array(input.locations).flatMap(location => {
     const url = httpsURL(location?.url);
@@ -241,7 +242,7 @@ export function toCSL(record) {
   const date = parts => parts && { "date-parts": [parts] };
   return Object.fromEntries(Object.entries({
     id: record.id, type: record.type, title: record.title,
-    author: record.authors.map(({ short, ...author }) => author),
+    author: record.authors.map(({ id, short, ...author }) => author),
     jurisdiction: record.jurisdiction, number: record.number,
     issued: date(record.issued), "original-date": date(record.originalIssued), "container-title": record.containerTitle, publisher: record.publisher,
     volume: record.volume, issue: record.issue, page: record.pages || record.articleNumber,

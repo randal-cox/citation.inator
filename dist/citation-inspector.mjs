@@ -177,7 +177,8 @@ function normalizeRecord(input) {
     const given = cleanText(author?.given);
     const short = cleanText(author?.short);
     const suffix = cleanText(author?.suffix);
-    return literal ? [{ literal, ...short && { short } }] : family ? [{ family, ...given && { given }, ...suffix && { suffix } }] : [];
+    const id = cleanText(author?.id);
+    return literal ? [{ literal, ...short && { short } }] : family ? [{ family, ...given && { given }, ...suffix && { suffix }, ...id && { id } }] : [];
   });
   const locations = array(input.locations).flatMap((location) => {
     const url = httpsURL(location?.url);

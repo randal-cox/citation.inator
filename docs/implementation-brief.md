@@ -2,7 +2,7 @@
 
 ## Build the smallest real vertical slice
 
-Do not begin with every provider or Commons drag behavior. Prove the portable contract first.
+Prove the portable contract before adding more providers or advanced panel controls.
 
 ### Slice 1: static compiler and plain HTML consumer
 
@@ -62,15 +62,6 @@ Demonstrate explicit runtime resolution and refresh:
 - negative-result caching
 - provider rate-limit compliance
 
-### Slice 5: Commons adapter
-
-Only after the standalone component works:
-
-- adopt Commons pane conventions
-- add draggable/resizable behavior
-- verify that visual movement does not alter accessible reading/focus order
-- preserve the framework-neutral package and plain HTML demonstration
-
 ## Proposed repository shape
 
 ```text
@@ -79,7 +70,6 @@ packages/
   providers/
   cli/
   web-component/
-  commons-adapter/
 demos/
   static/
   dynamic/

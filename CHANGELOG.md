@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Accept curated personal author IDs for Chicago surname disambiguation across variant bylines.
+
 ## 0.1.2 · 2026-11-10
 
 - Limit Chicago surname disambiguation to authors shown in competing bylines.

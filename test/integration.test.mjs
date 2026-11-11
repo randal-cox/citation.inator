@@ -372,6 +372,22 @@ test("Chicago distinguishes competing bylines without treating a work's hidden c
   assert.equal(toCSL(makeCache([behrens]).records[0]).author[0].suffix, "III");
 });
 
+test("Chicago uses personal author IDs to identify variant bylines", () => {
+  const author = { family: "Wrangham", given: "Richard", id: "person:richard-wrangham" };
+  const first = { ...book, id: "first", identifiers: [], issued: [2009], authors: [author] };
+  const second = { ...first, id: "second", issued: [2019], authors: [{ ...author, given: "Richard W." }] };
+  const other = { ...first, id: "other", issued: [2020], authors: [{ family: "Wrangham", given: "Alice", id: "person:alice-wrangham" }] };
+  const cache = makeCache([first, second, other]);
+  const options = { citationStyle: "chicago-author-date" };
+  const result = compileCitations("{citation first; second}\n\n{citation endnote}", cache, options);
+  assert.deepEqual(labels(result.html), ["Wrangham 2009", "2019"]);
+  assert.match(result.html, /Wrangham, Richard W\./);
+  assert.deepEqual(labels(compileCitations("{citation first; other}", cache, options).html),
+    ["R. Wrangham 2009", "A. Wrangham 2020"]);
+  assert.equal(cache.records[0].authors[0].id, author.id);
+  assert.deepEqual(toCSL(cache.records[0]).author, [{ family: "Wrangham", given: "Richard" }]);
+});
+
 test("scoped notes stay inside definition, list and table entries with local headings and diagnose misplaced markers", () => {
   const source = `<dl>
     <dt>First</dt><dd><p>{citation ostrom}</p><p>{citation endnote | scope:since-last | heading:"Sources" | level:4}</p></dd>

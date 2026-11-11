@@ -1,6 +1,6 @@
 # Launch decisions
 
-The 0.1.0 preview shipped an MIT npm package, a browser module and a plain HTML example. The core, resolver, compiler and browser component run independently of Commons. A future Commons adapter can map shared citation fields while retaining the source evidence and occurrence links.
+The 0.1.0 preview shipped an MIT npm package, a browser module and a plain HTML example.
 
 ## Source and identity
 

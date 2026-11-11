@@ -4,9 +4,9 @@ Status: draft v0.1, 2026-11-10
 
 ## Product summary
 
-The Portable Citation Inspector is a permissively licensed, framework-neutral citation system for Markdown, static sites, dynamic applications, and Inator Commons consumers. Authors place readable citation directives in source text. The system resolves scholarly metadata algorithmically, renders accessible inline author-year citations, generates endnotes, and opens a rich citation inspector with bibliographic metadata, abstract, status, provenance, and lawful access destinations.
+The Portable Citation Inspector is a permissively licensed, framework-neutral citation system for Markdown, static sites, and dynamic applications. Authors place readable citation directives in source text. The system resolves scholarly metadata algorithmically, renders accessible inline author-year citations, generates endnotes, and opens a rich citation inspector with bibliographic metadata, abstract, status, provenance, and lawful access destinations.
 
-It must remain useful without a server, an account, an LLM, or Inator Commons.
+It must remain useful without a server, an account, or an LLM.
 
 ## Problem
 
@@ -25,10 +25,9 @@ Authors also repeatedly hand-assemble metadata and access links even though matu
 4. Provide a compact, accessible citation inspector with full metadata and useful destinations.
 5. Preserve raw provider evidence and deterministic merge decisions.
 6. Work at build time, runtime, offline from cache, and in degraded static form.
-7. Be framework-neutral and adoptable outside the Inator ecosystem.
-8. Support an optional Commons adapter with draggable/resizable inspection behavior.
-9. Detect and display corrections, retractions, expressions of concern, and version status when reliable data are available.
-10. Be given away under a permissive open-source license.
+7. Be framework-neutral and usable by independent host applications.
+8. Detect and display corrections, retractions, expressions of concern, and version status when reliable data are available.
+9. Be given away under a permissive open-source license.
 
 ## Non-goals
 
@@ -38,7 +37,7 @@ Authors also repeatedly hand-assemble metadata and access links even though matu
 - Paywall circumvention
 - Automated discovery, rotation, or health monitoring of Sci-Hub mirrors or IP addresses
 - Analytics on reader citation opens or outbound clicks
-- Requiring Commons, React, a CMS, or a hosted service
+- Requiring React, a CMS, or a hosted service
 
 The core may expose a generic administrator-configured external-destination adapter. Such adapters are disabled by default, are not populated from document syntax, and remain the adopting site's legal and security responsibility.
 
@@ -428,12 +427,6 @@ Proposed packages:
 - desktop and mobile layouts
 - theming through CSS custom properties and parts
 
-### Commons adapter
-
-- optional integration with Commons draggable/resizable pane conventions
-- shared typography, controls, status patterns, and lifecycle
-- does not become a dependency of the portable core
-
 ### Markdown integration
 
 The core owns the citation directive parser and an abstract syntax representation. Ecosystem-specific adapters integrate with Markdown/MDX/static-site pipelines. This prevents each consumer from implementing a subtly incompatible grammar.
@@ -549,13 +542,6 @@ The original phases below describe planned sequencing. See the roadmap for curre
 - security validation
 - report callback/event
 
-### Commons adoption
-
-- Commons pane adapter
-- drag/resize behavior
-- shared status and control patterns
-- adoption in an independent website and one Inator consumer
-
 ### Later
 
 - manual metadata editing and durable overrides
@@ -587,4 +573,4 @@ The original phases below describe planned sequencing. See the roadmap for curre
 - arXiv metadata and PDFs
 - DataCite's unsupported citation widget as a narrow prior implementation to inspect, not adopt blindly
 
-The product's original contribution is the portable authoring grammar, deterministic multi-provider record, integrity/status layer, accessible reader interaction, offline/export behavior, and optional Commons inspection experience.
+The product's original contribution is the portable authoring grammar, deterministic multi-provider record, integrity/status layer, accessible reader interaction, and offline/export behavior.
