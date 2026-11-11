@@ -1,7 +1,7 @@
 import { defaultClassPrefix, partClassNames, partSelector, validClassPrefix, validateClassPrefix } from "./class-names.mjs";
 import { brandIconMarkup, iconMarkup } from "./icons.mjs";
 import { bibliographyText } from "./compiler.mjs";
-import { httpsURL, identifierURL, readCache } from "./records.mjs";
+import { fullAuthorName, httpsURL, identifierURL, readCache } from "./records.mjs";
 
 const componentName = "citation-inspector";
 const stylesheetURL = new URL("./citation-inspector.css", import.meta.url);
@@ -740,11 +740,11 @@ class CitationInspector extends HTMLElement {
     const titleNode = element("h3", title);
     titleNode.dir = "auto";
     fragment.append(titleNode);
-    const names = record.authors.map(author => author.literal || [author.given, author.family].filter(Boolean).join(" "));
+    const names = record.authors.map(author => fullAuthorName(author));
     if (names.length) {
-      const authors = element("p", names.join(", "), "authors");
+      const authors = element("p", names.join(", ") + (record.authorsComplete === false ? ", et al." : ""), "authors");
       authors.dir = "auto";
-      fragment.append(names.length > 8 ? disclosure(`Show all ${names.length} authors`, authors) : authors);
+      fragment.append(names.length > 8 ? disclosure(record.authorsComplete === false ? "Show listed authors" : `Show all ${names.length} authors`, authors) : authors);
     }
     const doi = record.identifiers.find(item => item.scheme === "doi");
     const doiURL = identifierURL(doi);

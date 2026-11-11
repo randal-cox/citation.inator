@@ -1,7 +1,7 @@
 import { defaultClassPrefix, partClassNames, validateClassPrefix } from "./class-names.mjs";
 import packageInfo from "../package.json" with { type: "json" };
 import { iconMarkup } from "./icons.mjs";
-import { canonicalIdentifierKey, httpsURL, identifierURL, localRecordId, normalizeIdentifier, normalizeRecord, readCache } from "./records.mjs";
+import { canonicalIdentifierKey, fullAuthorName, httpsURL, identifierURL, localRecordId, normalizeIdentifier, normalizeRecord, readCache } from "./records.mjs";
 
 const forms = new Set(["parenthetical", "narrative", "author-only", "suppress-author", "suppress-year"]);
 const parentheticalForms = new Set(["parenthetical", "suppress-author", "suppress-year"]);
@@ -63,6 +63,23 @@ function validateKeyword(citationKeyword) {
   }
 }
 
+function parseEndnotes(body, raw) {
+  const [, ...options] = split(body, "|");
+  const token = { type: "endnotes", raw };
+  for (const option of options) {
+    if (option === "scope:since-last" && !token.scoped) token.scoped = true;
+    else if (option === "heading:none" && token.heading === undefined) token.heading = null;
+    else {
+      const heading = /^heading:\s*"((?:\\.|[^"\\])+)"$/.exec(option);
+      const level = /^level:\s*([1-6])$/.exec(option);
+      if (heading && heading[1].trim() && token.heading === undefined) token.heading = unescape(heading[1]).trim();
+      else if (level && token.level === undefined) token.level = Number(level[1]);
+      else return { type: "text", text: raw, malformed: true };
+    }
+  }
+  return token;
+}
+
 export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
   validateKeyword(citationKeyword);
   const directive = new RegExp(String.raw`\\[\\{}]|\{endnotes\}|\{(${citationKeyword}|cite)[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
@@ -74,8 +91,8 @@ export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
     cursor = match.index + raw.length;
     if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
     else if (raw === "{endnotes}") tokens.push({ type: "endnotes", raw });
-    else if (match[1] === citationKeyword && /^endnote(?:\s*\|\s*scope:since-last)?$/.test(match[2].trim())) {
-      tokens.push({ type: "endnotes", scoped: match[2].includes("|"), raw });
+    else if (match[1] === citationKeyword && /^endnote(?:\s*\||$)/.test(match[2].trim())) {
+      tokens.push(parseEndnotes(match[2], raw));
     } else if (match[1] === citationKeyword && /^(?:list|nocite)[ \t]/.test(match[2].trim())) {
       const [, type, body] = /^(list|nocite)\s+(.+)$/.exec(match[2].trim()) || [];
       const [keys, ...options] = split(body || "", "|");
@@ -145,7 +162,7 @@ function defaultBibliography(record, suffix = "") {
   const names = record.authors.map(author => {
     if (author.literal) return author.literal;
     const initials = author.given?.match(/\p{L}[\p{L}\p{M}]*/gu)?.map(part => `${[...part][0]}.`).join(" ");
-    return initials ? `${author.family}, ${initials}` : author.family;
+    return [author.family, initials, author.suffix].filter(Boolean).join(", ");
   });
   const authors = names.length > 1 ? `${names.slice(0, -1).join(", ")}, & ${names.at(-1)}` : names[0];
   const journal = [record.containerTitle, record.volume + (record.issue ? `(${record.issue})` : ""), record.pages || record.articleNumber].filter(Boolean).join(", ");
@@ -166,11 +183,8 @@ function chicagoBibliography(record, suffix) {
   }
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
-  const fullName = (author, first) => author.literal || (first
-    ? [author.family, author.given].filter(Boolean).join(", ")
-    : [author.given, author.family].filter(Boolean).join(" "));
   if (authors.length) {
-    const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullName(author, index === 0));
+    const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullAuthorName(author, index === 0));
     const head = names.slice(0, -1).join(", ");
     const byline = names.length === 1 ? names[0]
       : authors.length > 6 ? `${names.join(", ")}, et al`
@@ -212,15 +226,13 @@ function styledBibliography(record, suffix, style) {
   const url = identifierURL(record.identifiers.find(id => ["doi", "url"].includes(id.scheme)));
   const initials = (given, separator = ". ") => (given?.match(/\p{L}[\p{L}\p{M}]*/gu) || [])
     .map(word => [...word][0]).join(separator);
-  const abbreviated = author => author.literal || [author.family, author.given && `${initials(author.given)}.`].filter(Boolean).join(", ");
-  const fullName = (author, first) => author.literal || (first
-    ? [author.family, author.given].filter(Boolean).join(", ")
-    : [author.given, author.family].filter(Boolean).join(" "));
+  const abbreviated = author => author.literal || [author.family, author.given && `${initials(author.given)}.`, author.suffix].filter(Boolean).join(", ");
   const period = text => /[.?!]$/.test(text) ? text : `${text}.`;
   const locator = pages && `${/[-–—]/.test(pages) ? "pp." : "p."} ${pages}`;
   if (style === "vancouver") {
+    const ordinal = { II: "2nd", III: "3rd", IV: "4th", V: "5th", VI: "6th", VII: "7th", VIII: "8th", IX: "9th", X: "10th" };
     const names = authors.slice(0, 6).map(author => author.literal ||
-      [author.family, initials(author.given, "")].filter(Boolean).join(" "));
+      [author.family, initials(author.given, ""), Object.hasOwn(ordinal, author.suffix) ? ordinal[author.suffix] : author.suffix?.replace(/\.$/, "")].filter(Boolean).join(" "));
     if (names.length) add(`${names.join(", ")}${authors.length > 6 ? ", et al" : ""}. `);
     add(period(title));
     if (containerTitle) {
@@ -238,8 +250,8 @@ function styledBibliography(record, suffix, style) {
   }
   if (style === "mla") {
     if (authors.length) {
-      const byline = fullName(authors[0], true);
-      add(`${byline}${authors.length > 2 ? ", et al" : authors.length === 2 ? `, and ${fullName(authors[1])}` : ""}. `);
+      const byline = fullAuthorName(authors[0], true);
+      add(`${byline}${authors.length > 2 ? ", et al" : authors.length === 2 ? `, and ${fullAuthorName(authors[1])}` : ""}. `);
     }
     if (containerTitle) {
       add(`“${period(title)}” `);
@@ -316,7 +328,7 @@ export function bibliographyText(record, suffix = "", style = "default") {
   return bibliographyParts(record, suffix, style).map(part => part.text).join("");
 }
 
-const identity = author => JSON.stringify([author.literal, author.family, author.given].map(value => (value || "").normalize("NFKC").toLowerCase()));
+const identity = author => JSON.stringify([author.literal, author.family, author.given, author.suffix].map(value => (value || "").normalize("NFKC").toLowerCase()));
 function styleAuthor(record, style, narrative = false, shared = new Set()) {
   if (record.inlineAuthor) return record.inlineAuthor;
   if (record.type === "legislation") return titleFor(record);
@@ -466,13 +478,14 @@ function renderBibliographyPart({ text, emphasis, href }) {
 export function compileCitationBlocks(blocks, cache, {
   namespace = "cit", classPrefix = defaultClassPrefix, citationStyle = "default",
   endnotesHeading = "Endnotes", markup = false, closingMarkup = "",
-  references = "endnotes", isolatedHref, reprintYear = "both"
+  references = "endnotes", isolatedHref, reprintYear = "both", suffixScope = "fragment"
 } = {}) {
   if (!/^[a-z][a-z0-9-]{0,39}$/.test(namespace)) throw new TypeError("Use a stable lowercase document namespace.");
   validateClassPrefix(classPrefix);
   if (!citationStyles.has(citationStyle)) throw new TypeError("Unknown citation style.");
   if (typeof endnotesHeading !== "string" || !endnotesHeading.trim()) throw new TypeError("Supply a nonempty endnotes heading.");
   if (!["endnotes", "isolated"].includes(references)) throw new TypeError("Use endnotes or isolated references.");
+  if (!["fragment", "cache"].includes(suffixScope)) throw new TypeError("Use fragment or cache for suffixScope.");
   if (!["original", "edition", "both"].includes(reprintYear)) throw new TypeError("Use original, edition, or both for reprintYear.");
   if (isolatedHref !== undefined && (typeof isolatedHref !== "string" || !safeFallback(isolatedHref.replaceAll("{id}", "record")))) {
     throw new TypeError("Use an HTTPS URL or a relative path for isolatedHref.");
@@ -505,6 +518,7 @@ export function compileCitationBlocks(blocks, cache, {
     }
     for (const [indexInBlock, token] of block.entries()) {
       if (token.malformed) diagnostics.push({ state: "malformed", source: token.text });
+      if (token.misplaced) diagnostics.push({ state: "misplaced-directive", source: token.text });
       if (!["citation", "list", "nocite"].includes(token.type)) continue;
       if (token.type === "list" && block.some(other => other !== token && (other.type !== "text" || other.text.trim()))) continue;
       for (const item of token.items) {
@@ -544,27 +558,39 @@ export function compileCitationBlocks(blocks, cache, {
   }
 
   const entries = [...used.values()];
-  if (citationStyle !== "vancouver") entries.sort(({ record: a }, { record: b }) =>
+  const referenceOrder = ({ record: a }, { record: b }) =>
     (a.state === "unresolved") - (b.state === "unresolved") ||
     compare(sortName(a), sortName(b)) ||
     bibliographyYear(a, citationStyle) - bibliographyYear(b, citationStyle) ||
-    compare(titleFor(a), titleFor(b)) || compare(a.id, b.id)
-  );
+    compare(titleFor(a), titleFor(b)) || compare(a.id, b.id);
+  if (citationStyle !== "vancouver") entries.sort(referenceOrder);
+  const numbering = suffixScope === "cache" && !["mla", "vancouver"].includes(citationStyle)
+    ? [...index.byId.values()].map(record => used.get(record.id) || { record, suffix: "" }).sort(referenceOrder)
+    : entries;
   const shared = new Set();
   if (citationStyle === "chicago-author-date") {
     const surnames = new Map();
-    for (const { record } of entries) for (const author of record.authors) {
-      if (!author.family || !author.given) continue;
-      const key = author.family.normalize("NFKC").toLowerCase();
-      if (!surnames.has(key)) surnames.set(key, new Set());
-      surnames.get(key).add(identity(author));
+    for (const { record } of numbering) {
+      if (record.inlineAuthor || record.type === "legislation" || record.state === "unresolved") continue;
+      const byline = record.authors.slice(0, record.authors.length > 2 ? 1 : 2);
+      const bylineKey = JSON.stringify(byline.map(identity));
+      for (const author of byline) {
+        if (!author.family || !author.given) continue;
+        const key = author.family.normalize("NFKC").toLowerCase();
+        if (!surnames.has(key)) surnames.set(key, { people: new Set(), bylines: new Set() });
+        const entry = surnames.get(key);
+        entry.people.add(identity(author));
+        entry.bylines.add(bylineKey);
+      }
     }
-    for (const authors of surnames.values()) if (authors.size > 1) for (const author of authors) shared.add(author);
+    for (const { people, bylines } of surnames.values()) {
+      if (people.size > 1 && bylines.size > 1) for (const person of people) shared.add(person);
+    }
   }
   const groups = new Map();
-  for (const entry of entries) {
+  for (const entry of entries) entry.number ??= nextReferenceNumber++;
+  for (const entry of numbering) {
     const { record } = entry;
-    entry.number ??= nextReferenceNumber++;
     if (record.state === "unresolved") continue;
     // The rendered author-year must also distinguish two different lists shortened to "et al."
     const label = styleAuthor(record, citationStyle, false, shared);
@@ -616,7 +642,7 @@ export function compileCitationBlocks(blocks, cache, {
     return `<a ${part("cite")}${item.occurrence ? ` id="${item.occurrence}"` : ""}${href ? ` href="${escapeHTML(href)}"` : ""} data-ci-record="${record.id}"${inspectLabel ? ` data-ci-inspect-label="${escapeHTML(inspectLabel)}" aria-label="${escapeHTML(inspectLabel)}"` : ""} data-ci-bibliography="${escapeHTML(text)}"${formatting} dir="auto">${escapeHTML(label)}</a>`;
   };
 
-  function referencesHTML(items, scope, list = false) {
+  function referencesHTML(items, scope, list = false, marker = {}) {
     const local = localEntries.get(scope);
     if (!items.length) return "";
     const heading = `${scopeName(scope)}-endnotes`;
@@ -632,11 +658,17 @@ export function compileCitationBlocks(blocks, cache, {
       }).join("");
       const controls = list ? trigger(item, "Inspect", "Inspect reference: " + titleFor(record)) + links
         : links + `<span ${part("backlinks")}>${backlinks}</span>`;
-      const attrs = list ? "" : ` id="${noteID(record, scope)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
-      return `<li${attrs}><span dir="auto">${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}<div ${part("note-actions")}>${controls}</div></li>`;
+      const annotation = list && record.listAnnotationParts?.length
+        ? `<p ${part("list-annotation")}>${record.listAnnotationParts.map(renderBibliographyPart).join("")}</p>` : "";
+      const attrs = list ? ` data-ci-list-record="${record.id}"` : ` id="${noteID(record, scope)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
+      return `<li${attrs}><span dir="auto">${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${annotation}<div ${part("note-actions")}>${controls}</div></li>`;
     }).join("\n");
-    return list ? `<ol ${part("reference-list")}>${rows}</ol>` :
-      `<section ${part("endnotes")} aria-labelledby="${heading}"><h2 id="${heading}">${escapeHTML(endnotesHeading)}</h2><ol>${rows}</ol></section>`;
+    if (list) return `<ol ${part("reference-list")}>${rows}</ol>`;
+    const level = marker.level ?? 2;
+    const label = marker.heading === null ? `aria-label="${escapeHTML(endnotesHeading)}"` : `aria-labelledby="${heading}"`;
+    const title = marker.heading === null ? "" : `<h${level} id="${heading}">${escapeHTML(marker.heading ?? endnotesHeading)}</h${level}>`;
+    return `<section ${part("endnotes")} ${label}>${title}<ol>${rows}</ol></section>`;
+
   }
   const scopeItems = scope => {
     const items = entries.filter(entry => localEntries.get(scope)?.has(entry.record.id));
@@ -652,7 +684,7 @@ export function compileCitationBlocks(blocks, cache, {
     if (marker && references === "isolated") return "";
     if (marker && (scoped || !emittedNotes)) {
       emittedNotes = true;
-      return referencesHTML(scopeItems(marker.scope ?? 0), marker.scope ?? 0);
+      return referencesHTML(scopeItems(marker.scope ?? 0), marker.scope ?? 0, false, marker);
     }
     if (meaningful.length === 1 && meaningful[0].type === "list") {
       const token = meaningful[0];
@@ -668,7 +700,10 @@ export function compileCitationBlocks(blocks, cache, {
       if (token.type === "text") return escapeHTML(token.text);
       if (token.type === "markup") return token.text;
       if (token.type === "nocite") return "";
-      if (token.type === "endnotes" || token.type === "list") return escapeHTML(token.raw);
+      if (token.type === "endnotes" || token.type === "list") {
+        diagnostics.push({ state: "misplaced-directive", source: token.raw });
+        return escapeHTML(token.raw);
+      }
       if (token.type === "annotation") {
         if (references === "isolated") return escapeHTML(annotationNames[token.name]);
         annotations.add(token.name);

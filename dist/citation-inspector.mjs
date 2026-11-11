@@ -151,6 +151,17 @@ function stamp(value) {
   const date = cleanText(value);
   return date && Number.isFinite(Date.parse(date)) ? new Date(date).toISOString() : null;
 }
+function normalizeTextParts(parts) {
+  return (Array.isArray(parts) ? parts : []).flatMap((part) => {
+    if (typeof part?.text !== "string" || !part.text) return [];
+    const href = httpsURL(part.href);
+    return [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
+  });
+}
+function fullAuthorName(author, inverted = false) {
+  if (author.literal) return author.literal;
+  return (inverted ? [author.family, author.given, author.suffix] : [author.given, author.family, author.suffix]).filter(Boolean).join(inverted ? ", " : " ");
+}
 function normalizeRecord(input) {
   if (!input || !stableId.test(cleanText(input.id))) throw new TypeError("A stable citation record ID is required.");
   const array = (value) => Array.isArray(value) ? value : [];
@@ -165,7 +176,8 @@ function normalizeRecord(input) {
     const family = cleanText(author?.family);
     const given = cleanText(author?.given);
     const short = cleanText(author?.short);
-    return literal ? [{ literal, ...short && { short } }] : family ? [{ family, ...given && { given } }] : [];
+    const suffix = cleanText(author?.suffix);
+    return literal ? [{ literal, ...short && { short } }] : family ? [{ family, ...given && { given }, ...suffix && { suffix } }] : [];
   });
   const locations = array(input.locations).flatMap((location) => {
     const url = httpsURL(location?.url);
@@ -206,11 +218,9 @@ function normalizeRecord(input) {
     identifiers: [...identifiers.values()],
     locations,
     provenance,
-    citationParts: array(input.citationParts).flatMap((part) => {
-      if (typeof part?.text !== "string" || !part.text) return [];
-      const href = httpsURL(part.href);
-      return [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
-    }),
+    citationParts: normalizeTextParts(input.citationParts),
+    ...input.authorsComplete === false && { authorsComplete: false },
+    ...Array.isArray(input.listAnnotationParts) && { listAnnotationParts: normalizeTextParts(input.listAnnotationParts) },
     ...Object.fromEntries(optional.map((field) => [field, cleanText(input[field])]).filter(([, value]) => value)),
     issued: dateParts(input.issued),
     ...originalIssued && { originalIssued },
@@ -279,7 +289,7 @@ function defaultBibliography(record, suffix = "") {
   const names = record.authors.map((author) => {
     if (author.literal) return author.literal;
     const initials = author.given?.match(/\p{L}[\p{L}\p{M}]*/gu)?.map((part) => `${[...part][0]}.`).join(" ");
-    return initials ? `${author.family}, ${initials}` : author.family;
+    return [author.family, initials, author.suffix].filter(Boolean).join(", ");
   });
   const authors = names.length > 1 ? `${names.slice(0, -1).join(", ")}, & ${names.at(-1)}` : names[0];
   const journal = [record.containerTitle, record.volume + (record.issue ? `(${record.issue})` : ""), record.pages || record.articleNumber].filter(Boolean).join(", ");
@@ -299,9 +309,8 @@ function chicagoBibliography(record, suffix) {
   }
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
-  const fullName = (author, first) => author.literal || (first ? [author.family, author.given].filter(Boolean).join(", ") : [author.given, author.family].filter(Boolean).join(" "));
   if (authors.length) {
-    const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullName(author, index === 0));
+    const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullAuthorName(author, index === 0));
     const head = names.slice(0, -1).join(", ");
     const byline = names.length === 1 ? names[0] : authors.length > 6 ? `${names.join(", ")}, et al` : `${head}${names.length > 2 ? "," : ""} and ${names.at(-1)}`;
     add(`${byline}. ${citationYear(record, suffix, "chicago-author-date", true)}. `);
@@ -337,12 +346,12 @@ function styledBibliography(record, suffix, style) {
   const pages = record.pages || record.articleNumber;
   const url = identifierURL(record.identifiers.find((id) => ["doi", "url"].includes(id.scheme)));
   const initials = (given, separator = ". ") => (given?.match(/\p{L}[\p{L}\p{M}]*/gu) || []).map((word) => [...word][0]).join(separator);
-  const abbreviated = (author) => author.literal || [author.family, author.given && `${initials(author.given)}.`].filter(Boolean).join(", ");
-  const fullName = (author, first) => author.literal || (first ? [author.family, author.given].filter(Boolean).join(", ") : [author.given, author.family].filter(Boolean).join(" "));
+  const abbreviated = (author) => author.literal || [author.family, author.given && `${initials(author.given)}.`, author.suffix].filter(Boolean).join(", ");
   const period = (text) => /[.?!]$/.test(text) ? text : `${text}.`;
   const locator = pages && `${/[-–—]/.test(pages) ? "pp." : "p."} ${pages}`;
   if (style === "vancouver") {
-    const names2 = authors.slice(0, 6).map((author) => author.literal || [author.family, initials(author.given, "")].filter(Boolean).join(" "));
+    const ordinal = { II: "2nd", III: "3rd", IV: "4th", V: "5th", VI: "6th", VII: "7th", VIII: "8th", IX: "9th", X: "10th" };
+    const names2 = authors.slice(0, 6).map((author) => author.literal || [author.family, initials(author.given, ""), Object.hasOwn(ordinal, author.suffix) ? ordinal[author.suffix] : author.suffix?.replace(/\.$/, "")].filter(Boolean).join(" "));
     if (names2.length) add(`${names2.join(", ")}${authors.length > 6 ? ", et al" : ""}. `);
     add(period(title));
     if (containerTitle) {
@@ -360,8 +369,8 @@ function styledBibliography(record, suffix, style) {
   }
   if (style === "mla") {
     if (authors.length) {
-      const byline = fullName(authors[0], true);
-      add(`${byline}${authors.length > 2 ? ", et al" : authors.length === 2 ? `, and ${fullName(authors[1])}` : ""}. `);
+      const byline = fullAuthorName(authors[0], true);
+      add(`${byline}${authors.length > 2 ? ", et al" : authors.length === 2 ? `, and ${fullAuthorName(authors[1])}` : ""}. `);
     }
     if (containerTitle) {
       add(`\u201C${period(title)}\u201D `);
@@ -1115,11 +1124,11 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     const titleNode = element("h3", title);
     titleNode.dir = "auto";
     fragment.append(titleNode);
-    const names = record.authors.map((author) => author.literal || [author.given, author.family].filter(Boolean).join(" "));
+    const names = record.authors.map((author) => fullAuthorName(author));
     if (names.length) {
-      const authors = element("p", names.join(", "), "authors");
+      const authors = element("p", names.join(", ") + (record.authorsComplete === false ? ", et al." : ""), "authors");
       authors.dir = "auto";
-      fragment.append(names.length > 8 ? disclosure(`Show all ${names.length} authors`, authors) : authors);
+      fragment.append(names.length > 8 ? disclosure(record.authorsComplete === false ? "Show listed authors" : `Show all ${names.length} authors`, authors) : authors);
     }
     const doi2 = record.identifiers.find((item) => item.scheme === "doi");
     const doiURL = identifierURL(doi2);

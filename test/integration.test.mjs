@@ -351,3 +351,70 @@ test("cross-fragment CLI report finds duplicate ISBNs, unused records and confli
   assert.ok(report.duplicates.some(group => group.identifier === "isbn:9780521405997"));
   assert.deepEqual(report.yearConflicts[0].records.map(record => record.year), [1990, 1991]);
 });
+
+test("Chicago distinguishes competing bylines without treating a work's hidden coauthors as competing authors", () => {
+  const meadows = { ...book, id: "limits", title: "The Limits to Growth", identifiers: [], issued: [1972], authors: [
+    { family: "Meadows", given: "Donella H." }, { family: "Meadows", given: "Dennis L." },
+    { family: "Randers", given: "Jørgen" }, { family: "Behrens", given: "William W.", suffix: "III" }
+  ] };
+  const dennis = { ...meadows, id: "dennis", authors: [meadows.authors[1]] };
+  const cache = makeCache([meadows, dennis]);
+  const options = { citationStyle: "chicago-author-date" };
+  const alone = compileCitations("{citation limits}", cache, options);
+  assert.deepEqual(labels(alone.html), ["Meadows et al. 1972"]);
+  assert.match(alone.html, /William W\. Behrens III/);
+  assert.deepEqual(labels(compileCitations("{citation limits; dennis}", cache, options).html),
+    ["D. H. Meadows et al. 1972", "D. L. Meadows 1972"]);
+  const behrens = { ...book, id: "behrens", identifiers: [], authors: [meadows.authors[3]] };
+  const sorted = compileCitations("{citation list ostrom; behrens | sort:author}", makeCache([book, behrens]), options).html;
+  assert.ok(sorted.indexOf('data-ci-list-record="behrens"') < sorted.indexOf('data-ci-list-record="ostrom"'));
+  assert.match(sorted, /Behrens, William W\., III/);
+  assert.equal(toCSL(makeCache([behrens]).records[0]).author[0].suffix, "III");
+});
+
+test("scoped notes stay inside definition, list and table entries with local headings and diagnose misplaced markers", () => {
+  const source = `<dl>
+    <dt>First</dt><dd><p>{citation ostrom}</p><p>{citation endnote | scope:since-last | heading:"Sources" | level:4}</p></dd>
+    <dt>Second</dt><dd><p>{citation ostrom}</p><p>{citation endnote | scope:since-last | heading:none}</p></dd>
+  </dl>
+  <ul><li>{citation study}<p>{citation endnote | scope:since-last}</p></li></ul>
+  <table><tr><td>{citation study}<p>{citation endnote | scope:since-last}</p></td></tr></table>
+  <p>Inline <em>{citation endnote | scope:since-last}</em> and {citation list ostrom} stay as text.</p>`;
+  const result = compileHTML(source, cache, { namespace: "lex", endnotesHeading: "References" });
+  const sections = nodes(result.html, node => attribute(node, "data-citation-part") === "endnotes");
+  assert.deepEqual(sections.map(node => node.parentNode.tagName), ["dd", "dd", "li", "td"]);
+  assert.match(result.html, /<h4 id="lex-endnotes">Sources<\/h4>/);
+  assert.equal(attribute(sections[1], "aria-label"), "References");
+  assert.equal(sections[1].childNodes[0].tagName, "ol");
+  assert.match(result.html, /<h2 id="lex-scope-3-endnotes">References<\/h2>/);
+  assert.match(result.html.split("</dd>")[0], /href="#lex-cite-ostrom-1"/);
+  assert.match(result.html.split("</dd>")[1], /href="#lex-cite-ostrom-2"/);
+  assert.match(rebaseCitationFragment(result.html, "lex", "other"), /aria-labelledby="other-endnotes"><h4 id="other-endnotes"/);
+  assert.deepEqual(result.diagnostics.map(item => item.state), ["misplaced-directive", "misplaced-directive"]);
+});
+
+test("cache-wide suffixes survive different citation subsets without expanding the page's references", () => {
+  const other = { ...book, id: "ostrom-other", identifiers: [], title: "Another work" };
+  const data = makeCache([book, other]);
+  const options = { citationStyle: "chicago-author-date", suffixScope: "cache" };
+  const one = compileCitations("{citation ostrom}", data, options);
+  const both = compileCitations("{citation ostrom; ostrom-other}", data, options);
+  assert.deepEqual(labels(one.html), ["Ostrom 1990b"]);
+  assert.deepEqual(labels(both.html), ["Ostrom 1990b", "1990a"]);
+  assert.deepEqual(one.cache.records.map(record => record.id), ["ostrom"]);
+  assert.doesNotMatch(one.html, /Another work/);
+  assert.match(one.html, /1990b\./);
+  assert.deepEqual(labels(compileCitations("{citation ostrom}", data, { ...options, suffixScope: "fragment" }).html), ["Ostrom 1990"]);
+});
+
+test("reading list annotations stay with each record and are absent from endnotes", () => {
+  const data = makeCache([
+    { ...book, listAnnotationParts: [{ text: "First summary", emphasis: "italic" }] },
+    { ...article, listAnnotationParts: [{ text: "<Second summary>", href: "https://example.org/summary" }] }
+  ]);
+  const { html } = compileCitations("{citation list ostrom; study}\n\n{citation nocite study}", data);
+  assert.match(html, /data-ci-list-record="ostrom"[^]*<em>First summary<\/em><\/p><div/);
+  assert.match(html, /data-ci-list-record="study"[^]*href="https:\/\/example.org\/summary"[^>]*>&lt;Second summary&gt;<\/a>/);
+  const notes = html.slice(html.indexOf('<section class="citation-endnotes"'));
+  assert.doesNotMatch(notes, /summary|data-ci-list-record/);
+});

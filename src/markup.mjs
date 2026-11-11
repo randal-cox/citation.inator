@@ -10,7 +10,7 @@ const interactiveRoles = new Set([
   "button", "checkbox", "combobox", "link", "menuitem", "menuitemcheckbox", "menuitemradio", "option",
   "radio", "searchbox", "slider", "spinbutton", "switch", "tab", "textbox", "treeitem"
 ]);
-const blockParents = new Set(["body", "article", "aside", "div", "footer", "header", "main", "section", "#document-fragment"]);
+const blockParents = new Set(["body", "article", "aside", "blockquote", "dd", "div", "figcaption", "figure", "footer", "header", "li", "main", "section", "td", "th", "#document-fragment"]);
 const proseBoundaries = new Set([
   ...blockParents, "blockquote", "caption", "dd", "dt", "figure", "figcaption", "h1", "h2", "h3",
   "h4", "h5", "h6", "li", "ol", "p", "table", "td", "th", "ul"
@@ -82,7 +82,7 @@ export function compileHTML(source, cache, options = {}) {
     } else {
       if (standalone(tokens) && !blockParents.has(parent.nodeName)) {
         const marker = tokens.find(token => token.type === "endnotes" || token.type === "list");
-        Object.assign(marker, { type: "text", text: marker.raw });
+        Object.assign(marker, { type: "text", text: marker.raw, misplaced: true });
       }
       edits.push({ ...node.sourceCodeLocation, tokens });
     }
@@ -142,7 +142,7 @@ export function rebaseCitationFragment(html, from, to) {
     const parentPart = attr(node.parentNode || {}, "data-citation-part")?.value;
     const listPart = attr(node.parentNode?.parentNode || {}, "data-citation-part")?.value;
     if (generated.test(id) && (attr(node, "data-ci-record") || part === "annotation-content" ||
-        node.tagName === "h2" && parentPart === "endnotes" || node.tagName === "li" && listPart === "endnotes")) {
+        /^h[1-6]$/.test(node.tagName) && parentPart === "endnotes" || node.tagName === "li" && listPart === "endnotes")) {
       mapping.set(id, to + id.slice(from.length));
     }
   });

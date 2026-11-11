@@ -46,7 +46,7 @@ export async function reportCitations(cache, fragments, compile) {
     for (const record of result.cache.records) if (ids.has(record.id)) used.add(record.id);
     for (const diagnostic of result.diagnostics) {
       if (diagnostic.state === "unresolved") unresolved.push({ fragment: name, identifier: diagnostic.identifier });
-      if (diagnostic.state === "malformed") malformed.push({ fragment: name, source: diagnostic.source });
+      if (["malformed", "misplaced-directive"].includes(diagnostic.state)) malformed.push({ fragment: name, source: diagnostic.source });
     }
   }
 

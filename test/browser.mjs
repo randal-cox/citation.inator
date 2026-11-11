@@ -676,7 +676,11 @@ try {
     references: "isolated", isolatedHref: "/lexicon.html#work", citationStyle: "chicago-author-date"
   });
   const linkedList = compileHTML("<p>{citation list adoption-book}</p>", makeCache([{
-    ...adoptionRecord, citationParts: [{ text: "Editorial reference: " }, { text: "source page", href: "https://example.org/source" }]
+    ...adoptionRecord,
+    authors: [{ family: "Behrens", given: "William W.", suffix: "III" }, { family: "Bulbulia", given: "Joseph" }],
+    authorsComplete: false,
+    citationParts: [{ text: "Editorial reference: " }, { text: "source page", href: "https://example.org/source" }],
+    listAnnotationParts: [{ text: "Reading list summary", emphasis: "italic" }]
   }]), { citationStyle: "chicago-author-date" });
   await writeFile(join(temporary, "lexicon-cache.json"), JSON.stringify(linkedList.cache));
   await writeFile(join(temporary, "lexicon.html"), `<!doctype html><html lang="en"><head>
@@ -702,7 +706,9 @@ try {
   }
   const list = page.locator(".citation-reference-list");
   assert.equal(await list.getByRole("link", { name: "Find at WorldCat" }).count(), 0);
+  assert.ok(await list.locator('[data-ci-list-record="adoption-book"] em').getByText("Reading list summary").isVisible());
   await list.getByRole("button", { name: /Inspect reference: Governing/ }).click();
+  assert.equal(await panel.locator(".citation-authors").textContent(), "William W. Behrens III, Joseph Bulbulia, et al.");
   assert.equal(await panel.getByRole("link", { name: "source page" }).getAttribute("href"), "https://example.org/source");
   await page.keyboard.press("Escape");
   await page.locator("citation-inspector").last().evaluate(reader => reader.removeAttribute("hidden-providers"));

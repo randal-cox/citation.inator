@@ -2,6 +2,11 @@
 
 ## 0.1.2 · 2026-11-10
 
+- Limit Chicago surname disambiguation to authors shown in competing bylines.
+- Preserve author suffixes and mark partial author lists in the inspector.
+- Support scoped endnotes in definition entries, list items, and table cells, with custom or omitted headings and diagnostics for misplaced markers.
+- Add cache-wide year letters and reading-list summaries with per-record hooks.
+
 - Compile isolated citations for reusable excerpts, scoped endnotes for entries, and standalone reading lists with optional uncited endnotes.
 - Add Chicago house-style dates, organization short names, surname initials, grouped years, and U.S. legislation reference fields.
 - Preserve HTTPS links in formatted reference parts and report citation gaps across multiple fragments.

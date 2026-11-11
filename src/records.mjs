@@ -130,6 +130,20 @@ function stamp(value) {
   return date && Number.isFinite(Date.parse(date)) ? new Date(date).toISOString() : null;
 }
 
+function normalizeTextParts(parts) {
+  return (Array.isArray(parts) ? parts : []).flatMap(part => {
+    if (typeof part?.text !== "string" || !part.text) return [];
+    const href = httpsURL(part.href);
+    return [{ text: part.text, ...(["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }), ...(href && { href }) }];
+  });
+}
+
+export function fullAuthorName(author, inverted = false) {
+  if (author.literal) return author.literal;
+  return (inverted ? [author.family, author.given, author.suffix] : [author.given, author.family, author.suffix])
+    .filter(Boolean).join(inverted ? ", " : " ");
+}
+
 export function normalizeRecord(input) {
   if (!input || !stableId.test(cleanText(input.id))) throw new TypeError("A stable citation record ID is required.");
   const array = value => Array.isArray(value) ? value : [];
@@ -144,7 +158,8 @@ export function normalizeRecord(input) {
     const family = cleanText(author?.family);
     const given = cleanText(author?.given);
     const short = cleanText(author?.short);
-    return literal ? [{ literal, ...(short && { short }) }] : family ? [{ family, ...(given && { given }) }] : [];
+    const suffix = cleanText(author?.suffix);
+    return literal ? [{ literal, ...(short && { short }) }] : family ? [{ family, ...(given && { given }), ...(suffix && { suffix }) }] : [];
   });
   const locations = array(input.locations).flatMap(location => {
     const url = httpsURL(location?.url);
@@ -176,11 +191,9 @@ export function normalizeRecord(input) {
     type: kinds.has(input.type) ? input.type : "document",
     state: title ? state : "unresolved",
     title, authors, identifiers: [...identifiers.values()], locations, provenance,
-    citationParts: array(input.citationParts).flatMap(part => {
-      if (typeof part?.text !== "string" || !part.text) return [];
-      const href = httpsURL(part.href);
-      return [{ text: part.text, ...(["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }), ...(href && { href }) }];
-    }),
+    citationParts: normalizeTextParts(input.citationParts),
+    ...(input.authorsComplete === false && { authorsComplete: false }),
+    ...(Array.isArray(input.listAnnotationParts) && { listAnnotationParts: normalizeTextParts(input.listAnnotationParts) }),
     ...Object.fromEntries(optional.map(field => [field, cleanText(input[field])]).filter(([, value]) => value)),
     issued: dateParts(input.issued),
     ...(originalIssued && { originalIssued }),
