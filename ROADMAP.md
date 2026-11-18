@@ -2,16 +2,19 @@
 
 Version 0.1.4 adds reader access, media records and structured citation integration. See the [changelog](CHANGELOG.md).
 
-## Milestone 0.1.4 completed
+## Completed milestone 0.1.4
+
+**We have a citation for that**, released 18 November 2026. The [milestone record](docs/milestones/0.1.4.md) links the release, delivered scope, acceptance evidence and remaining work.
 
 - Reader access profiles, built-in or host settings, copy-level access, grouped destinations, translated wording and plural counts.
 - Preferred title destinations, library proxy/OpenURL links, and saved verification dates.
 - Artwork/image records, explicit creator attribution, literal dates, reuse terms and source/served checksums.
 - Chicago media formatting and generic media fallbacks for other presets. Exact house styles can supply curated reference text.
 - Compact inspect icons, structured occurrences, host appearance tokens, route dismissal and webpage URL fixes, demonstrated in the Reading room and Plain HTML.
-- Native Safari, VoiceOver and physical-phone checks remain open. Packaging and independent reviews are recorded in the [preview verification](docs/reader-preview-verification.md).
 
-## Local preview
+Native Safari, VoiceOver and physical-phone checks remain open. The milestone record describes these limits and the scope of verification.
+
+## Earlier completed work
 
 - [x] Provide a standalone HTML ZIP and an npm tarball with separate compiler and browser entry points.
 - [x] Let readers move the inspector with a mouse or touch without dragging.
@@ -35,4 +38,4 @@ Version 0.1.4 adds reader access, media records and structured citation integrat
 - **Source maintenance.** Give editors a review queue for broken links and newer editions. Show the proposed change alongside the cited record and keep the original edition and the editor's decision traceable.
 - **More ways to find and access sources.** Use recurring ISBN misses and gaps in full-text or library access to prioritize additional providers. Preserve edition identity and provider provenance when comparing candidates.
 
-The [launch verification](https://github.com/randal-cox/citation.inator/blob/main/docs/launch-verification.md) records the checks for the local preview. The [product brief](https://github.com/randal-cox/citation.inator/blob/main/docs/prd-citation-inspector.md#milestones) describes the longer-term feature sequence.
+The [verification history](docs/launch-verification.md) preserves the earlier assays and links to the released milestone. The [product brief](https://github.com/randal-cox/citation.inator/blob/main/docs/prd-citation-inspector.md#milestones) describes the longer-term feature sequence.

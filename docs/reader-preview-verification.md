@@ -1,4 +1,6 @@
-# Reader access and media preview verification
+# Reader access and media verification history
+
+The released milestone is recorded in [Milestone 0.1.4](milestones/0.1.4.md). The sections below preserve the preview evidence and subsequent acceptance.
 
 The 0.1.4-access.0 working preview consolidates the structured-occurrence and host-integration candidates with reader access and media features. The public baseline for this work was 0.1.3 at c3cd258. This record describes the preview checks on 18 November 2026.
 
@@ -35,7 +37,7 @@ Chicago is the initial artwork/image formatting target. Other presets use the ge
 
 Link verification dates and checksums describe supplied metadata. The library performs no automatic destination checks or file verification. The synthetic access and media examples use example.org URLs and illustrative hashes.
 
-Stable release and package publication remain separate from this preview verification.
+At the time of this preview assay, stable release and package publication were pending. The milestone acceptance section below records the subsequent promotion.
 
 ## Compact icon follow-up, 0.1.4-access.1
 
@@ -51,4 +53,4 @@ On 18 November 2026, the adopting site's reviewer reported that both compact-act
 
 Randal accepted the small milestone as 0.1.4. Two nonblocking follow-ups remain on the roadmap: show unknown-profile help once per list and offer a documented item-content insertion hook. Native Safari, VoiceOver and physical-phone evidence remains open.
 
-The stable release promotes the accepted runtime implementation with updated version metadata and release documentation.
+The stable release promoted the accepted runtime implementation with updated version metadata and release documentation. The stable 0.1.4 build passed all 51 tests on Node 22.23.3 and the full Chrome 157.0.8103.78 suite before publication. The [milestone record](milestones/0.1.4.md) links the released tag and artifacts.

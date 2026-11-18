@@ -510,7 +510,7 @@ The core owns the citation directive parser and an abstract syntax representatio
 
 ## Milestones
 
-The original phases below describe planned sequencing. See the roadmap for current progress.
+The original phases below describe planned sequencing. See the [roadmap](../ROADMAP.md) for current progress and the [completed 0.1.4 milestone](milestones/0.1.4.md) for released scope and acceptance evidence.
 
 ### Deterministic core
 

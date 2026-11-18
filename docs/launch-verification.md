@@ -1,4 +1,6 @@
-# Launch verification
+# Verification history
+
+The current released milestone is [0.1.4 — We have a citation for that](milestones/0.1.4.md). The assays below retain their original version and environment scopes.
 
 Assay date 2026-11-10. Build 0.1.0. The checked artifacts were freshly built, with the plain HTML directory copied outside the checkout and served independently. Chrome 156.0.8078.80 ran headless. The zoom assay used actual tab zoom in Chrome for Testing. The demo servers were temporary.
 
@@ -46,7 +48,7 @@ The current software credit names Randal Cox and includes the package version, O
 
 The final interaction checks covered dragging from blank panel space on desktop and emulated touch, selecting abstract text without moving the panel, tapping outside the sheet, and keyboard dismissal. Evidence and credit follow the same hover setting as citations and remain available through click or keyboard activation. A custom same-origin icon loaded successfully with the configured panel title.
 
-## Unreleased integration candidate
+## Historical integration review
 
 The Node 22 suite and Chromium browser suite covered named styles, HTML and Markdown, the JSON CLI, formatted references, branded panels, help controls, and the standalone divider. Chromium covered phone movement, placement after pinch zoom, and desktop popover sizing. A live Open Library lookup returned the same Farneth edition for the equivalent ISBNs, and the second lookup reused its cache entry.
 
@@ -61,10 +63,12 @@ The Node 22 suite and Chromium browser suite covered named styles, HTML and Mark
 
 Verification on an actual host site, physical phones, Safari, Firefox and screen readers remains open.
 
-## Reader access and media preview
+## Reader access and media candidate history
 
 See the [0.1.4-access.0 verification record](reader-preview-verification.md) for the consolidated preview, regression coverage, package checks and independent reviewer verdicts.
 
 ## Milestone 0.1.4
+
+The [completed milestone record](milestones/0.1.4.md) is the release summary.
 
 Version 0.1.4 promotes the accepted reader-access and media candidate. The adopter reported successful site tests and verified both compact-action fixes. The [milestone acceptance record](reader-preview-verification.md#milestone-acceptance-014) distinguishes that reported host evidence from the automated library checks and lists the remaining follow-up work.
