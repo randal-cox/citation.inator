@@ -15,3 +15,5 @@ The exact markup used to generate the example is in `reading.txt`. To change the
 Citation evidence and Citation credit in the example open supplementary panels. The credit includes a suggested citation for the software. The source records carry their own attribution.
 
 In the structured preview, **Programmatic citations** uses a prebuilt example and a local module. The map and table share a reference with two return links. Try **Map details** to open an inspector inside a dialog. The preview module and its stylesheet are adjacent to `index.html`.
+
+The **Reader access and artwork** preview demonstrates open copies, subscriptions, library links, rights and source/served checksums. Its records and destinations are synthetic. The adjacent [reader access guide](reader-access.md), [media support matrix](media-support.md), and [integration guide](integration.md) cover configuration and host settings. The example’s access module is bundled as `access-preview.mjs`.

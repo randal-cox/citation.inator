@@ -310,6 +310,7 @@ await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
   cp("CITATION.cff", portable + "CITATION.cff"),
+  ...["integration.md", "reader-access.md", "media-support.md"].map(name => cp("docs/" + name, portable + name)),
   writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),
   cp("demos/static/structured-preview.css", portable + "structured-preview.css"),
   writeFile(portable + "structured-preview.mjs", structuredModule("./citation-inspector.mjs", previewClient))
