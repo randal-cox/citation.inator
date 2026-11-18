@@ -13,3 +13,5 @@ On Windows with the Python launcher, use `py -3` in place of `python3`. Click a 
 The exact markup used to generate the example is in `reading.txt`. To change the generated HTML, compile that text with the npm package, or use `node scripts/compile.mjs` from the repository root and replace the fragment and cache together. Editing the source text alone leaves the generated page as it was. The included `citation-inspector.mjs`, adjacent stylesheet and JSON cache are ready to copy into another static site. Keep the MIT license with the software. Third-party source material retains its own terms.
 
 Citation evidence and Citation credit in the example open supplementary panels. The credit includes a suggested citation for the software. The source records carry their own attribution.
+
+In the structured preview, **Programmatic citations** uses a prebuilt example and a local module. The map and table share a reference with two return links. Try **Map details** to open an inspector inside a dialog. The preview module and its stylesheet are adjacent to `index.html`.

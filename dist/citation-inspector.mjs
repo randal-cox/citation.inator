@@ -1,45 +1,11 @@
-/*! citation-inator v0.1.3 | MIT | See LICENSE */
-
-// src/class-names.mjs
-var defaultClassPrefix = "citation";
-var partSelector = "[data-citation-part]";
-function validClassPrefix(prefix) {
-  return typeof prefix === "string" && /^[a-z][a-z0-9-]{0,31}$/.test(prefix);
-}
-function validateClassPrefix(prefix) {
-  if (!validClassPrefix(prefix)) throw new TypeError("Use a lowercase citation class prefix.");
-}
-function partClassNames(prefix, parts) {
-  return parts.split(" ").map((part) => `${prefix}-${part}`);
-}
-
-// src/icons.mjs
-var paths = {
-  pdf: '<path d="M6 3h8l4 4v14H6z M14 3v5h4"/><path d="m8 17 3-5 2 4 3 1-4 1z"/>',
-  publisher: '<path d="M3 9 12 4l9 5z M5 20h14 M7 11v7m5-7v7m5-7v7"/>',
-  book: '<path d="M5 4h14v16H7a2 2 0 0 1-2-2z M5 17h14 M8 8h8m-8 3h6"/>',
-  link: '<path d="m9 15 6-6 M8 16l-1 1a3 3 0 0 1-4-4l5-5a3 3 0 0 1 4 0 M16 8l1-1a3 3 0 0 1 4 4l-5 5a3 3 0 0 1-4 0"/>',
-  repository: '<path d="M4 4h16v5H4z M6 9v11h12V9 M10 13h4"/>',
-  article: '<path d="M6 4h12v16H6z M9 8h6m-6 4h6m-6 4h4"/>',
-  external: '<path d="M13 4h7v7m0-7-9 9m7 0v7H4V6h7"/>',
-  library: '<path d="M4 19V5h4v14zm4 0V5h4v14zm6-13 4-1 3 14-4 1z"/>',
-  status: '<path d="M12 3 4 7v5c0 5 4 8 8 9 4-1 8-4 8-9V7z M12 8v5m0 3h.01"/>',
-  back: '<path d="m10 6-6 6 6 6 M4 12h11a4 4 0 0 0 4-4"/>',
-  endnote: '<path d="M4 5h16M4 10h10m-10 5h5m6-2v7m-3-3 3 3 3-3"/>',
-  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
-  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
-};
-function iconMarkup(name) {
-  return `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${Object.hasOwn(paths, name) ? paths[name] : paths.link}</svg>`;
-}
-var brandIconMarkup = '<svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg>';
+/*! citation-inator v0.1.4-access.0 | MIT | See LICENSE */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
 var cleanText = (value) => typeof value === "string" ? value.trim() : "";
 var stableId = /^[a-z0-9][a-z0-9.-]{0,159}$/;
 var doi = (value) => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value) && !value.split("/").some((part) => part === "." || part === "..");
-var kinds = /* @__PURE__ */ new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document"]);
+var kinds = /* @__PURE__ */ new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document", "artwork", "image"]);
 var versions = /* @__PURE__ */ new Set(["version of record", "accepted manuscript", "author preprint", "preprint", "repository dissertation", "dataset", "software release"]);
 var integrityStates = /* @__PURE__ */ new Set(["retracted", "corrected", "expression of concern"]);
 var locationKinds = /* @__PURE__ */ new Set(["publisher", "repository", "pdf", "preprint", "status", "full-text", "library"]);
@@ -79,6 +45,11 @@ function normalizeIdentifier(input) {
     case "arxiv":
       value = value.replace(/^arxiv:/i, "");
       return /^(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*\/\d{7})(?:v[1-9]\d*)?$/i.test(value) ? { scheme, value } : null;
+    case "issn":
+      value = value.replace(/[-\s]/g, "").toUpperCase();
+      if (!/^\d{7}[\dX]$/.test(value)) return null;
+      if ([...value].reduce((sum, digit, index) => sum + (digit === "X" ? 10 : Number(digit)) * (8 - index), 0) % 11) return null;
+      return { scheme, value: value.slice(0, 4) + "-" + value.slice(4) };
     case "isbn": {
       value = value.replace(/[\s-]/g, "").toUpperCase();
       if (/^97[89]\d{10}$/.test(value) && isbn13CheckDigit(value.slice(0, -1)) === Number(value.at(-1))) return { scheme, value };
@@ -162,6 +133,13 @@ function fullAuthorName(author, inverted = false) {
   if (author.literal) return author.literal;
   return (inverted ? [author.family, author.given, author.suffix] : [author.given, author.family, author.suffix]).filter(Boolean).join(inverted ? ", " : " ");
 }
+function normalizeChecksum(value) {
+  const algorithm = cleanText(value?.algorithm).toLowerCase().replace("-", "");
+  const digest = cleanText(value?.value).toLowerCase();
+  const lengths = { md5: 32, sha1: 40, sha256: 64, sha384: 96, sha512: 128 };
+  if (!lengths[algorithm] || digest.length !== lengths[algorithm] || !/^[a-f0-9]+$/.test(digest)) return null;
+  return { algorithm, value: digest, ...cleanText(value.role) && { role: cleanText(value.role) } };
+}
 function normalizeRecord(input) {
   if (!input || !stableId.test(cleanText(input.id))) throw new TypeError("A stable citation record ID is required.");
   const array = (value) => Array.isArray(value) ? value : [];
@@ -171,6 +149,12 @@ function normalizeRecord(input) {
     const id = normalizeIdentifier(identifierKey(item));
     if (id && id.scheme !== "local") identifiers.set(identifierKey(id), id);
   }
+  const relatedIdentifiers = array(input.relatedIdentifiers).flatMap((item) => {
+    const label = cleanText(item?.label);
+    const value = cleanText(item?.value);
+    const authority = cleanText(item?.authority);
+    return label && value && authority ? [{ label, value, authority }] : [];
+  });
   const authors = array(input.authors).flatMap((author) => {
     const literal = cleanText(author?.literal);
     const family = cleanText(author?.family);
@@ -191,7 +175,9 @@ function normalizeRecord(input) {
       url,
       provider,
       verifiedAt,
-      version: versions.has(location.version) ? location.version : null
+      version: versions.has(location.version) ? location.version : null,
+      service: /^[a-z0-9][a-z0-9-]{0,63}$/.test(location.service || "") ? location.service : null,
+      access: ["open", "subscription", "purchase", "loan"].includes(location.access) ? location.access : "unknown"
     }];
   });
   const provenance = array(input.provenance).flatMap((source) => {
@@ -200,7 +186,9 @@ function normalizeRecord(input) {
       provider,
       url: httpsURL(source.url),
       retrievedAt: stamp(source.retrievedAt),
-      note: cleanText(source.note)
+      note: cleanText(source.note),
+      ...normalizeChecksum(source.checksum) && { checksum: normalizeChecksum(source.checksum) },
+      ...Array.isArray(source.checksums) && { checksums: source.checksums.map(normalizeChecksum).filter(Boolean) }
     }] : [];
   });
   const title = cleanText(input.title);
@@ -209,16 +197,26 @@ function normalizeRecord(input) {
   const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
   const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
-  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText"];
+  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
   return {
     id: input.id.trim(),
     type: kinds.has(input.type) ? input.type : "document",
     state: title ? state : "unresolved",
+    ...input.license && cleanText(input.license.name) && {
+      license: { name: cleanText(input.license.name), url: httpsURL(input.license.url) }
+    },
+    ...Array.isArray(input.contributors) && {
+      contributors: input.contributors.flatMap((person) => {
+        const name = cleanText(person?.name), role = cleanText(person?.role);
+        return name && role ? [{ name, role }] : [];
+      })
+    },
     title,
     authors,
     identifiers: [...identifiers.values()],
     locations,
     provenance,
+    ...relatedIdentifiers.length && { relatedIdentifiers },
     citationParts: normalizeTextParts(input.citationParts),
     ...input.authorsComplete === false && { authorsComplete: false },
     ...Array.isArray(input.listAnnotationParts) && { listAnnotationParts: normalizeTextParts(input.listAnnotationParts) },
@@ -262,9 +260,672 @@ function readCache(input) {
   return { byId, byIdentifier };
 }
 
+// src/access.mjs
+var DEFAULT_ACCESS_STORAGE_KEY = "citation-inator.access.v1";
+var accessKinds = ["free", "publisher", "subscription", "library", "lending", "accessibility", "discovery"];
+var defaultAccessCatalog = [
+  { id: "open-access", label: "Open-access copy", kind: "free" },
+  { id: "author-preprint", label: "Author\u2019s preprint", kind: "free" },
+  { id: "jstor", label: "JSTOR", kind: "subscription" },
+  { id: "project-muse", label: "Project MUSE", kind: "subscription" },
+  { id: "perlego", label: "Perlego", kind: "subscription" },
+  { id: "worldcat", label: "WorldCat", kind: "library" },
+  { id: "internet-archive", label: "Internet Archive", kind: "lending" },
+  { id: "open-library", label: "Open Library", kind: "lending" },
+  { id: "bookshare", label: "Bookshare", kind: "accessibility" },
+  { id: "google-scholar", label: "Google Scholar", kind: "discovery" }
+].map(Object.freeze);
+Object.freeze(defaultAccessCatalog);
+function accessCatalog(overrides = []) {
+  if (!Array.isArray(overrides)) throw new TypeError("Supply an access catalogue array.");
+  const catalog = new Map(defaultAccessCatalog.map((item) => [item.id, { ...item }]));
+  for (const item of overrides) {
+    if (!item || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(item.id)) throw new TypeError("Supply a stable service id.");
+    if (item.remove) catalog.delete(item.id);
+    else {
+      const entry = { ...catalog.get(item.id), ...item };
+      if (!cleanText(entry.label) || !accessKinds.includes(entry.kind)) throw new TypeError("Supply a service label and kind.");
+      catalog.set(item.id, { id: item.id, label: cleanText(entry.label), kind: entry.kind });
+    }
+  }
+  return [...catalog.values()];
+}
+function normalizeAccessProfile(value) {
+  if (value === null) return null;
+  if (!value || !Array.isArray(value.services) || value.services.some((id) => typeof id !== "string" || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(id))) {
+    throw new TypeError("Supply services as an array of service ids, or null to clear the profile.");
+  }
+  const services = [...new Set(value.services)];
+  const preferred = cleanText(value.preferred);
+  if (preferred && !services.includes(preferred)) throw new TypeError("Choose a preferred service from your services.");
+  let library = null;
+  if (value.library) {
+    const { kind, base } = value.library;
+    const safe = httpsURL(base);
+    if (!["proxy", "openurl"].includes(kind) || !safe || new URL(safe).hash) {
+      throw new TypeError("Supply an HTTPS proxy or OpenURL address without a fragment.");
+    }
+    library = { kind, base: safe };
+  }
+  return { services, preferred: preferred || null, library, updatedAt: value.updatedAt && Number.isFinite(Date.parse(value.updatedAt)) ? new Date(value.updatedAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString() };
+}
+function accessProfileState(profile) {
+  return profile === null ? "unknown" : profile.services.length ? [...profile.services] : "none";
+}
+function serviceFor(location, catalog = defaultAccessCatalog) {
+  const original = defaultAccessCatalog.find((item) => item.label.toLowerCase() === location.provider?.toLowerCase());
+  return catalog.find((item) => item.id === location.service) || catalog.find((item) => item.label.toLowerCase() === location.provider?.toLowerCase()) || catalog.find((item) => item.id === original?.id) || { id: location.service || location.provider?.toLowerCase() || "publisher", label: location.provider || "Publisher", kind: "publisher" };
+}
+function libraryURL(record, library) {
+  if (!library) return "";
+  const best = identifierURL(record.identifiers.find((id) => id.scheme === "doi")) || identifierURL(record.identifiers.find((id) => id.scheme === "url")) || record.locations.find((location) => location.kind === "publisher")?.url;
+  if (library.kind === "proxy") return best ? httpsURL(library.base + encodeURIComponent(best)) : "";
+  const url = new URL(library.base);
+  url.searchParams.set("url_ver", "Z39.88-2004");
+  url.searchParams.set("ctx_ver", "Z39.88-2004");
+  const book = ["book", "chapter"].includes(record.type);
+  url.searchParams.set("rft_val_fmt", "info:ofi/fmt:kev:mtx:" + (book ? "book" : "journal"));
+  url.searchParams.set("rft.genre", record.type === "chapter" ? "bookitem" : book ? "book" : record.type === "article-journal" ? "article" : "unknown");
+  for (const id of record.identifiers) {
+    if (id.scheme === "doi") url.searchParams.append("rft_id", "info:doi/" + id.value);
+    if (id.scheme === "isbn") url.searchParams.append("rft.isbn", id.value);
+    if (id.scheme === "issn") url.searchParams.append("rft.issn", id.value);
+  }
+  if (record.title) url.searchParams.set(record.type === "book" ? "rft.btitle" : "rft.atitle", record.title);
+  if (record.containerTitle) url.searchParams.set(book ? "rft.btitle" : "rft.jtitle", record.containerTitle);
+  if (record.issued?.[0]) url.searchParams.set("rft.date", String(record.issued[0]));
+  const author = record.authors[0];
+  if (author?.literal) url.searchParams.set("rft.au", author.literal);
+  else if (author) {
+    url.searchParams.set("rft.aulast", author.family);
+    if (author.given) url.searchParams.set("rft.aufirst", author.given);
+  }
+  return url.href;
+}
+function groupAccess(items, profile) {
+  const free = [], selected = [], other = [];
+  for (const item of items) {
+    if (item.access === "open") free.push(item);
+    else if (item.service === "reader-library" || profile?.services.includes(item.service)) selected.push(item);
+    else other.push(item);
+  }
+  selected.sort((a, b) => Number(b.service === profile?.preferred) - Number(a.service === profile?.preferred));
+  return { free, selected, other };
+}
+
+// src/access-profile.mjs
+var stores = /* @__PURE__ */ new WeakMap();
+function storeFor({ accessStorageKey = DEFAULT_ACCESS_STORAGE_KEY, window: view = globalThis.window } = {}) {
+  if (!view) throw new TypeError("Access profiles need a browser window.");
+  if (typeof accessStorageKey !== "string" || !accessStorageKey.trim()) throw new TypeError("Supply a nonempty access storage key.");
+  let storesForWindow = stores.get(view);
+  if (!storesForWindow) {
+    storesForWindow = /* @__PURE__ */ new Map();
+    stores.set(view, storesForWindow);
+    view.addEventListener("storage", (event) => {
+      for (const [key, store] of storesForWindow) {
+        if (event.key === key || event.key === null) {
+          store.profile = readProfile(view, key);
+          for (const notify of store.listeners) notify();
+        }
+      }
+    });
+  }
+  if (!storesForWindow.has(accessStorageKey)) storesForWindow.set(accessStorageKey, {
+    profile: readProfile(view, accessStorageKey),
+    listeners: /* @__PURE__ */ new Set(),
+    view,
+    key: accessStorageKey
+  });
+  return storesForWindow.get(accessStorageKey);
+}
+function readProfile(view, key) {
+  try {
+    const value = JSON.parse(view.localStorage.getItem(key));
+    return value === null ? null : normalizeAccessProfile(value);
+  } catch {
+    return null;
+  }
+}
+function getAccessProfile(options) {
+  return structuredClone(storeFor(options).profile);
+}
+function setAccessProfile(profile, options) {
+  const store = storeFor(options);
+  store.profile = normalizeAccessProfile(profile === null ? null : { ...profile, updatedAt: (/* @__PURE__ */ new Date()).toISOString() });
+  try {
+    if (store.profile === null) store.view.localStorage.removeItem(store.key);
+    else store.view.localStorage.setItem(store.key, JSON.stringify(store.profile));
+  } catch {
+  }
+  for (const notify of store.listeners) notify();
+  return structuredClone(store.profile);
+}
+function subscribeAccessProfile(callback, options) {
+  const store = storeFor(options);
+  const notify = () => callback({ profile: structuredClone(store.profile), state: accessProfileState(store.profile) });
+  store.listeners.add(notify);
+  return () => store.listeners.delete(notify);
+}
+
+// src/icons.mjs
+var paths = {
+  pdf: '<path d="M6 3h8l4 4v14H6z M14 3v5h4"/><path d="m8 17 3-5 2 4 3 1-4 1z"/>',
+  publisher: '<path d="M3 9 12 4l9 5z M5 20h14 M7 11v7m5-7v7m5-7v7"/>',
+  book: '<path d="M5 4h14v16H7a2 2 0 0 1-2-2z M5 17h14 M8 8h8m-8 3h6"/>',
+  link: '<path d="m9 15 6-6 M8 16l-1 1a3 3 0 0 1-4-4l5-5a3 3 0 0 1 4 0 M16 8l1-1a3 3 0 0 1 4 4l-5 5a3 3 0 0 1-4 0"/>',
+  repository: '<path d="M4 4h16v5H4z M6 9v11h12V9 M10 13h4"/>',
+  article: '<path d="M6 4h12v16H6z M9 8h6m-6 4h6m-6 4h4"/>',
+  external: '<path d="M13 4h7v7m0-7-9 9m7 0v7H4V6h7"/>',
+  library: '<path d="M4 19V5h4v14zm4 0V5h4v14zm6-13 4-1 3 14-4 1z"/>',
+  status: '<path d="M12 3 4 7v5c0 5 4 8 8 9 4-1 8-4 8-9V7z M12 8v5m0 3h.01"/>',
+  back: '<path d="m10 6-6 6 6 6 M4 12h11a4 4 0 0 0 4-4"/>',
+  endnote: '<path d="M4 5h16M4 10h10m-10 5h5m6-2v7m-3-3 3 3 3-3"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
+};
+function iconMarkup(name) {
+  return `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${Object.hasOwn(paths, name) ? paths[name] : paths.link}</svg>`;
+}
+var brandIconMarkup = '<svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg>';
+
+// src/class-names.mjs
+var defaultClassPrefix = "citation";
+var partSelector = "[data-citation-part]";
+function validClassPrefix(prefix) {
+  return typeof prefix === "string" && /^[a-z][a-z0-9-]{0,31}$/.test(prefix);
+}
+function validateClassPrefix(prefix) {
+  if (!validClassPrefix(prefix)) throw new TypeError("Use a lowercase citation class prefix.");
+}
+function partClassNames(prefix, parts) {
+  return parts.split(" ").map((part) => `${prefix}-${part}`);
+}
+
+// src/access-view.mjs
+var defaults = {
+  "access.links": "Source links",
+  "access.action.pdf": "Download PDF",
+  "access.action.publisher": "Open publisher page",
+  "access.action.repository": "Open repository",
+  "access.action.preprint": "Open preprint",
+  "access.action.library": "Find at {service}",
+  "access.action.full-text": "Read full text at {service}",
+  "access.version": "{label} ({version})",
+  "access.free": "Read free",
+  "access.selected": "Through your services",
+  "access.other": "Other places to look",
+  "access.more": { one: "{count} more", other: "{count} more" },
+  "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
+  "access.help.none": "None of these is on your list. Add a service, or try your library.",
+  "access.help.match": "Change where you read",
+  "access.settings": "Where you can read",
+  "access.services": "Services you can use",
+  "access.preferred": "Open titles in",
+  "access.noPreference": "No preference",
+  "access.library": "Through my library",
+  "access.library.kind": "Library access type",
+  "access.library.none": "No library configured",
+  "access.library.proxy": "Proxy prefix",
+  "access.library.openurl": "OpenURL resolver",
+  "access.library.address": "Library address",
+  "access.library.help": "Use the HTTPS address supplied by your library. It is used only when you open a library link.",
+  "access.privacy": "Saved in this browser for this site. Services may have the work. Availability varies by title.",
+  "access.save": "Save",
+  "access.clear": "Clear settings",
+  "access.cancel": "Cancel",
+  "access.at": "at {service}",
+  "access.checked": "Checked {date}",
+  "access.stale": "May have moved",
+  "access.destination": "Open at {service}",
+  "access.invalid": "Check your library address and preferred service.",
+  "access.kind.free": "Open copies",
+  "access.kind.publisher": "Publishers",
+  "access.kind.subscription": "Subscriptions",
+  "access.kind.library": "Libraries",
+  "access.kind.lending": "Lending",
+  "access.kind.accessibility": "Accessible editions",
+  "access.kind.discovery": "Discovery"
+};
+function node(doc, tag, text, part) {
+  const value = doc.createElement(tag);
+  if (text) value.textContent = text;
+  if (part) {
+    value.dataset.citationPart = part;
+    value.className = partClassNames(defaultClassPrefix, part).join(" ");
+  }
+  return value;
+}
+function containerIsPanel(container) {
+  return container.getRootNode().host?.localName === "citation-inspector";
+}
+var AccessView = class {
+  #owner;
+  #options = {};
+  #unsubscribe;
+  #rows = /* @__PURE__ */ new Map();
+  #titles = /* @__PURE__ */ new Map();
+  #sheet;
+  #returnFocus;
+  #returnContainer;
+  constructor(owner) {
+    this.#owner = owner;
+  }
+  configure(options) {
+    this.#options = { ...this.#options, ...options };
+    accessCatalog(this.#options.accessCatalog);
+    if (this.#options.accessLayout && !["flat", "grouped"].includes(this.#options.accessLayout)) throw new TypeError("Use grouped or flat access.");
+    if (this.#options.accessSettings && !["builtin", "host", "off"].includes(this.#options.accessSettings)) throw new TypeError("Use builtin, host or off access settings.");
+    for (const key of ["accessCollapseAfter", "staleAfterDays"]) {
+      if (this.#options[key] !== void 0 && (!Number.isFinite(this.#options[key]) || this.#options[key] < 0)) throw new TypeError("Supply a nonnegative " + key + ".");
+    }
+    this.connect();
+    this.restore();
+  }
+  get catalog() {
+    return accessCatalog(this.#options.accessCatalog);
+  }
+  get storageOptions() {
+    return { accessStorageKey: this.#options.accessStorageKey, window: this.#owner.ownerDocument.defaultView };
+  }
+  get profile() {
+    return getAccessProfile(this.storageOptions);
+  }
+  get settings() {
+    return this.#owner.getAttribute("access-settings") || this.#options.accessSettings || "builtin";
+  }
+  get layout() {
+    return this.#owner.getAttribute("access-layout") || this.#options.accessLayout || "grouped";
+  }
+  text(key, values = {}) {
+    let template = this.#options.strings?.[key] ?? defaults[key] ?? key;
+    if (typeof template === "object") {
+      const rule = new Intl.PluralRules(this.#options.locale).select(values.count ?? 0);
+      template = template[rule] ?? template.other ?? defaults[key]?.other ?? key;
+    }
+    return String(template).replace(/\{(\w+)\}/g, (_, key2) => values[key2] ?? "");
+  }
+  connect() {
+    this.#unsubscribe?.();
+    if (!this.#owner.isConnected) return;
+    this.#unsubscribe = subscribeAccessProfile((detail) => {
+      this.restore();
+      this.#owner.refreshAccess();
+      this.#owner.dispatchEvent(new CustomEvent("access-profile-changed", { detail, bubbles: true, composed: true }));
+    }, this.storageOptions);
+  }
+  disconnect() {
+    this.#unsubscribe?.();
+    this.#unsubscribe = null;
+    if (this.#sheet?.open) this.#sheet.close();
+    this.#sheet?.remove();
+    this.#sheet = null;
+    this.restore();
+  }
+  owns(event) {
+    return this.#sheet && event.composedPath().includes(this.#sheet);
+  }
+  items(record, hidden = () => false) {
+    const catalog = this.catalog;
+    const items = record.locations.filter((location) => location.kind !== "status").map((location) => {
+      const service = serviceFor(location, catalog);
+      return { ...location, service: service.id, serviceLabel: service.label, label: this.text("access.destination", { service: service.label }) };
+    }).filter((item) => !hidden(item.provider) && !hidden(item.service) && !hidden(item.serviceLabel));
+    const resolver = typeof this.#owner.institutionalURL === "function" ? this.#institutional(record) : libraryURL(record, this.profile?.library);
+    if (resolver) items.push({
+      url: resolver,
+      kind: "library",
+      service: "reader-library",
+      serviceLabel: this.text("access.library"),
+      label: this.text("access.library"),
+      access: "unknown"
+    });
+    return items;
+  }
+  #institutional(record) {
+    try {
+      return httpsURL(this.#owner.institutionalURL(structuredClone(record)));
+    } catch {
+      return "";
+    }
+  }
+  // Resolve source labels and grouping from copy-level metadata, including legacy provider names.
+  decorate(list, record, hidden = () => false) {
+    const locations = this.items(record);
+    const doc = list.ownerDocument;
+    for (const item of locations) {
+      if (![...list.querySelectorAll("a")].some((link) => link.href === item.url)) {
+        const link = node(doc, "a", "", "icon");
+        link.href = item.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.innerHTML = iconMarkup(item.kind === "pdf" ? "pdf" : item.kind === "library" ? "library" : "link");
+        link.dataset.ciAccessProvider = item.provider || "";
+        if (item.kind === "pdf") link.download = "";
+        list.append(link);
+      }
+    }
+    for (const link of [...list.querySelectorAll("a")]) {
+      const provider = link.dataset.ciAccessProvider;
+      const known = provider && serviceFor({ provider }, this.catalog);
+      const item = locations.find((item2) => item2.url === link.href && (!provider || item2.provider === provider)) || known && { url: link.href, provider, service: known.id, serviceLabel: known.label, kind: "library", access: "unknown" };
+      if (!item) {
+        if (hidden(link.dataset.ciAccessProvider || "")) link.remove();
+        continue;
+      }
+      if ([item.provider, item.service, item.serviceLabel].some((value) => value && hidden(value))) {
+        link.remove();
+        continue;
+      }
+      const kind = item.kind === "preprint" && /\.pdf(?:[?#]|$)/i.test(item.url) ? "pdf" : item.kind;
+      const key = item.service === "reader-library" ? "access.library" : "access.action." + kind;
+      let label = this.text(key, { service: item.serviceLabel });
+      if (item.version) label = this.text("access.version", { label, version: item.version });
+      delete link.dataset.accessChecked;
+      delete link.dataset.accessStale;
+      link.removeAttribute("aria-description");
+      link.setAttribute("aria-label", label);
+      link.title = label + "\n" + item.url;
+      link.dataset.accessService = item.service;
+      link.dataset.accessState = item.access || "unknown";
+      if (item.verifiedAt) {
+        const date = new Intl.DateTimeFormat(this.#options.locale, { dateStyle: "medium" }).format(new Date(item.verifiedAt));
+        const checked = this.text("access.checked", { date });
+        link.title += "\n" + checked;
+        if (containerIsPanel(list)) {
+          link.dataset.accessChecked = checked;
+          link.setAttribute("aria-description", checked);
+        }
+        if (this.#options.staleAfterDays && Date.now() - Date.parse(item.verifiedAt) > this.#options.staleAfterDays * 864e5) {
+          link.title += "\n" + this.text("access.stale");
+          link.dataset.accessStale = this.text("access.stale");
+        }
+      }
+    }
+  }
+  #appendLink(container, link) {
+    if (containerIsPanel(container) && link.dataset.accessChecked) {
+      const item = node(container.ownerDocument, "span", "", "access-destination");
+      item.append(link, node(
+        container.ownerDocument,
+        "small",
+        [link.dataset.accessChecked, link.dataset.accessStale].filter(Boolean).join(" \xB7 "),
+        "access-checked"
+      ));
+      container.append(item);
+    } else container.append(link);
+  }
+  group(container, links, record, { flat = false, hidden } = {}) {
+    this.decorate(container, record, hidden);
+    links = [...container.querySelectorAll("a")];
+    if (this.layout === "flat") {
+      for (const link of links) this.#appendLink(container, link);
+      this.help(container, links);
+      return;
+    }
+    const groups = groupAccess(links.map((link) => ({
+      link,
+      access: link.dataset.accessState,
+      service: link.dataset.accessService
+    })), this.profile);
+    for (const [key, entries] of Object.entries(groups)) {
+      if (!entries.length) continue;
+      const doc = container.ownerDocument;
+      if (key === "other") {
+        const visible = this.#options.accessCollapseAfter ?? 0;
+        for (const { link } of entries.slice(0, visible)) this.#appendLink(container, link);
+        if (entries.length > visible) {
+          const more = node(doc, "details", "", "access-more");
+          more.append(node(doc, "summary", this.text("access.more", { count: entries.length - visible })));
+          const label = node(doc, "span", this.text("access.other"), "access-group-label");
+          more.append(label);
+          for (const { link } of entries.slice(visible)) this.#appendLink(more, link);
+          container.append(more);
+        }
+      } else {
+        if (!flat) container.append(node(doc, "span", this.text(key === "free" ? "access.free" : "access.selected"), "access-group-label"));
+        for (const { link } of entries) this.#appendLink(container, link);
+      }
+    }
+    this.help(container, links);
+  }
+  help(container, links) {
+    if (this.settings === "off") return;
+    const profile = this.profile;
+    const matched = links.some((link) => link.dataset.accessService === "reader-library" || profile?.services.includes(link.dataset.accessService));
+    const key = profile === null ? "unknown" : matched ? "match" : "none";
+    const help = node(container.ownerDocument, "button", this.text("access.help." + key), "access-help");
+    help.type = "button";
+    help.addEventListener("click", () => this.openSettings(help));
+    container.append(help);
+  }
+  openSettings(trigger) {
+    if (this.settings === "off") return;
+    if (this.settings === "host") {
+      this.#owner.dispatchEvent(new CustomEvent("access-settings-request", { bubbles: true, composed: true, cancelable: true }));
+      return;
+    }
+    this.#sheet?.remove();
+    const doc = this.#owner.ownerDocument;
+    const sheet = this.#sheet = node(doc, "dialog", "", "access-settings");
+    sheet.setAttribute("aria-label", this.text("access.settings"));
+    const form = node(doc, "form");
+    const title = node(doc, "h2", this.text("access.settings"));
+    form.append(title, node(doc, "p", this.text("access.privacy")));
+    const columns = node(doc, "div", "", "access-settings-columns");
+    const services = node(doc, "fieldset");
+    services.append(node(doc, "legend", this.text("access.services")));
+    const profile = this.profile;
+    const catalog = this.catalog;
+    for (const kind2 of [...new Set(catalog.map((item) => item.kind))]) {
+      const group = node(doc, "fieldset");
+      group.append(node(doc, "legend", this.text("access.kind." + kind2)));
+      for (const item of catalog.filter((item2) => item2.kind === kind2)) {
+        const label = node(doc, "label");
+        const input = node(doc, "input");
+        input.type = "checkbox";
+        input.name = "service";
+        input.value = item.id;
+        input.checked = Boolean(profile?.services.includes(item.id));
+        label.append(input, " " + item.label);
+        group.append(label);
+      }
+      services.append(group);
+    }
+    const preferences = node(doc, "fieldset");
+    preferences.append(node(doc, "legend", this.text("access.preferred")));
+    for (const item of [{ id: "", label: this.text("access.noPreference") }, ...catalog]) {
+      const label = node(doc, "label");
+      const input = node(doc, "input");
+      input.type = "radio";
+      input.name = "preferred";
+      input.value = item.id;
+      input.checked = (profile?.preferred || "") === item.id;
+      label.append(input, " " + item.label);
+      preferences.append(label);
+    }
+    columns.append(services, preferences);
+    form.append(columns);
+    const library = node(doc, "fieldset");
+    library.append(node(doc, "legend", this.text("access.library")));
+    const kindLabel = node(doc, "label", this.text("access.library.kind"));
+    const kind = node(doc, "select");
+    kind.name = "libraryKind";
+    for (const key of ["none", "proxy", "openurl"]) {
+      const option = node(doc, "option", this.text("access.library." + key));
+      option.value = key;
+      kind.append(option);
+    }
+    kind.value = profile?.library?.kind || "none";
+    kindLabel.append(kind);
+    const addressLabel = node(doc, "label", this.text("access.library.address"));
+    const address = node(doc, "input");
+    address.name = "libraryAddress";
+    address.type = "url";
+    address.value = profile?.library?.base || "";
+    addressLabel.append(address);
+    address.disabled = kind.value === "none";
+    kind.addEventListener("change", () => {
+      address.disabled = kind.value === "none";
+    });
+    library.append(kindLabel, addressLabel, node(doc, "p", this.text("access.library.help")));
+    form.append(library);
+    const error = node(doc, "p");
+    error.setAttribute("role", "alert");
+    form.append(error);
+    const save = node(doc, "button", this.text("access.save"));
+    save.type = "submit";
+    const clear = node(doc, "button", this.text("access.clear"));
+    clear.type = "button";
+    clear.addEventListener("click", () => {
+      setAccessProfile(null, this.storageOptions);
+      close();
+    });
+    const cancel = node(doc, "button", this.text("access.cancel"));
+    cancel.type = "button";
+    cancel.addEventListener("click", () => sheet.close());
+    form.append(save, clear, cancel);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const fields = new FormData(form);
+      try {
+        setAccessProfile({
+          services: fields.getAll("service"),
+          preferred: fields.get("preferred"),
+          library: kind.value === "none" ? null : { kind: kind.value, base: address.value }
+        }, this.storageOptions);
+        close();
+      } catch {
+        error.textContent = this.text("access.invalid");
+      }
+    });
+    sheet.append(form);
+    this.#owner.shadowRoot.append(sheet);
+    this.#returnFocus = trigger;
+    this.#returnContainer = trigger.closest("[data-ci-note-record]");
+    const finish = () => {
+      if (this.#sheet !== sheet) return;
+      this.#sheet = null;
+      if (this.#returnFocus?.isConnected) this.#returnFocus.focus({ preventScroll: true });
+      else {
+        const replacement = this.#returnContainer?.querySelector('[data-citation-part="access-help"]');
+        if (replacement?.isConnected) replacement.focus({ preventScroll: true });
+        else if (this.#owner.hasAttribute("open")) this.#owner.shadowRoot.querySelector("#panel-name")?.focus({ preventScroll: true });
+      }
+      sheet.remove();
+    };
+    const close = () => {
+      sheet.close();
+      finish();
+    };
+    sheet.addEventListener("close", finish, { once: true });
+    sheet.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      close();
+    });
+    let backdrop = false;
+    sheet.addEventListener("pointerdown", (event) => {
+      backdrop = event.target === sheet && this.#outside(sheet, event);
+    });
+    sheet.addEventListener("click", (event) => {
+      if (backdrop && event.target === sheet) close();
+      backdrop = false;
+    });
+    sheet.showModal();
+  }
+  #outside(sheet, event) {
+    const rect = sheet.getBoundingClientRect();
+    return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+  }
+  enhanceNotes(records, hidden) {
+    for (const row of this.#rows.keys()) {
+      if (!this.#owner.contains(row)) this.#restoreRow(row);
+    }
+    for (const row of this.#owner.querySelectorAll("[data-ci-note-record]")) {
+      if (row.closest("citation-inspector") !== this.#owner) continue;
+      const record = records.get(row.dataset.ciNoteRecord);
+      if (!record) continue;
+      const signature = JSON.stringify([record, this.profile, this.layout, this.settings, this.#options, this.#owner.getAttribute("hidden-providers"), this.#owner.getAttribute("hidden-access-providers"), this.#owner.getAttribute("access-providers")]);
+      if (this.#rows.get(row)?.signature === signature) continue;
+      this.#restoreRow(row);
+      const statusURL = record.integrity?.url || record.locations.find((item) => item.kind === "status")?.url;
+      const links = [...row.querySelectorAll(':scope > a[href^="https:"]:not([data-ci-record]):not([data-ci-panel])')].filter((link) => link.href !== statusURL);
+      const saved = { signature, nodes: [...row.childNodes] };
+      this.#rows.set(row, saved);
+      {
+        const group = node(row.ownerDocument, "span", "", "access-inline");
+        row.prepend(group);
+        for (const link of links) group.append(link);
+        this.group(group, [...group.querySelectorAll("a")], record, { flat: true, hidden });
+      }
+      this.#title(row.closest("li"), record, hidden);
+    }
+  }
+  #title(row, record, hidden) {
+    const items = this.items(record, hidden);
+    const groups = groupAccess(items, this.profile);
+    const best = groups.free[0] || groups.selected.find((item) => item.service === this.profile?.preferred);
+    if (!best) return;
+    const reference = row?.querySelector(":scope > span[data-ci-title-start]");
+    if (!reference) return;
+    let remaining = Number(reference.dataset.ciTitleStart);
+    const length = Number(reference.dataset.ciTitleLength);
+    const walker = reference.ownerDocument.createTreeWalker(reference, 4);
+    let title, text;
+    while (text = walker.nextNode()) {
+      if (remaining >= text.length) {
+        remaining -= text.length;
+        continue;
+      }
+      if (length > text.length - remaining) return;
+      if (text.parentElement.closest("a")) return;
+      const isolated = text.splitText(remaining);
+      isolated.splitText(length);
+      title = node(reference.ownerDocument, "span");
+      isolated.replaceWith(title);
+      title.append(isolated);
+      break;
+    }
+    const created = true;
+    if (!title) return;
+    const saved = [...title.childNodes];
+    const link = node(title.ownerDocument, "a");
+    link.href = best.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    const destination2 = this.text("access.at", { service: best.serviceLabel });
+    link.setAttribute("aria-label", title.textContent + " " + destination2);
+    for (const child of saved) link.append(child.cloneNode(true));
+    for (const nested of link.querySelectorAll("a")) nested.replaceWith(...nested.childNodes);
+    const label = node(title.ownerDocument, "small", " " + destination2);
+    title.replaceChildren(link, label);
+    this.#titles.set(title, { nodes: saved, created });
+  }
+  #restoreRow(row) {
+    const saved = this.#rows.get(row);
+    if (saved) row.replaceChildren(...saved.nodes);
+    this.#rows.delete(row);
+    for (const [title, saved2] of this.#titles) {
+      if (row.closest("li")?.contains(title)) {
+        if (saved2.created) title.replaceWith(...saved2.nodes);
+        else title.replaceChildren(...saved2.nodes);
+        this.#titles.delete(title);
+      }
+    }
+  }
+  restore() {
+    for (const row of this.#rows.keys()) this.#restoreRow(row);
+  }
+};
+
 // src/compiler.mjs
+var compare = (a, b) => {
+  const left = a.normalize("NFKC").toLowerCase();
+  const right = b.normalize("NFKC").toLowerCase();
+  return left < right ? -1 : left > right ? 1 : 0;
+};
 var titleFor = (record) => record.title || record.original || "Unresolved citation";
-var yearFor = (record) => record.issued?.[0] ?? "n.d.";
+var yearFor = (record) => record.displayDate || record.issued?.[0] || "n.d.";
 var suffixFor = (year, suffix, style) => style === "apa" && year === "n.d." && suffix ? `-${suffix}` : suffix;
 var originalYear = (record) => record.originalIssued?.[0];
 var hasReprintDate = (record) => originalYear(record) < record.issued?.[0];
@@ -281,10 +942,11 @@ function citationYear(record, suffix, style, bibliography = false, reprintYear =
   if (!bibliography && ["apa", "default", "harvard"].includes(style)) return `${originalYear(record)}/${dated}`;
   return dated;
 }
+var hasDefaultCitationText = (record, suffix) => record.citationText && (!suffix || record.citationText.includes(` (${yearFor(record)}).`));
 function defaultBibliography(record, suffix = "") {
   if (record.state === "unresolved") return titleFor(record);
   const year = yearFor(record);
-  if (record.citationText && (!suffix || record.citationText.includes(` (${year}).`))) {
+  if (hasDefaultCitationText(record, suffix)) {
     return record.citationText.replace(` (${year}).`, ` (${year}${suffix}).`);
   }
   const names = record.authors.map((author) => {
@@ -338,6 +1000,12 @@ function chicagoBibliography(record, suffix) {
   if (url) add(` ${url}`);
   return parts;
 }
+function webpageReferenceURL(record) {
+  const identifier = record.identifiers.find((id) => id.scheme === "doi") || record.identifiers.find((id) => id.scheme === "url");
+  if (identifier) return identifierURL(identifier);
+  const publisherURLs = new Set(record.locations.filter((location) => location.kind === "publisher").map((location) => location.url));
+  return publisherURLs.size === 1 ? httpsURL(publisherURLs.values().next().value) : "";
+}
 function styledBibliography(record, suffix, style) {
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
@@ -345,7 +1013,9 @@ function styledBibliography(record, suffix, style) {
   const title = style === "apa" && record.apaTitle || titleFor(record);
   const year = citationYear(record, suffix, style, true);
   const pages = record.pages || record.articleNumber;
-  const url = identifierURL(record.identifiers.find((id) => ["doi", "url"].includes(id.scheme)));
+  const apa = style === "apa";
+  const webpage = record.type === "webpage" && (apa || style === "default");
+  const url = webpage ? webpageReferenceURL(record) : identifierURL(record.identifiers.find((id) => ["doi", "url"].includes(id.scheme)));
   const initials = (given, separator = ". ") => (given?.match(/\p{L}[\p{L}\p{M}]*/gu) || []).map((word) => [...word][0]).join(separator);
   const abbreviated = (author) => author.literal || [author.family, author.given && `${initials(author.given)}.`, author.suffix].filter(Boolean).join(", ");
   const period = (text) => /[.?!]$/.test(text) ? text : `${text}.`;
@@ -386,14 +1056,20 @@ function styledBibliography(record, suffix, style) {
     if (hasReprintDate(record)) add(` Originally published ${originalYear(record)}.`);
     return parts;
   }
-  const apa = style === "apa";
   const names = authors.map(abbreviated);
   if (names.length) {
     const tail = names.at(-1);
-    const byline = apa && names.length > 20 ? `${names.slice(0, 19).join(", ")}, \u2026 ${tail}` : names.length === 1 ? tail : `${names.slice(0, -1).join(", ")}${apa ? ", &" : " and"} ${tail}`;
-    add(apa ? `${period(byline)} (${year}). ` : `${byline} (${year}) `);
+    const byline = apa && names.length > 20 ? `${names.slice(0, 19).join(", ")}, \u2026 ${tail}` : names.length === 1 ? tail : `${names.slice(0, -1).join(", ")}${apa || webpage ? ", &" : " and"} ${tail}`;
+    add(apa || webpage ? `${period(byline)} (${year}). ` : `${byline} (${year}) `);
   }
-  if (containerTitle) {
+  if (webpage) {
+    add(title, "italic");
+    if (!/[.?!]$/.test(title)) add(".");
+    if (!names.length) add(` (${year}).`);
+    const site = containerTitle || publisher;
+    const sameAsAuthor = site && authors.length === 1 && authors[0].literal && compare(authors[0].literal, site) === 0;
+    if (site && !sameAsAuthor) add(` ${period(site)}`);
+  } else if (containerTitle) {
     add(apa ? `${period(title)} ` : `\u2018${title}\u2019, `);
     if (!names.length) add(`(${year})${apa ? "." : ","} `);
     add(apa && volume ? `${containerTitle}, ${volume}` : containerTitle, "italic");
@@ -408,8 +1084,31 @@ function styledBibliography(record, suffix, style) {
     if (!names.length) add(` (${year}).`);
     if (publisher) add(` ${!apa && publisherPlace ? `${publisherPlace}: ` : ""}${period(publisher)}`);
   }
-  if (url) add(` ${apa ? "" : "Available at: "}${url}`);
+  if (url && webpage) parts.push({ text: " " }, { text: url, href: url });
+  else if (url) add(` ${apa ? "" : "Available at: "}${url}`);
   if (hasReprintDate(record)) add(` (Original work published ${originalYear(record)})`);
+  return parts;
+}
+function mediaBibliography(record, suffix, style) {
+  const parts = [];
+  const add = (text) => {
+    if (text) parts.push({ text });
+  };
+  const title = titleFor(record);
+  const creators = record.authors.map((author, index) => fullAuthorName(author, style === "chicago-author-date" && index === 0));
+  const creator = [record.creatorAttribution, creators.join(" and ")].filter(Boolean).join(" ");
+  const year = citationYear(record, suffix, style, true);
+  if (creator) add(style === "chicago-author-date" ? `${creator}. ${year}. ` : `${creator}. (${year}). `);
+  parts.push({ text: title, emphasis: "italic" });
+  if (!/[.?!]$/.test(title)) add(".");
+  if (!creator) add(style === "chicago-author-date" ? ` ${year}.` : ` (${year}).`);
+  if (record.medium) add(` ${record.medium.replace(/\.$/, "")}.`);
+  if (record.dimensions) add(` ${record.dimensions.replace(/\.$/, "")}.`);
+  if (record.holdingInstitution) add(` ${record.holdingInstitution.replace(/\.$/, "")}.`);
+  if (record.accession) add(` ${record.accession}.`);
+  if (record.platform) add(` ${record.platform.replace(/\.$/, "")}.`);
+  const href = identifierURL(record.identifiers.find((id) => id.scheme === "doi")) || identifierURL(record.identifiers.find((id) => id.scheme === "url")) || (record.locations.filter((location) => location.kind === "publisher").length === 1 ? record.locations.find((location) => location.kind === "publisher").url : "");
+  if (href) parts.push({ text: " " }, { text: href, href });
   return parts;
 }
 function bibliographyParts(record, suffix, style) {
@@ -430,8 +1129,13 @@ function bibliographyParts(record, suffix, style) {
       });
     }
   }
+  if (["artwork", "image"].includes(record.type) && !(style === "default" && hasDefaultCitationText(record, suffix))) {
+    return mediaBibliography(record, suffix, style);
+  }
   if (style === "chicago-author-date") return chicagoBibliography(record, suffix);
-  if (style !== "default") return styledBibliography(record, suffix, style);
+  if (style !== "default" || record.type === "webpage" && !hasDefaultCitationText(record, suffix)) {
+    return styledBibliography(record, suffix, style);
+  }
   const text = defaultBibliography(record, suffix) + (hasReprintDate(record) ? ` (Original work published ${originalYear(record)})` : "");
   const title = record.containerTitle || (["book", "report", "thesis"].includes(record.type) ? record.title : "");
   const at = title ? text.toLowerCase().lastIndexOf(title.toLowerCase()) : -1;
@@ -451,22 +1155,23 @@ var stylesheetURL = new URL("./citation-inspector.css", import.meta.url);
 var triggerSelector = "a[data-ci-record], a[data-ci-panel]";
 var triggerAttributes = ["role", "aria-haspopup", "aria-expanded", "aria-label", "tabindex"];
 var documentCaches = /* @__PURE__ */ new WeakMap();
+var activeInspectors = /* @__PURE__ */ new WeakMap();
 function element(tag, text, parts) {
-  const node = document.createElement(tag);
-  if (text) node.textContent = text;
+  const node2 = document.createElement(tag);
+  if (text) node2.textContent = text;
   if (parts) {
-    node.dataset.citationPart = parts;
-    node.className = partClassNames(defaultClassPrefix, parts).join(" ");
+    node2.dataset.citationPart = parts;
+    node2.className = partClassNames(defaultClassPrefix, parts).join(" ");
   }
-  return node;
+  return node2;
 }
-function iconControl(node, icon, label, tooltip = label) {
-  node.dataset.citationPart = "icon";
-  node.classList.add(`${defaultClassPrefix}-icon`);
-  node.innerHTML = iconMarkup(icon);
-  node.setAttribute("aria-label", label);
-  node.title = tooltip;
-  return node;
+function iconControl(node2, icon, label, tooltip = label) {
+  node2.dataset.citationPart = "icon";
+  node2.classList.add(`${defaultClassPrefix}-icon`);
+  node2.innerHTML = iconMarkup(icon);
+  node2.setAttribute("aria-label", label);
+  node2.title = tooltip;
+  return node2;
 }
 function action(label, icon, callback) {
   const button = iconControl(element("button"), icon, label);
@@ -496,8 +1201,8 @@ ${url}`);
   row.append(link);
   list.append(row);
 }
-var CitationInspector = class _CitationInspector extends HTMLElement {
-  static observedAttributes = ["activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "hidden-access-providers", "hidden-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
+var CitationInspector = class extends HTMLElement {
+  static observedAttributes = ["access-layout", "access-settings", "activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "hidden-access-providers", "hidden-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
   #hovering = false;
   #hoverOpenTimer;
   #hoverCloseTimer;
@@ -511,6 +1216,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   #observer;
   #panelSize;
   #enhanced = /* @__PURE__ */ new Map();
+  #bindings = /* @__PURE__ */ new Map();
   #appliedPrefixes = /* @__PURE__ */ new WeakMap();
   #accessOrder = /* @__PURE__ */ new WeakMap();
   #hiddenAccessLinks = /* @__PURE__ */ new WeakSet();
@@ -529,6 +1235,8 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   #drag;
   #manualPosition;
   #owner;
+  #access = new AccessView(this);
+  #settingsCommand;
   constructor() {
     super();
     const shadow = this.attachShadow({ mode: "open" });
@@ -562,7 +1270,12 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     movePanel.type = "button";
     movePanel.addEventListener("click", () => this.#beginPlacement());
     this.#panelMenu = element("details", "", "panel-menu");
-    this.#panelMenu.append(this.#panelMenuTrigger, movePanel);
+    this.#settingsCommand = element("button", this.#access.text("access.settings"), "panel-command");
+    this.#settingsCommand.type = "button";
+    this.#settingsCommand.addEventListener("click", () => this.#access.openSettings(this.#settingsCommand));
+    const commands = element("div", "", "panel-menu-commands");
+    commands.append(movePanel, this.#settingsCommand);
+    this.#panelMenu.append(this.#panelMenuTrigger, commands);
     header.append(brand, this.#panelMenu, this.#modalDismiss);
     const top = element("div", "", "panel-top");
     top.append(header);
@@ -594,12 +1307,78 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     });
     shadow.append(this.#style, element("slot"), this.#dialog, this.#placement);
   }
+  configureAccess(options) {
+    this.#access.configure(options);
+    this.refreshAccess();
+  }
+  refreshAccess() {
+    this.#settingsCommand.textContent = this.#access.text("access.settings");
+    this.#settingsCommand.hidden = this.#access.settings === "off";
+    this.#enhance();
+    const record = this.#record(this.#trigger);
+    if (record) this.#refresh(record, this.#trigger);
+  }
   set cache(value) {
     const cache = readCache(value);
-    this.#dismiss(false);
+    this.#dismiss(this.#bindings.has(this.#trigger) && !this.#hovering);
     this.#cache = cache;
     this.#hasInlineCache = true;
     if (this.isConnected) this.#enhance();
+  }
+  dismiss({ restoreFocus = true } = {}) {
+    this.#dismiss(restoreFocus);
+  }
+  bindTrigger(trigger, occurrence, options) {
+    if (!trigger?.matches?.("a, button") || trigger.closest(componentName) !== this) {
+      throw new TypeError("Bind an anchor or button inside this citation inspector.");
+    }
+    if (this.#bindings.has(trigger) || trigger.matches(triggerSelector)) {
+      throw new TypeError("This citation control is already managed by an inspector.");
+    }
+    this.#enhance();
+    const binding = this.#bindingFor(occurrence, options);
+    if ([...this.#bindings.values()].some((current) => current.occurrenceId === binding.occurrenceId)) {
+      throw new TypeError(`Duplicate bound citation occurrence ${binding.occurrenceId}.`);
+    }
+    this.#bindings.set(trigger, binding);
+    this.#enhance();
+    return {
+      update: (next, options2) => {
+        if (this.#bindings.get(trigger) !== binding) throw new Error("This citation binding has been disposed.");
+        const updated = this.#bindingFor(next, options2, binding);
+        if (binding.occurrenceId !== updated.occurrenceId) throw new TypeError("Rebind a control when its occurrence ID changes.");
+        Object.assign(binding, updated);
+        this.#enhance();
+        this.#labelTrigger(trigger);
+        if (this.#trigger === trigger) {
+          const record = this.#record(trigger);
+          if (record) this.#refresh(record, trigger);
+        }
+      },
+      dispose: () => {
+        if (this.#bindings.get(trigger) !== binding) return;
+        if (this.#trigger === trigger) this.#dismiss(!this.#hovering);
+        const attributes = this.#enhanced.get(trigger);
+        if (attributes) this.#restore(trigger, attributes);
+        this.#bindings.delete(trigger);
+      }
+    };
+  }
+  #bindingFor(occurrence, { endnote, focusFallback } = {}, previous = {}) {
+    if (!occurrence || !["occurrenceId", "anchorId", "recordId", "endnoteId", "label"].every((key) => typeof occurrence[key] === "string" && occurrence[key])) {
+      throw new TypeError("Supply an occurrence from a structured citation plan.");
+    }
+    const { bibliographyParts: bibliographyParts2 } = occurrence;
+    if (!Array.isArray(bibliographyParts2) || !bibliographyParts2.every((part) => typeof part?.text === "string")) {
+      throw new TypeError("A citation occurrence requires formatted bibliography parts.");
+    }
+    endnote = endnote === void 0 ? previous.endnote : endnote;
+    focusFallback = focusFallback === void 0 ? previous.focusFallback : focusFallback;
+    if (endnote != null && (endnote.ownerDocument !== this.ownerDocument || endnote.id !== occurrence.endnoteId)) {
+      throw new TypeError("Supply the endnote element for this citation occurrence.");
+    }
+    if (focusFallback != null && typeof focusFallback !== "function") throw new TypeError("The focus fallback must be a function.");
+    return { ...occurrence, bibliographyParts: bibliographyParts2.map((part) => ({ ...part })), endnote, focusFallback };
   }
   set accessProviders(providers) {
     if (!Array.isArray(providers) || providers.some((provider) => typeof provider !== "string" || !provider.trim() || provider.includes(","))) {
@@ -621,25 +1400,16 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   }
   attributeChangedCallback(name, before, after) {
     if (before === after) return;
+    if (name === "access-layout" || name === "access-settings") {
+      this.#access.restore();
+      this.refreshAccess();
+      return;
+    }
     if (name === "access-providers" || name === "hidden-access-providers" || name === "hidden-providers") {
-      this.#orderEndnoteLinks();
-      const record = this.#cache?.byId.get(this.#trigger?.dataset.ciRecord);
-      if (record) {
-        const focused = this.shadowRoot.activeElement;
-        const restoreFocus = focused && this.#content.contains(focused);
-        const actionName = focused?.getAttribute("aria-label");
-        const href = focused?.getAttribute("href");
-        const scroll = this.#dialog.scrollTop;
-        this.#render(record, this.#trigger);
-        this.#applyClassPrefix();
-        if (restoreFocus) {
-          const replacement = [...this.#content.querySelectorAll("a, button")].find(
-            (node) => actionName ? node.getAttribute("aria-label") === actionName : href && node.getAttribute("href") === href
-          );
-          (replacement || this.#heading).focus({ preventScroll: true });
-        }
-        this.#dialog.scrollTop = scroll;
-      }
+      this.#access.restore();
+      this.#enhance();
+      const record = this.#record(this.#trigger);
+      if (record) this.#refresh(record, this.#trigger);
       return;
     }
     if (name === "class-prefix") {
@@ -676,7 +1446,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     this.#media = matchMedia("(max-width: 42rem), (pointer: coarse), (max-height: 30rem)");
     this.#media.addEventListener("change", () => this.#dismiss(!this.#hovering), { signal });
     this.addEventListener("pointerover", (event) => {
-      const trigger = event.target.closest?.(triggerSelector);
+      const trigger = this.#eventTrigger(event);
       if (!this.#hoverAllowed(event) || !this.#enhanced.has(trigger) || event.relatedTarget instanceof Node && trigger.contains(event.relatedTarget)) return;
       clearTimeout(this.#hoverOpenTimer);
       if (this.#trigger === trigger) {
@@ -689,7 +1459,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
       }, 140);
     }, { signal });
     this.addEventListener("pointerout", (event) => {
-      const trigger = event.target.closest?.(triggerSelector);
+      const trigger = this.#eventTrigger(event);
       if (!this.#enhanced.has(trigger) || event.relatedTarget instanceof Node && trigger.contains(event.relatedTarget)) return;
       clearTimeout(this.#hoverOpenTimer);
       if (trigger === this.#trigger) this.#queueHoverClose();
@@ -723,22 +1493,28 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     this.#dialog.addEventListener("focusin", () => clearTimeout(this.#hoverCloseTimer), { signal });
     this.#dialog.addEventListener("focusout", () => this.#queueHoverClose(), { signal });
     this.addEventListener("click", (event) => {
-      const trigger = event.target.closest?.(triggerSelector);
+      const trigger = this.#eventTrigger(event);
       if (!this.#enhanced.has(trigger) || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
       this.#open(trigger);
     }, { signal });
     this.addEventListener("keydown", (event) => {
-      const trigger = event.target.closest?.(triggerSelector);
-      if (!this.#enhanced.has(trigger) || event.defaultPrevented || event.key !== " " && (event.key !== "Enter" || trigger.hasAttribute("href"))) return;
+      const trigger = this.#eventTrigger(event);
+      if (!trigger || trigger.tagName === "BUTTON" || event.defaultPrevented || event.key !== " " && (event.key !== "Enter" || trigger.hasAttribute("href"))) return;
       event.preventDefault();
       if (!event.repeat) this.#open(trigger);
     }, { signal });
-    this.ownerDocument.addEventListener("keydown", (event) => {
-      if (event.defaultPrevented || event.key !== "Escape") return;
+    this.ownerDocument.defaultView?.addEventListener("keydown", (event) => {
+      if (event.defaultPrevented || event.key !== "Escape" || this.#access.owns(event)) return;
       this.#cancelHover();
       if (!this.#trigger) return;
+      const path = event.composedPath();
+      if (![this.#dialog, this.#placement, this.#trigger].some((element2) => path.includes(element2))) {
+        this.#dismiss(false);
+        return;
+      }
       event.preventDefault();
+      event.stopPropagation();
       if (this.#placement.open) {
         this.#cancelPlacement();
         return;
@@ -749,7 +1525,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
         return;
       }
       this.#dismiss(!this.#hovering || Boolean(this.shadowRoot.activeElement));
-    }, { signal });
+    }, { signal, capture: true });
     this.#dialog.addEventListener("click", (event) => {
       const dismiss = this.#modal && this.#backdropPress && event.target === this.#dialog;
       this.#backdropPress = false;
@@ -766,10 +1542,11 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
       if (!this.#dialog.open && this.#modal) this.#clearOpen();
     }, { signal });
     this.ownerDocument.addEventListener("click", (event) => {
+      if (this.#access.owns(event)) return;
       const target = event.composedPath();
       if (target.includes(this.#placement)) return;
       if (!target.includes(this.#panelMenu)) this.#panelMenu.open = false;
-      if (!this.#trigger || this.#modal || target.includes(this) && (target.includes(this.#dialog) || target.some((node) => this.#enhanced.has(node)))) return;
+      if (!this.#trigger || this.#modal || target.includes(this) && (target.includes(this.#dialog) || target.some((node2) => this.#enhanced.has(node2)))) return;
       this.#dismiss(false);
     }, { signal });
     window.addEventListener("resize", () => this.#schedulePosition(), { signal });
@@ -784,6 +1561,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     });
     this.#observer.observe(this, { childList: true, subtree: true });
     this.#style.addEventListener("load", () => this.#enhance(), { signal });
+    this.#access.connect();
     this.#applyClassPrefix();
     this.#enhance();
     if (!this.#cache) this.#load(signal);
@@ -826,25 +1604,54 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     this.#enhanced.delete(trigger);
   }
   #applyClassPrefix() {
-    const lightParts = [...this.querySelectorAll(partSelector)].filter((node) => node.closest(componentName) === this);
+    const lightParts = [...this.querySelectorAll(partSelector)].filter((node2) => node2.closest(componentName) === this);
     const configured = this.getAttribute("class-prefix");
     const compiled = lightParts[0]?.dataset.citationPrefix;
     const prefix = validClassPrefix(configured) ? configured : validClassPrefix(compiled) ? compiled : defaultClassPrefix;
-    for (const node of [...lightParts, ...this.shadowRoot.querySelectorAll(partSelector)]) {
-      const previous = this.#appliedPrefixes.get(node) || node.dataset.citationPrefix || defaultClassPrefix;
+    for (const node2 of [...lightParts, ...this.shadowRoot.querySelectorAll(partSelector)]) {
+      const previous = this.#appliedPrefixes.get(node2) || node2.dataset.citationPrefix || defaultClassPrefix;
       if (previous === prefix) continue;
-      const parts = node.dataset.citationPart;
-      node.classList.remove(...partClassNames(previous, parts));
-      node.classList.add(...partClassNames(prefix, parts));
-      this.#appliedPrefixes.set(node, prefix);
+      const parts = node2.dataset.citationPart;
+      node2.classList.remove(...partClassNames(previous, parts));
+      node2.classList.add(...partClassNames(prefix, parts));
+      this.#appliedPrefixes.set(node2, prefix);
     }
   }
   #annotationTarget(trigger) {
-    const target = trigger.dataset.ciPanel && this.ownerDocument.getElementById(trigger.hash.slice(1));
+    const target = trigger.dataset.ciPanel && trigger.getRootNode().getElementById(trigger.hash.slice(1));
     return target && this.contains(target) && target.matches('[data-citation-part~="annotation-content"], .ci-annotation-content') ? target : null;
   }
   #canOpen(trigger) {
-    return this.#cache?.byId.has(trigger.dataset.ciRecord) || this.#annotationTarget(trigger);
+    return this.#record(trigger) || this.#annotationTarget(trigger);
+  }
+  #record(trigger) {
+    return this.#cache?.byId.get(this.#bindings.get(trigger)?.recordId ?? trigger?.dataset.ciRecord);
+  }
+  #eventTrigger(event) {
+    return event.composedPath().find((node2) => this.#enhanced.has(node2));
+  }
+  #labelTrigger(trigger) {
+    const original = this.#enhanced.get(trigger);
+    if (original && !trigger.dataset.ciPanel && !original.get("aria-label")) {
+      const label = this.#bindings.get(trigger)?.label || trigger.textContent.trim();
+      trigger.setAttribute("aria-label", trigger.dataset.ciInspectLabel || `Inspect citation: ${label}`);
+    }
+  }
+  #refresh(record, trigger) {
+    const focused = this.shadowRoot.activeElement;
+    const restoreFocus = focused && this.#content.contains(focused);
+    const actionName = focused?.getAttribute("aria-label");
+    const href = focused?.getAttribute("href");
+    const scroll = this.#dialog.scrollTop;
+    this.#render(record, trigger);
+    this.#applyClassPrefix();
+    if (restoreFocus) {
+      const replacement = [...this.#content.querySelectorAll("a, button")].find(
+        (node2) => actionName ? node2.getAttribute("aria-label") === actionName : href && node2.getAttribute("href") === href
+      );
+      (replacement || this.#heading).focus({ preventScroll: true });
+    }
+    this.#dialog.scrollTop = scroll;
   }
   #providerRank(provider) {
     const preferences = (this.getAttribute("access-providers") || "").split(",").map((name) => name.trim().toLowerCase());
@@ -852,6 +1659,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     return index < 0 ? Infinity : index;
   }
   #providerHidden(provider) {
+    if (!provider) return false;
     return (this.getAttribute("hidden-providers") ?? this.getAttribute("hidden-access-providers") ?? "").split(",").some((name) => name.trim().toLowerCase() === provider.toLowerCase());
   }
   #orderEndnoteLinks() {
@@ -888,24 +1696,32 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   }
   #enhance() {
     this.#orderEndnoteLinks();
-    if (!this.#style.sheet || typeof this.#dialog.showModal !== "function") return;
     for (const [trigger, attributes] of this.#enhanced) {
-      if (this.contains(trigger) && this.#canOpen(trigger)) continue;
-      if (trigger === this.#trigger) this.#dismiss(false);
+      if (trigger.closest(componentName) === this && this.#canOpen(trigger)) continue;
+      if (trigger === this.#trigger) this.#dismiss(this.#bindings.has(trigger) && !this.#hovering);
       this.#restore(trigger, attributes);
     }
-    for (const trigger of this.querySelectorAll(triggerSelector)) {
+    for (const trigger of this.#bindings.keys()) {
+      if (trigger.closest(componentName) !== this) this.#bindings.delete(trigger);
+    }
+    if (!this.#style.sheet || typeof this.#dialog.showModal !== "function") return;
+    if (this.#cache) this.#access.enhanceNotes(this.#cache.byId, (name) => this.#providerHidden(name));
+    const candidates = [...this.querySelectorAll(triggerSelector), ...this.#bindings.keys()];
+    for (const trigger of candidates) {
       if (trigger.closest(componentName) !== this || this.#enhanced.has(trigger) || !this.#canOpen(trigger)) continue;
       this.#enhanced.set(trigger, new Map(triggerAttributes.map((key) => [key, trigger.getAttribute(key)])));
-      trigger.setAttribute("role", "button");
-      if (!trigger.hasAttribute("href")) trigger.setAttribute("tabindex", "0");
+      if (trigger.tagName === "A") {
+        trigger.setAttribute("role", "button");
+        if (!trigger.hasAttribute("href")) trigger.setAttribute("tabindex", "0");
+      }
       trigger.setAttribute("aria-haspopup", "dialog");
       trigger.setAttribute("aria-expanded", "false");
-      if (!trigger.dataset.ciPanel) trigger.setAttribute("aria-label", trigger.dataset.ciInspectLabel || `Inspect citation: ${trigger.textContent.trim()}`);
+      this.#labelTrigger(trigger);
     }
   }
   disconnectedCallback() {
-    this.#dismiss(false);
+    this.#access.disconnect();
+    this.#dismiss(this.#bindings.has(this.#trigger) && !this.#hovering);
     this.#listeners?.abort();
     this.#observer?.disconnect();
     this.#panelSize?.disconnect();
@@ -927,14 +1743,14 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
       this.#dismiss(false);
     }
     const annotation = this.#annotationTarget(trigger);
-    const record = this.#cache?.byId.get(trigger.dataset.ciRecord);
+    const record = this.#record(trigger);
     if (!annotation && !record) return;
     const doc = this.ownerDocument;
-    doc.querySelectorAll(componentName).forEach((component) => {
-      if (component !== this && component instanceof _CitationInspector) component.#dismiss(false);
-    });
+    const previousInspector = activeInspectors.get(doc);
+    if (previousInspector && previousInspector !== this) previousInspector.#dismiss(false);
     this.#dismiss(false);
     this.#trigger = trigger;
+    activeInspectors.set(doc, this);
     this.#hovering = hover;
     this.#owner = {};
     this.#modal = !hover && (this.#media.matches || typeof this.#dialog.showPopover !== "function");
@@ -965,6 +1781,7 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     if (!hover) this.#heading.focus({ preventScroll: true });
   }
   #clearOpen() {
+    if (activeInspectors.get(this.ownerDocument) === this) activeInspectors.delete(this.ownerDocument);
     this.removeAttribute("open");
     this.#trigger?.setAttribute("aria-expanded", "false");
     this.#trigger = null;
@@ -986,7 +1803,11 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     this.#clearOpen();
     if (this.#modal) this.#dialog.close();
     else if (this.#dialog.matches(":popover-open")) this.#dialog.hidePopover();
-    if (restore && trigger.isConnected) trigger.focus();
+    if (restore) {
+      const binding = this.#bindings.get(trigger);
+      const target = trigger.isConnected && trigger.closest(componentName) === this ? trigger : binding?.focusFallback?.();
+      if (target?.isConnected) target.focus(binding ? { preventScroll: true } : void 0);
+    }
   }
   #schedulePosition() {
     if (!this.#trigger || this.#frame) return;
@@ -1119,42 +1940,63 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   #render(record, trigger) {
     const fragment = document.createDocumentFragment();
     const title = record.title || record.original || "Unresolved citation";
-    const bibliography = trigger.dataset.ciBibliography || bibliographyText(record);
+    const binding = this.#bindings.get(trigger);
+    const bibliography = binding?.bibliographyParts.map((part) => part.text).join("") || trigger.dataset.ciBibliography || bibliographyText(record);
     const badges = [record.integrity?.state, record.state === "unresolved" && "Unresolved"].filter(Boolean);
     if (badges.length) fragment.append(element("p", badges.join(" \xB7 "), record.integrity ? "badge integrity" : "badge"));
     const titleNode = element("h3", title);
     titleNode.dir = "auto";
     fragment.append(titleNode);
+    if (record.license || record.rightsHolder) {
+      const rights = element("p", "", "rights");
+      if (record.license) rights.append(record.license.url ? external(record.license.url, record.license.name) : record.license.name);
+      if (record.rightsHolder) rights.append((record.license ? " \xB7 " : "") + record.rightsHolder);
+      fragment.append(rights);
+    }
     const names = record.authors.map((author) => fullAuthorName(author));
     if (names.length) {
       const authors = element("p", names.join(", ") + (record.authorsComplete === false ? ", et al." : ""), "authors");
       authors.dir = "auto";
       fragment.append(names.length > 8 ? disclosure(record.authorsComplete === false ? "Show listed authors" : `Show all ${names.length} authors`, authors) : authors);
     }
+    const mediaDetails = [record.creatorAttribution, record.displayDate, record.medium, record.dimensions, record.holdingInstitution, record.accession, record.platform].filter(Boolean);
+    if (mediaDetails.length) fragment.append(element("p", mediaDetails.join(" \xB7 "), "details"));
+    for (const contributor of record.contributors || []) fragment.append(element("p", contributor.role + " \xB7 " + contributor.name, "details"));
+    for (const source of record.provenance) {
+      for (const checksum of [source.checksum, ...source.checksums || []].filter(Boolean)) {
+        const line = element("p", "", "checksum");
+        const label = [source.provider, checksum.role, checksum.algorithm].filter(Boolean).join(" \xB7 ");
+        line.append(label + " " + checksum.value.slice(0, 12) + "\u2026");
+        line.append(action("Copy " + label, "copy", () => this.#copy(checksum.value)));
+        fragment.append(line);
+      }
+    }
     const doi2 = record.identifiers.find((item) => item.scheme === "doi");
     const doiURL = identifierURL(doi2);
     const citation = element("p", "", "citation");
-    let parts;
-    try {
-      parts = JSON.parse(trigger.dataset.ciBibliographyParts || "null");
-    } catch {
+    let parts = binding?.bibliographyParts;
+    if (!parts) {
+      try {
+        parts = JSON.parse(trigger.dataset.ciBibliographyParts || "null");
+      } catch {
+      }
     }
     if (!Array.isArray(parts) || !parts.every((part) => typeof part?.text === "string") || parts.map((part) => part.text).join("") !== bibliography) parts = [{ text: bibliography }];
     let linkedDOI = false;
     for (const { text, emphasis, href } of parts) {
-      const node = emphasis === "italic" ? element("em") : emphasis === "bold" ? element("strong") : citation;
+      const node2 = emphasis === "italic" ? element("em") : emphasis === "bold" ? element("strong") : citation;
       const doiAt = !linkedDOI && doiURL ? text.toLowerCase().indexOf(doiURL.toLowerCase()) : -1;
       const link = httpsURL(href);
       if (link) {
-        node.append(external(link, text));
+        node2.append(external(link, text));
         if (link === doiURL) linkedDOI = true;
-      } else if (doiAt < 0) node.append(text);
+      } else if (doiAt < 0) node2.append(text);
       else {
         const end = doiAt + doiURL.length;
-        node.append(text.slice(0, doiAt), external(doiURL, text.slice(doiAt, end)), text.slice(end));
+        node2.append(text.slice(0, doiAt), external(doiURL, text.slice(doiAt, end)), text.slice(end));
         linkedDOI = true;
       }
-      if (node !== citation) citation.append(node);
+      if (node2 !== citation) citation.append(node2);
     }
     citation.dir = "auto";
     fragment.append(names.length > 8 ? disclosure("Show formatted citation", citation) : citation);
@@ -1163,6 +2005,11 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
       const line = element("p", "", "identifier");
       const value = identifier.scheme === "isbn" && this.#providerHidden("WorldCat") ? identifier.value : external(identifierURL(identifier), identifier.value);
       line.append(`${identifier.scheme.toUpperCase()} `, value);
+      fragment.append(line);
+    }
+    for (const { label, value, authority } of record.relatedIdentifiers ?? []) {
+      const line = element("p", `${label}: ${value} (${authority})`, "identifier");
+      line.dir = "auto";
       fragment.append(line);
     }
     if (record.abstract) {
@@ -1199,14 +2046,15 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
         service.url
       );
     }
-    if (typeof this.institutionalURL === "function") destination(list, "Open library resolver", "library", this.#institutionalLink(record));
     if (record.integrity) destination(list, "Open status record", "status", record.integrity.url || location("status")?.url);
     const footer = element("footer", "", "panel-actions");
-    const endnote = trigger.id && trigger.hash && this.ownerDocument.getElementById(trigger.hash.slice(1));
-    if (endnote) {
+    const endnote = binding ? binding.endnote : trigger.id && trigger.hash && trigger.getRootNode().getElementById(trigger.hash.slice(1));
+    if (endnote?.isConnected) {
       footer.append(action("Go to endnote", "endnote", () => {
+        if (!endnote.isConnected) return;
         this.#dismiss(false);
-        this.ownerDocument.defaultView.location.hash = trigger.hash;
+        if (binding) endnote.scrollIntoView({ block: "nearest" });
+        else this.ownerDocument.defaultView.location.hash = trigger.hash;
         endnote.focus();
       }));
     }
@@ -1215,24 +2063,34 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
     if (persistent) footer.append(action(`Copy ${persistent.scheme.toUpperCase()}`, "link", () => this.#copy(persistent.value)));
     if (typeof this.report === "function" || this.hasAttribute("data-report")) {
       footer.append(action("Report metadata", "status", () => {
-        const payload = { record: structuredClone(record), page: this.ownerDocument.location.href, occurrence: trigger.id };
+        const payload = {
+          record: structuredClone(record),
+          page: this.ownerDocument.location.href,
+          occurrence: binding?.anchorId || trigger.id,
+          ...binding && { occurrenceId: binding.occurrenceId }
+        };
         this.dispatchEvent(new CustomEvent("citation-report", { detail: payload, bubbles: true, composed: true }));
         this.report?.(payload);
       }));
     }
     const toolbar = element("div", "", "panel-toolbar");
-    if (list.childElementCount) toolbar.append(list);
+    const access = element("section", "", "access");
+    access.setAttribute("aria-label", this.#access.text("access.links"));
+    const statusURL = record.integrity?.url || location("status")?.url;
+    const accessLinks = [...list.querySelectorAll("a")].filter((link) => {
+      if (statusURL && link.href === statusURL) {
+        footer.prepend(link);
+        return false;
+      }
+      return true;
+    });
+    access.append(...accessLinks);
+    this.#access.group(access, accessLinks, record, { hidden: (name) => this.#providerHidden(name) });
+    if (access.childElementCount) fragment.append(access);
     toolbar.append(footer);
     fragment.append(toolbar);
     this.#status.textContent = "";
     this.#content.replaceChildren(fragment);
-  }
-  #institutionalLink(record) {
-    try {
-      return httpsURL(this.institutionalURL(structuredClone(record)));
-    } catch {
-      return "";
-    }
   }
   #showStatus(message) {
     this.#status.textContent = message;
@@ -1250,6 +2108,10 @@ var CitationInspector = class _CitationInspector extends HTMLElement {
   }
 };
 if (!customElements.get(componentName)) customElements.define(componentName, CitationInspector);
+function bindCitationTrigger(inspector, trigger, occurrence, options) {
+  if (typeof inspector?.bindTrigger !== "function") throw new TypeError("Pass an initialized citation-inspector element.");
+  return inspector.bindTrigger(trigger, occurrence, options);
+}
 function initializeCitationInspector(element2, {
   classPrefix,
   cache,
@@ -1262,7 +2124,15 @@ function initializeCitationInspector(element2, {
   evidenceTitle,
   evidenceIcon,
   creditTitle,
-  creditIcon
+  creditIcon,
+  accessCatalog: accessCatalog2,
+  accessStorageKey,
+  accessLayout,
+  accessCollapseAfter,
+  accessSettings,
+  strings,
+  locale,
+  staleAfterDays
 } = {}) {
   if (element2?.localName !== componentName) throw new TypeError("Pass a citation-inspector element.");
   if (classPrefix !== void 0) {
@@ -1279,9 +2149,22 @@ function initializeCitationInspector(element2, {
   if (accessProviders !== void 0) element2.accessProviders = accessProviders;
   if (hiddenAccessProviders !== void 0) element2.hiddenAccessProviders = hiddenAccessProviders;
   if (hiddenProviders !== void 0) element2.hiddenProviders = hiddenProviders;
+  element2.configureAccess(Object.fromEntries(Object.entries({
+    accessCatalog: accessCatalog2,
+    accessStorageKey,
+    accessLayout,
+    accessCollapseAfter,
+    accessSettings,
+    strings,
+    locale,
+    staleAfterDays
+  }).filter(([, value]) => value !== void 0)));
   if (cache !== void 0) element2.cache = cache;
   return element2;
 }
 export {
-  initializeCitationInspector
+  bindCitationTrigger,
+  getAccessProfile,
+  initializeCitationInspector,
+  setAccessProfile
 };

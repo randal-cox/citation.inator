@@ -1,0 +1,389 @@
+import { accessCatalog, serviceFor, groupAccess, libraryURL } from "./access.mjs";
+import { getAccessProfile, setAccessProfile, subscribeAccessProfile } from "./access-profile.mjs";
+import { iconMarkup } from "./icons.mjs";
+import { httpsURL } from "./records.mjs";
+import { defaultClassPrefix, partClassNames } from "./class-names.mjs";
+
+const defaults = {
+  "access.links": "Source links",
+  "access.action.pdf": "Download PDF", "access.action.publisher": "Open publisher page",
+  "access.action.repository": "Open repository", "access.action.preprint": "Open preprint",
+  "access.action.library": "Find at {service}", "access.action.full-text": "Read full text at {service}",
+  "access.version": "{label} ({version})",
+  "access.free": "Read free", "access.selected": "Through your services",
+  "access.other": "Other places to look", "access.more": { one: "{count} more", other: "{count} more" },
+  "access.help.unknown": "Can’t open these? Tell us where you can read.",
+  "access.help.none": "None of these is on your list. Add a service, or try your library.",
+  "access.help.match": "Change where you read", "access.settings": "Where you can read",
+  "access.services": "Services you can use", "access.preferred": "Open titles in",
+  "access.noPreference": "No preference", "access.library": "Through my library",
+  "access.library.kind": "Library access type", "access.library.none": "No library configured",
+  "access.library.proxy": "Proxy prefix", "access.library.openurl": "OpenURL resolver",
+  "access.library.address": "Library address", "access.library.help": "Use the HTTPS address supplied by your library. It is used only when you open a library link.",
+  "access.privacy": "Saved in this browser for this site. Services may have the work. Availability varies by title.",
+  "access.save": "Save", "access.clear": "Clear settings", "access.cancel": "Cancel",
+  "access.at": "at {service}", "access.checked": "Checked {date}", "access.stale": "May have moved",
+  "access.destination": "Open at {service}", "access.invalid": "Check your library address and preferred service.",
+  "access.kind.free": "Open copies", "access.kind.publisher": "Publishers", "access.kind.subscription": "Subscriptions",
+  "access.kind.library": "Libraries", "access.kind.lending": "Lending", "access.kind.accessibility": "Accessible editions",
+  "access.kind.discovery": "Discovery"
+};
+
+function node(doc, tag, text, part) {
+  const value = doc.createElement(tag);
+  if (text) value.textContent = text;
+  if (part) {
+    value.dataset.citationPart = part;
+    value.className = partClassNames(defaultClassPrefix, part).join(" ");
+  }
+  return value;
+}
+
+function containerIsPanel(container) {
+  return container.getRootNode().host?.localName === "citation-inspector";
+}
+
+export class AccessView {
+  #owner;
+  #options = {};
+  #unsubscribe;
+  #rows = new Map();
+  #titles = new Map();
+  #sheet;
+  #returnFocus;
+  #returnContainer;
+  constructor(owner) { this.#owner = owner; }
+  configure(options) {
+    this.#options = { ...this.#options, ...options };
+    accessCatalog(this.#options.accessCatalog);
+    if (this.#options.accessLayout && !["flat", "grouped"].includes(this.#options.accessLayout)) throw new TypeError("Use grouped or flat access.");
+    if (this.#options.accessSettings && !["builtin", "host", "off"].includes(this.#options.accessSettings)) throw new TypeError("Use builtin, host or off access settings.");
+    for (const key of ["accessCollapseAfter", "staleAfterDays"]) {
+      if (this.#options[key] !== undefined && (!Number.isFinite(this.#options[key]) || this.#options[key] < 0)) throw new TypeError("Supply a nonnegative " + key + ".");
+    }
+    this.connect();
+    this.restore();
+  }
+  get catalog() { return accessCatalog(this.#options.accessCatalog); }
+  get storageOptions() { return { accessStorageKey: this.#options.accessStorageKey, window: this.#owner.ownerDocument.defaultView }; }
+  get profile() { return getAccessProfile(this.storageOptions); }
+  get settings() { return this.#owner.getAttribute("access-settings") || this.#options.accessSettings || "builtin"; }
+  get layout() { return this.#owner.getAttribute("access-layout") || this.#options.accessLayout || "grouped"; }
+  text(key, values = {}) {
+    let template = this.#options.strings?.[key] ?? defaults[key] ?? key;
+    if (typeof template === "object") {
+      const rule = new Intl.PluralRules(this.#options.locale).select(values.count ?? 0);
+      template = template[rule] ?? template.other ?? defaults[key]?.other ?? key;
+    }
+    return String(template).replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
+  }
+  connect() {
+    this.#unsubscribe?.();
+    if (!this.#owner.isConnected) return;
+    this.#unsubscribe = subscribeAccessProfile(detail => {
+      this.restore();
+      this.#owner.refreshAccess();
+      this.#owner.dispatchEvent(new CustomEvent("access-profile-changed", { detail, bubbles: true, composed: true }));
+    }, this.storageOptions);
+  }
+  disconnect() {
+    this.#unsubscribe?.();
+    this.#unsubscribe = null;
+    if (this.#sheet?.open) this.#sheet.close();
+    this.#sheet?.remove();
+    this.#sheet = null;
+    this.restore();
+  }
+  owns(event) { return this.#sheet && event.composedPath().includes(this.#sheet); }
+  items(record, hidden = () => false) {
+    const catalog = this.catalog;
+    const items = record.locations.filter(location => location.kind !== "status").map(location => {
+      const service = serviceFor(location, catalog);
+      return { ...location, service: service.id, serviceLabel: service.label, label: this.text("access.destination", { service: service.label }) };
+    }).filter(item => !hidden(item.provider) && !hidden(item.service) && !hidden(item.serviceLabel));
+    const resolver = typeof this.#owner.institutionalURL === "function"
+      ? this.#institutional(record) : libraryURL(record, this.profile?.library);
+    if (resolver) items.push({ url: resolver, kind: "library", service: "reader-library", serviceLabel: this.text("access.library"),
+      label: this.text("access.library"), access: "unknown" });
+    return items;
+  }
+  #institutional(record) {
+    try { return httpsURL(this.#owner.institutionalURL(structuredClone(record))); } catch { return ""; }
+  }
+  // Resolve source labels and grouping from copy-level metadata, including legacy provider names.
+  decorate(list, record, hidden = () => false) {
+    const locations = this.items(record);
+    const doc = list.ownerDocument;
+    for (const item of locations) {
+      if (![...list.querySelectorAll("a")].some(link => link.href === item.url)) {
+        const link = node(doc, "a", "", "icon");
+        link.href = item.url; link.target = "_blank"; link.rel = "noopener noreferrer";
+        link.innerHTML = iconMarkup(item.kind === "pdf" ? "pdf" : item.kind === "library" ? "library" : "link");
+        link.dataset.ciAccessProvider = item.provider || "";
+        if (item.kind === "pdf") link.download = "";
+        list.append(link);
+      }
+    }
+    for (const link of [...list.querySelectorAll("a")]) {
+      const provider = link.dataset.ciAccessProvider;
+      const known = provider && serviceFor({ provider }, this.catalog);
+      const item = locations.find(item => item.url === link.href && (!provider || item.provider === provider)) ||
+        (known && { url: link.href, provider, service: known.id, serviceLabel: known.label, kind: "library", access: "unknown" });
+      if (!item) {
+        if (hidden(link.dataset.ciAccessProvider || "")) link.remove();
+        continue;
+      }
+      if ([item.provider, item.service, item.serviceLabel].some(value => value && hidden(value))) { link.remove(); continue; }
+      const kind = item.kind === "preprint" && /\.pdf(?:[?#]|$)/i.test(item.url) ? "pdf" : item.kind;
+      const key = item.service === "reader-library" ? "access.library" : "access.action." + kind;
+      let label = this.text(key, { service: item.serviceLabel });
+      if (item.version) label = this.text("access.version", { label, version: item.version });
+      delete link.dataset.accessChecked;
+      delete link.dataset.accessStale;
+      link.removeAttribute("aria-description");
+      link.setAttribute("aria-label", label);
+      link.title = label + "\n" + item.url;
+      link.dataset.accessService = item.service;
+      link.dataset.accessState = item.access || "unknown";
+      if (item.verifiedAt) {
+        const date = new Intl.DateTimeFormat(this.#options.locale, { dateStyle: "medium" }).format(new Date(item.verifiedAt));
+        const checked = this.text("access.checked", { date });
+        link.title += "\n" + checked;
+        if (containerIsPanel(list)) {
+          link.dataset.accessChecked = checked;
+          link.setAttribute("aria-description", checked);
+        }
+        if (this.#options.staleAfterDays && Date.now() - Date.parse(item.verifiedAt) > this.#options.staleAfterDays * 86400000) {
+          link.title += "\n" + this.text("access.stale");
+          link.dataset.accessStale = this.text("access.stale");
+        }
+      }
+    }
+  }
+  #appendLink(container, link) {
+    if (containerIsPanel(container) && link.dataset.accessChecked) {
+      const item = node(container.ownerDocument, "span", "", "access-destination");
+      item.append(link, node(container.ownerDocument, "small",
+        [link.dataset.accessChecked, link.dataset.accessStale].filter(Boolean).join(" · "), "access-checked"));
+      container.append(item);
+    } else container.append(link);
+  }
+  group(container, links, record, { flat = false, hidden } = {}) {
+    this.decorate(container, record, hidden);
+    links = [...container.querySelectorAll("a")];
+    if (this.layout === "flat") {
+      for (const link of links) this.#appendLink(container, link);
+      this.help(container, links);
+      return;
+    }
+    const groups = groupAccess(links.map(link => ({
+      link, access: link.dataset.accessState, service: link.dataset.accessService
+    })), this.profile);
+    for (const [key, entries] of Object.entries(groups)) {
+      if (!entries.length) continue;
+      const doc = container.ownerDocument;
+      if (key === "other") {
+        const visible = this.#options.accessCollapseAfter ?? 0;
+        for (const { link } of entries.slice(0, visible)) this.#appendLink(container, link);
+        if (entries.length > visible) {
+          const more = node(doc, "details", "", "access-more");
+          more.append(node(doc, "summary", this.text("access.more", { count: entries.length - visible })));
+          const label = node(doc, "span", this.text("access.other"), "access-group-label");
+          more.append(label);
+          for (const { link } of entries.slice(visible)) this.#appendLink(more, link);
+          container.append(more);
+        }
+      } else {
+        if (!flat) container.append(node(doc, "span", this.text(key === "free" ? "access.free" : "access.selected"), "access-group-label"));
+        for (const { link } of entries) this.#appendLink(container, link);
+      }
+    }
+    this.help(container, links);
+  }
+  help(container, links) {
+    if (this.settings === "off") return;
+    const profile = this.profile;
+    const matched = links.some(link => link.dataset.accessService === "reader-library" || profile?.services.includes(link.dataset.accessService));
+    const key = profile === null ? "unknown" : matched ? "match" : "none";
+    const help = node(container.ownerDocument, "button", this.text("access.help." + key), "access-help");
+    help.type = "button";
+    help.addEventListener("click", () => this.openSettings(help));
+    container.append(help);
+  }
+  openSettings(trigger) {
+    if (this.settings === "off") return;
+    if (this.settings === "host") {
+      this.#owner.dispatchEvent(new CustomEvent("access-settings-request", { bubbles: true, composed: true, cancelable: true }));
+      return;
+    }
+    this.#sheet?.remove();
+    const doc = this.#owner.ownerDocument;
+    const sheet = this.#sheet = node(doc, "dialog", "", "access-settings");
+    sheet.setAttribute("aria-label", this.text("access.settings"));
+    const form = node(doc, "form");
+    const title = node(doc, "h2", this.text("access.settings"));
+    form.append(title, node(doc, "p", this.text("access.privacy")));
+    const columns = node(doc, "div", "", "access-settings-columns");
+    const services = node(doc, "fieldset");
+    services.append(node(doc, "legend", this.text("access.services")));
+    const profile = this.profile;
+    const catalog = this.catalog;
+    for (const kind of [...new Set(catalog.map(item => item.kind))]) {
+      const group = node(doc, "fieldset");
+      group.append(node(doc, "legend", this.text("access.kind." + kind)));
+      for (const item of catalog.filter(item => item.kind === kind)) {
+        const label = node(doc, "label");
+        const input = node(doc, "input");
+        input.type = "checkbox"; input.name = "service"; input.value = item.id;
+        input.checked = Boolean(profile?.services.includes(item.id));
+        label.append(input, " " + item.label); group.append(label);
+      }
+      services.append(group);
+    }
+    const preferences = node(doc, "fieldset");
+    preferences.append(node(doc, "legend", this.text("access.preferred")));
+    for (const item of [{ id: "", label: this.text("access.noPreference") }, ...catalog]) {
+      const label = node(doc, "label");
+      const input = node(doc, "input");
+      input.type = "radio"; input.name = "preferred"; input.value = item.id;
+      input.checked = (profile?.preferred || "") === item.id;
+      label.append(input, " " + item.label); preferences.append(label);
+    }
+    columns.append(services, preferences); form.append(columns);
+    const library = node(doc, "fieldset");
+    library.append(node(doc, "legend", this.text("access.library")));
+    const kindLabel = node(doc, "label", this.text("access.library.kind"));
+    const kind = node(doc, "select"); kind.name = "libraryKind";
+    for (const key of ["none", "proxy", "openurl"]) {
+      const option = node(doc, "option", this.text("access.library." + key)); option.value = key;
+      kind.append(option);
+    }
+    kind.value = profile?.library?.kind || "none"; kindLabel.append(kind);
+    const addressLabel = node(doc, "label", this.text("access.library.address"));
+    const address = node(doc, "input"); address.name = "libraryAddress"; address.type = "url";
+    address.value = profile?.library?.base || ""; addressLabel.append(address);
+    address.disabled = kind.value === "none";
+    kind.addEventListener("change", () => { address.disabled = kind.value === "none"; });
+    library.append(kindLabel, addressLabel, node(doc, "p", this.text("access.library.help")));
+    form.append(library);
+    const error = node(doc, "p"); error.setAttribute("role", "alert"); form.append(error);
+    const save = node(doc, "button", this.text("access.save")); save.type = "submit";
+    const clear = node(doc, "button", this.text("access.clear")); clear.type = "button";
+    clear.addEventListener("click", () => { setAccessProfile(null, this.storageOptions); close(); });
+    const cancel = node(doc, "button", this.text("access.cancel")); cancel.type = "button";
+    cancel.addEventListener("click", () => sheet.close());
+    form.append(save, clear, cancel);
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const fields = new FormData(form);
+      try {
+        setAccessProfile({
+          services: fields.getAll("service"), preferred: fields.get("preferred"),
+          library: kind.value === "none" ? null : { kind: kind.value, base: address.value }
+        }, this.storageOptions);
+        close();
+      } catch { error.textContent = this.text("access.invalid"); }
+    });
+    sheet.append(form);
+    this.#owner.shadowRoot.append(sheet);
+    this.#returnFocus = trigger;
+    this.#returnContainer = trigger.closest('[data-ci-note-record]');
+    const finish = () => {
+      if (this.#sheet !== sheet) return;
+      this.#sheet = null;
+      if (this.#returnFocus?.isConnected) this.#returnFocus.focus({ preventScroll: true });
+      else {
+        const replacement = this.#returnContainer?.querySelector('[data-citation-part="access-help"]');
+        if (replacement?.isConnected) replacement.focus({ preventScroll: true });
+        else if (this.#owner.hasAttribute("open")) this.#owner.shadowRoot.querySelector("#panel-name")?.focus({ preventScroll: true });
+      }
+      sheet.remove();
+    };
+    const close = () => { sheet.close(); finish(); };
+    sheet.addEventListener("close", finish, { once: true });
+    sheet.addEventListener("cancel", event => { event.preventDefault(); close(); });
+    let backdrop = false;
+    sheet.addEventListener("pointerdown", event => { backdrop = event.target === sheet && this.#outside(sheet, event); });
+    sheet.addEventListener("click", event => { if (backdrop && event.target === sheet) close(); backdrop = false; });
+    sheet.showModal();
+  }
+  #outside(sheet, event) {
+    const rect = sheet.getBoundingClientRect();
+    return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+  }
+  enhanceNotes(records, hidden) {
+    for (const row of this.#rows.keys()) {
+      if (!this.#owner.contains(row)) this.#restoreRow(row);
+    }
+    for (const row of this.#owner.querySelectorAll('[data-ci-note-record]')) {
+      if (row.closest("citation-inspector") !== this.#owner) continue;
+      const record = records.get(row.dataset.ciNoteRecord);
+      if (!record) continue;
+      const signature = JSON.stringify([record, this.profile, this.layout, this.settings, this.#options, this.#owner.getAttribute("hidden-providers"), this.#owner.getAttribute("hidden-access-providers"), this.#owner.getAttribute("access-providers")]);
+      if (this.#rows.get(row)?.signature === signature) continue;
+      this.#restoreRow(row);
+      const statusURL = record.integrity?.url || record.locations.find(item => item.kind === "status")?.url;
+      const links = [...row.querySelectorAll(':scope > a[href^="https:"]:not([data-ci-record]):not([data-ci-panel])')].filter(link => link.href !== statusURL);
+      const saved = { signature, nodes: [...row.childNodes] };
+      this.#rows.set(row, saved);
+      {
+        const group = node(row.ownerDocument, "span", "", "access-inline");
+        row.prepend(group);
+        for (const link of links) group.append(link);
+        this.group(group, [...group.querySelectorAll("a")], record, { flat: true, hidden });
+      }
+      this.#title(row.closest("li"), record, hidden);
+    }
+  }
+  #title(row, record, hidden) {
+    const items = this.items(record, hidden);
+    const groups = groupAccess(items, this.profile);
+    const best = groups.free[0] || groups.selected.find(item => item.service === this.profile?.preferred);
+    if (!best) return;
+    const reference = row?.querySelector(':scope > span[data-ci-title-start]');
+    if (!reference) return;
+    let remaining = Number(reference.dataset.ciTitleStart);
+    const length = Number(reference.dataset.ciTitleLength);
+    const walker = reference.ownerDocument.createTreeWalker(reference, 4);
+    let title, text;
+    while ((text = walker.nextNode())) {
+      if (remaining >= text.length) { remaining -= text.length; continue; }
+      if (length > text.length - remaining) return;
+      if (text.parentElement.closest("a")) return;
+      const isolated = text.splitText(remaining);
+      isolated.splitText(length);
+      title = node(reference.ownerDocument, "span");
+      isolated.replaceWith(title);
+      title.append(isolated);
+      break;
+    }
+    const created = true;
+    if (!title) return;
+    const saved = [...title.childNodes];
+    const link = node(title.ownerDocument, "a");
+    link.href = best.url; link.target = "_blank"; link.rel = "noopener noreferrer";
+    const destination = this.text("access.at", { service: best.serviceLabel });
+    link.setAttribute("aria-label", title.textContent + " " + destination);
+    // Keep authored emphasis, while avoiding nested links from a curated reference.
+    for (const child of saved) link.append(child.cloneNode(true));
+    for (const nested of link.querySelectorAll("a")) nested.replaceWith(...nested.childNodes);
+    const label = node(title.ownerDocument, "small", " " + destination);
+    title.replaceChildren(link, label);
+    this.#titles.set(title, { nodes: saved, created });
+  }
+  #restoreRow(row) {
+    const saved = this.#rows.get(row);
+    if (saved) row.replaceChildren(...saved.nodes);
+    this.#rows.delete(row);
+    for (const [title, saved] of this.#titles) {
+      if (row.closest("li")?.contains(title)) {
+        if (saved.created) title.replaceWith(...saved.nodes);
+        else title.replaceChildren(...saved.nodes);
+        this.#titles.delete(title);
+      }
+    }
+  }
+  restore() {
+    for (const row of this.#rows.keys()) this.#restoreRow(row);
+  }
+}

@@ -42,7 +42,7 @@ The preview adds configurable notation, supplementary evidence and credit panels
 
 The local preview keeps both archive names versioned and records their SHA-256 checksums. Future handoffs should rerun the consumer walkthrough and set `CITATION_DROP_IN_DIR` to the extracted ZIP before running `npm run test:browser`. Safari, Firefox, screen-reader and physical-device testing remain open for this release. The original planning milestones in the PRD describe feature sequencing.
 
-The software credit uses the project collective and the package version. The MIT license covers the software. The bundled abstract excerpt is identified and attributed separately in the record. The archives contain normalized data and no raw provider responses.
+The current software credit names Randal Cox and includes the package version, ORCID and repository. The MIT license covers the software. The bundled abstract excerpt is identified and attributed separately in the record. The archives contain normalized data and no raw provider responses.
 
 The final interaction checks covered dragging from blank panel space on desktop and emulated touch, selecting abstract text without moving the panel, tapping outside the sheet, and keyboard dismissal. Evidence and credit follow the same hover setting as citations and remain available through click or keyboard activation. A custom same-origin icon loaded successfully with the configured panel title.
 
@@ -60,3 +60,7 @@ The Node 22 suite and Chromium browser suite covered named styles, HTML and Mark
 | Non sequitur | Passed. The public docs and generated Guide use the standalone demo name, distinguish historical behavior and omit one-off checkout logistics. |
 
 Verification on an actual host site, physical phones, Safari, Firefox and screen readers remains open.
+
+## Reader access and media preview
+
+See the [0.1.4-access.0 verification record](reader-preview-verification.md) for the consolidated preview, regression coverage, package checks and independent reviewer verdicts.

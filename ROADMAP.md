@@ -2,6 +2,15 @@
 
 Version 0.1.3 adds author IDs for Chicago and a diagnostic for cache-wide year letters. See the [changelog](CHANGELOG.md).
 
+## Working 0.1.4-access.0 preview
+
+- Reader access profiles, built-in or host settings, copy-level access, grouped destinations, translated wording and plural counts.
+- Preferred title destinations, library proxy/OpenURL links, and saved verification dates.
+- Artwork/image records, explicit creator attribution, literal dates, reuse terms and source/served checksums.
+- Chicago media formatting and generic media fallbacks for other presets. Exact house styles can supply curated reference text.
+- Compact inspect icons, structured occurrences, host appearance tokens, route dismissal and webpage URL fixes, demonstrated in the Reading room and Plain HTML.
+- Native Safari, VoiceOver and physical-phone checks remain open. Packaging and independent reviews are recorded in the [preview verification](docs/reader-preview-verification.md).
+
 ## Local preview
 
 - [x] Provide a standalone HTML ZIP and an npm tarball with separate compiler and browser entry points.

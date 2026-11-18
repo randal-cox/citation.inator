@@ -1,6 +1,6 @@
 {
   "name": "citation-inator",
-  "version": "0.1.3",
+  "version": "0.1.4-access.0",
   "description": "Portable citations, endnotes, and source inspection",
   "type": "module",
   "license": "MIT",
@@ -24,7 +24,8 @@
     "./citations.json": "./dist/citations.json",
     "./package.json": "./package.json",
     "./markup": "./src/markup.mjs",
-    "./openlibrary": "./src/openlibrary.mjs"
+    "./openlibrary": "./src/openlibrary.mjs",
+    "./access": "./src/access.mjs"
   },
   "bin": {
     "citation-inator": "./scripts/compile.mjs"
@@ -39,7 +40,9 @@
     "ROADMAP.md",
     "CHANGELOG.md",
     "CITATION.cff",
-    "docs/citation-example.png"
+    "docs/citation-example.png",
+    "docs/reader-access.md",
+    "docs/media-support.md"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",

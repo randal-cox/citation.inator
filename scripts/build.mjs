@@ -5,6 +5,8 @@ import { brandIconMarkup } from "../src/icons.mjs";
 import { makeCache } from "../src/records.mjs";
 import { demoCache } from "./demo-cache.mjs";
 import { compileDemoStyles, demoStyles } from "./demo-styles.mjs";
+import { structuredDemo, structuredModule } from "./structured-demo.mjs";
+import { accessDemo, accessDemoModule } from "./access-demo.mjs";
 
 const version = JSON.parse(await readFile("package.json", "utf8")).version;
 const fixtures = JSON.parse(await readFile("fixtures/citation-demo-cases.json", "utf8"));
@@ -111,14 +113,24 @@ ${showPreferences ? `    ${preferences}\n` : ""}    ${content}
 `;
 }
 
+const previewClient = await readFile("scripts/structured-demo-client.mjs", "utf8");
+const previewAssets = `<link rel="stylesheet" href="./structured-preview.css">
+  <script type="module" src="./structured-preview.mjs"></script>
+  <script type="module" src="./access-preview.mjs"></script>`;
+await writeFile("demos/static/access-preview.mjs", accessDemoModule("../../dist/citation-inspector.mjs"));
+await writeFile("demos/static/structured-preview.mjs", structuredModule("../../dist/citation-inspector.mjs", previewClient));
+
 await writeFile("demos/static/index.html", document({
   title: "Follow the source.",
-  intro: "Open a citation in the reading below to inspect its source. The endnotes also work when JavaScript is off.",
+  intro: 'Open a citation to inspect its source. Try the <a href="#structured-preview">programmatic citations preview</a> for app-rendered links and a citation inside a dialog.',
+  script: previewAssets,
   active: "static",
   content: `<article class="reading" aria-labelledby="reading-title">
     <h2 id="reading-title">Citation examples</h2>
-    <citation-inspector data-cache="./citations.json">${article.html}</citation-inspector>
+    <citation-inspector id="reading-reader" data-cache="./citations.json">${article.html}</citation-inspector>
     ${notationExamples}
+    ${structuredDemo}
+    ${accessDemo}
   </article>`
 }));
 await writeFile("demos/static/citations.json", json(article.cache));
@@ -271,6 +283,17 @@ await writeFile("demos/static/guide.html", document({
       <pre><code>${escapeHTML(markupExample)}</code></pre>
       <p>For a build tool such as Python, run the CLI with <code>--json</code> and send <code>{ paragraphs, cache, options }</code> on standard input. It returns <code>{ html, cache, diagnostics }</code>. For HTML or Markdown send <code>{ source, format, cache, options }</code>.</p>
     </section>
+    <section aria-labelledby="guide-structured">
+      <h2 id="guide-structured">Programmatic citations <small>Preview</small></h2>
+      <p>Use <code>planCitationOccurrences</code> when your application owns the caption, table, or dialog markup. Supply stable occurrence IDs and render the planner’s anchors and endnotes as ordinary links. Bind the controls with <code>bindCitationTrigger</code> to add the inspector.</p>
+      <p>Try the preview in the <a href="./#structured-preview">Reading room</a> or <a href="../drop-in/#structured-preview">Plain HTML</a>. Follow the two return links from one reference, inspect an unresolved source, and press Escape twice in Map details. The regular reading on the same page still uses compiled notation.</p>
+      <p>The dark switch also changes the inspector’s body font and compact modal styling. If your site reuses the same inspector across views, call <code>inspector.dismiss({ restoreFocus: false })</code> during navigation, then focus the destination.</p>
+    </section>
+    <section aria-labelledby="guide-access">
+      <h2 id="guide-access">Reader access and media <small>Preview</small></h2>
+      <p>Try the <a href="./#access-preview">reader access example</a> or its <a href="../drop-in/#access-preview">Plain HTML copy</a>. The access sheet remembers services in this browser. A PDF is open only when its location says <code>access: "open"</code>. Choose <code>access-settings="host"</code> to open your own settings page in response to <code>access-settings-request</code>.</p>
+      <p>Artwork and image records retain the creator separately from contributors such as uploaders. Use <code>displayDate</code> for a date range or approximation, <code>license</code> for reuse terms, and <code>provenance[].checksums</code> for separate source and served digests. The <a href="../../docs/media-support.md">media support matrix</a> describes style coverage.</p>
+    </section>
     <section aria-labelledby="guide-cache">
       <h2 id="guide-cache">Format references and add access links</h2>
       <p>For curated reference text, put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
@@ -286,7 +309,10 @@ await Promise.all(["citation-inspector.mjs", "citation-inspector.css", "LICENSE"
 await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
-  cp("CITATION.cff", portable + "CITATION.cff")
+  cp("CITATION.cff", portable + "CITATION.cff"),
+  writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),
+  cp("demos/static/structured-preview.css", portable + "structured-preview.css"),
+  writeFile(portable + "structured-preview.mjs", structuredModule("./citation-inspector.mjs", previewClient))
 ]);
 await writeFile(portable + "index.html", `<!doctype html>
 <html lang="en">
@@ -294,16 +320,19 @@ await writeFile(portable + "index.html", `<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sources in plain HTML</title>
+  ${previewAssets}
   <link rel="stylesheet" href="./citation-inspector.css">
   <script type="module" src="./citation-inspector.mjs"></script>
 </head>
 <body>
   <main>
     <h1 data-citation-part="brand">${brandIconMarkup}<span>Sources in plain HTML</span></h1>
-    <p>Click a citation to inspect it. Without JavaScript, it links directly to its endnote.</p>
+    <p>Click a citation to inspect it. Without JavaScript, it links directly to its endnote. Try the <a href="#structured-preview">programmatic citations preview</a>.</p>
     <hr>
-    <citation-inspector data-cache="./citations.json">${article.html}</citation-inspector>
+    <citation-inspector id="reading-reader" data-cache="./citations.json">${article.html}</citation-inspector>
     ${notationExamples}
+    ${structuredDemo}
+    ${accessDemo}
   </main>
 </body>
 </html>

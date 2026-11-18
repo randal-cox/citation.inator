@@ -9,6 +9,10 @@ import { chromium } from "playwright-core";
 import axe from "axe-core";
 import { compileHTML } from "../src/markup.mjs";
 import { makeCache } from "../src/records.mjs";
+import { checkStructuredBrowser } from "./structured-browser.mjs";
+import { checkReaderAccess } from "./access-browser.mjs";
+import { checkWebpageBrowser } from "./webpage-browser.mjs";
+import { checkStructuredDemo } from "./structured-demo-browser.mjs";
 
 const executablePath = process.env.CITATION_CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const evidence = process.env.CITATION_EVIDENCE;
@@ -50,6 +54,15 @@ try {
   browser = await chromium.launch({ executablePath, headless: true, args: ["--no-first-run"] });
   console.log(`Chrome ${browser.version()}`);
   const context = await browser.newContext({ permissions: ["clipboard-read", "clipboard-write"], viewport: { width: 1440, height: 960 }, reducedMotion: "reduce" });
+  await context.addInitScript(() => {
+    // Retain the pre-access presentation for the existing regression scenarios.
+    const configure = () => document.querySelectorAll("citation-inspector").forEach(inspector => {
+      inspector.setAttribute("access-layout", "flat");
+      inspector.setAttribute("access-settings", "off");
+    });
+    new MutationObserver(configure).observe(document, { childList: true, subtree: true });
+    configure();
+  });
   const page = await context.newPage();
   page.setDefaultTimeout(5000);
   const errors = [];
@@ -61,7 +74,7 @@ try {
     document.addEventListener("securitypolicyviolation", event => window.violations.push(event.violatedDirective));
   });
 
-  const primary = page.locator(".citation-cite").first();
+  const primary = page.locator("citation-inspector:not(#access-demo-reader):not(#media-demo-reader) .citation-cite").first();
   const panel = page.getByRole("dialog", { name: "citation.inator" });
   const dialogHeading = panel.getByRole("heading", { name: "citation.inator", exact: true });
   const report = async label => {
@@ -94,7 +107,7 @@ try {
   await primary.and(page.getByRole("button")).waitFor();
   await primary.click();
   await panel.waitFor();
-  assert.equal(await page.locator("citation-inspector").getAttribute("open"), "");
+  assert.equal(await page.locator("#reading-reader").getAttribute("open"), "");
   assert.equal(await panel.locator('[data-citation-part~="brand-icon"] svg').count(), 1);
   const pdf = panel.getByRole("link", { name: "Download PDF (author preprint)" });
   assert.equal(await pdf.getAttribute("download"), "");
@@ -106,7 +119,7 @@ try {
   assert.ok(await panel.getByText(/marked increase in partisan social polarization/).isVisible());
   if (evidence) await page.screenshot({ path: join(evidence, "reading-room.png") });
   await page.keyboard.press("Escape");
-  assert.equal(await page.locator("citation-inspector").getAttribute("open"), null);
+  assert.equal(await page.locator("#reading-reader").getAttribute("open"), null);
   await page.setViewportSize({ width: 1000, height: 700 });
   const desktopPinch = await context.newCDPSession(page);
   await primary.click();
@@ -164,7 +177,7 @@ try {
   await enableHover.check();
   await style.selectOption("field");
   assert.deepEqual(await hostAppearance(), baseAppearance);
-  assert.match(await page.locator(".citation-endnotes").evaluate(node => getComputedStyle(node).fontFamily), /Georgia/);
+  assert.match(await page.locator("#reading-reader .citation-endnotes").evaluate(node => getComputedStyle(node).fontFamily), /Georgia/);
   const countBeforeHover = requests.length;
   await primary.hover();
   await panel.waitFor();
@@ -223,7 +236,7 @@ try {
   await page.keyboard.press("Escape");
   await style.selectOption("midnight");
   assert.deepEqual(await hostAppearance(), baseAppearance);
-  assert.equal(await page.locator(".citation-endnotes").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(21, 39, 50)");
+  assert.equal(await page.locator("#reading-reader .citation-endnotes").evaluate(node => getComputedStyle(node).backgroundColor), "rgb(21, 39, 50)");
   await primary.click();
   await panel.waitFor();
   assert.equal(await panel.evaluate(node => getComputedStyle(node).backgroundColor), "rgb(21, 39, 50)");
@@ -280,7 +293,7 @@ try {
     const reader = document.querySelector("citation-inspector");
     initializeCitationInspector(reader, { classPrefix: "example-ref" });
   }, origin + "/dist/citation-inspector.mjs");
-  assert.equal(await page.locator("a.citation-cite").count(), 0);
+  assert.equal(await page.locator("#reading-reader a.citation-cite").count(), 0);
   assert.ok(await page.locator(".example-ref-endnotes").isVisible());
   const customTrigger = page.locator("a.example-ref-cite").first();
   await customTrigger.click();
@@ -515,6 +528,12 @@ try {
 
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.emulateMedia({ forcedColors: "none" });
+  await checkReaderAccess(browser, origin, evidence);
+  await checkStructuredBrowser({ page, directory: temporary, origin: copied });
+  await checkWebpageBrowser({ page, directory: temporary, origin: copied });
+  await checkStructuredDemo(browser, origin + "/demos/static/", false, evidence);
+  await checkStructuredDemo(browser, copied, true, evidence);
+  console.log("Both structured demos passed static links, shared endnotes, unresolved sources, scoped theme, forced colors and nested Escape.");
   await page.goto(origin + "/demos/dynamic/");
   const mode = page.getByLabel("Provider mode");
   const input = page.getByLabel("Identifier or single citation directive");
@@ -574,7 +593,7 @@ try {
   assert.ok(guideExamples.every(example => original.includes(example)));
   for (const demoURL of [origin + "/demos/static/", copied + "/"]) {
     await page.goto(demoURL);
-    const content = page.locator("citation-inspector");
+    const content = page.locator("#reading-reader");
     assert.ok(await content.getByText("ritual and reconciliation reference pending", { exact: true }).isVisible());
     assert.ok(await content.getByText("the study | journal article; preprint available", { exact: true }).isVisible());
     assert.equal(await content.locator('a[data-ci-record="ioannidis-2005"]').count(), 4);
@@ -642,7 +661,7 @@ try {
   await occurrence.click();
   const sourceDetails = adopter.getByRole("dialog", { name: "Source details" });
   assert.equal(await sourceDetails.locator(".adoption-citation em").textContent(), adoptionRecord.title);
-  const sourceOrder = () => sourceDetails.getByRole("list", { name: "Source links" }).getByRole("link")
+  const sourceOrder = () => sourceDetails.getByRole("region", { name: "Source links" }).getByRole("link")
     .evaluateAll(links => links.map(link => link.getAttribute("aria-label")));
   assert.deepEqual(await sourceOrder(), ["Find at Open Library", "Find at WorldCat", "Read full text at Test Archive"]);
   await adopter.evaluate(reader => { reader.accessProviders = []; });
@@ -655,7 +674,7 @@ try {
   assert.equal(await sourceDetails.getByRole("heading", { name: "Source details", exact: true })
     .evaluate(node => node === node.getRootNode().activeElement), true);
   await adopter.evaluate(reader => { reader.hiddenAccessProviders = ["worldcat", "open library", "test archive"]; });
-  assert.equal(await sourceDetails.getByRole("list", { name: "Source links" }).count(), 0);
+  assert.equal(await sourceDetails.getByRole("region", { name: "Source links" }).count(), 0);
   assert.equal(await sourceDetails.locator('a[href*="worldcat.org"]').count(), 0);
   assert.match(await sourceDetails.locator(".adoption-identifier").textContent(), /ISBN 9780521405997/);
   assert.equal(await endnotes.getByRole("link", { name: "Read full text at Test Archive" }).count(), 0);

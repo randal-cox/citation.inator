@@ -4,7 +4,7 @@ export const DAY = 86_400_000;
 export const cleanText = value => typeof value === "string" ? value.trim() : "";
 const stableId = /^[a-z0-9][a-z0-9.-]{0,159}$/;
 const doi = value => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value) && !value.split("/").some(part => part === "." || part === "..");
-const kinds = new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document"]);
+const kinds = new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document", "artwork", "image"]);
 const versions = new Set(["version of record", "accepted manuscript", "author preprint", "preprint", "repository dissertation", "dataset", "software release"]);
 const integrityStates = new Set(["retracted", "corrected", "expression of concern"]);
 const locationKinds = new Set(["publisher", "repository", "pdf", "preprint", "status", "full-text", "library"]);
@@ -49,6 +49,11 @@ export function normalizeIdentifier(input) {
     case "arxiv":
       value = value.replace(/^arxiv:/i, "");
       return /^(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*\/\d{7})(?:v[1-9]\d*)?$/i.test(value) ? { scheme, value } : null;
+    case "issn":
+      value = value.replace(/[-\s]/g, "").toUpperCase();
+      if (!/^\d{7}[\dX]$/.test(value)) return null;
+      if ([...value].reduce((sum, digit, index) => sum + (digit === "X" ? 10 : Number(digit)) * (8 - index), 0) % 11) return null;
+      return { scheme, value: value.slice(0, 4) + "-" + value.slice(4) };
     case "isbn": {
       value = value.replace(/[\s-]/g, "").toUpperCase();
       if (/^97[89]\d{10}$/.test(value) && isbn13CheckDigit(value.slice(0, -1)) === Number(value.at(-1))) return { scheme, value };
@@ -144,6 +149,14 @@ export function fullAuthorName(author, inverted = false) {
     .filter(Boolean).join(inverted ? ", " : " ");
 }
 
+function normalizeChecksum(value) {
+  const algorithm = cleanText(value?.algorithm).toLowerCase().replace("-", "");
+  const digest = cleanText(value?.value).toLowerCase();
+  const lengths = { md5: 32, sha1: 40, sha256: 64, sha384: 96, sha512: 128 };
+  if (!lengths[algorithm] || digest.length !== lengths[algorithm] || !/^[a-f0-9]+$/.test(digest)) return null;
+  return { algorithm, value: digest, ...(cleanText(value.role) && { role: cleanText(value.role) }) };
+}
+
 export function normalizeRecord(input) {
   if (!input || !stableId.test(cleanText(input.id))) throw new TypeError("A stable citation record ID is required.");
   const array = value => Array.isArray(value) ? value : [];
@@ -153,6 +166,12 @@ export function normalizeRecord(input) {
     const id = normalizeIdentifier(identifierKey(item));
     if (id && id.scheme !== "local") identifiers.set(identifierKey(id), id);
   }
+  const relatedIdentifiers = array(input.relatedIdentifiers).flatMap(item => {
+    const label = cleanText(item?.label);
+    const value = cleanText(item?.value);
+    const authority = cleanText(item?.authority);
+    return label && value && authority ? [{ label, value, authority }] : [];
+  });
   const authors = array(input.authors).flatMap(author => {
     const literal = cleanText(author?.literal);
     const family = cleanText(author?.family);
@@ -170,14 +189,18 @@ export function normalizeRecord(input) {
     if (["pdf", "preprint"].includes(location.kind) && !verifiedAt) return [];
     return [{
       kind: location.kind, url, provider, verifiedAt,
-      version: versions.has(location.version) ? location.version : null
+      version: versions.has(location.version) ? location.version : null,
+      service: /^[a-z0-9][a-z0-9-]{0,63}$/.test(location.service || "") ? location.service : null,
+      access: ["open", "subscription", "purchase", "loan"].includes(location.access) ? location.access : "unknown"
     }];
   });
   const provenance = array(input.provenance).flatMap(source => {
     const provider = cleanText(source?.provider);
     return provider ? [{
       provider, url: httpsURL(source.url), retrievedAt: stamp(source.retrievedAt),
-      note: cleanText(source.note)
+      note: cleanText(source.note),
+      ...(normalizeChecksum(source.checksum) && { checksum: normalizeChecksum(source.checksum) }),
+      ...(Array.isArray(source.checksums) && { checksums: source.checksums.map(normalizeChecksum).filter(Boolean) })
     }] : [];
   });
   const title = cleanText(input.title);
@@ -186,12 +209,22 @@ export function normalizeRecord(input) {
   const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
   const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
-  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText"];
+  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
   return {
     id: input.id.trim(),
     type: kinds.has(input.type) ? input.type : "document",
     state: title ? state : "unresolved",
+    ...(input.license && cleanText(input.license.name) && {
+      license: { name: cleanText(input.license.name), url: httpsURL(input.license.url) }
+    }),
+    ...(Array.isArray(input.contributors) && {
+      contributors: input.contributors.flatMap(person => {
+        const name = cleanText(person?.name), role = cleanText(person?.role);
+        return name && role ? [{ name, role }] : [];
+      })
+    }),
     title, authors, identifiers: [...identifiers.values()], locations, provenance,
+    ...(relatedIdentifiers.length && { relatedIdentifiers }),
     citationParts: normalizeTextParts(input.citationParts),
     ...(input.authorsComplete === false && { authorsComplete: false }),
     ...(Array.isArray(input.listAnnotationParts) && { listAnnotationParts: normalizeTextParts(input.listAnnotationParts) }),
@@ -241,12 +274,16 @@ export function toCSL(record) {
   const id = scheme => record.identifiers.find(item => item.scheme === scheme)?.value;
   const date = parts => parts && { "date-parts": [parts] };
   return Object.fromEntries(Object.entries({
-    id: record.id, type: record.type, title: record.title,
+    id: record.id, type: ["artwork", "image"].includes(record.type) ? "graphic" : record.type, title: record.title,
     author: record.authors.map(({ id, short, ...author }) => author),
     jurisdiction: record.jurisdiction, number: record.number,
-    issued: date(record.issued), "original-date": date(record.originalIssued), "container-title": record.containerTitle, publisher: record.publisher,
+    "original-date": date(record.originalIssued), "container-title": record.containerTitle, publisher: record.publisher,
     volume: record.volume, issue: record.issue, page: record.pages || record.articleNumber,
+    note: [record.note, record.creatorAttribution && "Creator attribution: " + record.creatorAttribution, ...(record.contributors || []).map(person => person.role + ": " + person.name)].filter(Boolean).join(" · "),
+    medium: record.medium, dimensions: record.dimensions, archive: record.holdingInstitution,
+    archive_location: record.accession, "copyright": record.rightsHolder,
+    "issued": record.displayDate ? { literal: record.displayDate } : date(record.issued),
     edition: record.edition, DOI: id("doi"), ISBN: id("isbn"), PMID: id("pmid"), PMCID: id("pmcid"),
-    URL: record.locations.find(item => ["publisher", "repository"].includes(item.kind))?.url || id("url")
+    URL: identifierURL(record.identifiers.find(item => item.scheme === "doi")) || id("url") || record.locations.find(item => ["publisher", "repository"].includes(item.kind))?.url
   }).filter(([, value]) => value));
 }

@@ -24,7 +24,9 @@
           "url": "https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/",
           "provider": "Penguin Random House",
           "verifiedAt": "2026-11-10T00:00:00.000Z",
-          "version": null
+          "version": null,
+          "service": null,
+          "access": "unknown"
         }
       ],
       "provenance": [
@@ -65,7 +67,15 @@
       "apaTitle": "A time to gather: How ritual created the world—and how it can save us",
       "original": "A Time to Gather: How Ritual Created the World—and How It Can Save Us, Bruce Feiler, Penguin Press (2026)",
       "note": "",
-      "citationText": "Feiler, B. (2026). A time to gather: How ritual created the world—and how it can save us. Penguin Press."
+      "citationText": "Feiler, B. (2026). A time to gather: How ritual created the world—and how it can save us. Penguin Press.",
+      "medium": "",
+      "dimensions": "",
+      "holdingInstitution": "",
+      "accession": "",
+      "platform": "",
+      "rightsHolder": "",
+      "creatorAttribution": "",
+      "displayDate": ""
     }
   ]
 }

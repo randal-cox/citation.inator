@@ -344,7 +344,15 @@
       "apaTitle": "",
       "original": "",
       "note": "",
-      "citationText": ""
+      "citationText": "",
+      "medium": "",
+      "dimensions": "",
+      "holdingInstitution": "",
+      "accession": "",
+      "platform": "",
+      "rightsHolder": "",
+      "creatorAttribution": "",
+      "displayDate": ""
     },
     {
       "id": "synthetic-long",
@@ -697,7 +705,15 @@
       "apaTitle": "",
       "original": "",
       "note": "",
-      "citationText": ""
+      "citationText": "",
+      "medium": "",
+      "dimensions": "",
+      "holdingInstitution": "",
+      "accession": "",
+      "platform": "",
+      "rightsHolder": "",
+      "creatorAttribution": "",
+      "displayDate": ""
     }
   ]
 }

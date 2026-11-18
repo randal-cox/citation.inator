@@ -48,7 +48,7 @@ Serve `.mjs` as JavaScript and `.json` as JSON. Static links and endnotes work w
 Build the current tarball by running `npm ci` and `npm pack` in the downloaded library checkout with Node.js 22 or later. Install that tarball in your project. Copy `reading.txt` and `citations.json` from the ZIP into this directory for the example.
 
 ```sh
-npm install ./citation-inator-0.1.3.tgz
+npm install ./citation-inator-0.1.4-access.0.tgz
 npm exec -- citation-inator reading.txt citations.json article.html my-article
 ```
 
@@ -197,11 +197,60 @@ result = json.loads(process.stdout)
 
 For HTML or Markdown, replace `paragraphs` with a `source` string and set `format` to `"html"` or `"markdown"`. An invalid request exits with a nonzero status and writes an error to standard error.
 
+## Bind citations to controls you render
+
+This API is available in the `0.1.4-access.0` preview. Try it in the [Reading room](http://127.0.0.1:4187/demos/static/#structured-preview) or [Plain HTML](http://127.0.0.1:4187/demos/drop-in/#structured-preview) after running `npm start`. The two captions share an endnote and have distinct return links. The earlier release shares a sample collection code and keeps its own record. The station log has an explicit unresolved record, so it still has an anchor and can be inspected. An unknown record ID is a planning error.
+
+Use `planCitationOccurrences` when your application renders its own chart captions, table cells, or other controls. Give each reference list a document namespace. Use an occurrence ID tied to the content or control that cites the record. An occurrence keeps its ID when you move it within the list. Numeric styles still follow the order you supply.
+
+```js
+import { planCitationOccurrences } from "citation-inator";
+import { bindCitationTrigger, initializeCitationInspector } from "citation-inator/browser";
+
+const plan = planCitationOccurrences([
+  { occurrenceId: "map-caption", recordId: "field-atlas", locator: "42", context: "Map caption" }
+], cache, { namespace: "survey-map", citationStyle: "apa" });
+const [occurrence] = plan.occurrences;
+
+initializeCitationInspector(inspector, { cache });
+const binding = bindCitationTrigger(inspector, trigger, occurrence, {
+  endnote,
+  focusFallback: () => captionHeading
+});
+```
+
+The planner returns labels, formatted bibliography parts, and endnotes with safe destinations and backlinks. Treat the IDs it returns as opaque. An example document-level fallback looks like this:
+
+```html
+<citation-inspector>
+  <a id="citation_10-survey-map-occurrence-map-caption"
+     href="#citation_10-survey-map-note-field-atlas">Field atlas</a>
+  <ol>
+    <li id="citation_10-survey-map-note-field-atlas" tabindex="-1">
+      <cite>Field atlas</cite>
+      <a href="#citation_10-survey-map-occurrence-map-caption">Return to map caption</a>
+    </li>
+  </ol>
+</citation-inspector>
+```
+
+Fragment links work before enhancement when the anchors and endnotes are in the document's light DOM. Inside a shadow root, use a host-provided fallback link to a reachable reference or a document-level bibliography. A native button also works where a link fallback is unnecessary.
+
+Pass the actual endnote element to make **Go to endnote** focus it. This works inside a shadow root and leaves host routing in control. The inspector reads the in-memory cache supplied at initialization. Each mounted control has one binding. Call `binding.update(nextOccurrence, { endnote })` after the host updates its markup for the same occurrence ID. Dispose a binding before reusing its control for a different occurrence. `binding.dispose()` restores the original accessibility attributes. If the control is removed while its inspector is open, focus returns to the connected element supplied by `focusFallback`. In metadata reports, `occurrence` is the namespaced anchor ID and `occurrenceId` is the host's local key.
+
+## Reader access and media preview
+
+Use the built-in access sheet, grouped links, cross-inspector profile updates, preferred title destinations, or host settings integration. Mark openness on individual locations, using service IDs to associate subscriptions. [Reader access configuration and strings](reader-access.md)
+
+For artwork and images, preserve attribution, date ranges, medium, institution, rights and source/served checksums. [Media support matrix and compact actions](media-support.md)
+
 ## Supply the cache
 
 The ZIP includes an example `citations.json`. The npm package exports a larger sample cache at `citation-inator/citations.json`. Its local path is `node_modules/citation-inator/dist/citations.json`.
 
 Use `makeCache(records)` from `citation-inator/records` to produce the versioned cache and reject duplicate IDs and identifier collisions. Records can include structured authors, dates, identifiers, locations, version and integrity metadata, and provenance. Give PDF and preprint locations an HTTPS URL, a named source and a valid `verifiedAt` timestamp. Record the document version when known.
+
+In the structured preview, use `relatedIdentifiers: [{ label, value, authority }]` for identifiers such as a catalog or application number that can describe multiple editions or versions. The inspector displays them as text. They travel with the cache record and stay out of the identifier lookup index.
 
 ### Original publication and edition dates
 
@@ -255,6 +304,20 @@ Set the CSS properties `--citation-paper`, `--citation-ink`, `--citation-accent`
 Source icons show destinations as tooltips. Publisher links open in a separate tab or window. The PDF icon requests a download. A cross-origin PDF host may serve the document inline.
 
 To support a library resolver, assign `element.institutionalURL = record => "https://…"`. Set `data-report` on the element to enable a bubbling `citation-report` event, or assign `element.report = handler`. The payload includes the canonical record, document URL and occurrence ID. Your application decides whether to send a report.
+
+### Use the inspector in a host dialog
+
+In the structured preview, mount the inspector inside its owning dialog and pass the actual endnote element. Provide `focusFallback` for a trigger that can disappear during an update. An Escape from the active inspector or its trigger dismisses it first. An Escape from a host dialog above it remains available to the host. The **Map details** demo exercises nested dismissal and focus return. Desktop opens an anchored popover when supported. Compact viewports and browsers without popover support use the modal presentation.
+
+Set `--citation-*` tokens on the inspector or a containing element to match a local theme. The demo’s dark switch changes the preview section and its inspector independently of the rest of the page. In the preview, `--citation-panel-font` sets the panel’s body font family, `--citation-sheet-radius` sets the compact modal’s border radius, and `--citation-panel-backdrop` sets the modal backdrop background. The anchored panel still uses `--citation-panel-radius`.
+
+Use the `open` attribute to observe panel visibility. If navigation reuses an inspector and its trigger, call `inspector.dismiss()` to dismiss the panel and restore focus to the trigger or its binding’s focus fallback. When the destination view owns focus, dismiss with `restoreFocus: false` and focus the new destination after dismissal. The browser may still perform its native dialog focus restoration while closing. A dismiss call also cancels a pending hover preview.
+
+```js
+// In the host's navigation callback, once the destination heading is mounted.
+inspector.dismiss({ restoreFocus: false });
+destinationHeading.focus({ preventScroll: true });
+```
 
 ## Network and host behavior
 

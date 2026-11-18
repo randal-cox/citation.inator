@@ -95,7 +95,7 @@ const types = new Map([
   [".json", "application/json; charset=utf-8"], [".md", "text/plain; charset=utf-8"], [".txt", "text/plain; charset=utf-8"]
 ]);
 const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
-const files = /^\/(?:dist|demos\/(?:static|dynamic|drop-in))\/[\w.-]+\.(html|css|mjs|json|md|txt)$/;
+const files = /^\/(?:dist|docs|demos\/(?:static|dynamic|drop-in))\/[\w.-]+\.(html|css|mjs|json|md|txt)$/;
 const directories = /^\/demos\/(?:static|dynamic|drop-in)\/?$/;
 const server = createServer(async (request, response) => {
   const send = (status, type, content) => {

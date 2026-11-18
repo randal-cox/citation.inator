@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.4-access.0 · Preview · 2026-11-18
+
+- Add browser-local reader profiles, service catalogues, grouped access destinations, built-in or host settings, translated wording and plural counts.
+- Add preferred title destinations, OpenURL/proxy library links and saved verification dates.
+- Add artwork/image metadata, rights, attributed creators, literal dates and source/served checksums, with CSL graphic export.
+- Add compact inspect actions and examples in both demos.
+- Include the tested structured, host-theme, route-dismissal and webpage-reference preview work.
+
+## 0.1.4-structured.2 · Preview
+
+- Plan citations for app-rendered captions, tables, and dialogs from stable occurrence IDs. Render one endnote per cited record with a backlink for each occurrence, including without JavaScript in light DOM.
+- Bind existing controls to the inspector with explicit endnote targets, update and disposal, and a focus fallback for removed controls.
+- Keep structured anchors distinct from legacy compiled IDs. Preserve separate editions that share a catalog number using display-only related identifiers.
+- Add host-scoped panel font, compact-sheet radius, and modal backdrop settings. Expose dismissal for hosts that reuse citation controls during navigation.
+- Coordinate Escape with surrounding dialogs. The Reading room and Plain HTML demos show both a nested inspector and unresolved reference handling.
+
 ## 0.1.3 · 2026-11-10
 
 - Accept curated personal author IDs for Chicago surname disambiguation across variant bylines.

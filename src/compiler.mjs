@@ -124,7 +124,7 @@ const compare = (a, b) => {
 };
 const titleFor = record => record.title || record.original || "Unresolved citation";
 const shortTitle = record => titleFor(record).split(/[:;]/, 1)[0];
-const yearFor = record => record.issued?.[0] ?? "n.d.";
+const yearFor = record => record.displayDate || record.issued?.[0] || "n.d.";
 const suffixFor = (year, suffix, style) => style === "apa" && year === "n.d." && suffix ? `-${suffix}` : suffix;
 const originalYear = record => record.originalIssued?.[0];
 const hasReprintDate = record => originalYear(record) < record.issued?.[0];
@@ -153,10 +153,13 @@ export function authorLabel(record, narrative = false) {
   return `${names[0]} et al.`;
 }
 
+const hasDefaultCitationText = (record, suffix) =>
+  record.citationText && (!suffix || record.citationText.includes(` (${yearFor(record)}).`));
+
 function defaultBibliography(record, suffix = "") {
   if (record.state === "unresolved") return titleFor(record);
   const year = yearFor(record);
-  if (record.citationText && (!suffix || record.citationText.includes(` (${year}).`))) {
+  if (hasDefaultCitationText(record, suffix)) {
     return record.citationText.replace(` (${year}).`, ` (${year}${suffix}).`);
   }
   const names = record.authors.map(author => {
@@ -216,6 +219,13 @@ function chicagoBibliography(record, suffix) {
 
 const citationStyles = new Set(["default", "chicago-author-date", "apa", "mla", "harvard", "vancouver"]);
 
+function webpageReferenceURL(record) {
+  const identifier = record.identifiers.find(id => id.scheme === "doi") || record.identifiers.find(id => id.scheme === "url");
+  if (identifier) return identifierURL(identifier);
+  const publisherURLs = new Set(record.locations.filter(location => location.kind === "publisher").map(location => location.url));
+  return publisherURLs.size === 1 ? httpsURL(publisherURLs.values().next().value) : "";
+}
+
 function styledBibliography(record, suffix, style) {
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
@@ -223,7 +233,10 @@ function styledBibliography(record, suffix, style) {
   const title = style === "apa" && record.apaTitle || titleFor(record);
   const year = citationYear(record, suffix, style, true);
   const pages = record.pages || record.articleNumber;
-  const url = identifierURL(record.identifiers.find(id => ["doi", "url"].includes(id.scheme)));
+  const apa = style === "apa";
+  const webpage = record.type === "webpage" && (apa || style === "default");
+  const url = webpage ? webpageReferenceURL(record)
+    : identifierURL(record.identifiers.find(id => ["doi", "url"].includes(id.scheme)));
   const initials = (given, separator = ". ") => (given?.match(/\p{L}[\p{L}\p{M}]*/gu) || [])
     .map(word => [...word][0]).join(separator);
   const abbreviated = author => author.literal || [author.family, author.given && `${initials(author.given)}.`, author.suffix].filter(Boolean).join(", ");
@@ -266,15 +279,21 @@ function styledBibliography(record, suffix, style) {
     if (hasReprintDate(record)) add(` Originally published ${originalYear(record)}.`);
     return parts;
   }
-  const apa = style === "apa";
   const names = authors.map(abbreviated);
   if (names.length) {
     const tail = names.at(-1);
     const byline = apa && names.length > 20 ? `${names.slice(0, 19).join(", ")}, … ${tail}` :
-      names.length === 1 ? tail : `${names.slice(0, -1).join(", ")}${apa ? ", &" : " and"} ${tail}`;
-    add(apa ? `${period(byline)} (${year}). ` : `${byline} (${year}) `);
+      names.length === 1 ? tail : `${names.slice(0, -1).join(", ")}${apa || webpage ? ", &" : " and"} ${tail}`;
+    add(apa || webpage ? `${period(byline)} (${year}). ` : `${byline} (${year}) `);
   }
-  if (containerTitle) {
+  if (webpage) {
+    add(title, "italic");
+    if (!/[.?!]$/.test(title)) add(".");
+    if (!names.length) add(` (${year}).`);
+    const site = containerTitle || publisher;
+    const sameAsAuthor = site && authors.length === 1 && authors[0].literal && compare(authors[0].literal, site) === 0;
+    if (site && !sameAsAuthor) add(` ${period(site)}`);
+  } else if (containerTitle) {
     add(apa ? `${period(title)} ` : `‘${title}’, `);
     if (!names.length) add(`(${year})${apa ? "." : ","} `);
     add(apa && volume ? `${containerTitle}, ${volume}` : containerTitle, "italic");
@@ -289,8 +308,32 @@ function styledBibliography(record, suffix, style) {
     if (!names.length) add(` (${year}).`);
     if (publisher) add(` ${!apa && publisherPlace ? `${publisherPlace}: ` : ""}${period(publisher)}`);
   }
-  if (url) add(` ${apa ? "" : "Available at: "}${url}`);
+  if (url && webpage) parts.push({ text: " " }, { text: url, href: url });
+  else if (url) add(` ${apa ? "" : "Available at: "}${url}`);
   if (hasReprintDate(record)) add(` (Original work published ${originalYear(record)})`);
+  return parts;
+}
+
+function mediaBibliography(record, suffix, style) {
+  const parts = [];
+  const add = text => { if (text) parts.push({ text }); };
+  const title = titleFor(record);
+  const creators = record.authors.map((author, index) => fullAuthorName(author, style === "chicago-author-date" && index === 0));
+  const creator = [record.creatorAttribution, creators.join(" and ")].filter(Boolean).join(" ");
+  const year = citationYear(record, suffix, style, true);
+  if (creator) add(style === "chicago-author-date" ? `${creator}. ${year}. ` : `${creator}. (${year}). `);
+  parts.push({ text: title, emphasis: "italic" });
+  if (!/[.?!]$/.test(title)) add(".");
+  if (!creator) add(style === "chicago-author-date" ? ` ${year}.` : ` (${year}).`);
+  if (record.medium) add(` ${record.medium.replace(/\.$/, "")}.`);
+  if (record.dimensions) add(` ${record.dimensions.replace(/\.$/, "")}.`);
+  if (record.holdingInstitution) add(` ${record.holdingInstitution.replace(/\.$/, "")}.`);
+  if (record.accession) add(` ${record.accession}.`);
+  if (record.platform) add(` ${record.platform.replace(/\.$/, "")}.`);
+  const href = identifierURL(record.identifiers.find(id => id.scheme === "doi")) ||
+    identifierURL(record.identifiers.find(id => id.scheme === "url")) ||
+    (record.locations.filter(location => location.kind === "publisher").length === 1 ? record.locations.find(location => location.kind === "publisher").url : "");
+  if (href) parts.push({ text: " " }, { text: href, href });
   return parts;
 }
 
@@ -313,8 +356,13 @@ function bibliographyParts(record, suffix, style) {
       });
     }
   }
+  if (["artwork", "image"].includes(record.type) && !(style === "default" && hasDefaultCitationText(record, suffix))) {
+    return mediaBibliography(record, suffix, style);
+  }
   if (style === "chicago-author-date") return chicagoBibliography(record, suffix);
-  if (style !== "default") return styledBibliography(record, suffix, style);
+  if (style !== "default" || record.type === "webpage" && !hasDefaultCitationText(record, suffix)) {
+    return styledBibliography(record, suffix, style);
+  }
   const text = defaultBibliography(record, suffix) + (hasReprintDate(record) ? ` (Original work published ${originalYear(record)})` : "");
   const title = record.containerTitle || (["book", "report", "thesis"].includes(record.type) ? record.title : "");
   const at = title ? text.toLowerCase().lastIndexOf(title.toLowerCase()) : -1;
@@ -385,7 +433,7 @@ function iconLink(part, url, label, icon, title = label, attributes = "", text =
   return `<a ${part("icon")} href="${escapeHTML(url)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(title)}"${attributes}>${icon ? iconMarkup(icon) : escapeHTML(text)}</a>`;
 }
 
-function destinations(record, part) {
+function destinationEntries(record) {
   const links = new Map();
   const services = new Map();
   const identifierIcons = { isbn: "book", pmid: "article", pmcid: "repository", arxiv: "external" };
@@ -411,7 +459,11 @@ function destinations(record, part) {
     const label = location.version ? `${action} (${location.version})` : action;
     links.set(location.url, { label, icon, download: location.kind === "pdf" || location.kind === "preprint" && /\.pdf(?:[?#]|$)/i.test(location.url) });
   }
-  return [...links, ...services.values()].filter(([url]) => url).map(([url, { label, icon, download, provider }]) =>
+  return [...links, ...services.values()].filter(([url]) => url).map(([href, details]) => ({ href, ...details }));
+}
+
+function destinations(record, part) {
+  return destinationEntries(record).map(({ href: url, label, icon, download, provider }) =>
     iconLink(part, url, label, icon, `${label}\n${url}`, ` target="_blank" rel="noopener noreferrer"${download ? ' download=""' : ""}${provider ? ` data-ci-access-provider="${escapeHTML(provider)}"` : ""}`)
   ).join("");
 }
@@ -438,6 +490,7 @@ function annotationContent(name, namespace, records, part) {
   } else {
     const sources = records.map(record => ({
       title: titleFor(record), state: record.state, identifiers: record.identifiers,
+      ...(record.relatedIdentifiers && { relatedIdentifiers: record.relatedIdentifiers }),
       ...(record.originalIssued && { issued: record.issued, originalIssued: record.originalIssued }),
       version: record.version, retrievedAt: record.retrievedAt, provenance: record.provenance,
       ...(record.note && { note: record.note })
@@ -473,21 +526,53 @@ function safeFallback(value) {
   return value;
 }
 
-function renderBibliographyPart({ text, emphasis, href }) {
+function renderBibliographyPart({ text, emphasis, href }, record) {
   const escaped = escapeHTML(text);
-  const formatted = emphasis === "italic" ? `<em>${escaped}</em>` : emphasis === "bold" ? `<strong>${escaped}</strong>` : escaped;
-  return href ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${formatted}</a>` : formatted;
+  let formatted = emphasis === "italic" ? `<em>${escaped}</em>` : emphasis === "bold" ? `<strong>${escaped}</strong>` : escaped;
+  const value = href ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${formatted}</a>` : formatted;
+  return value;
 }
 
-export function compileCitationBlocks(blocks, cache, {
+export function compileCitationBlocks(blocks, cache, options) {
+  return compileBlocks(blocks, cache, options);
+}
+
+export function planCitationOccurrences(occurrences, cache, { namespace, citationStyle, reprintYear, suffixScope } = {}) {
+  if (!namespace) throw new TypeError("A structured citation plan requires a document namespace.");
+  if (!Array.isArray(occurrences)) throw new TypeError("Supply an ordered array of citation occurrences.");
+  const keys = new Set();
+  const blocks = occurrences.map(({ occurrenceId, recordId, form = "parenthetical", ...fields }) => {
+    if (typeof occurrenceId !== "string" || !/^[a-z0-9][a-z0-9.-]{0,159}$/.test(occurrenceId) || keys.has(occurrenceId)) {
+      throw new TypeError(`Expected a unique stable citation occurrence ID: ${occurrenceId}.`);
+    }
+    if (typeof recordId !== "string" || !/^[a-z0-9][a-z0-9.-]{0,159}$/.test(recordId)) {
+      throw new TypeError("A structured citation occurrence requires a local record ID.");
+    }
+    if (!forms.has(form)) throw new TypeError("Unknown citation form.");
+    const item = { occurrenceId, identifier: { scheme: "local", value: recordId }, form };
+    for (const name of ["label", "locator", "prefix", "context"]) {
+      if (fields[name] === undefined) continue;
+      if (typeof fields[name] !== "string") throw new TypeError(`Citation occurrence ${name} must be text.`);
+      item[name] = fields[name].trim();
+    }
+    keys.add(occurrenceId);
+    return [{ type: "citation", items: [item] }];
+  });
+  return compileBlocks(blocks, cache, { namespace, citationStyle, reprintYear, suffixScope }, true);
+}
+
+function compileBlocks(blocks, cache, {
   namespace = "cit", classPrefix = defaultClassPrefix, citationStyle = "default",
   endnotesHeading = "Endnotes", markup = false, closingMarkup = "",
-  references = "endnotes", isolatedHref, reprintYear = "both", suffixScope = "fragment"
-} = {}) {
+  references = "endnotes", isolatedHref, reprintYear = "both", suffixScope = "fragment",
+  inspectAppearance = "text", inspectPlacement = "after", inspectIcon
+} = {}, structured = false) {
   if (!/^[a-z][a-z0-9-]{0,39}$/.test(namespace)) throw new TypeError("Use a stable lowercase document namespace.");
   validateClassPrefix(classPrefix);
   if (!citationStyles.has(citationStyle)) throw new TypeError("Unknown citation style.");
   if (typeof endnotesHeading !== "string" || !endnotesHeading.trim()) throw new TypeError("Supply a nonempty endnotes heading.");
+  if (!["text", "icon"].includes(inspectAppearance) || !["before", "after"].includes(inspectPlacement)) throw new TypeError("Choose text or icon inspection, before or after the reference.");
+  if (inspectIcon !== undefined && !safeFallback(inspectIcon)) throw new TypeError("Supply a safe inspect icon URL.");
   if (!["endnotes", "isolated"].includes(references)) throw new TypeError("Use endnotes or isolated references.");
   if (!["fragment", "cache"].includes(suffixScope)) throw new TypeError("Use fragment or cache for suffixScope.");
   if (!["original", "edition", "both"].includes(reprintYear)) throw new TypeError("Use original, edition, or both for reprintYear.");
@@ -495,6 +580,7 @@ export function compileCitationBlocks(blocks, cache, {
     throw new TypeError("Use an HTTPS URL or a relative path for isolatedHref.");
   }
   const prefixAttribute = classPrefix === defaultClassPrefix ? "" : ` data-citation-prefix="${classPrefix}"`;
+  const structuredPrefix = `citation_${namespace.length}-${namespace}`;
   const part = names => `class="${partClassNames(classPrefix, names).join(" ")}" data-citation-part="${names}"${prefixAttribute}`;
   const index = readCache(cache);
   const used = new Map();
@@ -529,6 +615,7 @@ export function compileCitationBlocks(blocks, cache, {
         const { identifier } = item;
         const key = canonicalIdentifierKey(identifier);
         let record = identifier.scheme === "local" ? index.byId.get(identifier.value) : index.byIdentifier.get(key);
+        if (!record && structured) throw new Error(`Unknown citation record ${identifier.value}.`);
         if (!record) {
           if (!missing.has(key)) {
             const base = localRecordId("missing", key);
@@ -551,8 +638,10 @@ export function compileCitationBlocks(blocks, cache, {
         const occurrences = local ? includeInNotes(entry, scope) : null;
         if (local && !entry.number) entry.number = nextReferenceNumber++;
         if (token.type === "citation") {
-          const occurrence = local ? `${namespace}-cite-${record.id}-${entry.occurrences.length + 1}` : null;
-          const detail = { id: occurrence, context: occurrenceContext(block, indexInBlock, item, record), label: item.label };
+          const occurrence = structured ? `${structuredPrefix}-occurrence-${item.occurrenceId}`
+            : local ? `${namespace}-cite-${record.id}-${entry.occurrences.length + 1}` : null;
+          const context = item.context || occurrenceContext(block, indexInBlock, item, record);
+          const detail = { id: occurrence, context, label: item.label };
           if (occurrence) entry.occurrences.push(detail);
           occurrences?.push(detail);
           item.occurrence = occurrence;
@@ -651,8 +740,32 @@ export function compileCitationBlocks(blocks, cache, {
   }
 
   const scopeName = scope => scope === 0 ? namespace : `${namespace}-scope-${scope + 1}`;
-  const noteID = (record, scope) => `${scopeName(scope)}-note-${record.id}`;
+  const noteID = (record, scope) => `${structured ? structuredPrefix : scopeName(scope)}-note-${record.id}`;
   const bibliography = ({ record, suffix }) => bibliographyParts(record, suffix, citationStyle);
+  if (structured) {
+    const occurrences = blocks.map(([{ items: [item] }]) => {
+      const label = inlineText(item.entry, item, citationStyle, reprintYear);
+      const parenthetical = !item.label && (citationStyle === "vancouver" || parentheticalForms.has(item.form));
+      return {
+        occurrenceId: item.occurrenceId,
+        anchorId: item.occurrence,
+        recordId: item.entry.record.id,
+        endnoteId: noteID(item.entry.record, 0),
+        label: parenthetical ? `(${label})` : label,
+        bibliographyParts: bibliography(item.entry)
+      };
+    });
+    const endnotes = entries.map(entry => ({
+      id: noteID(entry.record, 0),
+      recordId: entry.record.id,
+      state: entry.record.state,
+      integrity: entry.record.integrity,
+      parts: bibliography(entry),
+      destinations: destinationEntries(entry.record),
+      backlinks: entry.occurrences.map(({ id, context }) => ({ href: `#${id}`, context }))
+    }));
+    return { schema: "citation-inator.occurrence-plan.v1", occurrences, endnotes, diagnostics };
+  }
   const trigger = (item, label, inspectLabel) => {
     const { record } = item.entry;
     const parts = bibliography(item.entry);
@@ -664,13 +777,35 @@ export function compileCitationBlocks(blocks, cache, {
     return `<a ${part("cite")}${item.occurrence ? ` id="${item.occurrence}"` : ""}${href ? ` href="${escapeHTML(href)}"` : ""} data-ci-record="${record.id}"${inspectLabel ? ` data-ci-inspect-label="${escapeHTML(inspectLabel)}" aria-label="${escapeHTML(inspectLabel)}"` : ""} data-ci-bibliography="${escapeHTML(text)}"${formatting} dir="auto">${escapeHTML(label)}</a>`;
   };
 
+  function titleOffset(parts, record, suffix) {
+    const title = record.apaTitle && citationStyle === "apa" ? record.apaTitle : titleFor(record);
+    let offset = 0;
+    const generatedDefault = citationStyle === "default" && !record.citationParts?.length && !["artwork", "image", "webpage"].includes(record.type);
+    for (const [index, part] of parts.entries()) {
+      const plain = part.text.trim().replace(/^[“‘]/, "").replace(/[”’]$/, "");
+      if (!generatedDefault && !(record.authors.length && index === 0) && (plain === title || plain === title + ".")) {
+        return { start: offset + part.text.indexOf(title), length: title.length };
+      }
+      offset += part.text.length;
+    }
+    const text = parts.map(part => part.text).join("");
+    const year = String(yearFor(record)) + suffixFor(yearFor(record), suffix, citationStyle);
+    const afterYear = record.authors.length ? text.indexOf(`(${year}). `) : -1;
+    const start = text.indexOf(title, afterYear < 0 ? 0 : afterYear + year.length + 4);
+    return start >= 0 && (afterYear >= 0 || !record.authors.length || text.indexOf(title, start + title.length) < 0)
+      ? { start, length: title.length } : null;
+  }
+
   function referencesHTML(items, scope, list = false, marker = {}) {
     const local = localEntries.get(scope);
     if (!items.length) return "";
     const heading = `${scopeName(scope)}-endnotes`;
     const rows = items.map(item => {
       const { record } = item.entry;
-      const text = bibliography(item.entry).map(renderBibliographyPart).join("");
+      const formatted = bibliography(item.entry);
+      const text = formatted.map(value => renderBibliographyPart(value, record)).join("");
+      const title = titleOffset(formatted, record, item.entry.suffix);
+      const titleAttributes = title ? ` data-ci-title-start="${title.start}" data-ci-title-length="${title.length}"` : "";
       const status = [record.state === "unresolved" ? "Unresolved" : "", record.integrity?.state].filter(Boolean).join(" · ");
       const links = destinations(record, part);
       const backlinks = (local?.get(record.id) || []).map(({ id, context }, index) => {
@@ -678,12 +813,20 @@ export function compileCitationBlocks(blocks, cache, {
         const label = `Return to “${context}” (occurrence ${letter})`;
         return iconLink(part, `#${id}`, label, "", label, "", letter);
       }).join("");
-      const controls = list ? trigger(item, "Inspect", "Inspect reference: " + titleFor(record)) + links
-        : links + `<span ${part("backlinks")}>${backlinks}</span>`;
+      let inspect = list || inspectAppearance === "icon" || inspectPlacement === "before"
+        ? trigger(item, "Inspect", "Inspect reference: " + titleFor(record)) : "";
+      if (inspect && inspectAppearance === "icon") {
+        const icon = inspectIcon ? `<img src="${escapeHTML(inspectIcon)}" alt="" width="19" height="19">` : iconMarkup("book");
+        inspect = inspect.replace(">Inspect</a>", ` data-ci-inspect-icon>${icon}</a>`);
+      }
+      const leading = inspectPlacement === "before" ? inspect : "";
+      const trailing = inspectPlacement === "after" ? inspect : "";
+      const controls = list ? trailing + links
+        : trailing + links + `<span ${part("backlinks")}>${backlinks}</span>`;
       const annotation = list && record.listAnnotationParts?.length
-        ? `<p ${part("list-annotation")}>${record.listAnnotationParts.map(renderBibliographyPart).join("")}</p>` : "";
+        ? `<p ${part("list-annotation")}>${record.listAnnotationParts.map(value => renderBibliographyPart(value)).join("")}</p>` : "";
       const attrs = list ? ` data-ci-list-record="${record.id}"` : ` id="${noteID(record, scope)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
-      return `<li${attrs}><span dir="auto">${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${annotation}<div ${part("note-actions")}>${controls}</div></li>`;
+      return `<li${attrs}>${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${annotation}<div ${part("note-actions")} data-ci-note-record="${record.id}">${controls}</div></li>`;
     }).join("\n");
     if (list) return `<ol ${part("reference-list")}>${rows}</ol>`;
     const level = marker.level ?? 2;
