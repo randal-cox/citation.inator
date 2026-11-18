@@ -1,6 +1,6 @@
-# Reader access preview
+# Reader access
 
-These features are part of the working 0.1.4 preview. Run `npm start` and open **Reader access and artwork** in the Reading room or Plain HTML.
+These features are available in version 0.1.4. Run `npm start` and open **Reader access and artwork** in the Reading room or Plain HTML.
 
 ## Load and configure
 

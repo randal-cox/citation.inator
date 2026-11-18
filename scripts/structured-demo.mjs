@@ -57,8 +57,8 @@ function endnotes({ endnotes }) {
 const [map, table, prior, missing] = plan.occurrences;
 
 export const structuredDemo = `<section id="structured-preview" class="structured-preview" aria-labelledby="structured-title">
-      <h2 id="structured-title">Programmatic citations <small>Preview</small></h2>
-      <p>Try the map and table citations. Each opens the same source, and its single reference has a return link for each caption. This preview uses records and occurrence IDs supplied by the page.</p>
+      <h2 id="structured-title">Programmatic citations</h2>
+      <p>Try the map and table citations. Each opens the same source, and its single reference has a return link for each caption. This example uses records and occurrence IDs supplied by the page.</p>
       <citation-inspector id="structured-reader" panel-title="Climate sources">
         <p><strong>Map caption.</strong> Baseline ${anchor(map)}.</p>
         <p><strong>Table caption.</strong> Comparison baseline ${anchor(table)}.</p>

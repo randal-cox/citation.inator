@@ -1,8 +1,8 @@
 # Roadmap
 
-Version 0.1.3 adds author IDs for Chicago and a diagnostic for cache-wide year letters. See the [changelog](CHANGELOG.md).
+Version 0.1.4 adds reader access, media records and structured citation integration. See the [changelog](CHANGELOG.md).
 
-## Working 0.1.4-access.1 preview
+## Milestone 0.1.4 completed
 
 - Reader access profiles, built-in or host settings, copy-level access, grouped destinations, translated wording and plural counts.
 - Preferred title destinations, library proxy/OpenURL links, and saved verification dates.
@@ -18,10 +18,12 @@ Version 0.1.3 adds author IDs for Chicago and a diagnostic for cache-wide year l
 - [x] Provide five named citation styles for common books and journal articles, formatted reference text, HTML and Markdown input, and a JSON CLI.
 - [x] Carry curated access links and reader-supplied provider preferences into the panel and endnotes. Resolve ISBN editions through Open Library.
 
-## Current milestone
+## Follow-up work
 
+- Show the unknown-profile help once per reading list, while keeping a settings entry available from each inspector. Long lists currently repeat the help under every reading.
+- Provide a documented hook for adding host content before each reference item, such as topic tags, without matching generated HTML strings.
 - Build a comprehensive catalog of citation styles and variants. Cover author–date, author–page, numeric, and notes and bibliography styles, including disciplinary and publisher variants. Record each style's edition or variant, link to its governing guide where available, and show what citation.inator can format today by source type and citation form. Use real migration examples to identify which gaps matter most and whether a broader style engine would help.
-- Run the integration walkthrough on one actual host page using direct HTML compilation and the Chicago preset. Verify one page end to end, including italic titles, year suffixes, access-service preferences and endnote return links.
+- Extend the reported host-site verification to additional integrations and retain regression checks for formatted references, year letters, service preferences and return links.
 - Test on a physical phone and with Safari and VoiceOver. Cover opening the inspector, moving it, dismissing it, and returning from an endnote.
 
 ## Wishlist

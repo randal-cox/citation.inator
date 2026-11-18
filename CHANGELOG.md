@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.4 · 2026-11-18
+
+- Add reader access profiles, service catalogues, grouped destinations, built-in and host settings, translated wording and plural counts.
+- Add preferred title destinations, library proxy/OpenURL links and saved verification dates while preserving canonical citation text.
+- Add structured occurrences, stable identifiers, trigger bindings, host theme controls and route dismissal.
+- Add artwork/image metadata, rights, attribution, literal dates, source/served checksums and CSL graphic export. Chicago is the initial media formatting target.
+- Add compact inspect controls and custom icon masks that follow text colour. Omit empty trailing action boxes.
+- Expand the Reading room, Plain HTML, Guide and packaged documentation.
+
 ## 0.1.4-access.1 · Preview · 2026-11-18
 
 - Omit empty trailing action containers when an inspect control leads the reference.

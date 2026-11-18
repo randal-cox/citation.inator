@@ -1,6 +1,6 @@
-# Media record preview
+# Media records
 
-Artwork and image support is part of the working 0.1.4 preview. Use `type: "artwork"` for an art object and `type: "image"` for a photograph, still, or screenshot.
+Artwork and image support is available in version 0.1.4. Use `type: "artwork"` for an art object and `type: "image"` for a photograph, still, or screenshot.
 
 ## Record fields
 

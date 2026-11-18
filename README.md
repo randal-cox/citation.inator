@@ -1,6 +1,6 @@
 # citation.inator
 
-A small citation library. Write citations in plain text, compile them into linked references and endnotes, and add an optional browser inspector. [Try programmatic citations in the preview](#try-the-programmatic-citations-preview).
+A small citation library. Write citations in plain text, compile them into linked references and endnotes, and add an optional browser inspector. [Try programmatic citations](#try-programmatic-citations).
 
 ## Load and initialize
 
@@ -8,7 +8,7 @@ To serve the demos from the checkout, run `npm start` from the repository root.
 
 **Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
-**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.1.4-access.1.tgz` there for this preview. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
+**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.1.4.tgz` there for this release. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">
@@ -23,13 +23,13 @@ To serve the demos from the checkout, run `npm start` from the repository root.
 
 To write `{ref …}` instead of `{citation …}` and emit classes such as `essay-cite`, set `citationKeyword: "ref"` and `classPrefix: "essay"` when compiling. Match the browser’s `class-prefix` to the compiler’s setting. The browser initializer also accepts `classPrefix`, `panelTitle`, `panelIcon`, `evidenceTitle`, `evidenceIcon`, `creditTitle` and `creditIcon`. [Configuration examples](docs/integration.md#load-and-initialize)
 
-## Try the programmatic citations preview
+## Try programmatic citations
 
-In the `0.1.4-access.1` preview checkout, run `npm start` and open the [Reading room](http://127.0.0.1:4187/demos/static/#structured-preview) or [Plain HTML](http://127.0.0.1:4187/demos/drop-in/#structured-preview). Open the map and table citations, then use their separate return links from the same reference. Try the unresolved station log and open a citation inside **Map details**. Press Escape twice to see focus return through both layers. The page’s reference links and backlinks also work with JavaScript disabled.
+In the `0.1.4` checkout, run `npm start` and open the [Reading room](http://127.0.0.1:4187/demos/static/#structured-preview) or [Plain HTML](http://127.0.0.1:4187/demos/drop-in/#structured-preview). Open the map and table citations, then use their separate return links from the same reference. Try the unresolved station log and open a citation inside **Map details**. Press Escape twice to see focus return through both layers. The page’s reference links and backlinks also work with JavaScript disabled.
 
-Use `planCitationOccurrences` and `bindCitationTrigger` to add the inspector to app-rendered controls. The preview runs alongside the regular compiled citations on both pages. See the [integration guide](docs/integration.md#bind-citations-to-controls-you-render).
+Use `planCitationOccurrences` and `bindCitationTrigger` to add the inspector to app-rendered controls. The example runs alongside the regular compiled citations on both pages. See the [integration guide](docs/integration.md#bind-citations-to-controls-you-render).
 
-## Reader access and media preview
+## Reader access and media
 
 Try **Reader access and artwork** in the Reading room or Plain HTML. The built-in settings sheet remembers a reader’s services on this site, prioritizes explicitly open copies, and can use a library proxy or OpenURL resolver. Hosts can replace the settings UI and translate its text. Copied citations keep their canonical bibliographic URL. [Reader access API and wording](docs/reader-access.md)
 

@@ -44,3 +44,11 @@ The 18 November follow-up omits empty trailing action containers and adds option
 Node 22.23.3 passed all 51 tests. The full Chrome 157.0.8103.78 suite passed, including light and dark mask rendering under a restrictive CSP, complete accessible names, keyboard opening and return focus, distinct mask IDs across repeated lists, fragment rebasing, and the runtime add/remove-location sequence. The mask images were visually inspected in both themes.
 
 The scoped UX, documentation and non-sequitur review passed after fixing the cache-replacement edge. Native Safari and VoiceOver remain unverified for the preview.
+
+## Milestone acceptance, 0.1.4
+
+On 18 November 2026, the adopting site's reviewer reported that both compact-action fixes worked, all of its tests passed against a scratch copy using the candidate, reading lists matched the live presentation, and the citation panel opened without errors. Its custom open-book mask followed text colour in light and dark themes. This host-site verification was reported by the adopter.
+
+Randal accepted the small milestone as 0.1.4. Two nonblocking follow-ups remain on the roadmap: show unknown-profile help once per list and offer a documented item-content insertion hook. Native Safari, VoiceOver and physical-phone evidence remains open.
+
+The stable release promotes the accepted runtime implementation with updated version metadata and release documentation.

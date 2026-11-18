@@ -35,7 +35,7 @@ const media = compileCitations("{citation list harbor-artwork}", cache, {
   namespace: "media-example", citationStyle: "chicago-author-date", inspectAppearance: "icon", inspectPlacement: "before"
 });
 export const accessDemo = `<section id="access-preview" aria-labelledby="access-preview-title">
-  <h2 id="access-preview-title">Reader access and artwork <small>Preview</small></h2>
+  <h2 id="access-preview-title">Reader access and artwork</h2>
   <p>These synthetic records use example.org destinations to demonstrate access choices. Select JSTOR in Where you can read, save, and reopen the handbook. The open copy stays first. Both inspectors share your browser settings.</p>
   <p>Access settings <output id="access-profile-state">Not set</output></p>
   <citation-inspector id="access-demo-reader" panel-title="Source and access">${main.html}</citation-inspector>

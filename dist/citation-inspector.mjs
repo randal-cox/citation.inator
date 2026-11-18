@@ -1,4 +1,4 @@
-/*! citation-inator v0.1.4-access.1 | MIT | See LICENSE */
+/*! citation-inator v0.1.4 | MIT | See LICENSE */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";

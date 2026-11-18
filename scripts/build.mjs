@@ -122,7 +122,7 @@ await writeFile("demos/static/structured-preview.mjs", structuredModule("../../d
 
 await writeFile("demos/static/index.html", document({
   title: "Follow the source.",
-  intro: 'Open a citation to inspect its source. Try the <a href="#structured-preview">programmatic citations preview</a> for app-rendered links and a citation inside a dialog.',
+  intro: 'Open a citation to inspect its source. Try the <a href="#structured-preview">programmatic citation examples</a> for app-rendered links and a citation inside a dialog.',
   script: previewAssets,
   active: "static",
   content: `<article class="reading" aria-labelledby="reading-title">
@@ -284,13 +284,13 @@ await writeFile("demos/static/guide.html", document({
       <p>For a build tool such as Python, run the CLI with <code>--json</code> and send <code>{ paragraphs, cache, options }</code> on standard input. It returns <code>{ html, cache, diagnostics }</code>. For HTML or Markdown send <code>{ source, format, cache, options }</code>.</p>
     </section>
     <section aria-labelledby="guide-structured">
-      <h2 id="guide-structured">Programmatic citations <small>Preview</small></h2>
+      <h2 id="guide-structured">Programmatic citations</h2>
       <p>Use <code>planCitationOccurrences</code> when your application owns the caption, table, or dialog markup. Supply stable occurrence IDs and render the planner’s anchors and endnotes as ordinary links. Bind the controls with <code>bindCitationTrigger</code> to add the inspector.</p>
-      <p>Try the preview in the <a href="./#structured-preview">Reading room</a> or <a href="../drop-in/#structured-preview">Plain HTML</a>. Follow the two return links from one reference, inspect an unresolved source, and press Escape twice in Map details. The regular reading on the same page still uses compiled notation.</p>
+      <p>Try the examples in the <a href="./#structured-preview">Reading room</a> or <a href="../drop-in/#structured-preview">Plain HTML</a>. Follow the two return links from one reference, inspect an unresolved source, and press Escape twice in Map details. The regular reading on the same page still uses compiled notation.</p>
       <p>The dark switch also changes the inspector’s body font and compact modal styling. If your site reuses the same inspector across views, call <code>inspector.dismiss({ restoreFocus: false })</code> during navigation, then focus the destination.</p>
     </section>
     <section aria-labelledby="guide-access">
-      <h2 id="guide-access">Reader access and media <small>Preview</small></h2>
+      <h2 id="guide-access">Reader access and media</h2>
       <p>Try the <a href="./#access-preview">reader access example</a> or its <a href="../drop-in/#access-preview">Plain HTML copy</a>. The access sheet remembers services in this browser. A PDF is open only when its location says <code>access: "open"</code>. Choose <code>access-settings="host"</code> to open your own settings page in response to <code>access-settings-request</code>.</p>
       <p>Artwork and image records retain the creator separately from contributors such as uploaders. Use <code>displayDate</code> for a date range or approximation, <code>license</code> for reuse terms, and <code>provenance[].checksums</code> for separate source and served digests. The <a href="../../docs/media-support.md">media support matrix</a> describes style coverage. Set <code>inspectIconMode: "mask"</code> with a custom <code>inspectIcon</code> URL to follow the link’s text colour.</p>
     </section>
@@ -328,7 +328,7 @@ await writeFile(portable + "index.html", `<!doctype html>
 <body>
   <main>
     <h1 data-citation-part="brand">${brandIconMarkup}<span>Sources in plain HTML</span></h1>
-    <p>Click a citation to inspect it. Without JavaScript, it links directly to its endnote. Try the <a href="#structured-preview">programmatic citations preview</a>.</p>
+    <p>Click a citation to inspect it. Without JavaScript, it links directly to its endnote. Try the <a href="#structured-preview">programmatic citation examples</a>.</p>
     <hr>
     <citation-inspector id="reading-reader" data-cache="./citations.json">${article.html}</citation-inspector>
     ${notationExamples}

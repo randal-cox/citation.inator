@@ -64,3 +64,7 @@ Verification on an actual host site, physical phones, Safari, Firefox and screen
 ## Reader access and media preview
 
 See the [0.1.4-access.0 verification record](reader-preview-verification.md) for the consolidated preview, regression coverage, package checks and independent reviewer verdicts.
+
+## Milestone 0.1.4
+
+Version 0.1.4 promotes the accepted reader-access and media candidate. The adopter reported successful site tests and verified both compact-action fixes. The [milestone acceptance record](reader-preview-verification.md#milestone-acceptance-014) distinguishes that reported host evidence from the automated library checks and lists the remaining follow-up work.
