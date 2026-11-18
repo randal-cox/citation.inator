@@ -46,7 +46,10 @@
     "test": "node --test test/*.test.mjs",
     "test:browser": "node test/browser.mjs",
     "start": "node scripts/serve.mjs",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "checkin:check": "node scripts/checkin.mjs --staged",
+    "milestone:check": "npm test && npm run build && npm run test:browser && node scripts/checkin.mjs",
+    "hooks:install": "git config --local core.hooksPath .githooks"
   },
   "devDependencies": {
     "axe-core": "4.14.0",

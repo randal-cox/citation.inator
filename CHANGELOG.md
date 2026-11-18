@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Establish a repository check-in and milestone procedure with staged consistency checks, a local hook and a milestone record template.
+
 ## 0.1.4 · 2026-11-18
 
 - Add reader access profiles, service catalogues, grouped destinations, built-in and host settings, translated wording and plural counts.

@@ -14,6 +14,10 @@ Version 0.1.4 adds reader access, media records and structured citation integrat
 
 Native Safari, VoiceOver and physical-phone checks remain open. The milestone record describes these limits and the scope of verification.
 
+## Check-in practice
+
+Review the milestone record and roadmap before every check-in. The [repository procedure](docs/checkin-procedure.md) defines the fast staged checks, milestone verification, independent review and release record. The local pre-commit hook runs the fast checks.
+
 ## Earlier completed work
 
 - [x] Provide a standalone HTML ZIP and an npm tarball with separate compiler and browser entry points.

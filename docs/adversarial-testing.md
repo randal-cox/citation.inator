@@ -1,5 +1,7 @@
 # Adversarial testing
 
+This review is part of the [milestone check-in procedure](checkin-procedure.md). The current milestone record and roadmap are reviewed before every check-in.
+
 Run this review at every milestone and whenever a change warrants it. Start from an identified commit or working-tree candidate and share the expected behavior, artifacts and commands with reviewers. Ask each reviewer to challenge the work independently and give an explicit verdict, with reproduction steps for any issue.
 
 | Reviewer | What to challenge |
