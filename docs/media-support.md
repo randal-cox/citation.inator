@@ -63,8 +63,13 @@ CSL export uses `type: "graphic"`. Creators remain in `author`, medium in `mediu
 compileCitations(source, cache, {
   inspectAppearance: "icon",
   inspectPlacement: "before",
-  inspectIcon: "/assets/inspect.svg"
+  inspectIcon: "/assets/inspect.svg",
+  inspectIconMode: "mask"
 });
 ```
 
-`inspectAppearance` accepts `text` or `icon`. `inspectPlacement` accepts `before` or `after`. Defaults retain the reading list’s text action after its reference. The icon/before settings also enable inspection on endnotes. The default icon is a book. `inspectIcon` accepts a safe image URL and keeps the full accessible name **Inspect reference** followed by the title.
+`inspectAppearance` accepts `text` or `icon`. `inspectPlacement` accepts `before` or `after`. Defaults retain the reading list’s text action after its reference. The icon/before settings also enable inspection on endnotes. The default icon is a book. `inspectIcon` accepts a safe image URL. Set `inspectIconMode: "mask"` to render the image’s silhouette with `currentColor`, so it follows the link’s text colour in light and dark themes. The default mode, `image`, retains the supplied image’s colours. Both modes keep the full accessible name **Inspect reference** followed by the title.
+
+Mask mode uses a generated SVG alpha mask with unique IDs. Serve the image from the same origin and allow it through `img-src 'self'` in a restrictive CSP. A transparent SVG or PNG silhouette works well. The generated icon needs no inline CSS. [SVG alpha masks](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/mask-type)
+
+With a leading inspect control and no destination or return actions, the compiler omits the trailing action container. Reader-access enhancement can still add meaningful access or settings controls when configured.

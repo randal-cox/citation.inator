@@ -131,6 +131,7 @@ export function rebaseCitationFragment(html, from, to) {
   }
   const fragment = parseFragment(html);
   const generated = new RegExp(`^${from}-(?:scope-[0-9]+-)?(?:cite-.+-[0-9]+|note-.+|endnotes|evidence|credit)$`);
+  const inspectMask = new RegExp(`^${from}_inspect-mask-[0-9]+$`);
   const ids = new Set();
   const mapping = new Map();
   visit(fragment, node => {
@@ -141,7 +142,7 @@ export function rebaseCitationFragment(html, from, to) {
     const part = attr(node, "data-citation-part")?.value;
     const parentPart = attr(node.parentNode || {}, "data-citation-part")?.value;
     const listPart = attr(node.parentNode?.parentNode || {}, "data-citation-part")?.value;
-    if (generated.test(id) && (attr(node, "data-ci-record") || part === "annotation-content" ||
+    if (node.tagName === "mask" && inspectMask.test(id) || generated.test(id) && (attr(node, "data-ci-record") || part === "annotation-content" ||
         /^h[1-6]$/.test(node.tagName) && parentPart === "endnotes" || node.tagName === "li" && listPart === "endnotes")) {
       mapping.set(id, to + id.slice(from.length));
     }
@@ -153,6 +154,9 @@ export function rebaseCitationFragment(html, from, to) {
     const id = attr(node, "id");
     const href = attr(node, "href");
     const labelledBy = attr(node, "aria-labelledby");
+    const mask = attr(node, "mask");
+    const maskId = /^url\(#(.+)\)$/.exec(mask?.value || "")?.[1];
+    if (mapping.has(maskId)) mask.value = "url(#" + mapping.get(maskId) + ")";
     if (mapping.has(id?.value)) id.value = mapping.get(id.value);
     if (href?.value.startsWith("#") && mapping.has(href.value.slice(1))) href.value = "#" + mapping.get(href.value.slice(1));
     if (labelledBy) labelledBy.value = labelledBy.value.replace(/\S+/g, word => mapping.get(word) || word);

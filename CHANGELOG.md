@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4-access.1 · Preview · 2026-11-18
+
+- Omit empty trailing action containers when an inspect control leads the reference.
+- Add `inspectIconMode: "mask"` for custom icons that inherit text colour in light and dark themes.
+
 ## 0.1.4-access.0 · Preview · 2026-11-18
 
 - Add browser-local reader profiles, service catalogues, grouped access destinations, built-in or host settings, translated wording and plural counts.

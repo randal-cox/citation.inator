@@ -10,6 +10,7 @@ import axe from "axe-core";
 import { compileHTML } from "../src/markup.mjs";
 import { makeCache } from "../src/records.mjs";
 import { checkStructuredBrowser } from "./structured-browser.mjs";
+import { checkInspectIcons } from "./inspect-browser.mjs";
 import { checkReaderAccess } from "./access-browser.mjs";
 import { checkWebpageBrowser } from "./webpage-browser.mjs";
 import { checkStructuredDemo } from "./structured-demo-browser.mjs";
@@ -528,6 +529,7 @@ try {
 
   await page.setViewportSize({ width: 1440, height: 960 });
   await page.emulateMedia({ forcedColors: "none" });
+  await checkInspectIcons(browser, origin, evidence);
   await checkReaderAccess(browser, origin, evidence);
   await checkStructuredBrowser({ page, directory: temporary, origin: copied });
   await checkWebpageBrowser({ page, directory: temporary, origin: copied });

@@ -565,13 +565,14 @@ function compileBlocks(blocks, cache, {
   namespace = "cit", classPrefix = defaultClassPrefix, citationStyle = "default",
   endnotesHeading = "Endnotes", markup = false, closingMarkup = "",
   references = "endnotes", isolatedHref, reprintYear = "both", suffixScope = "fragment",
-  inspectAppearance = "text", inspectPlacement = "after", inspectIcon
+  inspectAppearance = "text", inspectPlacement = "after", inspectIcon, inspectIconMode = "image"
 } = {}, structured = false) {
   if (!/^[a-z][a-z0-9-]{0,39}$/.test(namespace)) throw new TypeError("Use a stable lowercase document namespace.");
   validateClassPrefix(classPrefix);
   if (!citationStyles.has(citationStyle)) throw new TypeError("Unknown citation style.");
   if (typeof endnotesHeading !== "string" || !endnotesHeading.trim()) throw new TypeError("Supply a nonempty endnotes heading.");
   if (!["text", "icon"].includes(inspectAppearance) || !["before", "after"].includes(inspectPlacement)) throw new TypeError("Choose text or icon inspection, before or after the reference.");
+  if (!["image", "mask"].includes(inspectIconMode)) throw new TypeError("Choose image or mask for inspectIconMode.");
   if (inspectIcon !== undefined && !safeFallback(inspectIcon)) throw new TypeError("Supply a safe inspect icon URL.");
   if (!["endnotes", "isolated"].includes(references)) throw new TypeError("Use endnotes or isolated references.");
   if (!["fragment", "cache"].includes(suffixScope)) throw new TypeError("Use fragment or cache for suffixScope.");
@@ -796,6 +797,8 @@ function compileBlocks(blocks, cache, {
       ? { start, length: title.length } : null;
   }
 
+  let nextInspectMask = 0;
+
   function referencesHTML(items, scope, list = false, marker = {}) {
     const local = localEntries.get(scope);
     if (!items.length) return "";
@@ -816,17 +819,25 @@ function compileBlocks(blocks, cache, {
       let inspect = list || inspectAppearance === "icon" || inspectPlacement === "before"
         ? trigger(item, "Inspect", "Inspect reference: " + titleFor(record)) : "";
       if (inspect && inspectAppearance === "icon") {
-        const icon = inspectIcon ? `<img src="${escapeHTML(inspectIcon)}" alt="" width="19" height="19">` : iconMarkup("book");
+        let icon = iconMarkup("book");
+        if (inspectIcon) {
+          const url = escapeHTML(inspectIcon);
+          const id = `${namespace}_inspect-mask-${++nextInspectMask}`;
+          icon = inspectIconMode === "mask"
+            ? `<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" focusable="false"><defs><mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24" mask-type="alpha"><image href="${url}" width="24" height="24" preserveAspectRatio="xMidYMid meet"/></mask></defs><rect width="24" height="24" fill="currentColor" mask="url(#${id})"/></svg>`
+            : `<img src="${url}" alt="" width="19" height="19">`;
+        }
         inspect = inspect.replace(">Inspect</a>", ` data-ci-inspect-icon>${icon}</a>`);
       }
       const leading = inspectPlacement === "before" ? inspect : "";
       const trailing = inspectPlacement === "after" ? inspect : "";
       const controls = list ? trailing + links
-        : trailing + links + `<span ${part("backlinks")}>${backlinks}</span>`;
+        : trailing + links + (backlinks ? `<span ${part("backlinks")}>${backlinks}</span>` : "");
       const annotation = list && record.listAnnotationParts?.length
         ? `<p ${part("list-annotation")}>${record.listAnnotationParts.map(value => renderBibliographyPart(value)).join("")}</p>` : "";
       const attrs = list ? ` data-ci-list-record="${record.id}"` : ` id="${noteID(record, scope)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
-      return `<li${attrs}>${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${annotation}<div ${part("note-actions")} data-ci-note-record="${record.id}">${controls}</div></li>`;
+      const actions = controls ? `<div ${part("note-actions")} data-ci-note-record="${record.id}">${controls}</div>` : "";
+      return `<li${attrs} data-ci-reference-record="${record.id}">${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${annotation}${actions}</li>`;
     }).join("\n");
     if (list) return `<ol ${part("reference-list")}>${rows}</ol>`;
     const level = marker.level ?? 2;

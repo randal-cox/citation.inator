@@ -292,7 +292,7 @@ await writeFile("demos/static/guide.html", document({
     <section aria-labelledby="guide-access">
       <h2 id="guide-access">Reader access and media <small>Preview</small></h2>
       <p>Try the <a href="./#access-preview">reader access example</a> or its <a href="../drop-in/#access-preview">Plain HTML copy</a>. The access sheet remembers services in this browser. A PDF is open only when its location says <code>access: "open"</code>. Choose <code>access-settings="host"</code> to open your own settings page in response to <code>access-settings-request</code>.</p>
-      <p>Artwork and image records retain the creator separately from contributors such as uploaders. Use <code>displayDate</code> for a date range or approximation, <code>license</code> for reuse terms, and <code>provenance[].checksums</code> for separate source and served digests. The <a href="../../docs/media-support.md">media support matrix</a> describes style coverage.</p>
+      <p>Artwork and image records retain the creator separately from contributors such as uploaders. Use <code>displayDate</code> for a date range or approximation, <code>license</code> for reuse terms, and <code>provenance[].checksums</code> for separate source and served digests. The <a href="../../docs/media-support.md">media support matrix</a> describes style coverage. Set <code>inspectIconMode: "mask"</code> with a custom <code>inspectIcon</code> URL to follow the link’s text colour.</p>
     </section>
     <section aria-labelledby="guide-cache">
       <h2 id="guide-cache">Format references and add access links</h2>

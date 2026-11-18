@@ -48,7 +48,7 @@ Serve `.mjs` as JavaScript and `.json` as JSON. Static links and endnotes work w
 Build the current tarball by running `npm ci` and `npm pack` in the downloaded library checkout with Node.js 22 or later. Install that tarball in your project. Copy `reading.txt` and `citations.json` from the ZIP into this directory for the example.
 
 ```sh
-npm install ./citation-inator-0.1.4-access.0.tgz
+npm install ./citation-inator-0.1.4-access.1.tgz
 npm exec -- citation-inator reading.txt citations.json article.html my-article
 ```
 
@@ -199,7 +199,7 @@ For HTML or Markdown, replace `paragraphs` with a `source` string and set `forma
 
 ## Bind citations to controls you render
 
-This API is available in the `0.1.4-access.0` preview. Try it in the [Reading room](http://127.0.0.1:4187/demos/static/#structured-preview) or [Plain HTML](http://127.0.0.1:4187/demos/drop-in/#structured-preview) after running `npm start`. The two captions share an endnote and have distinct return links. The earlier release shares a sample collection code and keeps its own record. The station log has an explicit unresolved record, so it still has an anchor and can be inspected. An unknown record ID is a planning error.
+This API is available in the `0.1.4-access.1` preview. Try it in the [Reading room](http://127.0.0.1:4187/demos/static/#structured-preview) or [Plain HTML](http://127.0.0.1:4187/demos/drop-in/#structured-preview) after running `npm start`. The two captions share an endnote and have distinct return links. The earlier release shares a sample collection code and keeps its own record. The station log has an explicit unresolved record, so it still has an anchor and can be inspected. An unknown record ID is a planning error.
 
 Use `planCitationOccurrences` when your application renders its own chart captions, table cells, or other controls. Give each reference list a document namespace. Use an occurrence ID tied to the content or control that cites the record. An occurrence keeps its ID when you move it within the list. Numeric styles still follow the order you supply.
 

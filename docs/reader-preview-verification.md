@@ -36,3 +36,11 @@ Chicago is the initial artwork/image formatting target. Other presets use the ge
 Link verification dates and checksums describe supplied metadata. The library performs no automatic destination checks or file verification. The synthetic access and media examples use example.org URLs and illustrative hashes.
 
 Stable release and package publication remain separate from this preview verification.
+
+## Compact icon follow-up, 0.1.4-access.1
+
+The 18 November follow-up omits empty trailing action containers and adds optional current-colour masks for custom inspect images. Generated action rows also disappear when a cache update removes the last destination and settings are off.
+
+Node 22.23.3 passed all 51 tests. The full Chrome 157.0.8103.78 suite passed, including light and dark mask rendering under a restrictive CSP, complete accessible names, keyboard opening and return focus, distinct mask IDs across repeated lists, fragment rebasing, and the runtime add/remove-location sequence. The mask images were visually inspected in both themes.
+
+The scoped UX, documentation and non-sequitur review passed after fixing the cache-replacement edge. Native Safari and VoiceOver remain unverified for the preview.

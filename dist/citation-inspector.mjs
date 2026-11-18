@@ -1,4 +1,4 @@
-/*! citation-inator v0.1.4-access.0 | MIT | See LICENSE */
+/*! citation-inator v0.1.4-access.1 | MIT | See LICENSE */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -841,16 +841,33 @@ var AccessView = class {
     for (const row of this.#rows.keys()) {
       if (!this.#owner.contains(row)) this.#restoreRow(row);
     }
-    for (const row of this.#owner.querySelectorAll("[data-ci-note-record]")) {
-      if (row.closest("citation-inspector") !== this.#owner) continue;
-      const record = records.get(row.dataset.ciNoteRecord);
+    const references = this.#owner.querySelectorAll("[data-ci-reference-record], [data-ci-note-record]");
+    const visited = /* @__PURE__ */ new Set();
+    for (const reference of references) {
+      if (reference.closest("citation-inspector") !== this.#owner) continue;
+      const record = records.get(reference.dataset.ciReferenceRecord || reference.dataset.ciNoteRecord);
       if (!record) continue;
+      let row = reference.matches("[data-ci-note-record]") ? reference : reference.querySelector(":scope > [data-ci-note-record]");
+      if (!row) {
+        if (this.settings === "off" && !this.items(record, hidden).length) continue;
+        row = node(reference.ownerDocument, "div", "", "note-actions");
+        row.dataset.ciNoteRecord = record.id;
+        row.dataset.ciGeneratedActions = "";
+        reference.append(row);
+      }
+      if (visited.has(row)) continue;
+      visited.add(row);
       const signature = JSON.stringify([record, this.profile, this.layout, this.settings, this.#options, this.#owner.getAttribute("hidden-providers"), this.#owner.getAttribute("hidden-access-providers"), this.#owner.getAttribute("access-providers")]);
       if (this.#rows.get(row)?.signature === signature) continue;
       this.#restoreRow(row);
+      if (row.hasAttribute("data-ci-generated-actions") && this.settings === "off" && !this.items(record, hidden).length) {
+        row.remove();
+        continue;
+      }
+      if (!row.isConnected) reference.append(row);
       const statusURL = record.integrity?.url || record.locations.find((item) => item.kind === "status")?.url;
       const links = [...row.querySelectorAll(':scope > a[href^="https:"]:not([data-ci-record]):not([data-ci-panel])')].filter((link) => link.href !== statusURL);
-      const saved = { signature, nodes: [...row.childNodes] };
+      const saved = { signature, nodes: [...row.childNodes], generated: row.hasAttribute("data-ci-generated-actions"), reference: row.closest("li") };
       this.#rows.set(row, saved);
       {
         const group = node(row.ownerDocument, "span", "", "access-inline");
@@ -903,12 +920,14 @@ var AccessView = class {
   }
   #restoreRow(row) {
     const saved = this.#rows.get(row);
-    if (saved) row.replaceChildren(...saved.nodes);
+    const reference = saved?.reference || row.closest("li");
+    if (saved?.generated) row.remove();
+    else if (saved) row.replaceChildren(...saved.nodes);
     this.#rows.delete(row);
-    for (const [title, saved2] of this.#titles) {
-      if (row.closest("li")?.contains(title)) {
-        if (saved2.created) title.replaceWith(...saved2.nodes);
-        else title.replaceChildren(...saved2.nodes);
+    for (const [title, titleState] of this.#titles) {
+      if (reference?.contains(title)) {
+        if (titleState.created) title.replaceWith(...titleState.nodes);
+        else title.replaceChildren(...titleState.nodes);
         this.#titles.delete(title);
       }
     }

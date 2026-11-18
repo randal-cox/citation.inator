@@ -8,7 +8,7 @@ To serve the demos from the checkout, run `npm start` from the repository root.
 
 **Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
-**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.1.4-access.0.tgz` there for this preview. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
+**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.1.4-access.1.tgz` there for this preview. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">
@@ -25,7 +25,7 @@ To write `{ref …}` instead of `{citation …}` and emit classes such as `essay
 
 ## Try the programmatic citations preview
 
-In the `0.1.4-access.0` preview checkout, run `npm start` and open the [Reading room](http://127.0.0.1:4187/demos/static/#structured-preview) or [Plain HTML](http://127.0.0.1:4187/demos/drop-in/#structured-preview). Open the map and table citations, then use their separate return links from the same reference. Try the unresolved station log and open a citation inside **Map details**. Press Escape twice to see focus return through both layers. The page’s reference links and backlinks also work with JavaScript disabled.
+In the `0.1.4-access.1` preview checkout, run `npm start` and open the [Reading room](http://127.0.0.1:4187/demos/static/#structured-preview) or [Plain HTML](http://127.0.0.1:4187/demos/drop-in/#structured-preview). Open the map and table citations, then use their separate return links from the same reference. Try the unresolved station log and open a citation inside **Map details**. Press Escape twice to see focus return through both layers. The page’s reference links and backlinks also work with JavaScript disabled.
 
 Use `planCitationOccurrences` and `bindCitationTrigger` to add the inspector to app-rendered controls. The preview runs alongside the regular compiled citations on both pages. See the [integration guide](docs/integration.md#bind-citations-to-controls-you-render).
 
@@ -33,7 +33,7 @@ Use `planCitationOccurrences` and `bindCitationTrigger` to add the inspector to 
 
 Try **Reader access and artwork** in the Reading room or Plain HTML. The built-in settings sheet remembers a reader’s services on this site, prioritizes explicitly open copies, and can use a library proxy or OpenURL resolver. Hosts can replace the settings UI and translate its text. Copied citations keep their canonical bibliographic URL. [Reader access API and wording](docs/reader-access.md)
 
-Artwork and image records support creator attribution, literal date ranges, rights, institutions, accession numbers, contributors, and separate source/served checksums. The demo also shows an inline inspect icon. [Media fields and style support](docs/media-support.md)
+Artwork and image records support creator attribution, literal date ranges, rights, institutions, accession numbers, contributors, and separate source/served checksums. The demo also shows an inline inspect icon. Custom icons can follow the text colour with `inspectIconMode: "mask"`. [Media fields and style support](docs/media-support.md)
 
 ## Write a citation
 
