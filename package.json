@@ -36,13 +36,10 @@
     "dist/citation-inspector.css",
     "dist/citations.json",
     "scripts/compile.mjs",
-    "docs/integration.md",
     "ROADMAP.md",
     "CHANGELOG.md",
     "CITATION.cff",
-    "docs/citation-example.png",
-    "docs/reader-access.md",
-    "docs/media-support.md"
+    "docs"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
