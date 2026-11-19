@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add browser regression coverage for unboxed inspector headings, visible keyboard control focus and isolation from host focus styling.
 - Establish a repository check-in and milestone procedure with staged consistency checks, a local hook and a milestone record template.
 
 ## 0.1.4 · 2026-11-18

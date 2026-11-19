@@ -78,6 +78,14 @@ try {
   const primary = page.locator("citation-inspector:not(#access-demo-reader):not(#media-demo-reader) .citation-cite").first();
   const panel = page.getByRole("dialog", { name: "citation.inator" });
   const dialogHeading = panel.getByRole("heading", { name: "citation.inator", exact: true });
+  const checkHeadingFocus = async label => {
+    const appearance = await dialogHeading.evaluate(node => {
+      const css = getComputedStyle(node);
+      return { focused: node.getRootNode().activeElement === node, outline: css.outlineStyle,
+        shadow: css.boxShadow, border: css.borderWidth };
+    });
+    assert.deepEqual(appearance, { focused: true, outline: "none", shadow: "none", border: "0px" }, label);
+  };
   const report = async label => {
     await page.evaluate(axe.source);
     const findings = await page.evaluate(async () => {
@@ -109,6 +117,7 @@ try {
   await primary.click();
   await panel.waitFor();
   assert.equal(await page.locator("#reading-reader").getAttribute("open"), "");
+  await checkHeadingFocus("pointer-open heading has no focus box");
   assert.equal(await panel.locator('[data-citation-part~="brand-icon"] svg').count(), 1);
   const pdf = panel.getByRole("link", { name: "Download PDF (author preprint)" });
   assert.equal(await pdf.getAttribute("download"), "");
@@ -241,6 +250,7 @@ try {
   await primary.click();
   await panel.waitFor();
   assert.equal(await panel.evaluate(node => getComputedStyle(node).backgroundColor), "rgb(21, 39, 50)");
+  await checkHeadingFocus("dark-theme heading has no focus box");
   if (evidence) await page.screenshot({ path: join(evidence, "midnight-theme.png") });
   await page.keyboard.press("Escape");
   await report("midnight reading room");
@@ -321,10 +331,14 @@ try {
   await primary.focus();
   await page.keyboard.press("Enter");
   await panel.waitFor();
+  await checkHeadingFocus("keyboard-open heading has no focus box");
   assert.equal(await dialogHeading.evaluate(node => node.getRootNode().activeElement === node), true);
   await page.keyboard.press("Tab");
   const panelOptions = panel.getByLabel("Panel options", { exact: true });
   assert.equal(await panelOptions.evaluate(node => node.getRootNode().activeElement === node), true);
+  assert.equal(await panelOptions.evaluate(node => node.matches(":focus-visible") &&
+    getComputedStyle(node).outlineStyle === "solid" && parseFloat(getComputedStyle(node).outlineWidth) >= 2), true,
+    "actual keyboard controls keep a visible focus indicator");
   await page.keyboard.press("Tab");
   const doiLink = panel.getByRole("link", { name: /https:\/\/doi.org/ });
   assert.equal(await doiLink.evaluate(node => node.getRootNode().activeElement === node), true);
@@ -490,6 +504,7 @@ try {
   await primary.click();
   await panel.waitFor();
   const hostile = await panel.boundingBox();
+  await checkHeadingFocus("host focus rules cannot add a box to the shadow heading");
   assert.ok(hostile.width <= 320);
   assert.equal(await panel.evaluate(node => node.scrollWidth === node.clientWidth), true);
   assert.ok(await panel.getByRole("heading", { name: /<img src=x onerror=alert\(1\)>/ }).isVisible());
