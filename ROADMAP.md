@@ -1,12 +1,16 @@
 # Roadmap
 
-Version 0.1.4 adds reader access, media records and structured citation integration. See the [changelog](CHANGELOG.md).
+Current release 0.2.0 provides article editor tools, cross-page bibliographies and tag contributions alongside reader access, media records and structured citations. See the [changelog](CHANGELOG.md).
+
+## Milestone 0.3.0 — Reviewed import in development
+
+F4 is the next substantial milestone, targeted at 0.3.0 once confidence is established. Initial work is a source-only author-date detector/matcher and a private paired-format corpus audit. See [the milestone record](docs/milestones/0.3.0.md) and [corpus/development protocol](docs/import-development.md). Public file adapters, Crossref search, reviewed edits and measured import accuracy remain unfinished. Released metadata/assets stay at 0.2.0 until a distinct preview is ready.
 
 ## Completed milestone 0.2.0 — Article tooling
 
 The adopter accepted `0.2.0-preview.0` at `77461de`. Version 0.2.0 adds its seven polish fixes and per-citation marker tag contributions (F5). F1–F3 provide editor tools, cross-page bibliography returns and topic filters. See [the milestone record](docs/milestones/0.2.0.md) and [the API guide](docs/article-tools.md). Final checks and independent closeout reviews passed; the release was published on 20 November and its downloaded assets verified. The milestone record distinguishes adopter and local evidence.
 
-F4 remains planned. Prioritize in-text matching and Crossref bibliographic search, then measure rule-based reference parsing on real pasted documents before extending backends. Import must work without AI; any AI adapter remains optional. The [import plan](docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages) records that sequence and its review requirements.
+F4 development targets 0.3.0. Prioritize in-text matching and Crossref bibliographic search, then measure rule-based reference parsing on real pasted documents before extending backends. Import must work without AI; any AI adapter remains optional. The [import plan](docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages) records that sequence and its review requirements.
 
 ## Completed milestone 0.1.4
 
@@ -33,7 +37,7 @@ Review the milestone record and roadmap before every check-in. The [repository p
 
 ## Follow-up work
 
-- Start F4 with the in-text matcher and optional Crossref bibliographic search; measure rule-based reference parsing before expanding backends. The [article-tooling plan](docs/article-tooling-plan.md) retains its review and fallback requirements.
+- Continue F4 with the in-text matcher and optional Crossref bibliographic search; measure rule-based reference parsing before expanding backends. The [article-tooling plan](docs/article-tooling-plan.md) retains its review and fallback requirements.
 - Show the unknown-profile help once per reading list, while keeping a settings entry available from each inspector. Long lists currently repeat the help under every reading.
 - Provide a documented hook for adding host content before each reference item, such as topic tags, without matching generated HTML strings.
 - Build a comprehensive catalog of citation styles and variants. Cover author–date, author–page, numeric, and notes and bibliography styles, including disciplinary and publisher variants. Record each style's edition or variant, link to its governing guide where available, and show what citation.inator can format today by source type and citation form. Use real migration examples to identify which gaps matter most and whether a broader style engine would help.

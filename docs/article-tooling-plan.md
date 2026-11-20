@@ -70,6 +70,8 @@ Acceptance: tags survive normalization/refresh, icon and text names render, miss
 
 ## F4: reviewed import, delivered in smaller stages
 
+Work has begun toward 0.3.0. The [development protocol](import-development.md) and [milestone record](milestones/0.3.0.md) distinguish the experimental source-only matcher from unimplemented file adapters, provider search and reviewed edits. The 0.2.0 public API remains unchanged.
+
 The reusable pipeline is extraction, reference parsing, in-text recognition, local matching, optional identifier search, review, and an explicit edit plan. Each stage retains original text, source ranges, diagnostics and provenance. Unrecognized references stay available as raw local records; provider failure must not lose the document. No network call is required for local parsing and matching.
 
 The adopter prioritizes in-text recognition/matching against existing curated records and Crossref bibliographic search first. Start raw-reference parsing with measured rules; richer parsing backends can wait for a representative corpus and demonstrated gaps. No AI service is required for import or its fallback.

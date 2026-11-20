@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Begin source-only F4/0.3.0 author-date detection and reviewable matching experiments, paired-format corpus analysis and synthetic regressions. No new installed API or document-file import is exposed in 0.2.0.
+
 ## 0.2.0 · 2026-11-20
 
 - Add editor-only marker notes, structured query/annotation APIs, a self-contained browser tools bundle and JSON CLI description, annotation and stale-note checks.
