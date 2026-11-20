@@ -27,6 +27,7 @@ Review the milestone record and roadmap before every check-in. The [repository p
 
 ## Follow-up work
 
+- Plan editor queries and source-only marker notes (F3), a host-supplied cross-page occurrence index and bibliography return links (F1), record/usage tags and list filtering (F2), and reviewed citation import (F4). The [article-tooling plan](docs/article-tooling-plan.md) records proposed contracts, sequencing, library/host boundaries and acceptance checks. These features are not available in 0.1.4; the next milestone scope/version remains to be agreed.
 - Show the unknown-profile help once per reading list, while keeping a settings entry available from each inspector. Long lists currently repeat the help under every reading.
 - Provide a documented hook for adding host content before each reference item, such as topic tags, without matching generated HTML strings.
 - Build a comprehensive catalog of citation styles and variants. Cover author–date, author–page, numeric, and notes and bibliography styles, including disciplinary and publisher variants. Record each style's edition or variant, link to its governing guide where available, and show what citation.inator can format today by source type and citation form. Use real migration examples to identify which gaps matter most and whether a broader style engine would help.

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Document proposed article-editor query tools, cross-page bibliography links, tags and reviewed citation import; implementation scope and version are pending.
 - Add browser regression coverage for unboxed inspector headings, visible keyboard control focus and isolation from host focus styling.
 - Establish a repository check-in and milestone procedure with staged consistency checks, a local hook and a milestone record template.
 
