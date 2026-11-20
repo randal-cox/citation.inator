@@ -4,7 +4,7 @@ Version 0.1.4 adds reader access, media records and structured citation integrat
 
 ## Completed milestone 0.2.0 — Article tooling
 
-The adopter accepted `0.2.0-preview.0` at `77461de`. Version 0.2.0 adds its seven polish fixes and per-citation marker tag contributions (F5). F1–F3 provide editor tools, cross-page bibliography returns and topic filters. See [the milestone record](docs/milestones/0.2.0.md) and [the API guide](docs/article-tools.md). Final checks and independent closeout reviews passed; see the milestone record for release artifacts and the distinction between adopter and local evidence.
+The adopter accepted `0.2.0-preview.0` at `77461de`. Version 0.2.0 adds its seven polish fixes and per-citation marker tag contributions (F5). F1–F3 provide editor tools, cross-page bibliography returns and topic filters. See [the milestone record](docs/milestones/0.2.0.md) and [the API guide](docs/article-tools.md). Final checks and independent closeout reviews passed; the release was published on 20 November and its downloaded assets verified. The milestone record distinguishes adopter and local evidence.
 
 F4 remains planned. Prioritize in-text matching and Crossref bibliographic search, then measure rule-based reference parsing on real pasted documents before extending backends. Import must work without AI; any AI adapter remains optional. The [import plan](docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages) records that sequence and its review requirements.
 
