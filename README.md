@@ -2,17 +2,15 @@
 
 A small citation library. Write citations in plain text, compile them into linked references and endnotes, and add an optional browser inspector. [Try programmatic citations](#try-programmatic-citations).
 
-This branch develops **0.2.0-preview.0**, the article-tooling milestone. Stable **0.1.4** remains available from [GitHub releases](https://github.com/randal-cox/citation.inator/releases). Preview acceptance is recorded in [the milestone](docs/milestones/0.2.0.md).
-
-To try the preview, check out `codex/article-tooling` explicitly; the stable `main` branch does not yet include these additions.
+**0.2.0 — Article tooling.** Editor notes, a site-wide bibliography and tag filters are included in this milestone. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/citation.inator/releases).
 
 ## Load and initialize
 
 To serve the demos from the checkout, run `npm start` from the repository root.
 
-**Without npm.** Start with [the preview standalone demo](https://github.com/randal-cox/citation.inator/tree/codex/article-tooling/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
+**Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
-**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.2.0-preview.0.tgz` there for this preview. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
+**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.2.0.tgz` there for this release. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">
@@ -35,9 +33,9 @@ Use `planCitationOccurrences` and `bindCitationTrigger` to add the inspector to 
 
 ## Article editors and a site-wide bibliography
 
-The preview adds source-only `note:"Cox 1995"` metadata, `describeCitation` and `annotateMarkers` editor APIs, and JSON CLI operations to describe, refresh or check notes. The self-contained `citation-tools.mjs` also works in a browser without npm.
+Version 0.2.0 adds source-only `note:"Cox 1995"` metadata, `describeCitation` and `annotateMarkers` editor APIs, and JSON CLI operations to describe, refresh or check notes. Per-item `tags:theory,praxis` contributions are collected with `collectMarkerTags` (or `--collect-tags --json`); the host aggregates and curates record topics. Use `includeDiagnostics: true` in build tools. The self-contained `citation-tools.mjs` also works in a browser without npm.
 
-Compiler results expose actual citation occurrences. `createSiteOccurrenceIndex` joins those anchors to published page routes; pass the resulting `siteOccurrences` into a bibliography to get static cross-page return links and the inspector's **Cited on this site** section. Records can carry `tags`, with a `tagCatalogue`, per-list usage overrides, build-time filters and optional keyboard-operated browser filters.
+Compiler results expose actual citation occurrences, including listing-only `nocite` entries. `createSiteOccurrenceIndex` joins those anchors to published page routes; pass the resulting `siteOccurrences` into a bibliography to get static **Cited in** / **Listed in** return links and corresponding inspector sections. Records can carry `tags`, with a `tagCatalogue`, per-list usage overrides, build-time filters and optional keyboard-operated browser filters. `listFilters: { minItems: 6, minTags: 2 }` limits controls to longer multi-topic lists. `inlineTags: "marker"` displays the tags contributed at a particular mention.
 
 Run `npm start` and try [the shared bibliography](http://127.0.0.1:4187/demos/static/bibliography.html) and [editor tools](http://127.0.0.1:4187/demos/static/editor-tools.html). Both examples are also in the standalone folder. See [the complete API, CLI and configuration guide](docs/article-tools.md). Formatted-document import is planned separately.
 
@@ -83,7 +81,7 @@ See the [integration guide](docs/integration.md) for HTML and Markdown examples,
 Clone the [GitHub repository](https://github.com/randal-cox/citation.inator) and use Node.js 22 or later.
 
 ```sh
-git clone --branch codex/article-tooling https://github.com/randal-cox/citation.inator.git
+git clone https://github.com/randal-cox/citation.inator.git
 cd citation.inator
 npm ci
 npm run build

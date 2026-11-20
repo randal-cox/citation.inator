@@ -1,4 +1,4 @@
-/*! citation-inator v0.2.0-preview.0 | MIT | See LICENSE */
+/*! citation-inator v0.2.0 | MIT | See LICENSE */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -985,32 +985,36 @@ function prepareReferences({ siteOccurrences = {}, occurrences, siteOrigin, tagC
   for (const [recordId, entries] of Object.entries(siteOccurrences)) {
     if (!Array.isArray(entries)) throw new TypeError("Each site occurrence entry must be an array.");
     const seen = /* @__PURE__ */ new Set();
-    byRecord.set(recordId, entries.flatMap((item) => {
+    byRecord.set(recordId, [...entries].sort((a, b) => Number(a?.kind === "listed") - Number(b?.kind === "listed")).flatMap((item) => {
       const href = siteURL(item?.href, siteOrigin, { fragment: true });
       const label = cleanText(item?.label);
-      if (!href || !label) {
+      if (!href || !label || item.kind !== void 0 && !["cited", "listed"].includes(item.kind)) {
         diagnostics.push({ state: "invalid-site-occurrence", recordId });
         return [];
       }
       const canonical = /^(?:[a-z][a-z0-9+.-]*:|\/)/i.test(href) ? new URL(href, siteOrigin || fallbackOrigin).href : href;
       if (seen.has(canonical)) return [];
       seen.add(canonical);
-      return [{ href, label, context: cleanText(item.context), ...cleanText(item.occurrenceId) && { occurrenceId: cleanText(item.occurrenceId) } }];
+      return [{ href, label, context: cleanText(item.context), ...item.kind === "listed" && { kind: "listed" }, ...cleanText(item.occurrenceId) && { occurrenceId: cleanText(item.occurrenceId) } }];
     }));
   }
   return { tags, occurrences: (recordId) => byRecord.get(recordId) || [] };
 }
 function groupSiteOccurrences(entries) {
   const groups = /* @__PURE__ */ new Map();
+  const citedPages = new Set(entries.filter((item) => item.kind !== "listed").map((item) => item.href.split("#")[0]));
   for (const item of entries) {
-    const key = item.href.split("#")[0];
-    if (!groups.has(key)) groups.set(key, { label: item.label, entries: [] });
+    const page = item.href.split("#")[0];
+    const kind = item.kind === "listed" ? "listed" : "cited";
+    if (kind === "listed" && citedPages.has(page)) continue;
+    const key = JSON.stringify([page, kind]);
+    if (!groups.has(key)) groups.set(key, { label: item.label, kind, entries: [] });
     groups.get(key).entries.push(item);
   }
   return [...groups.values()];
 }
 var occurrenceLetter = (index) => index < 26 ? String.fromCharCode(97 + index) : occurrenceLetter(Math.floor(index / 26) - 1) + occurrenceLetter(index % 26);
-var siteReturnLabel = (group, item, index) => `Return to ${group.label}${item.context ? " \u2014 " + item.context : ""} (occurrence ${occurrenceLetter(index)})`;
+var siteReturnLabel = (group, item, index) => `Return to ${group.kind === "listed" ? "listing in " : ""}${group.label}${item.context ? " \u2014 " + item.context : ""} (${group.kind === "listed" ? "entry" : "occurrence"} ${occurrenceLetter(index)})`;
 
 // src/compiler.mjs
 var compare = (a, b) => {
@@ -2093,6 +2097,8 @@ var CitationInspector = class extends HTMLElement {
     for (const tag of Array.isArray(tags) ? tags : []) {
       if (typeof tag?.label !== "string") continue;
       const badge = element("span", "", "tag");
+      if (typeof tag.id === "string") badge.dataset.ciTag = tag.id;
+      if (/^[a-z0-9][a-z0-9-]{0,63}$/.test(tag.id || "")) badge.setAttribute("part", `tag tag-${tag.id}`);
       const iconURL = siteURL(tag.icon, this.ownerDocument.location.origin);
       if (iconURL) {
         const ns = "http://www.w3.org/2000/svg";
@@ -2126,11 +2132,14 @@ var CitationInspector = class extends HTMLElement {
       siteOrigin: this.ownerDocument.location.origin,
       siteOccurrences: { [record.id]: Array.isArray(siteOccurrences) ? siteOccurrences : [] }
     }).occurrences(record.id);
-    if (acceptedUsage.length) {
+    const usageContent = document.createDocumentFragment();
+    for (const kind of ["cited", "listed"]) {
+      const groups = groupSiteOccurrences(acceptedUsage).filter((group) => group.kind === kind);
+      if (!groups.length) continue;
       const section = element("section", "", "site-returns");
-      section.append(element("h4", "Cited on this site"));
+      section.append(element("h4", kind === "listed" ? "Listed on this site" : "Cited on this site"));
       const list2 = element("ul");
-      for (const group of groupSiteOccurrences(acceptedUsage)) {
+      for (const group of groups) {
         const row = element("li", group.label + " (");
         group.entries.forEach((item, index) => {
           if (index) row.append(", ");
@@ -2144,7 +2153,7 @@ var CitationInspector = class extends HTMLElement {
         list2.append(row);
       }
       section.append(list2);
-      fragment.append(section);
+      usageContent.append(section);
     }
     if (record.license || record.rightsHolder) {
       const rights = element("p", "", "rights");
@@ -2211,6 +2220,7 @@ var CitationInspector = class extends HTMLElement {
       line.dir = "auto";
       fragment.append(line);
     }
+    fragment.append(usageContent);
     if (record.abstract) {
       const heading = record.abstract.kind === "excerpt" ? "Abstract excerpt" : "Abstract";
       const abstract = element("p", record.abstract.text, "abstract");

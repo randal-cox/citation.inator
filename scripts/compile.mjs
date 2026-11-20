@@ -16,16 +16,16 @@ try {
     options: {
       json: { type: "boolean" }, report: { type: "boolean" }, "find-isbns": { type: "boolean" }, format: { type: "string" },
       style: { type: "string" }, "endnotes-heading": { type: "string" },
-      describe: { type: "boolean" }, annotate: { type: "boolean" }, "check-notes": { type: "boolean" }
+      describe: { type: "boolean" }, annotate: { type: "boolean" }, "check-notes": { type: "boolean" }, 'collect-tags': { type: 'boolean' }
     }
   });
   const overrides = {
     ...(values.style !== undefined && { citationStyle: values.style }),
     ...(values["endnotes-heading"] !== undefined && { endnotesHeading: values["endnotes-heading"] })
   };
-  const toolOperations = ['describe', 'annotate', 'check-notes'].filter(name => values[name]);
+  const toolOperations = ['describe', 'annotate', 'check-notes', 'collect-tags'].filter(name => values[name]);
   if (toolOperations.length > 1 || toolOperations.length && (!values.json || values.report || values['find-isbns'])) {
-    throw new TypeError('Use one of --describe, --annotate or --check-notes with --json.');
+    throw new TypeError('Use one of --describe, --annotate, --check-notes or --collect-tags with --json.');
   }
   if (values["find-isbns"] && (!values.json || values.report || values.format || values.style || values["endnotes-heading"])) {
     throw new TypeError("Use --find-isbns --json with a book list on standard input.");
@@ -37,9 +37,10 @@ try {
     for await (const chunk of process.stdin) input += chunk;
     const request = JSON.parse(input);
     if (toolOperations.length) {
-      const { describeCitation, annotateMarkers } = await import('../src/tools.mjs');
+      const { describeCitation, annotateMarkers, collectMarkerTags } = await import('../src/tools.mjs');
       const options = { ...request.options, ...overrides, ...(values.format && { format: values.format }) };
-      const result = values.describe ? describeCitation(request.citation, request.cache, options)
+      const result = values['collect-tags'] ? collectMarkerTags(request.sources, request.cache, options)
+        : values.describe ? describeCitation(request.citation, request.cache, options)
         : annotateMarkers(request.source, request.cache, options);
       process.stdout.write(JSON.stringify(result) + '\n');
       if (values['check-notes'] && (result.changed || result.diagnostics.length)) process.exitCode = 1;

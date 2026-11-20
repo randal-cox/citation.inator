@@ -15,6 +15,8 @@ export async function checkArticleTools(browser, origin, evidence) {
     await controls.waitFor();
     const rows = reader.locator('ol > li');
     assert.equal(await rows.count(), 3);
+    assert.equal(await reader.locator('[data-citation-part~="endnotes"]').count(), 0);
+    assert.equal(await reader.locator('ol').getAttribute('class'), 'citation-reference-list');
     const theory = controls.getByRole('checkbox', { name: 'Theory', exact: true });
     await theory.focus();
     await page.keyboard.press('Space');
@@ -28,7 +30,10 @@ export async function checkArticleTools(browser, origin, evidence) {
     const panel = page.getByRole('dialog', { name: 'citation.inator', exact: true });
     await panel.waitFor();
     assert.ok(await panel.getByText('Theory', { exact: true }).isVisible());
+    assert.equal(await panel.locator('[data-ci-tag="theory"]').getAttribute('part'), 'tag tag-theory');
     assert.ok(await panel.getByRole('heading', { name: 'Cited on this site' }).isVisible());
+    assert.equal(await panel.locator('[data-citation-part~="citation"]').evaluate(node => Boolean(node.compareDocumentPosition(
+      node.getRootNode().querySelector('[data-citation-part~="site-returns"]')) & Node.DOCUMENT_POSITION_FOLLOWING)), true);
     const siteLinks = panel.getByRole('link', { name: /^Return to Article/ });
     assert.ok(await siteLinks.count() >= 2);
     const target = await siteLinks.first().getAttribute('href');
@@ -61,6 +66,16 @@ export async function checkArticleTools(browser, origin, evidence) {
     await page.waitForURL(/article-1\.html#/);
     assert.ok(await page.locator('[id="' + decodeURIComponent(new URL(target, origin).hash.slice(1)) + '"]').isVisible());
     await page.goto(origin + '/bibliography.html');
+    await reader.evaluate(node => node.setAttribute('access-layout', 'flat'));
+    const doi = reader.locator('a[href^="https://doi.org/"][data-citation-part~="icon"]').first();
+    await doi.waitFor({ state: 'visible' });
+    assert.equal(await doi.evaluate(node => getComputedStyle(node.closest('[data-ci-note-record]')).display), 'inline-flex');
+    assert.equal(await doi.evaluate(node => node.getBoundingClientRect().bottom <= node.closest('li')
+      .querySelector('[data-citation-part~="site-returns"]').getBoundingClientRect().top + 2), true);
+    const listingRow = rows.filter({ has: page.getByRole('link', { name: /Return to listing in Article 2/ }) });
+    await listingRow.getByRole('button', { name: /^Inspect reference/ }).press('Enter');
+    await panel.getByRole('heading', { name: 'Listed on this site' }).waitFor();
+    await page.keyboard.press('Escape');
     const firstRow = reader.locator('ol > li').filter({ has: page.getByRole('link', { name: /Return to Article 1.*occurrence b/ }) });
     const returnLinks = firstRow.getByRole('link', { name: /^Return to Article/ });
     assert.equal(await returnLinks.count(), 3);
@@ -83,6 +98,19 @@ export async function checkArticleTools(browser, origin, evidence) {
     await staticLink.click();
     assert.match(staticPage.url(),/article-1\.html#example-1-cite-/);
     assert.ok(await staticPage.locator('[id="' + decodeURIComponent(new URL(staticPage.url()).hash.slice(1)) + '"]').isVisible());
+    await staticPage.goto(origin + '/bibliography.html');
+    await staticPage.getByRole('link', { name: /Return to listing in Article 2/ }).click();
+    assert.match(staticPage.url(), /article-2\.html#example-2-note-/);
+    assert.ok(await staticPage.locator('[id="' + decodeURIComponent(new URL(staticPage.url()).hash.slice(1)) + '"]').isVisible());
+    await page.goto(origin + '/article-2.html');
+    const cluster = page.locator('#article-reader [data-citation-part~="cluster"]').first();
+    assert.equal(await cluster.locator('[data-ci-tag="praxis"]').count(), 1);
+    assert.equal(await cluster.locator('[data-ci-tag="theory"]').count(), 0);
+    await cluster.getByRole('button').press('Enter');
+    await panel.waitFor();
+    assert.equal(await panel.locator('[data-ci-tag="theory"]').count(), 1);
+    assert.equal(await panel.locator('[data-ci-tag="praxis"]').count(), 0);
+    await page.keyboard.press('Escape');
     await page.goto(origin + '/editor-tools.html');
     await page.getByRole('button', { name: 'Refresh editor notes' }).click();
     await page.getByRole('status').getByText('Editor notes refreshed. Reader output is unchanged.').waitFor();
@@ -95,6 +123,12 @@ export async function checkArticleTools(browser, origin, evidence) {
     await page.getByRole('button', { name: 'Refresh editor notes' }).click();
     await page.getByRole('status').getByText('Editor notes refreshed. Reader output is unchanged.').waitFor();
     assert.notEqual(await page.locator('#editor-source').inputValue(), annotated);
+    await page.getByRole('button', { name: 'Collect marker tags' }).click();
+    await page.getByRole('status').getByText('Collected tag contributions for 1 reference.').waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Collect marker tags' }).evaluate(node => node === document.activeElement), true);
+    const collected = JSON.parse(await page.locator('#tag-result').textContent());
+    assert.deepEqual(Object.values(collected.counts), [{ theory: 2, praxis: 1 }]);
+    assert.deepEqual(collected.diagnostics, []);
     assert.deepEqual(failures, []);
   } finally { await context.close(); await noJS.close(); }
   console.log('Cross-page bibliography anchors, no-JavaScript returns, independent tag filters, keyboard/counts and bundled editor tools passed.');

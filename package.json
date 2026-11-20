@@ -1,6 +1,6 @@
 {
   "name": "citation-inator",
-  "version": "0.2.0-preview.0",
+  "version": "0.2.0",
   "description": "Portable citations, endnotes, and source inspection",
   "type": "module",
   "license": "MIT",

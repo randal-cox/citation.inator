@@ -2,6 +2,7 @@ import { parse } from 'parse5';
 import { Lexer } from 'marked';
 import { compileCitationBlocks, parseDirectives, scanCitationMarkers } from './compiler.mjs';
 import { isCitationTextExcluded } from './markup.mjs';
+import { canonicalIdentifierKey, readCache } from './records.mjs';
 export { createSiteOccurrenceIndex } from './reference-features.mjs';
 
 const escaped = value => value.replace(/[\\"{};|]/g, character => '\\' + character);
@@ -98,7 +99,7 @@ function analyze(source, cache, options) {
   for (const range of ranges) {
     const text = source.slice(range.start, range.end);
     for (const marker of scanCitationMarkers(text, options)) {
-      if (marker.token?.malformed) diagnostics.push({ state: 'malformed', source: marker.raw, start: range.start + marker.start });
+      if (marker.token?.malformed) diagnostics.push({ state: 'malformed', code: 'citation-malformed', source: marker.raw, start: range.start + marker.start });
       if (marker.token?.type === 'citation') markers.push({ ...marker, start: marker.start + range.start, end: marker.end + range.start });
     }
     for (const paragraph of text.split(/\r?\n(?:[ \t]*\r?\n)+/)) blocks.push(parseDirectives(paragraph, options));
@@ -115,7 +116,7 @@ export function describeCitation(identifierOrMarker, cache, options = {}) {
   const source = identifierOrMarker.trim().startsWith('{') ? identifierOrMarker : `{${options.citationKeyword || 'citation'} ${identifierOrMarker}}`;
   const markers = scanCitationMarkers(source, options);
   if (markers.length !== 1 || markers[0].token?.type !== 'citation' || source.trim() !== markers[0].raw) {
-    return { text: '', items: [], state: 'malformed', diagnostics: [{ state: 'malformed', source: identifierOrMarker }] };
+    return { text: '', items: [], state: 'malformed', diagnostics: [{ state: 'malformed', code: 'citation-malformed', source: identifierOrMarker }] };
   }
   const result = analyze(source, cache, { ...options, format: 'text' });
   const items = result.descriptions.flatMap(marker => marker.items);
@@ -153,4 +154,35 @@ export function annotateMarkers(source, cache, options = {}) {
   let output = source;
   for (const edit of [...edits].sort((a, b) => b.start - a.start)) output = output.slice(0, edit.start) + edit.text + output.slice(edit.end);
   return { source: output, edits, changed: edits.length > 0, diagnostics };
+}
+
+/** Count per-item tag contributions without fetching providers or changing records. */
+export function collectMarkerTags(sources, cache, options = {}) {
+  if (!Array.isArray(sources)) throw new TypeError('Supply an array of source strings or source objects.');
+  const index = cache === undefined ? null : readCache(cache);
+  const counts = new Map();
+  const diagnostics = [];
+  for (const [position, input] of sources.entries()) {
+    const entry = typeof input === 'string' ? { source: input } : input;
+    if (!entry || typeof entry.source !== 'string') throw new TypeError('Each source must contain source text.');
+    const settings = { ...options, ...entry.options, ...(entry.format && { format: entry.format }) };
+    const issues = [];
+    const ranges = textRanges(entry.source, settings.format || 'text', issues, settings);
+    for (const range of ranges) for (const marker of scanCitationMarkers(entry.source.slice(range.start, range.end), settings)) {
+      if (marker.token?.malformed) issues.push({ state: 'malformed', code: 'citation-malformed', start: range.start + marker.start });
+      if (marker.token?.type !== 'citation') continue;
+      for (const item of marker.token.items) {
+        if (!item.markerTags?.length) continue;
+        const key = canonicalIdentifierKey(item.identifier);
+        const record = item.identifier.scheme === 'local' ? index?.byId.get(item.identifier.value) : index?.byIdentifier.get(key);
+        const id = record?.id || (item.identifier.scheme === 'local' ? item.identifier.value : key);
+        if (index && (!record || record.state === 'unresolved')) issues.push({ state: 'unresolved', code: 'citation-unresolved', identifier: key });
+        if (!counts.has(id)) counts.set(id, new Map());
+        for (const tag of item.markerTags) counts.get(id).set(tag, (counts.get(id).get(tag) || 0) + 1);
+      }
+    }
+    diagnostics.push(...issues.map(issue => ({ ...issue, source: typeof entry.name === 'string' ? entry.name : String(position + 1) })));
+  }
+  const result = Object.fromEntries([...counts].map(([id, tags]) => [id, Object.fromEntries(tags)]));
+  return options.includeDiagnostics ? { counts: result, diagnostics } : result;
 }

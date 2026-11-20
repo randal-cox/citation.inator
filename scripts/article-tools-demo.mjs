@@ -12,8 +12,8 @@ export async function writeArticleToolsDemo(directory, cache, assets) {
   const catalogue = [{ id: 'theory', label: 'Theory', icon: './tag-book.svg' }, { id: 'praxis', label: 'Praxis', icon: './tag-tool.svg' }];
   const options = { citationStyle: 'chicago-author-date', tagCatalogue: catalogue, endnotesHeading: 'References' };
   const sources = [
-    `This article uses the first source {citation ${one}}. A second passage uses the same source {citation ${one} | locator:"p. 4"}.\n\nA different source provides a comparison {citation ${two}}.\n\n{citation endnote}`,
-    `This article shares a source with Article one {citation ${one}}. Its other source has two topic tags {citation ${three}}.\n\n{citation endnote}`
+    `This article uses the first source {citation ${one} | tags:theory}. A second passage uses the same source {citation ${one} | tags:praxis | locator:"p. 4"}.\n\nA different source provides a comparison {citation ${two}}.\n\n{citation endnote}`,
+    `This article shares a source with Article one {citation ${one} | tags:praxis}. Its other source has two accumulated topic tags, but this mention contributes Theory {citation ${three} | tags:theory}.\n\nThe comparison source is listed for further reading without an in-text citation.\n\n{citation nocite ${two}}\n\n{citation endnote}`
   ];
   const articles = sources.map((source, index) => compileCitations(source, data, { ...options, namespace: `example-${index + 1}` }));
   const siteOccurrences = createSiteOccurrenceIndex(articles.map((result, index) => ({ href: `./article-${index + 1}.html`, label: `Article ${index + 1}`, occurrences: result.occurrences })));
@@ -27,15 +27,22 @@ export async function writeArticleToolsDemo(directory, cache, assets) {
 <body><header><a href="./">Reading room</a><nav aria-label="Article tools examples"><a href="./article-1.html">Article one</a> · <a href="./article-2.html">Article two</a> · <a href="./bibliography.html">Site bibliography</a> · <a href="./editor-tools.html">Editor tools</a></nav></header>
 <main><h1>${brandIconMarkup}<span>${title}</span></h1><hr>${body}</main></body></html>`;
   for (const [index, source] of sources.entries()) {
-    const result = compileCitations(source, data, { ...fullOptions, namespace: `example-${index + 1}` });
-    await writeFile(`${directory}article-${index + 1}.html`, page(`Article ${index + 1}`, `<p>This example demonstrates repeated citations and return links shared across two articles. The references retain this article's own formatting context.</p>${reader(result.html, 'article-reader')}`));
+    const result = compileCitations(source, data, { ...fullOptions, namespace: `example-${index + 1}`, inlineTags: index === 1 ? 'marker' : false });
+    await writeFile(`${directory}article-${index + 1}.html`, page(`Article ${index + 1}`, `<p>This example demonstrates repeated citations and return links shared across two articles. The references retain this article's own formatting context. Article two shows marker-local tags and a listing-only source.</p>${reader(result.html, 'article-reader')}`));
   }
   await writeFile(directory + 'bibliography.html', page('Site bibliography', `<p>Three sources are shared by two articles. Follow the lettered <strong>Cited in</strong> links to the exact passages, or inspect a reference to see <strong>Cited on this site</strong>. These links work without JavaScript.</p><h2>All topics</h2>${reader(bibliography.html, 'site-bibliography')}<h2>Both topics, selected at build time</h2><p>This list requires both Theory and Praxis.</p>${reader(buildFiltered.html, 'both-topics')}`));
-  const source = `A source for an editor to identify {citation ${one}}.\n\n{citation endnote}`;
-  await writeFile(directory + 'editor-tools.html', page('Editor tools', `<p>This offline example refreshes source-only notes. It makes no network lookups and does not save your text.</p><form id="editor-tools"><label for="editor-source">Citation source</label><textarea id="editor-source" name="source" autocomplete="off" spellcheck="false" rows="7">${escapeHTML(source)}</textarea><label for="editor-style">Citation style</label><select id="editor-style" name="style"><option value="chicago-author-date">Chicago author–date</option><option value="apa">APA</option><option value="mla">MLA</option><option value="harvard">Harvard</option><option value="vancouver">Vancouver</option></select><button type="submit">Refresh editor notes</button></form><p id="editor-status" role="status"></p><pre id="editor-result" aria-label="Annotated source"></pre><details><summary>Record cache for this example</summary><pre>${escapeHTML(JSON.stringify(data, null, 2))}</pre></details>`, '<script type="module" src="./editor-tools-demo.mjs"></script>'));
-  await writeFile(directory + 'editor-tools-demo.mjs', `import { annotateMarkers } from '${assets}citation-tools.mjs';
+  const source = `A source for an editor to identify {citation ${one} | tags:theory,praxis}.\n\n{citation endnote}`;
+  await writeFile(directory + 'editor-tools.html', page('Editor tools', `<p>This offline example refreshes source-only notes. It makes no network lookups and does not save your text.</p><form id="editor-tools"><label for="editor-source">Citation source</label><textarea id="editor-source" name="source" autocomplete="off" spellcheck="false" rows="7">${escapeHTML(source)}</textarea><label for="editor-style">Citation style</label><select id="editor-style" name="style"><option value="chicago-author-date">Chicago author–date</option><option value="apa">APA</option><option value="mla">MLA</option><option value="harvard">Harvard</option><option value="vancouver">Vancouver</option></select><button type="submit">Refresh editor notes</button><label for="tag-source">Another source for tag contributions</label><textarea id="tag-source" name="tag-source" autocomplete="off" spellcheck="false" rows="3">${escapeHTML(`{citation ${one} | tags:theory}`)}</textarea><button type="button" id="collect-tags">Collect marker tags</button></form><pre id="tag-result" aria-label="Tag contribution counts"></pre><p id="editor-status" role="status"></p><pre id="editor-result" aria-label="Annotated source"></pre><details><summary>Record cache for this example</summary><pre>${escapeHTML(JSON.stringify(data, null, 2))}</pre></details>`, '<script type="module" src="./editor-tools-demo.mjs"></script>'));
+  await writeFile(directory + 'editor-tools-demo.mjs', `import { annotateMarkers, collectMarkerTags } from '${assets}citation-tools.mjs';
 const response = await fetch('./article-tools.json');
 const cache = await response.json();
+document.querySelector('#collect-tags').addEventListener('click', () => {
+  const result = collectMarkerTags([document.querySelector('#editor-source').value, document.querySelector('#tag-source').value], cache, { includeDiagnostics: true });
+  document.querySelector('#tag-result').textContent = JSON.stringify(result, null, 2);
+  const count = Object.keys(result.counts).length;
+  const noun = new Intl.PluralRules('en').select(count) === 'one' ? 'reference' : 'references';
+  document.querySelector('#editor-status').textContent = 'Collected tag contributions for ' + count + ' ' + noun + '.' + (result.diagnostics.length ? ' Some source regions need review; see the diagnostics.' : '');
+});
 document.querySelector('#editor-tools').addEventListener('submit', event => {
   event.preventDefault();
   const source = document.querySelector('#editor-source');

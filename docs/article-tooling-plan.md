@@ -1,6 +1,6 @@
 # Article editing, site bibliographies and citation import
 
-20 November 2026. **Original design and retained import plan.** F1–F3 are implemented in the 0.2.0 preview candidate; use [the actual API guide](article-tools.md) and [milestone record](milestones/0.2.0.md) for current contracts and acceptance. They are absent from stable 0.1.4. F4 remains planned. The sections below preserve the design discussion and proposed shapes, which may differ from the implemented contracts. This plan responds to four adopter requests: cross-page return links (F1), record tags (F2), editor queries and marker notes (F3), and formatted-document import (F4).
+20 November 2026. **Original design and retained import plan.** F1–F3 are implemented in 0.2.0; use [the actual API guide](article-tools.md) and [milestone record](milestones/0.2.0.md) for current contracts and acceptance. They are absent from 0.1.4. F4 remains planned. The sections below preserve the design discussion and proposed shapes, which may differ from the implemented contracts. This plan responds to four adopter requests: cross-page return links (F1), record tags (F2), editor queries and marker notes (F3), and formatted-document import (F4).
 
 ## Design direction
 
@@ -8,7 +8,7 @@ Keep three things distinct: a bibliographic record describes a particular work o
 
 The library supplies portable record/query functions, compiler output and browser presentation. The host supplies page routes, the published-page inventory, authoring UI, authentication, file storage and review/publication workflow. Import functions propose changes for review; they do not open pull requests, publish articles or silently replace a source.
 
-## What exists today
+## Baseline before 0.2.0
 
 - `compileCitations`, the HTML/Markdown adapters and the JSON CLI compile authored notation. Structured occurrence plans provide stable occurrence IDs and anchor IDs for application-rendered citations.
 - Reading lists have `data-ci-list-record` hooks. Return links currently refer to uses in the same compiled fragment. The record normalizer does not retain a `tags` field.
@@ -72,6 +72,8 @@ Acceptance: tags survive normalization/refresh, icon and text names render, miss
 
 The reusable pipeline is extraction, reference parsing, in-text recognition, local matching, optional identifier search, review, and an explicit edit plan. Each stage retains original text, source ranges, diagnostics and provenance. Unrecognized references stay available as raw local records; provider failure must not lose the document. No network call is required for local parsing and matching.
 
+The adopter prioritizes in-text recognition/matching against existing curated records and Crossref bibliographic search first. Start raw-reference parsing with measured rules; richer parsing backends can wait for a representative corpus and demonstrated gaps. No AI service is required for import or its fallback.
+
 Start with plain text and explicitly delimited reference lists in APA and Chicago author-date. Heading detection can suggest a boundary for review; a heading or hanging indent alone is insufficient grounds to delete source. Rich-text paste and DOCX extraction are separate adapters, with explicit support for footnote/endnote relationships before promising notes-and-bibliography import.
 
 Proposed functions:
@@ -99,7 +101,7 @@ Acceptance uses a versioned, curated fixture corpus with expected fields, spans 
 
 ## Delivery and documentation
 
-Recommended sequence: F3, F1, F2, then local F4 parsing/matching and optional search, followed by richer extraction/backends only as justified. Treat each as a bounded candidate with focused acceptance and adopter review; agree milestone scope/version before packaging a shared preview.
+F1–F3 and marker tag contributions (F5) are implemented in 0.2.0. For F4, prioritize in-text matching and optional Crossref bibliographic search, then measure rule-based reference parsing on real pasted material before adding richer extraction/backends. Any AI remains an optional last fallback, and import must continue to work without it. Treat each as a bounded candidate with focused acceptance and adopter review; agree milestone scope/version before packaging a shared preview.
 
 For every delivered part, update the README, generated Guide, integration documentation, JSON CLI examples and runnable demos in the same change. Show which functions work offline and which optional adapters use the network. Keep unavailable plans linked from the roadmap rather than presenting them as installed APIs.
 

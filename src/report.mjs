@@ -45,8 +45,8 @@ export async function reportCitations(cache, fragments, compile) {
     const result = await compile(fragment.paragraphs ?? fragment.source, { schema: CACHE_SCHEMA, records: [...usable.values()] }, fragment.options, fragment.format);
     for (const record of result.cache.records) if (ids.has(record.id)) used.add(record.id);
     for (const diagnostic of result.diagnostics) {
-      if (diagnostic.state === "unresolved") unresolved.push({ fragment: name, identifier: diagnostic.identifier });
-      if (["malformed", "misplaced-directive"].includes(diagnostic.state)) malformed.push({ fragment: name, source: diagnostic.source });
+      if (diagnostic.state === "unresolved") unresolved.push({ fragment: name, identifier: diagnostic.identifier, code: diagnostic.code });
+      if (["malformed", "misplaced-directive"].includes(diagnostic.state)) malformed.push({ fragment: name, source: diagnostic.source, code: diagnostic.code || 'citation-misplaced-directive' });
     }
   }
 

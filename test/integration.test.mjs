@@ -347,7 +347,7 @@ test("cross-fragment CLI report finds duplicate ISBNs, unused records and confli
   assert.equal(run.status, 0, run.stderr);
   const report = JSON.parse(run.stdout);
   assert.deepEqual(report.unused.map(record => record.id), ["study", "other-edition"]);
-  assert.deepEqual(report.unresolved, [{ fragment: "terms.md", identifier: "local:missing" }]);
+  assert.deepEqual(report.unresolved, [{ fragment: "terms.md", identifier: "local:missing", code: "citation-unresolved" }]);
   assert.ok(report.duplicates.some(group => group.identifier === "isbn:9780521405997"));
   assert.deepEqual(report.yearConflicts[0].records.map(record => record.year), [1990, 1991]);
 });
@@ -437,7 +437,7 @@ test("reading list annotations stay with each record and are absent from endnote
     { ...article, listAnnotationParts: [{ text: "<Second summary>", href: "https://example.org/summary" }] }
   ]);
   const { html } = compileCitations("{citation list ostrom; study}\n\n{citation nocite study}", data);
-  assert.match(html, /data-ci-list-record="ostrom"[^]*<em>First summary<\/em><\/p><div/);
+  assert.match(html.split('<li data-ci-list-record="study"')[0], /data-ci-list-record="ostrom"[^]*<em>First summary<\/em><\/p>/);
   assert.match(html, /data-ci-list-record="study"[^]*href="https:\/\/example.org\/summary"[^>]*>&lt;Second summary&gt;<\/a>/);
   const notes = html.slice(html.indexOf('<section class="citation-endnotes"'));
   assert.doesNotMatch(notes, /summary|data-ci-list-record/);

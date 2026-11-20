@@ -1,4 +1,4 @@
-/*! citation-inator tools v0.2.0-preview.0 | MIT | See LICENSE */
+/*! citation-inator tools v0.2.0 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -9110,7 +9110,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.2.0-preview.0",
+  version: "0.2.0",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9510,44 +9510,52 @@ function prepareReferences({ siteOccurrences = {}, occurrences, siteOrigin, tagC
   for (const [recordId, entries] of Object.entries(siteOccurrences)) {
     if (!Array.isArray(entries)) throw new TypeError("Each site occurrence entry must be an array.");
     const seen = /* @__PURE__ */ new Set();
-    byRecord.set(recordId, entries.flatMap((item) => {
+    byRecord.set(recordId, [...entries].sort((a, b2) => Number(a?.kind === "listed") - Number(b2?.kind === "listed")).flatMap((item) => {
       const href = siteURL(item?.href, siteOrigin, { fragment: true });
       const label = cleanText(item?.label);
-      if (!href || !label) {
+      if (!href || !label || item.kind !== void 0 && !["cited", "listed"].includes(item.kind)) {
         diagnostics.push({ state: "invalid-site-occurrence", recordId });
         return [];
       }
       const canonical = /^(?:[a-z][a-z0-9+.-]*:|\/)/i.test(href) ? new URL(href, siteOrigin || fallbackOrigin).href : href;
       if (seen.has(canonical)) return [];
       seen.add(canonical);
-      return [{ href, label, context: cleanText(item.context), ...cleanText(item.occurrenceId) && { occurrenceId: cleanText(item.occurrenceId) } }];
+      return [{ href, label, context: cleanText(item.context), ...item.kind === "listed" && { kind: "listed" }, ...cleanText(item.occurrenceId) && { occurrenceId: cleanText(item.occurrenceId) } }];
     }));
   }
   return { tags, occurrences: (recordId) => byRecord.get(recordId) || [] };
 }
 function groupSiteOccurrences(entries) {
   const groups = /* @__PURE__ */ new Map();
+  const citedPages = new Set(entries.filter((item) => item.kind !== "listed").map((item) => item.href.split("#")[0]));
   for (const item of entries) {
-    const key = item.href.split("#")[0];
-    if (!groups.has(key)) groups.set(key, { label: item.label, entries: [] });
+    const page = item.href.split("#")[0];
+    const kind = item.kind === "listed" ? "listed" : "cited";
+    if (kind === "listed" && citedPages.has(page)) continue;
+    const key = JSON.stringify([page, kind]);
+    if (!groups.has(key)) groups.set(key, { label: item.label, kind, entries: [] });
     groups.get(key).entries.push(item);
   }
   return [...groups.values()];
 }
 var occurrenceLetter = (index) => index < 26 ? String.fromCharCode(97 + index) : occurrenceLetter(Math.floor(index / 26) - 1) + occurrenceLetter(index % 26);
-var siteReturnLabel = (group, item, index) => `Return to ${group.label}${item.context ? " \u2014 " + item.context : ""} (occurrence ${occurrenceLetter(index)})`;
+var siteReturnLabel = (group, item, index) => `Return to ${group.kind === "listed" ? "listing in " : ""}${group.label}${item.context ? " \u2014 " + item.context : ""} (${group.kind === "listed" ? "entry" : "occurrence"} ${occurrenceLetter(index)})`;
 function createSiteOccurrenceIndex(pages, { siteOrigin } = {}) {
   if (!Array.isArray(pages)) throw new TypeError("Supply pages with href, label and compiled occurrences.");
   const result = /* @__PURE__ */ Object.create(null);
   for (const page of pages) {
     const href = siteURL(page?.href, siteOrigin);
     if (!href || href.includes("#") || !cleanText(page.label) || !Array.isArray(page.occurrences)) throw new TypeError("Each page needs a safe route, label and occurrence array.");
+    if (page.occurrences.some((item) => !item || item.kind !== void 0 && !["cited", "listed"].includes(item.kind))) throw new TypeError("Occurrence kind must be cited or listed when supplied.");
+    const citedRecords = new Set(page.occurrences.filter((item) => item.kind !== "listed").map((item) => item.recordId));
     for (const occurrence of page.occurrences) {
+      if (occurrence.kind === "listed" && citedRecords.has(occurrence.recordId)) continue;
       if (!cleanText(occurrence.anchorId) || !/^[a-z0-9][a-z0-9.-]{0,159}$/.test(occurrence.recordId || "")) throw new TypeError("Supply actual compiled occurrence IDs and record IDs.");
       (result[occurrence.recordId] ||= []).push({
         href: href + "#" + encodeURIComponent(occurrence.anchorId),
         label: page.label,
         context: cleanText(occurrence.context),
+        ...occurrence.kind === "listed" && { kind: "listed" },
         ...occurrence.occurrenceId && { occurrenceId: occurrence.occurrenceId }
       });
     }
@@ -9584,6 +9592,7 @@ function parseItem(text) {
   let label = "";
   let hint = "";
   let editorNote;
+  let markerTags;
   const affixes = {};
   let formSpecified = false;
   let isolated = false;
@@ -9605,6 +9614,10 @@ function parseItem(text) {
       const match = /^note:\s*"((?:\\.|[^"\\])*)"$/.exec(option);
       if (editorNote !== void 0 || !match) return null;
       editorNote = unescape(match[1]);
+    } else if (option.startsWith("tags:")) {
+      const tags = option.slice(5).trim().split(",").map((tag) => tag.trim());
+      if (markerTags !== void 0 || !tags.every((tag) => /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag))) return null;
+      markerTags = [...new Set(tags)];
     } else if (/^(prefix|locator):/.test(option)) {
       const colon = option.indexOf(":");
       const field = option.slice(0, colon);
@@ -9616,7 +9629,7 @@ function parseItem(text) {
     } else if (option && !hint) hint = unescape(option);
     else return null;
   }
-  return { identifier, form, label, hint, ...editorNote !== void 0 && { editorNote }, ...isolated && { isolated }, ...affixes };
+  return { identifier, form, label, hint, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
 }
 function validateKeyword(citationKeyword) {
   if (typeof citationKeyword !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(citationKeyword)) {
@@ -10107,6 +10120,10 @@ function compileBlocks(blocks, cache, {
   validateClassPrefix(classPrefix);
   if (!citationStyles.has(citationStyle)) throw new TypeError("Unknown citation style.");
   if (typeof endnotesHeading !== "string" || !endnotesHeading.trim()) throw new TypeError("Supply a nonempty endnotes heading.");
+  if (typeof listFilters !== "boolean" && (!listFilters || typeof listFilters !== "object" || Array.isArray(listFilters))) throw new TypeError("Use a boolean or thresholds object for listFilters.");
+  const filterThresholds = typeof listFilters === "object" ? { minItems: 6, minTags: 2, ...listFilters } : { minItems: 0, minTags: 1 };
+  if (![filterThresholds.minItems, filterThresholds.minTags].every((value) => Number.isSafeInteger(value) && value >= 0)) throw new TypeError("Filter thresholds must be nonnegative integers.");
+  if (![false, true, "marker"].includes(inlineTags)) throw new TypeError("Use false, true or marker for inlineTags.");
   if (!["text", "icon"].includes(inspectAppearance) || !["before", "after"].includes(inspectPlacement)) throw new TypeError("Choose text or icon inspection, before or after the reference.");
   if (!["image", "mask"].includes(inspectIconMode)) throw new TypeError("Choose image or mask for inspectIconMode.");
   if (inspectIcon !== void 0 && !safeFallback(inspectIcon)) throw new TypeError("Supply a safe inspect icon URL.");
@@ -10145,13 +10162,13 @@ function compileBlocks(blocks, cache, {
       continue;
     }
     for (const [indexInBlock, token] of block.entries()) {
-      if (token.malformed) diagnostics.push({ state: "malformed", source: token.text });
+      if (token.malformed) diagnostics.push({ state: "malformed", code: "citation-malformed", source: token.text });
       if (token.misplaced) diagnostics.push({ state: "misplaced-directive", source: token.text });
       if (!["citation", "list", "nocite"].includes(token.type)) continue;
       if (token.type === "list" && block.some((other) => other !== token && (other.type !== "text" || other.text.trim()))) continue;
       if (token.type === "list" && token.tags) token.items = token.items.filter((item) => {
         const record = item.identifier.scheme === "local" ? index.byId.get(item.identifier.value) : index.byIdentifier.get(canonicalIdentifierKey(item.identifier));
-        if (!record) diagnostics.push({ state: "unresolved", identifier: canonicalIdentifierKey(item.identifier) });
+        if (!record) diagnostics.push({ state: "unresolved", code: "citation-unresolved", identifier: canonicalIdentifierKey(item.identifier) });
         const tags = record ? features.tags(record, true) : [];
         return token.tags[token.tagMode === "all" ? "every" : "some"]((tag) => tags.some((value) => value.id === tag));
       });
@@ -10176,7 +10193,7 @@ function compileBlocks(blocks, cache, {
           }
           record = missing.get(key);
         }
-        if (record.state === "unresolved") diagnostics.push({ state: "unresolved", identifier: key });
+        if (record.state === "unresolved") diagnostics.push({ state: "unresolved", code: "citation-unresolved", identifier: key });
         if (!used.has(record.id)) used.set(record.id, { record, occurrences: [], suffix: "" });
         const entry = used.get(record.id);
         item.entry = entry;
@@ -10287,12 +10304,15 @@ function compileBlocks(blocks, cache, {
   const tagsHTML = (tags) => tags.length ? `<span ${part("tags")}>${tags.map((tag) => {
     const mask = `${namespace}_tag-mask-${++nextTagIcon}`;
     const icon = tag.icon ? `<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><defs><mask id="${mask}" mask-type="alpha"><image href="${escapeHTML(tag.icon)}" width="24" height="24"/></mask></defs><rect width="24" height="24" fill="currentColor" mask="url(#${mask})"/></svg>` : "";
-    return `<span ${part("tag")}>${icon}<span>${escapeHTML(tag.label)}</span></span>`;
+    return `<span ${part("tag")} data-ci-tag="${escapeHTML(tag.id)}">${icon}<span>${escapeHTML(tag.label)}</span></span>`;
   }).join("")}</span>` : "";
   const siteLinks = (recordId) => {
     const groups2 = groupSiteOccurrences(features.occurrences(recordId));
     if (!groups2.length) return "";
-    return `<div ${part("site-returns")}><span>Cited in: </span>${groups2.map((group) => `<span>${escapeHTML(group.label)} (${group.entries.map((item, index2) => `<a href="${escapeHTML(item.href)}" aria-label="${escapeHTML(siteReturnLabel(group, item, index2))}" title="${escapeHTML(item.context || group.label)}">${occurrenceLetter(index2)}</a>`).join(", ")})</span>`).join(" \xB7 ")}</div>`;
+    return `<div ${part("site-returns")}>${["cited", "listed"].map((kind) => {
+      const selected = groups2.filter((group) => group.kind === kind);
+      return selected.length ? `<div><span>${kind === "listed" ? "Listed in" : "Cited in"}: </span>${selected.map((group) => `<span>${escapeHTML(group.label)} (${group.entries.map((item, index2) => `<a href="${escapeHTML(item.href)}" aria-label="${escapeHTML(siteReturnLabel(group, item, index2))}" title="${escapeHTML(item.context || group.label)}">${occurrenceLetter(index2)}</a>`).join(", ")})</span>`).join(" \xB7 ")}</div>` : "";
+    }).join("")}</div>`;
   };
   const citationDescriptions = blocks.flatMap((block) => block.filter((token) => token.type === "citation").map((token) => ({
     items: token.items.map((item) => ({
@@ -10338,11 +10358,12 @@ function compileBlocks(blocks, cache, {
     const text = parts.map((part2) => part2.text).join("");
     const formatting = parts.some((part2) => part2.emphasis || part2.href) ? ` data-ci-bibliography-parts="${escapeHTML(JSON.stringify(parts))}"` : "";
     const tags = features.tags(record, item.list);
+    const visibleTags = !inspectLabel && inlineTags === "marker" ? features.tags({ ...record, tags: item.markerTags || [] }) : tags;
     const usage = features.occurrences(record.id);
     const metadata = (tags.length ? ` data-ci-tags="${escapeHTML(JSON.stringify(tags))}"` : "") + (usage.length ? ` data-ci-site-occurrences="${escapeHTML(JSON.stringify(usage))}"` : "") + (siteOrigin ? ` data-ci-site-origin="${escapeHTML(siteOrigin)}"` : "");
     const fallback = isolatedHref && safeFallback(isolatedHref.replaceAll("{id}", encodeURIComponent(record.id))) || record.identifiers.map(identifierURL).find(Boolean) || record.locations[0]?.url;
     const href = item.occurrence ? "#" + noteID(record, item.scope) : fallback;
-    return `<a ${part("cite")}${item.occurrence ? ` id="${item.occurrence}"` : ""}${href ? ` href="${escapeHTML(href)}"` : ""} data-ci-record="${record.id}"${inspectLabel ? ` data-ci-inspect-label="${escapeHTML(inspectLabel)}" aria-label="${escapeHTML(inspectLabel)}"` : ""} data-ci-bibliography="${escapeHTML(text)}"${formatting}${metadata} dir="auto">${escapeHTML(label)}</a>${inlineTags && !inspectLabel ? tagsHTML(tags) : ""}`;
+    return `<a ${part("cite")}${item.occurrence ? ` id="${item.occurrence}"` : ""}${href ? ` href="${escapeHTML(href)}"` : ""} data-ci-record="${record.id}"${inspectLabel ? ` data-ci-inspect-label="${escapeHTML(inspectLabel)}" aria-label="${escapeHTML(inspectLabel)}"` : ""} data-ci-bibliography="${escapeHTML(text)}"${formatting}${metadata} dir="auto">${escapeHTML(label)}</a>${inlineTags && !inspectLabel ? tagsHTML(visibleTags) : ""}`;
   };
   function titleOffset(parts, record, suffix) {
     const title = record.apaTitle && citationStyle === "apa" ? record.apaTitle : titleFor(record);
@@ -10364,7 +10385,7 @@ function compileBlocks(blocks, cache, {
   let nextInspectMask = 0;
   function referencesHTML(items, scope2, list = false, marker = {}) {
     const local = localEntries.get(scope2);
-    if (!items.length) return list ? `<section ${part("endnotes")} aria-label="Reading list"><p>No references match the selected tags.</p></section>` : "";
+    if (!items.length) return list ? `<section ${part("reading-list")} aria-label="Reading list"><p>No references match the selected tags.</p></section>` : "";
     const heading = `${scopeName(scope2)}-endnotes`;
     const rows = items.map((item) => {
       const { record } = item.entry;
@@ -10396,15 +10417,15 @@ function compileBlocks(blocks, cache, {
       const attrs = list ? ` data-ci-list-record="${record.id}"` : ` id="${noteID(record, scope2)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
       const actions = controls ? `<div ${part("note-actions")} data-ci-note-record="${record.id}">${controls}</div>` : "";
       const tags = features.tags(record, list);
-      return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map((tag) => tag.id)))}">${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${annotation}${siteLinks(record.id)}${actions}</li>`;
+      return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map((tag) => tag.id)))}">${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${actions}${annotation}${siteLinks(record.id)}</li>`;
     }).join("\n");
     if (list && !listFilters) return `<ol ${part("reference-list")}>${rows}</ol>`;
     const level = marker.level ?? 2;
     const label = list ? 'aria-label="Reading list"' : marker.heading === null ? `aria-label="${escapeHTML(endnotesHeading)}"` : `aria-labelledby="${heading}"`;
     const title = list || marker.heading === null ? "" : `<h${level} id="${heading}">${escapeHTML(marker.heading ?? endnotesHeading)}</h${level}>`;
     const filterTags = [...new Map(items.flatMap((item) => features.tags(item.entry.record, true)).map((tag) => [tag.id, tag])).values()];
-    const filters = list && listFilters && filterTags.length ? `<fieldset ${part("tag-filters")} data-ci-tag-filters hidden><legend>Show references with any selected tag</legend>${filterTags.map((tag) => `<label><input type="checkbox" value="${escapeHTML(tag.id)}" data-ci-tag-filter> ${escapeHTML(tag.label)}</label>`).join(" ")}<p data-ci-list-count role="status" aria-live="polite"></p></fieldset>` : "";
-    return `<section ${part("endnotes")}${list ? " data-ci-reading-list" : ""} ${label}>${title}${filters}<ol>${rows}</ol>${filters ? "<p data-ci-list-empty hidden>No references match the selected tags.</p>" : ""}</section>`;
+    const filters = list && listFilters && items.length >= filterThresholds.minItems && filterTags.length >= Math.max(1, filterThresholds.minTags) ? `<fieldset ${part("tag-filters")} data-ci-tag-filters hidden><legend>Show references with any selected tag</legend>${filterTags.map((tag) => `<label><input type="checkbox" value="${escapeHTML(tag.id)}" data-ci-tag-filter> ${escapeHTML(tag.label)}</label>`).join(" ")}<p data-ci-list-count role="status" aria-live="polite"></p></fieldset>` : "";
+    return `<section ${part(list ? "reading-list" : "endnotes")}${list ? " data-ci-reading-list" : ""} ${label}>${title}${filters}<ol${list ? " " + part("reference-list") : ""}>${rows}</ol>${filters ? "<p data-ci-list-empty hidden>No references match the selected tags.</p>" : ""}</section>`;
   }
   const scopeItems = (scope2) => {
     const items = entries.filter((entry) => localEntries.get(scope2)?.has(entry.record.id));
@@ -10467,7 +10488,10 @@ function compileBlocks(blocks, cache, {
     html: [html, ...supplementary].join("\n") + closingMarkup,
     cache: { schema: cache.schema, records },
     citationDescriptions,
-    occurrences: citationDescriptions.flatMap((marker) => marker.items.filter((item) => item.anchorId)),
+    occurrences: [
+      ...citationDescriptions.flatMap((marker) => marker.items.filter((item) => item.anchorId)),
+      ...blocks.flatMap((block) => block.filter((token) => token.type === "nocite").flatMap((token) => token.items.filter((item) => references !== "isolated" && localEntries.get(item.scope)?.has(item.entry.record.id)).map((item) => ({ recordId: item.entry.record.id, anchorId: noteID(item.entry.record, item.scope), kind: "listed", context: endnotesHeading }))))
+    ],
     diagnostics
   };
 }
@@ -10629,7 +10653,7 @@ function analyze(source, cache, options) {
   for (const range of ranges) {
     const text = source.slice(range.start, range.end);
     for (const marker of scanCitationMarkers(text, options)) {
-      if (marker.token?.malformed) diagnostics.push({ state: "malformed", source: marker.raw, start: range.start + marker.start });
+      if (marker.token?.malformed) diagnostics.push({ state: "malformed", code: "citation-malformed", source: marker.raw, start: range.start + marker.start });
       if (marker.token?.type === "citation") markers.push({ ...marker, start: marker.start + range.start, end: marker.end + range.start });
     }
     for (const paragraph of text.split(/\r?\n(?:[ \t]*\r?\n)+/)) blocks.push(parseDirectives(paragraph, options));
@@ -10646,7 +10670,7 @@ function describeCitation(identifierOrMarker, cache, options = {}) {
   const source = identifierOrMarker.trim().startsWith("{") ? identifierOrMarker : `{${options.citationKeyword || "citation"} ${identifierOrMarker}}`;
   const markers = scanCitationMarkers(source, options);
   if (markers.length !== 1 || markers[0].token?.type !== "citation" || source.trim() !== markers[0].raw) {
-    return { text: "", items: [], state: "malformed", diagnostics: [{ state: "malformed", source: identifierOrMarker }] };
+    return { text: "", items: [], state: "malformed", diagnostics: [{ state: "malformed", code: "citation-malformed", source: identifierOrMarker }] };
   }
   const result = analyze(source, cache, { ...options, format: "text" });
   const items = result.descriptions.flatMap((marker) => marker.items);
@@ -10686,8 +10710,38 @@ function annotateMarkers(source, cache, options = {}) {
   for (const edit of [...edits].sort((a, b2) => b2.start - a.start)) output = output.slice(0, edit.start) + edit.text + output.slice(edit.end);
   return { source: output, edits, changed: edits.length > 0, diagnostics };
 }
+function collectMarkerTags(sources, cache, options = {}) {
+  if (!Array.isArray(sources)) throw new TypeError("Supply an array of source strings or source objects.");
+  const index = cache === void 0 ? null : readCache(cache);
+  const counts = /* @__PURE__ */ new Map();
+  const diagnostics = [];
+  for (const [position, input] of sources.entries()) {
+    const entry = typeof input === "string" ? { source: input } : input;
+    if (!entry || typeof entry.source !== "string") throw new TypeError("Each source must contain source text.");
+    const settings = { ...options, ...entry.options, ...entry.format && { format: entry.format } };
+    const issues = [];
+    const ranges = textRanges(entry.source, settings.format || "text", issues, settings);
+    for (const range of ranges) for (const marker of scanCitationMarkers(entry.source.slice(range.start, range.end), settings)) {
+      if (marker.token?.malformed) issues.push({ state: "malformed", code: "citation-malformed", start: range.start + marker.start });
+      if (marker.token?.type !== "citation") continue;
+      for (const item of marker.token.items) {
+        if (!item.markerTags?.length) continue;
+        const key = canonicalIdentifierKey(item.identifier);
+        const record = item.identifier.scheme === "local" ? index?.byId.get(item.identifier.value) : index?.byIdentifier.get(key);
+        const id = record?.id || (item.identifier.scheme === "local" ? item.identifier.value : key);
+        if (index && (!record || record.state === "unresolved")) issues.push({ state: "unresolved", code: "citation-unresolved", identifier: key });
+        if (!counts.has(id)) counts.set(id, /* @__PURE__ */ new Map());
+        for (const tag of item.markerTags) counts.get(id).set(tag, (counts.get(id).get(tag) || 0) + 1);
+      }
+    }
+    diagnostics.push(...issues.map((issue) => ({ ...issue, source: typeof entry.name === "string" ? entry.name : String(position + 1) })));
+  }
+  const result = Object.fromEntries([...counts].map(([id, tags]) => [id, Object.fromEntries(tags)]));
+  return options.includeDiagnostics ? { counts: result, diagnostics } : result;
+}
 export {
   annotateMarkers,
+  collectMarkerTags,
   createSiteOccurrenceIndex,
   describeCitation
 };

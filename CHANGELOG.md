@@ -1,11 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 · 2026-11-20
 
-- Develop 0.2.0-preview.0 with editor-only marker notes, query/annotation APIs and JSON CLI checks; site occurrence indexes and cross-page bibliography returns; record tags, per-list roles and build/browser filters. Include browser tools, static multi-page examples and integration documentation. Candidate acceptance is pending; formatted-citation import remains planned.
-- Document proposed article-editor query tools, cross-page bibliography links, tags and reviewed citation import; implementation scope and version are pending.
-- Add browser regression coverage for unboxed inspector headings, visible keyboard control focus and isolation from host focus styling.
-- Establish a repository check-in and milestone procedure with staged consistency checks, a local hook and a milestone record template.
+- Add editor-only marker notes, structured query/annotation APIs, a self-contained browser tools bundle and JSON CLI description, annotation and stale-note checks.
+- Expose emitted occurrence inventories and build site-wide Cited in / Listed in return links, with static anchors and inspector sections after the formatted reference.
+- Add curated record topics, per-list usage roles, same-origin masked icons, per-tag styling hooks, any/all build filters and keyboard-operated browser filters. Filter thresholds can limit controls to longer lists with multiple topics; reading-list classes remain intact.
+- Accept per-item marker tags without changing reader output by default. Collect contribution counts across text/HTML/Markdown with cache alias resolution and detailed diagnostics; optionally display marker-local tags inline. Hosts own topic curation and aggregation policy.
+- Add stable unresolved/malformed diagnostic codes. Keep bibliography controls beside the reference and before site-use lines when space allows.
+- Include multi-page standalone examples, the editor/tag-count demo, README/Guide/API documentation and retained parser dependency license notices. Formatted-citation import remains planned.
+- Establish the check-in/milestone procedure and add header/control focus regression coverage.
 
 ## 0.1.4 · 2026-11-18
 

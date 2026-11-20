@@ -41,14 +41,14 @@ export function prepareReferences({ siteOccurrences = {}, occurrences, siteOrigi
   for (const [recordId, entries] of Object.entries(siteOccurrences)) {
     if (!Array.isArray(entries)) throw new TypeError('Each site occurrence entry must be an array.');
     const seen = new Set();
-    byRecord.set(recordId, entries.flatMap(item => {
+    byRecord.set(recordId, [...entries].sort((a, b) => Number(a?.kind === 'listed') - Number(b?.kind === 'listed')).flatMap(item => {
       const href = siteURL(item?.href, siteOrigin, { fragment: true });
       const label = cleanText(item?.label);
-      if (!href || !label) { diagnostics.push({ state: 'invalid-site-occurrence', recordId }); return []; }
+      if (!href || !label || item.kind !== undefined && !['cited', 'listed'].includes(item.kind)) { diagnostics.push({ state: 'invalid-site-occurrence', recordId }); return []; }
       const canonical = /^(?:[a-z][a-z0-9+.-]*:|\/)/i.test(href) ? new URL(href, siteOrigin || fallbackOrigin).href : href;
       if (seen.has(canonical)) return [];
       seen.add(canonical);
-      return [{ href, label, context: cleanText(item.context), ...(cleanText(item.occurrenceId) && { occurrenceId: cleanText(item.occurrenceId) }) }];
+      return [{ href, label, context: cleanText(item.context), ...(item.kind === 'listed' && { kind: 'listed' }), ...(cleanText(item.occurrenceId) && { occurrenceId: cleanText(item.occurrenceId) }) }];
     }));
   }
   return { tags, occurrences: recordId => byRecord.get(recordId) || [] };
@@ -56,15 +56,19 @@ export function prepareReferences({ siteOccurrences = {}, occurrences, siteOrigi
 
 export function groupSiteOccurrences(entries) {
   const groups = new Map();
+  const citedPages = new Set(entries.filter(item => item.kind !== 'listed').map(item => item.href.split('#')[0]));
   for (const item of entries) {
-    const key = item.href.split('#')[0];
-    if (!groups.has(key)) groups.set(key, { label: item.label, entries: [] });
+    const page = item.href.split('#')[0];
+    const kind = item.kind === 'listed' ? 'listed' : 'cited';
+    if (kind === 'listed' && citedPages.has(page)) continue;
+    const key = JSON.stringify([page, kind]);
+    if (!groups.has(key)) groups.set(key, { label: item.label, kind, entries: [] });
     groups.get(key).entries.push(item);
   }
   return [...groups.values()];
 }
 export const occurrenceLetter = index => index < 26 ? String.fromCharCode(97 + index) : occurrenceLetter(Math.floor(index / 26) - 1) + occurrenceLetter(index % 26);
-export const siteReturnLabel = (group, item, index) => `Return to ${group.label}${item.context ? ' — ' + item.context : ''} (occurrence ${occurrenceLetter(index)})`;
+export const siteReturnLabel = (group, item, index) => `Return to ${group.kind === 'listed' ? 'listing in ' : ''}${group.label}${item.context ? ' — ' + item.context : ''} (${group.kind === 'listed' ? 'entry' : 'occurrence'} ${occurrenceLetter(index)})`;
 
 /** Join actual emitted anchors to routes; does not crawl pages or write files. */
 export function createSiteOccurrenceIndex(pages, { siteOrigin } = {}) {
@@ -73,10 +77,13 @@ export function createSiteOccurrenceIndex(pages, { siteOrigin } = {}) {
   for (const page of pages) {
     const href = siteURL(page?.href, siteOrigin);
     if (!href || href.includes('#') || !cleanText(page.label) || !Array.isArray(page.occurrences)) throw new TypeError('Each page needs a safe route, label and occurrence array.');
+    if (page.occurrences.some(item => !item || item.kind !== undefined && !['cited', 'listed'].includes(item.kind))) throw new TypeError('Occurrence kind must be cited or listed when supplied.');
+    const citedRecords = new Set(page.occurrences.filter(item => item.kind !== 'listed').map(item => item.recordId));
     for (const occurrence of page.occurrences) {
+      if (occurrence.kind === 'listed' && citedRecords.has(occurrence.recordId)) continue;
       if (!cleanText(occurrence.anchorId) || !/^[a-z0-9][a-z0-9.-]{0,159}$/.test(occurrence.recordId || '')) throw new TypeError('Supply actual compiled occurrence IDs and record IDs.');
       (result[occurrence.recordId] ||= []).push({ href: href + '#' + encodeURIComponent(occurrence.anchorId), label: page.label,
-        context: cleanText(occurrence.context), ...(occurrence.occurrenceId && { occurrenceId: occurrence.occurrenceId }) });
+        context: cleanText(occurrence.context), ...(occurrence.kind === 'listed' && { kind: 'listed' }), ...(occurrence.occurrenceId && { occurrenceId: occurrence.occurrenceId }) });
     }
   }
   const normalized = prepareReferences({ siteOccurrences: result, siteOrigin });

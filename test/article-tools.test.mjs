@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { compileCitations, planCitationOccurrences } from '../src/compiler.mjs';
 import { compileHTML, compileMarkdown, rebaseCitationFragment } from '../src/markup.mjs';
-import { annotateMarkers, describeCitation, createSiteOccurrenceIndex } from '../src/tools.mjs';
+import { annotateMarkers, describeCitation, createSiteOccurrenceIndex, collectMarkerTags } from '../src/tools.mjs';
 import { makeCache, normalizeRecord, toCSL } from '../src/records.mjs';
 import { prepareReferences } from '../src/reference-features.mjs';
 import { createCrossrefResolver } from '../src/crossref.mjs';
@@ -113,6 +113,9 @@ test('JSON CLI describes, transforms and checks notes without writing source fil
   assert.equal(transformed.status,0,transformed.stderr);
   assert.equal(run('--check-notes',{source:'{citation alpha}',cache,options:chicago}).status,1);
   assert.equal(run('--check-notes',{source:JSON.parse(transformed.stdout).source,cache,options:chicago}).status,0);
+  const collected=run('--collect-tags',{sources:['{citation alpha | tags:theory}','{citation alpha | tags:theory,praxis}'],cache,options:{includeDiagnostics:true}});
+  assert.equal(collected.status,0,collected.stderr);
+  assert.deepEqual(JSON.parse(collected.stdout),{counts:{alpha:{theory:2,praxis:1}},diagnostics:[]});
 });
 
 test('annotation safely quotes provider markup and line breaks without changing reader output', () => {
@@ -166,4 +169,87 @@ test('rebased copies update tag masks and local site-use metadata together', () 
   assert.ok(!rebased.includes('url(#original_tag-mask-'));
   assert.ok(rebased.includes('#copy-cite-alpha-1'));
   assert.ok(!rebased.includes('#original-cite-alpha-1'));
+});
+
+test('tag hooks and filter thresholds retain reading-list semantics', () => {
+  const source='{citation list alpha; beta; gamma}';
+  const base={tagCatalogue:catalogue,classPrefix:'host-ref'};
+  const filtered=compileCitations(source,cache,{...base,listFilters:{minItems:3,minTags:2}});
+  assert.match(filtered.html,/data-citation-part="reading-list"/);
+  assert.ok(!filtered.html.includes('data-citation-part="endnotes"'));
+  assert.match(filtered.html,/<ol class="host-ref-reference-list"/);
+  assert.match(filtered.html,/data-ci-tag="theory"/);
+  assert.ok(filtered.html.includes('data-ci-tag-filters'));
+  for(const options of [{minItems:4,minTags:2},{minItems:1,minTags:3},{}]) {
+    assert.ok(!compileCitations(source,cache,{...base,listFilters:options}).html.includes('data-ci-tag-filters'));
+  }
+  assert.ok(!compileCitations('{citation list alpha}',cache,{...base,listFilters:{minItems:1,minTags:2}}).html.includes('data-ci-tag-filters'));
+  assert.throws(()=>compileCitations(source,cache,{listFilters:{minItems:-1}}),/threshold/);
+});
+
+test('nocite inventory reports listed uses at actual endnote anchors without inventing citations', () => {
+  const compiled=compileCitations('{citation nocite alpha}\n\n{citation endnote}',cache,{namespace:'listing'});
+  assert.equal(compiled.citationDescriptions.length,0);
+  assert.deepEqual(compiled.occurrences,[{recordId:'alpha',anchorId:'listing-note-alpha',kind:'listed',context:'Endnotes'}]);
+  const index=createSiteOccurrenceIndex([{href:'/reading/',label:'Reading',occurrences:compiled.occurrences}]);
+  const bibliography=compileCitations('{citation list alpha}',cache,{siteOccurrences:index});
+  assert.ok(bibliography.html.includes('Listed in:'));
+  assert.ok(!bibliography.html.includes('Cited in:'));
+  assert.match(bibliography.html,/Return to listing in Reading/);
+  assert.ok(compiled.html.includes('id="listing-note-alpha"'));
+  assert.ok(bibliography.html.indexOf('data-ci-note-record="alpha"')<bibliography.html.indexOf('Listed in:'));
+  const mixed=compileCitations('{citation alpha}\n\n{citation nocite alpha}',cache,{namespace:'mixed'});
+  const mixedIndex=createSiteOccurrenceIndex([{href:'/mixed/',label:'Mixed',occurrences:mixed.occurrences}]);
+  assert.equal(mixedIndex.alpha.length,1);
+  assert.notEqual(mixedIndex.alpha[0].kind,'listed');
+  assert.equal(compileCitations('{citation nocite alpha}',cache,{references:'isolated'}).occurrences.length,0);
+  const scoped=compileCitations('{citation nocite alpha}\n\n{citation endnote | scope:since-last}',cache,{namespace:'scoped'});
+  for(const occurrence of scoped.occurrences) assert.ok(scoped.html.includes(`id="${occurrence.anchorId}"`));
+});
+
+test('unresolved and malformed diagnostics expose stable codes without replacing legacy state', () => {
+  const result=compileCitations('{citation missing}\n\n{citation alpha | form:wrong}',cache);
+  assert.ok(result.diagnostics.some(d=>d.state==='unresolved'&&d.code==='citation-unresolved'));
+  assert.ok(result.diagnostics.some(d=>d.state==='malformed'&&d.code==='citation-malformed'));
+  assert.equal(describeCitation('{citation alpha} trailing',cache).diagnostics[0].code,'citation-malformed');
+  assert.ok(annotateMarkers('{citation missing}',cache).diagnostics.some(d=>d.code==='citation-unresolved'));
+});
+
+test('marker tags are reader-neutral metadata preserved by annotation and counted per contribution', () => {
+  const sources=['{citation alpha | tags:a}', '{citation alpha | note:"old" | tags:a,b}'];
+  assert.deepEqual(collectMarkerTags(sources),{alpha:{a:2,b:1}});
+  for(const compile of [compileCitations,compileHTML,compileMarkdown]) {
+    assert.deepEqual(compile('{citation alpha | tags:a,b}',cache),compile('{citation alpha}',cache));
+    assert.deepEqual(compile('{citation missing | tags:a,b}',cache),compile('{citation missing}',cache));
+  }
+  const annotated=annotateMarkers(sources[1],cache,chicago);
+  assert.match(annotated.source,/tags:a,b/);
+  assert.deepEqual(collectMarkerTags([annotated.source]),{alpha:{a:1,b:1}});
+  assert.equal(annotateMarkers(annotated.source,cache,chicago).changed,false);
+  const aliases=makeCache([{...work('alpha','Alpha'),identifiers:[{scheme:'doi',value:'10.1234/alpha'}]}]);
+  assert.deepEqual(collectMarkerTags(['{citation alpha | tags:a}', '{citation 10.1234/alpha | tags:a,b}'],aliases),{alpha:{a:2,b:1}});
+  assert.deepEqual(collectMarkerTags(['{citation 10.1234/alpha | tags:a}']),{'doi:10.1234/alpha':{a:1}});
+  assert.deepEqual(collectMarkerTags(['{citation alpha | tags:a,a}']),{alpha:{a:1}});
+  const result=collectMarkerTags(['{citation missing | tags:a}'],cache,{includeDiagnostics:true});
+  assert.deepEqual(result.counts,{missing:{a:1}});
+  assert.equal(result.diagnostics[0].code,'citation-unresolved');
+});
+
+test('tag collection shares HTML and Markdown exclusions and supports custom notation', () => {
+  const sources=[{format:'html',source:'<p>{citation alpha | tags:a}</p><code>{citation alpha | tags:code}</code><a href="#x">{citation alpha | tags:link}</a>'},
+    {format:'markdown',source:'`{citation alpha | tags:code}`\n\n{ref alpha | tags:a,b}\n\n```\n{ref alpha | tags:code}\n```',options:{citationKeyword:'ref'}}];
+  assert.deepEqual(collectMarkerTags(sources,cache),{alpha:{a:2,b:1}});
+  const skipped=collectMarkerTags([{format:'html',source:'&#123;citation alpha | tags:a&#125;'}],cache,{includeDiagnostics:true});
+  assert.deepEqual(skipped.counts,{});
+  assert.ok(skipped.diagnostics.some(d=>d.state==='annotation-encoded-marker-skipped'));
+  assert.throws(()=>collectMarkerTags('not an array'),/array/);
+  const inline=compileCitations('{citation alpha | tags:praxis}',cache,{tagCatalogue:catalogue,inlineTags:'marker',references:'isolated'});
+  assert.ok(inline.html.includes('data-ci-tag="praxis"'));
+  assert.ok(!inline.html.includes('data-ci-tag="theory"'));
+  assert.throws(()=>createSiteOccurrenceIndex([{href:'/x/',label:'X',occurrences:[{recordId:'alpha',anchorId:'id',kind:'typo'}]}]),/kind/);
+  for(const kind of [null,false,'']) {
+    const diagnostics=[];
+    assert.equal(prepareReferences({siteOccurrences:{alpha:[{href:'/x/#id',label:'X',kind}]}},diagnostics).occurrences('alpha').length,0);
+    assert.equal(diagnostics[0].state,'invalid-site-occurrence');
+  }
 });

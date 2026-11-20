@@ -922,6 +922,8 @@ class CitationInspector extends HTMLElement {
     for (const tag of Array.isArray(tags) ? tags : []) {
       if (typeof tag?.label !== 'string') continue;
       const badge = element('span', '', 'tag');
+      if (typeof tag.id === 'string') badge.dataset.ciTag = tag.id;
+      if (/^[a-z0-9][a-z0-9-]{0,63}$/.test(tag.id || '')) badge.setAttribute('part', `tag tag-${tag.id}`);
       const iconURL = siteURL(tag.icon, this.ownerDocument.location.origin);
       if (iconURL) {
         const ns = 'http://www.w3.org/2000/svg';
@@ -942,11 +944,14 @@ class CitationInspector extends HTMLElement {
     if (tagLine.childNodes.length) fragment.append(tagLine);
     const acceptedUsage = prepareReferences({ siteOrigin: this.ownerDocument.location.origin,
       siteOccurrences: { [record.id]: Array.isArray(siteOccurrences) ? siteOccurrences : [] } }).occurrences(record.id);
-    if (acceptedUsage.length) {
+    const usageContent = document.createDocumentFragment();
+    for (const kind of ['cited', 'listed']) {
+      const groups = groupSiteOccurrences(acceptedUsage).filter(group => group.kind === kind);
+      if (!groups.length) continue;
       const section = element('section', '', 'site-returns');
-      section.append(element('h4', 'Cited on this site'));
+      section.append(element('h4', kind === 'listed' ? 'Listed on this site' : 'Cited on this site'));
       const list = element('ul');
-      for (const group of groupSiteOccurrences(acceptedUsage)) {
+      for (const group of groups) {
         const row = element('li', group.label + ' (');
         group.entries.forEach((item, index) => {
           if (index) row.append(', ');
@@ -956,7 +961,7 @@ class CitationInspector extends HTMLElement {
         });
         row.append(')'); list.append(row);
       }
-      section.append(list); fragment.append(section);
+      section.append(list); usageContent.append(section);
     }
     if (record.license || record.rightsHolder) {
       const rights = element("p", "", "rights");
@@ -1022,6 +1027,7 @@ class CitationInspector extends HTMLElement {
       line.dir = "auto";
       fragment.append(line);
     }
+    fragment.append(usageContent);
     if (record.abstract) {
       const heading = record.abstract.kind === "excerpt" ? "Abstract excerpt" : "Abstract";
       const abstract = element("p", record.abstract.text, "abstract");

@@ -48,7 +48,7 @@ Serve `.mjs` as JavaScript and `.json` as JSON. Static links and endnotes work w
 Build the current tarball by running `npm ci` and `npm pack` in the downloaded library checkout with Node.js 22 or later. Install that tarball in your project. Copy `reading.txt` and `citations.json` from the ZIP into this directory for the example.
 
 ```sh
-npm install ./citation-inator-0.2.0-preview.0.tgz
+npm install ./citation-inator-0.2.0.tgz
 npm exec -- citation-inator reading.txt citations.json article.html my-article
 ```
 
@@ -154,7 +154,7 @@ For an act or bill, use `type: "legislation"`, `title`, and `issued`. Supply `ju
 
 ## Compile existing HTML or Markdown
 
-For source-only editor notes, `describeCitation` / `annotateMarkers`, the JSON editor CLI, cross-page occurrence indexes, site bibliographies, record/usage tags and list filters, see [Article tools](article-tools.md). The tools have separate Node and self-contained browser entry points; reader panels still load the inspector module and stylesheet described above. These additions belong to the 0.2.0 preview, not stable 0.1.4.
+For source-only editor notes, `describeCitation` / `annotateMarkers`, the JSON editor CLI, cross-page occurrence indexes, site bibliographies, record/usage tags and list filters, see [Article tools](article-tools.md). The tools have separate Node and self-contained browser entry points; reader panels still load the inspector module and stylesheet described above. These additions require 0.2.0 or later; 0.1.4 does not include them.
 
 With npm dependencies installed, use these Node imports. From a source checkout, the same functions are available in `src/markup.mjs`.
 

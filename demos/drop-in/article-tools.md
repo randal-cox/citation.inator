@@ -1,6 +1,6 @@
 # Article editor tools, site bibliographies and tags
 
-These features are in the 0.2.0 preview source. They are absent from the stable 0.1.4 release. The preview is being verified; see the [milestone record](https://github.com/randal-cox/citation.inator/blob/codex/article-tooling/docs/milestones/0.2.0.md). Formatted-citation import remains [planned work](https://github.com/randal-cox/citation.inator/blob/codex/article-tooling/docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages).
+These features are available in 0.2.0 and later. They are absent from 0.1.4; see the [milestone record](https://github.com/randal-cox/citation.inator/blob/main/docs/milestones/0.2.0.md). Formatted-citation import remains [planned work](https://github.com/randal-cox/citation.inator/blob/main/docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages).
 
 ## Load the tools
 
@@ -8,13 +8,13 @@ For a Node build, editor service or command-line adapter:
 
 ```js
 import { compileCitations } from 'citation-inator';
-import { describeCitation, annotateMarkers, createSiteOccurrenceIndex } from 'citation-inator/tools';
+import { describeCitation, annotateMarkers, collectMarkerTags, createSiteOccurrenceIndex } from 'citation-inator/tools';
 ```
 
 For an editor running in a browser, copy the prebuilt `dist/citation-tools.mjs` to your site and import it directly:
 
 ```js
-import { describeCitation, annotateMarkers, createSiteOccurrenceIndex } from './citation-tools.mjs';
+import { describeCitation, annotateMarkers, collectMarkerTags, createSiteOccurrenceIndex } from './citation-tools.mjs';
 ```
 
 An installed package also exports `citation-inator/tools-browser` as a self-contained browser module. A bare package specifier needs a bundler or import map in browsers. Tools do not register the inspector; load `citation-inspector.mjs` and its adjacent stylesheet separately for reader panels. Browser tools include their parsing dependencies and need no npm install on the serving machine. The JSON cache is an ordinary argument to the functions. None of these functions fetches providers or writes files.
@@ -76,6 +76,31 @@ citation-inator --check-notes --json < article-request.json
 
 A description request is `{ "citation": "source-one", "cache": CACHE, "options": { "citationStyle": "chicago-author-date" } }`. An annotation/check request replaces `citation` with a `source` string and can include `format` in `options`. These examples use `CACHE` as a placeholder for the complete cache object, not a literal JSON token. `--style` and `--format` override corresponding options. `--check-notes` returns exit code 1 for stale notes or diagnostics and 0 for current notes without diagnostics; it still emits its JSON result. Other invalid requests return a nonzero status and an error on standard error. The same commands are available as `node scripts/compile.mjs …` in a source checkout.
 
+## Tags contributed by citation markers
+
+```text
+{citation source-one | note:"Cox 1995" | tags:ritual-theory,consent-ethics}
+```
+
+`tags:` is per cited item, like `note:`. It contributes metadata without changing reader output or diagnostics by default; `annotateMarkers` retains it when refreshing notes. IDs follow the same syntax as record tags. Repeated IDs within one item count once. Invalid or duplicate `tags:` options make the marker malformed under the normal notation rules. List-directive `tags:` continues to mean build-time filtering, not a contribution.
+
+```js
+const result = collectMarkerTags([
+  { name: 'essay-one.md', format: 'markdown', source: firstSource },
+  { name: 'essay-two.html', format: 'html', source: secondSource }
+], cache, { includeDiagnostics: true });
+// result.counts: { 'source-one': { 'ritual-theory': 2, 'consent-ethics': 1 } }
+// result.diagnostics: source-labelled skipped/malformed/unresolved regions
+```
+
+Sources can be strings (text by default) or objects with `source`, optional `name`, `format` and `options` such as a custom `citationKeyword`. With a cache, aliases such as a local ID and DOI are counted under the same stable record ID. Without a cache, local identifiers use their local IDs and external identifiers use canonical keys such as `doi:10.1234/example`; the helper cannot invent record IDs. Unknown cached identifiers retain those fallback keys and produce unresolved diagnostics in detailed mode.
+
+`collectMarkerTags(sources)` returns the counts object directly, matching the simple API shape. **Use `includeDiagnostics: true` in build/import tools** so conservative Markdown skips or encoded notation cannot look like a complete count. The collector shares annotation's HTML/Markdown exclusions, including code, attributes, excluded elements and diagnosed unlocatable regions. It counts valid tagged citation items across sources; it does not count list filters, fetch metadata, mutate records, enforce a topic catalogue, identify voters or apply curator decisions. The host owns allowed topics, totals, manual additions/blocks and any voting policy; pass the resulting accepted topic IDs back as record `tags`.
+
+Set `inlineTags: 'marker'` to display only the tags contributed at each in-text citation. A mention with no contributed tags shows none inline. Reference lists and inspector panels retain the work's accumulated record tags. `inlineTags: true` instead displays accumulated tags beside each mention; `false` (default) keeps marker contributions out of reader output entirely. Displayed marker tags use the supplied catalogue and its normal unknown-tag fallback.
+
+The JSON CLI supports `citation-inator --collect-tags --json`, with `{ "sources": SOURCES, "cache": CACHE, "options": { "includeDiagnostics": true } }`. `cache` is optional; `SOURCES` and `CACHE` are placeholders for actual JSON values. The result uses the same plain/detailed shape as the JavaScript function. Inspect detailed diagnostics; a syntactically valid collection request does not fail solely because some contributions need review.
+
 ## Cross-page occurrence index
 
 Each normal compilation now returns `occurrences` and `citationDescriptions` alongside `html`, `cache` and `diagnostics`. `occurrences` includes actual in-text anchors, record IDs and surrounding text context; list Inspect actions and unanchored isolated citations do not create uses. Structured plans already return stable `occurrenceId`, `anchorId` and `recordId` values and can feed the same helper. Explicit host context can be supplied in structured occurrences.
@@ -111,9 +136,13 @@ const siteOccurrences = {
 };
 ```
 
+An occurrence can carry `kind: 'listed'` when a work is only included in a reference list. Compiling `nocite` emits a listed occurrence targeting the actual endnote; it does not invent an in-text citation. The helper retains that distinction, preferring real citations when the same work is both cited and listed on a page. Lists use **Listed in** and panels use **Listed on this site** for listing-only pages. The default kind is cited for backward compatibility. Rebuild your site index to obtain the new `nocite` entries; an old index cannot infer whether a use was only a listing.
+
 `occurrences` is accepted as a compiler-option alias for `siteOccurrences`; supply one, not both. Use `siteOccurrences` to distinguish the site index from the compiler result's local `occurrences`. URLs need a fragment, a nonempty label and a safe same-site destination. Relative paths, root-relative paths and local fragments are allowed. For absolute URLs, supply `siteOrigin` and use that origin only. Unsafe/off-site entries are omitted with `invalid-site-occurrence` diagnostics; exact duplicate targets are omitted. Distinct relative path spellings are preserved because their meaning depends on the host page's base path. Use consistent root-relative routes in a site-wide index, or construct paths relative to each destination page when compiling. The helper does not rewrite routes for you.
 
 The compiler emits grouped `Cited in` links under references and carries the accepted index on Inspect triggers. The panel shows `Cited on this site`. Both use contextual `Return to … (occurrence a)` accessible names. Static links work without JavaScript. Local endnote return links remain available independently; the site-use section intentionally provides the broader page grouping as well. A page must not export its private/draft occurrences into a public index. Index data belongs to the host build, not to a source's canonical bibliographic identity.
+
+Panel site-use sections follow the formatted reference and identifiers. Bibliography action icons precede site-use lines and can sit beside the reference when space allows. Reading lists retain their `reference-list` class inside a dedicated `reading-list` wrapper when filters are enabled; endnote-specific styles do not apply to that wrapper.
 
 When rendering your own controls, pass `siteOccurrences` to `planCitationOccurrences`; its occurrence bindings carry that data into the panel. Alternatively configure the browser directly:
 
@@ -123,7 +152,7 @@ initializeCitationInspector(element, { cache, siteOccurrences, tagCatalogue });
 
 The inspector validates destinations against its current page origin. Cross-origin absolute links supplied for a production site are not shown in a different-origin local preview; use relative routes for portable previews. No index is fetched or crawled automatically. Copied citations and bibliographic exports retain their canonical work URLs.
 
-## Tags, usage roles and filtering
+## Record tags, usage roles and filtering
 
 Add curated topic IDs to records:
 
@@ -143,6 +172,8 @@ Tags are retained in the library JSON cache and through provider refresh. Biblio
 
 Tags appear on references and in the panel. Set `inlineTags: true` to also show them beside ordinary in-text citation triggers. Set a custom `classPrefix` normally; all new rendered parts use `data-citation-part` and the configured prefix. Common parts are `tags`, `tag`, `site-returns` and `tag-filters`. Library CSS remains scoped to those parts.
 
+Each tag has `data-ci-tag="theory"` (using its own ID), in static HTML and panel content. For example, scope a host rule to `[data-ci-tag="theory"]` to style one tag. Panel content lives in Shadow DOM: set an inherited colour variable on the inspector and use the shared component stylesheet if you need tag-specific panel rules; ordinary host selectors style the static list, not Shadow DOM contents. Panel badges also expose `part="tag tag-theory"` (using the actual ID), so a host can style `citation-inspector::part(tag-theory)` without editing the shared stylesheet.
+
 Build-time filters apply only to the explicitly named list:
 
 ```text
@@ -154,3 +185,9 @@ Build-time filters apply only to the explicitly named list:
 The default is any-of. `tag-mode:all` requires every listed tag. Filtering happens before record-use and year-letter planning. An empty selection has an explicit empty-result message. It does not pull additional records out of the cache or change other citations/endnotes. Browser hiding after compilation preserves the already-compiled reference labels.
 
 With `listFilters: true`, supported inspectors reveal native checkboxes above each tagged reading list. No filters checked shows all of that list's compiled entries. Multiple checked filters use any-of; the legend states this. A live, plural-aware shown/total count updates without moving keyboard focus. Lists are independent, and a no-match state is explicit. The initial English controls/count wording is not yet connected to the reader-access translation catalogue. The controls stay hidden without JavaScript, leaving the build-selected list and all static return links usable. Filters are local UI state and are not persisted as reader access preferences.
+
+Use `listFilters: { minItems: 6, minTags: 2 }` to show controls only for lists with at least six build-selected entries and two distinct effective tags. Both thresholds are nonnegative integers. An empty options object uses those same defaults; `true` retains the original behavior of showing controls for any nonempty tagged list, and `false` disables them. Thresholds control whether the filter UI is generated, not which references are selected. Short and single-tag lists retain the same reference-list styling.
+
+## Diagnostic codes
+
+Unresolved diagnostics carry `code: 'citation-unresolved'`; malformed-citation diagnostics carry `code: 'citation-malformed'`. The existing `state` values stay `unresolved` and `malformed`. These additive codes are present in compiler, editor-query/annotation and JSON CLI results, including unresolved/malformed entries in the cross-fragment report. Hosts can key on `code` without parsing message text. Other diagnostic states retain their existing contracts.
