@@ -15,13 +15,18 @@ try {
     allowPositionals: true,
     options: {
       json: { type: "boolean" }, report: { type: "boolean" }, "find-isbns": { type: "boolean" }, format: { type: "string" },
-      style: { type: "string" }, "endnotes-heading": { type: "string" }
+      style: { type: "string" }, "endnotes-heading": { type: "string" },
+      describe: { type: "boolean" }, annotate: { type: "boolean" }, "check-notes": { type: "boolean" }
     }
   });
   const overrides = {
     ...(values.style !== undefined && { citationStyle: values.style }),
     ...(values["endnotes-heading"] !== undefined && { endnotesHeading: values["endnotes-heading"] })
   };
+  const toolOperations = ['describe', 'annotate', 'check-notes'].filter(name => values[name]);
+  if (toolOperations.length > 1 || toolOperations.length && (!values.json || values.report || values['find-isbns'])) {
+    throw new TypeError('Use one of --describe, --annotate or --check-notes with --json.');
+  }
   if (values["find-isbns"] && (!values.json || values.report || values.format || values.style || values["endnotes-heading"])) {
     throw new TypeError("Use --find-isbns --json with a book list on standard input.");
   }
@@ -31,7 +36,14 @@ try {
     let input = "";
     for await (const chunk of process.stdin) input += chunk;
     const request = JSON.parse(input);
-    if (values["find-isbns"]) {
+    if (toolOperations.length) {
+      const { describeCitation, annotateMarkers } = await import('../src/tools.mjs');
+      const options = { ...request.options, ...overrides, ...(values.format && { format: values.format }) };
+      const result = values.describe ? describeCitation(request.citation, request.cache, options)
+        : annotateMarkers(request.source, request.cache, options);
+      process.stdout.write(JSON.stringify(result) + '\n');
+      if (values['check-notes'] && (result.changed || result.diagnostics.length)) process.exitCode = 1;
+    } else if (values["find-isbns"]) {
       if (!Array.isArray(request?.books)) throw new TypeError('Supply a JSON object with a "books" array.');
       const { createOpenLibrarySearch } = await import("../src/openlibrary.mjs");
       const finder = createOpenLibrarySearch({ mailto: typeof request.mailto === "string" ? request.mailto : "" });

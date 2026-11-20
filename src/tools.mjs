@@ -1,0 +1,156 @@
+import { parse } from 'parse5';
+import { Lexer } from 'marked';
+import { compileCitationBlocks, parseDirectives, scanCitationMarkers } from './compiler.mjs';
+import { isCitationTextExcluded } from './markup.mjs';
+export { createSiteOccurrenceIndex } from './reference-features.mjs';
+
+const escaped = value => value.replace(/[\\"{};|]/g, character => '\\' + character);
+const splitSpans = (source, separator) => {
+  const spans = [];
+  const pattern = /\\.|"[^"\\]*(?:\\.[^"\\]*)*"|./gsu;
+  let start = 0;
+  for (const match of source.matchAll(pattern)) if (match[0] === separator) {
+    spans.push({ start, end: match.index }); start = match.index + 1;
+  }
+  spans.push({ start, end: source.length });
+  return spans;
+};
+
+function textRanges(source, format, diagnostics, options) {
+  if (format === 'text') return [{ start: 0, end: source.length }];
+  if (format === 'html') {
+    const ranges = [];
+    const walk = node => {
+      if (isCitationTextExcluded(node)) return;
+      if (node.nodeName === '#text' && node.sourceCodeLocation) {
+        const raw = source.slice(node.sourceCodeLocation.startOffset, node.sourceCodeLocation.endOffset);
+        if (raw.includes('&') && scanCitationMarkers(node.value, options).filter(item => item.token?.type === 'citation').length >
+            scanCitationMarkers(raw, options).filter(item => item.token?.type === 'citation').length) {
+          diagnostics.push({ state: 'annotation-encoded-marker-skipped', start: node.sourceCodeLocation.startOffset });
+        }
+        ranges.push({ start: node.sourceCodeLocation.startOffset, end: node.sourceCodeLocation.endOffset });
+      }
+      for (const child of node.childNodes || []) walk(child);
+    };
+    walk(parse(source, { sourceCodeLocationInfo: true }));
+    return ranges;
+  }
+  if (format !== 'markdown') throw new TypeError('Use text, html or markdown format.');
+  // Marked normalizes line endings. Map normalized offsets back to the author's bytes.
+  const offsets = [];
+  let normalized = '';
+  for (let i = 0; i < source.length; i++) {
+    offsets.push(i);
+    normalized += source[i] === '\r' ? '\n' : source[i];
+    if (source[i] === '\r' && source[i + 1] === '\n') i++;
+  }
+  offsets.push(source.length);
+  let lexicalSource = normalized;
+  for (const marker of scanCitationMarkers(normalized, options).reverse()) {
+    lexicalSource = lexicalSource.slice(0, marker.start) + 'x'.repeat(marker.end - marker.start) + lexicalSource.slice(marker.end);
+  }
+  const blocked = [];
+  const walk = (tokens, start, end) => {
+    let cursor = start;
+    for (const token of tokens || []) {
+      if (!token.raw) continue;
+      const at = lexicalSource.indexOf(token.raw, cursor);
+      if (at < cursor || at + token.raw.length > end) {
+        blocked.push([start, end]);
+        diagnostics.push({ state: 'annotation-region-skipped', message: 'Could not locate a Markdown token exactly; its containing region was left unchanged.' });
+        return;
+      }
+      cursor = at + token.raw.length;
+      if (['code', 'codespan', 'html', 'link', 'image'].includes(token.type)) blocked.push([at, cursor]);
+      else if (token.items) walk(token.items, at, cursor);
+      else if (token.tokens) walk(token.tokens, at, cursor);
+    }
+  };
+  walk(Lexer.lex(lexicalSource), 0, normalized.length);
+  const protectHTML = node => {
+    if (isCitationTextExcluded(node)) {
+      if (node.sourceCodeLocation) blocked.push([node.sourceCodeLocation.startOffset, node.sourceCodeLocation.endOffset]);
+      return;
+    }
+    if (node.nodeName === '#text' && scanCitationMarkers(node.value, options).some(item => item.token?.type === 'citation')) {
+      diagnostics.push({ state: 'annotation-encoded-marker-skipped', start: offsets[node.sourceCodeLocation?.startOffset || 0] });
+    }
+    for (const child of node.childNodes || []) protectHTML(child);
+  };
+  protectHTML(parse(lexicalSource, { sourceCodeLocationInfo: true }));
+  // Raw HTML tags/blocks are protected, including quoted attribute values.
+  const ranges = [];
+  let cursor = 0;
+  for (const [start, end] of blocked.sort((a, b) => a[0] - b[0])) {
+    if (start > cursor) ranges.push({ start: offsets[cursor], end: offsets[start] });
+    cursor = Math.max(cursor, end);
+  }
+  if (cursor < normalized.length) ranges.push({ start: offsets[cursor], end: source.length });
+  return ranges;
+}
+
+function analyze(source, cache, options) {
+  if (typeof source !== 'string') throw new TypeError('Supply source text.');
+  const diagnostics = [];
+  const ranges = textRanges(source, options.format || 'text', diagnostics, options);
+  const markers = [];
+  const blocks = [];
+  for (const range of ranges) {
+    const text = source.slice(range.start, range.end);
+    for (const marker of scanCitationMarkers(text, options)) {
+      if (marker.token?.malformed) diagnostics.push({ state: 'malformed', source: marker.raw, start: range.start + marker.start });
+      if (marker.token?.type === 'citation') markers.push({ ...marker, start: marker.start + range.start, end: marker.end + range.start });
+    }
+    for (const paragraph of text.split(/\r?\n(?:[ \t]*\r?\n)+/)) blocks.push(parseDirectives(paragraph, options));
+  }
+  const result = compileCitationBlocks(blocks, cache, options);
+  if (markers.length !== result.citationDescriptions.length) throw new Error('Citation source ranges do not match the compilation context.');
+  return { markers, descriptions: result.citationDescriptions, diagnostics: [...diagnostics,
+    ...result.diagnostics.filter(item => !['unknown-tag', 'invalid-tag-icon', 'invalid-site-occurrence'].includes(item.state))] };
+}
+
+/** Describe a marker or identifier. No network requests or cache writes. */
+export function describeCitation(identifierOrMarker, cache, options = {}) {
+  if (typeof identifierOrMarker !== 'string') throw new TypeError('Supply a marker or identifier.');
+  const source = identifierOrMarker.trim().startsWith('{') ? identifierOrMarker : `{${options.citationKeyword || 'citation'} ${identifierOrMarker}}`;
+  const markers = scanCitationMarkers(source, options);
+  if (markers.length !== 1 || markers[0].token?.type !== 'citation' || source.trim() !== markers[0].raw) {
+    return { text: '', items: [], state: 'malformed', diagnostics: [{ state: 'malformed', source: identifierOrMarker }] };
+  }
+  const result = analyze(source, cache, { ...options, format: 'text' });
+  const items = result.descriptions.flatMap(marker => marker.items);
+  return { text: items.map(item => item.text).join('; '), items,
+    state: !items.length ? 'malformed' : items.some(item => item.state === 'unresolved') ? 'unresolved' : items.some(item => item.state === 'partial') ? 'partial' : 'resolved',
+    diagnostics: result.diagnostics };
+}
+
+/** Refresh per-item editor notes; bytes outside proposed note edits are preserved. */
+export function annotateMarkers(source, cache, options = {}) {
+  const { markers, descriptions, diagnostics } = analyze(source, cache, options);
+  const edits = [];
+  for (const [index, marker] of markers.entries()) {
+    const description = descriptions[index];
+    if (description.items.some(item => item.state === 'unresolved')) continue;
+    const bodyStart = marker.raw.match(/^\{[^\s]+\s+/)[0].length;
+    const body = marker.raw.slice(bodyStart, -1);
+    for (const [i, item] of splitSpans(body, ';').entries()) {
+      const text = body.slice(item.start, item.end);
+      const parts = splitSpans(text, '|');
+      const note = parts.slice(1).find(span => /^\s*note:/.test(text.slice(span.start, span.end)));
+      const noteText = escaped(description.items[i].text);
+      const replacement = `note:"${options.format && options.format !== 'text' ? noteText.replace(/[&<>]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[character])) : noteText}"`;
+      if (note) {
+        const original = text.slice(note.start, note.end);
+        const start = marker.start + bodyStart + item.start + note.start + original.search(/\S/);
+        const end = marker.start + bodyStart + item.start + note.end - (original.match(/\s*$/)[0].length);
+        if (source.slice(start, end) !== replacement) edits.push({ start, end, text: replacement });
+      } else {
+        const end = marker.start + bodyStart + item.end - text.match(/\s*$/)[0].length;
+        edits.push({ start: end, end, text: ' | ' + replacement });
+      }
+    }
+  }
+  let output = source;
+  for (const edit of [...edits].sort((a, b) => b.start - a.start)) output = output.slice(0, edit.start) + edit.text + output.slice(edit.end);
+  return { source: output, edits, changed: edits.length > 0, diagnostics };
+}

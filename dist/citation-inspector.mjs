@@ -1,8 +1,9 @@
-/*! citation-inator v0.1.4 | MIT | See LICENSE */
+/*! citation-inator v0.2.0-preview.0 | MIT | See LICENSE */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
 var cleanText = (value) => typeof value === "string" ? value.trim() : "";
+var normalizeTags = (value) => [...new Set((Array.isArray(value) ? value : []).filter((tag) => typeof tag === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag)))];
 var stableId = /^[a-z0-9][a-z0-9.-]{0,159}$/;
 var doi = (value) => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value) && !value.split("/").some((part) => part === "." || part === "..");
 var kinds = /* @__PURE__ */ new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document", "artwork", "image"]);
@@ -216,6 +217,7 @@ function normalizeRecord(input) {
     identifiers: [...identifiers.values()],
     locations,
     provenance,
+    ...Array.isArray(input.tags) && { tags: normalizeTags(input.tags) },
     ...relatedIdentifiers.length && { relatedIdentifiers },
     citationParts: normalizeTextParts(input.citationParts),
     ...input.authorsComplete === false && { authorsComplete: false },
@@ -937,6 +939,79 @@ var AccessView = class {
   }
 };
 
+// src/reference-features.mjs
+var fallbackOrigin = "https://citation.invalid";
+function siteURL(value, siteOrigin, { fragment = false } = {}) {
+  if (typeof value !== "string" || !value || /[\u0000-\u0020\u007f\\]/.test(value) || value.startsWith("//")) return "";
+  try {
+    const base = siteOrigin ? new URL(siteOrigin) : new URL(fallbackOrigin);
+    if (!["https:", "http:"].includes(base.protocol) || base.username || base.password) return "";
+    const url = new URL(value, base);
+    const absolute = /^[a-z][a-z0-9+.-]*:/i.test(value);
+    if (absolute && !siteOrigin || url.origin !== base.origin || url.username || url.password || fragment && !url.hash) return "";
+    return value;
+  } catch {
+    return "";
+  }
+}
+function prepareReferences({ siteOccurrences = {}, occurrences, siteOrigin, tagCatalogue = [], listItemTags = {} } = {}, diagnostics = []) {
+  if (occurrences !== void 0) {
+    if (Object.keys(siteOccurrences).length) throw new TypeError("Use siteOccurrences or occurrences, not both.");
+    siteOccurrences = occurrences;
+  }
+  if (!siteOccurrences || typeof siteOccurrences !== "object" || Array.isArray(siteOccurrences)) throw new TypeError("Supply a site occurrence index keyed by record ID.");
+  if (!Array.isArray(tagCatalogue)) throw new TypeError("Supply a tagCatalogue array.");
+  if (!listItemTags || typeof listItemTags !== "object" || Array.isArray(listItemTags)) throw new TypeError("Supply listItemTags keyed by record ID.");
+  if (siteOrigin && !siteURL("/", siteOrigin)) throw new TypeError("Supply an HTTP(S) siteOrigin.");
+  const catalogue = /* @__PURE__ */ new Map();
+  for (const item of tagCatalogue) {
+    const id = normalizeTags([item?.id])[0];
+    const label = cleanText(item?.label);
+    if (!id || !label || catalogue.has(id)) throw new TypeError("Tag catalogue entries need unique valid IDs and labels.");
+    const icon = item.icon ? siteURL(item.icon, siteOrigin) : "";
+    if (item.icon && !icon) diagnostics.push({ state: "invalid-tag-icon", tag: id });
+    catalogue.set(id, { id, label, ...icon && { icon } });
+  }
+  const seenUnknown = /* @__PURE__ */ new Set();
+  const tags = (record, list = false) => normalizeTags(list && Object.hasOwn(listItemTags, record.id) ? listItemTags[record.id] : record.tags).map((id) => {
+    if (catalogue.has(id)) return catalogue.get(id);
+    if (!seenUnknown.has(id)) {
+      diagnostics.push({ state: "unknown-tag", tag: id });
+      seenUnknown.add(id);
+    }
+    return { id, label: id };
+  });
+  const byRecord = /* @__PURE__ */ new Map();
+  for (const [recordId, entries] of Object.entries(siteOccurrences)) {
+    if (!Array.isArray(entries)) throw new TypeError("Each site occurrence entry must be an array.");
+    const seen = /* @__PURE__ */ new Set();
+    byRecord.set(recordId, entries.flatMap((item) => {
+      const href = siteURL(item?.href, siteOrigin, { fragment: true });
+      const label = cleanText(item?.label);
+      if (!href || !label) {
+        diagnostics.push({ state: "invalid-site-occurrence", recordId });
+        return [];
+      }
+      const canonical = /^(?:[a-z][a-z0-9+.-]*:|\/)/i.test(href) ? new URL(href, siteOrigin || fallbackOrigin).href : href;
+      if (seen.has(canonical)) return [];
+      seen.add(canonical);
+      return [{ href, label, context: cleanText(item.context), ...cleanText(item.occurrenceId) && { occurrenceId: cleanText(item.occurrenceId) } }];
+    }));
+  }
+  return { tags, occurrences: (recordId) => byRecord.get(recordId) || [] };
+}
+function groupSiteOccurrences(entries) {
+  const groups = /* @__PURE__ */ new Map();
+  for (const item of entries) {
+    const key = item.href.split("#")[0];
+    if (!groups.has(key)) groups.set(key, { label: item.label, entries: [] });
+    groups.get(key).entries.push(item);
+  }
+  return [...groups.values()];
+}
+var occurrenceLetter = (index) => index < 26 ? String.fromCharCode(97 + index) : occurrenceLetter(Math.floor(index / 26) - 1) + occurrenceLetter(index % 26);
+var siteReturnLabel = (group, item, index) => `Return to ${group.label}${item.context ? " \u2014 " + item.context : ""} (occurrence ${occurrenceLetter(index)})`;
+
 // src/compiler.mjs
 var compare = (a, b) => {
   const left = a.normalize("NFKC").toLowerCase();
@@ -1256,6 +1331,12 @@ var CitationInspector = class extends HTMLElement {
   #owner;
   #access = new AccessView(this);
   #settingsCommand;
+  #references = prepareReferences();
+  configureReferences(options = {}) {
+    this.#references = prepareReferences({ siteOrigin: this.ownerDocument.location.origin, ...options });
+    const record = this.#record(this.#trigger);
+    if (record) this.#refresh(record, this.#trigger);
+  }
   constructor() {
     super();
     const shadow = this.attachShadow({ mode: "open" });
@@ -1574,6 +1655,9 @@ var CitationInspector = class extends HTMLElement {
     window.visualViewport?.addEventListener("scroll", () => this.#schedulePosition(), { signal });
     this.#panelSize = new ResizeObserver(() => this.#schedulePosition());
     this.#panelSize.observe(this.#dialog);
+    this.addEventListener("change", (event) => {
+      if (event.target.matches("[data-ci-tag-filter]") && event.target.closest(componentName) === this) this.#filterLists();
+    }, { signal });
     this.#observer = new MutationObserver(() => {
       this.#applyClassPrefix();
       this.#enhance();
@@ -1724,6 +1808,7 @@ var CitationInspector = class extends HTMLElement {
       if (trigger.closest(componentName) !== this) this.#bindings.delete(trigger);
     }
     if (!this.#style.sheet || typeof this.#dialog.showModal !== "function") return;
+    this.#filterLists();
     if (this.#cache) this.#access.enhanceNotes(this.#cache.byId, (name) => this.#providerHidden(name));
     const candidates = [...this.querySelectorAll(triggerSelector), ...this.#bindings.keys()];
     for (const trigger of candidates) {
@@ -1745,6 +1830,34 @@ var CitationInspector = class extends HTMLElement {
     this.#observer?.disconnect();
     this.#panelSize?.disconnect();
     for (const [trigger, attributes] of this.#enhanced) this.#restore(trigger, attributes);
+    for (const filters of this.querySelectorAll("[data-ci-tag-filters]")) filters.hidden = true;
+    for (const row of this.querySelectorAll("[data-ci-reading-list] > ol > li")) row.hidden = false;
+  }
+  #filterLists() {
+    for (const list of this.querySelectorAll("[data-ci-reading-list]")) {
+      if (list.closest(componentName) !== this) continue;
+      const filters = list.querySelector("[data-ci-tag-filters]");
+      if (!filters) continue;
+      const selected = [...filters.querySelectorAll("input:checked")].map((node2) => node2.value);
+      const rows = [...list.querySelectorAll(":scope > ol > li")];
+      let shown = 0;
+      for (const row of rows) {
+        let tags = [];
+        try {
+          tags = JSON.parse(row.dataset.ciTags || "[]");
+        } catch {
+        }
+        row.hidden = selected.length > 0 && !selected.some((tag) => tags.includes(tag));
+        if (!row.hidden) shown++;
+      }
+      const category = new Intl.PluralRules("en").select(shown);
+      const count = `${shown} ${category === "one" ? "reference" : "references"} shown out of ${rows.length}`;
+      const status = filters.querySelector("[data-ci-list-count]");
+      if (status.textContent !== count) status.textContent = count;
+      list.querySelector("[data-ci-list-empty]").hidden = shown > 0;
+      filters.hidden = false;
+      if (this.#trigger && rows.some((row) => row.hidden && row.contains(this.#trigger))) this.#dismiss(false);
+    }
   }
   #open(trigger, hover = false) {
     this.#cancelHover();
@@ -1966,6 +2079,73 @@ var CitationInspector = class extends HTMLElement {
     const titleNode = element("h3", title);
     titleNode.dir = "auto";
     fragment.append(titleNode);
+    const bindingMetadata = this.#bindings.get(trigger);
+    let tags = bindingMetadata?.tags || this.#references.tags(record);
+    let siteOccurrences = bindingMetadata?.siteOccurrences || this.#references.occurrences(record.id);
+    try {
+      const metadata = JSON.parse(trigger.dataset.ciTags || "null");
+      if (Array.isArray(metadata)) tags = metadata;
+      const usage = JSON.parse(trigger.dataset.ciSiteOccurrences || "null");
+      if (Array.isArray(usage)) siteOccurrences = usage;
+    } catch {
+    }
+    const tagLine = element("p", "", "tags");
+    for (const tag of Array.isArray(tags) ? tags : []) {
+      if (typeof tag?.label !== "string") continue;
+      const badge = element("span", "", "tag");
+      const iconURL = siteURL(tag.icon, this.ownerDocument.location.origin);
+      if (iconURL) {
+        const ns = "http://www.w3.org/2000/svg";
+        const icon = document.createElementNS(ns, "svg");
+        icon.setAttribute("width", "16");
+        icon.setAttribute("height", "16");
+        icon.setAttribute("viewBox", "0 0 24 24");
+        icon.setAttribute("aria-hidden", "true");
+        icon.setAttribute("focusable", "false");
+        const mask = document.createElementNS(ns, "mask");
+        mask.id = "citation-tag-" + crypto.randomUUID();
+        mask.setAttribute("mask-type", "alpha");
+        const image = document.createElementNS(ns, "image");
+        image.setAttribute("href", iconURL);
+        image.setAttribute("width", "24");
+        image.setAttribute("height", "24");
+        mask.append(image);
+        const rect = document.createElementNS(ns, "rect");
+        rect.setAttribute("width", "24");
+        rect.setAttribute("height", "24");
+        rect.setAttribute("fill", "currentColor");
+        rect.setAttribute("mask", `url(#${mask.id})`);
+        icon.append(mask, rect);
+        badge.append(icon);
+      }
+      badge.append(tag.label);
+      tagLine.append(badge);
+    }
+    if (tagLine.childNodes.length) fragment.append(tagLine);
+    const acceptedUsage = prepareReferences({
+      siteOrigin: this.ownerDocument.location.origin,
+      siteOccurrences: { [record.id]: Array.isArray(siteOccurrences) ? siteOccurrences : [] }
+    }).occurrences(record.id);
+    if (acceptedUsage.length) {
+      const section = element("section", "", "site-returns");
+      section.append(element("h4", "Cited on this site"));
+      const list2 = element("ul");
+      for (const group of groupSiteOccurrences(acceptedUsage)) {
+        const row = element("li", group.label + " (");
+        group.entries.forEach((item, index) => {
+          if (index) row.append(", ");
+          const link = element("a", occurrenceLetter(index));
+          link.href = item.href;
+          link.setAttribute("aria-label", siteReturnLabel(group, item, index));
+          link.title = item.context || group.label;
+          row.append(link);
+        });
+        row.append(")");
+        list2.append(row);
+      }
+      section.append(list2);
+      fragment.append(section);
+    }
     if (record.license || record.rightsHolder) {
       const rights = element("p", "", "rights");
       if (record.license) rights.append(record.license.url ? external(record.license.url, record.license.name) : record.license.name);
@@ -2151,7 +2331,10 @@ function initializeCitationInspector(element2, {
   accessSettings,
   strings,
   locale,
-  staleAfterDays
+  staleAfterDays,
+  tagCatalogue,
+  siteOccurrences,
+  siteOrigin
 } = {}) {
   if (element2?.localName !== componentName) throw new TypeError("Pass a citation-inspector element.");
   if (classPrefix !== void 0) {
@@ -2168,6 +2351,7 @@ function initializeCitationInspector(element2, {
   if (accessProviders !== void 0) element2.accessProviders = accessProviders;
   if (hiddenAccessProviders !== void 0) element2.hiddenAccessProviders = hiddenAccessProviders;
   if (hiddenProviders !== void 0) element2.hiddenProviders = hiddenProviders;
+  element2.configureReferences(Object.fromEntries(Object.entries({ tagCatalogue, siteOccurrences, siteOrigin }).filter(([, value]) => value !== void 0)));
   element2.configureAccess(Object.fromEntries(Object.entries({
     accessCatalog: accessCatalog2,
     accessStorageKey,

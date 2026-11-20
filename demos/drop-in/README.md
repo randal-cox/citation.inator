@@ -1,5 +1,7 @@
 # citation.inator in plain HTML
 
+This source checkout contains the 0.2.0 preview candidate. The released 0.1.4 archives remain unchanged.
+
 From the repository root, run `npm start` and open [Plain HTML](http://127.0.0.1:4187/demos/drop-in/).
 
 If you have only the standalone ZIP or want to run without npm, serve the extracted folder with a static server. For example, run this command from the folder and open [the local example](http://127.0.0.1:8080/).
@@ -17,3 +19,5 @@ Citation evidence and Citation credit in the example open supplementary panels. 
 In the programmatic example, **Programmatic citations** uses a prebuilt example and a local module. The map and table share a reference with two return links. Try **Map details** to open an inspector inside a dialog. The example module and its stylesheet are adjacent to `index.html`.
 
 The **Reader access and artwork** example demonstrates open copies, subscriptions, library links, rights and source/served checksums. Its records and destinations are synthetic. The adjacent [reader access guide](reader-access.md), [media support matrix](media-support.md), and [integration guide](integration.md) cover configuration and host settings. The example’s access module is bundled as `access-preview.mjs`.
+
+Try [the site bibliography](bibliography.html), [Article one](article-1.html), [Article two](article-2.html) and [the editor tools](editor-tools.html). They demonstrate cross-page return links, accessible tag filters and source-only editor notes. The browser editor uses the included self-contained `citation-tools.mjs`; it makes no provider lookups and saves no files. The [article tools guide](article-tools.md) covers the APIs, CLI, index-build process, tag catalogue, source formats and limitations.

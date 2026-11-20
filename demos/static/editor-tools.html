@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Editor tools | citation.inator</title>
+<link rel="stylesheet" href="../../dist/citation-inspector.css"><link rel="stylesheet" href="./article-tools-demo.css"><script type="module" src="../../dist/citation-inspector.mjs"></script><script type="module" src="./editor-tools-demo.mjs"></script></head>
+<body><header><a href="./">Reading room</a><nav aria-label="Article tools examples"><a href="./article-1.html">Article one</a> · <a href="./article-2.html">Article two</a> · <a href="./bibliography.html">Site bibliography</a> · <a href="./editor-tools.html">Editor tools</a></nav></header>
+<main><h1><svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg><span>Editor tools</span></h1><hr><p>This offline example refreshes source-only notes. It makes no network lookups and does not save your text.</p><form id="editor-tools"><label for="editor-source">Citation source</label><textarea id="editor-source" name="source" autocomplete="off" spellcheck="false" rows="7">A source for an editor to identify {citation farneth-2023-politics-ritual}.
+
+{citation endnote}</textarea><label for="editor-style">Citation style</label><select id="editor-style" name="style"><option value="chicago-author-date">Chicago author–date</option><option value="apa">APA</option><option value="mla">MLA</option><option value="harvard">Harvard</option><option value="vancouver">Vancouver</option></select><button type="submit">Refresh editor notes</button></form><p id="editor-status" role="status"></p><pre id="editor-result" aria-label="Annotated source"></pre><details><summary>Record cache for this example</summary><pre>{
+  &quot;schema&quot;: &quot;citation-inator.cache.v1&quot;,
+  &quot;records&quot;: [
+    {
+      &quot;id&quot;: &quot;farneth-2023-politics-ritual&quot;,
+      &quot;type&quot;: &quot;book&quot;,
+      &quot;state&quot;: &quot;resolved&quot;,
+      &quot;title&quot;: &quot;The Politics of Ritual&quot;,
+      &quot;authors&quot;: [
+        {
+          &quot;family&quot;: &quot;Farneth&quot;,
+          &quot;given&quot;: &quot;Molly&quot;
+        }
+      ],
+      &quot;identifiers&quot;: [
+        {
+          &quot;scheme&quot;: &quot;isbn&quot;,
+          &quot;value&quot;: &quot;9780691198927&quot;
+        }
+      ],
+      &quot;locations&quot;: [
+        {
+          &quot;kind&quot;: &quot;publisher&quot;,
+          &quot;url&quot;: &quot;https://press.princeton.edu/books/paperback/9780691198927/the-politics-of-ritual&quot;,
+          &quot;provider&quot;: &quot;Princeton University Press&quot;,
+          &quot;verifiedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;version&quot;: null,
+          &quot;service&quot;: null,
+          &quot;access&quot;: &quot;unknown&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;library&quot;,
+          &quot;url&quot;: &quot;https://search.worldcat.org/search?q=bn%3A9780691198927&quot;,
+          &quot;provider&quot;: &quot;WorldCat&quot;,
+          &quot;verifiedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;version&quot;: null,
+          &quot;service&quot;: null,
+          &quot;access&quot;: &quot;unknown&quot;
+        },
+        {
+          &quot;kind&quot;: &quot;library&quot;,
+          &quot;url&quot;: &quot;https://openlibrary.org/books/OL39279248M/Politics_of_Ritual&quot;,
+          &quot;provider&quot;: &quot;Open Library&quot;,
+          &quot;verifiedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;version&quot;: null,
+          &quot;service&quot;: null,
+          &quot;access&quot;: &quot;unknown&quot;
+        }
+      ],
+      &quot;provenance&quot;: [
+        {
+          &quot;provider&quot;: &quot;citation.inator editorial handoff&quot;,
+          &quot;url&quot;: &quot;&quot;,
+          &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;note&quot;: &quot;Original citation and curation preserved in the source fixtures.&quot;
+        },
+        {
+          &quot;provider&quot;: &quot;Princeton University Press&quot;,
+          &quot;url&quot;: &quot;https://press.princeton.edu/books/paperback/9780691198927/the-politics-of-ritual&quot;,
+          &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;note&quot;: &quot;&quot;
+        }
+      ],
+      &quot;tags&quot;: [
+        &quot;theory&quot;
+      ],
+      &quot;citationParts&quot;: [],
+      &quot;issued&quot;: [
+        2023
+      ],
+      &quot;online&quot;: null,
+      &quot;print&quot;: null,
+      &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+      &quot;version&quot;: null,
+      &quot;integrity&quot;: null,
+      &quot;abstract&quot;: null,
+      &quot;containerTitle&quot;: &quot;&quot;,
+      &quot;publisher&quot;: &quot;Princeton University Press&quot;,
+      &quot;volume&quot;: &quot;&quot;,
+      &quot;issue&quot;: &quot;&quot;,
+      &quot;pages&quot;: &quot;&quot;,
+      &quot;articleNumber&quot;: &quot;&quot;,
+      &quot;edition&quot;: &quot;&quot;,
+      &quot;publisherPlace&quot;: &quot;&quot;,
+      &quot;containerAbbreviation&quot;: &quot;&quot;,
+      &quot;apaTitle&quot;: &quot;The politics of ritual&quot;,
+      &quot;original&quot;: &quot;The Politics of Ritual, Molly Farneth, Princeton University Press (2023)&quot;,
+      &quot;note&quot;: &quot;Publisher ISBN record. JSTOR assigns a separate DOI to its digital book record.&quot;,
+      &quot;citationText&quot;: &quot;Farneth, M. (2023). The politics of ritual. Princeton University Press.&quot;,
+      &quot;medium&quot;: &quot;&quot;,
+      &quot;dimensions&quot;: &quot;&quot;,
+      &quot;holdingInstitution&quot;: &quot;&quot;,
+      &quot;accession&quot;: &quot;&quot;,
+      &quot;platform&quot;: &quot;&quot;,
+      &quot;rightsHolder&quot;: &quot;&quot;,
+      &quot;creatorAttribution&quot;: &quot;&quot;,
+      &quot;displayDate&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;farneth-2023-politics-ritual-jstor&quot;,
+      &quot;type&quot;: &quot;book&quot;,
+      &quot;state&quot;: &quot;resolved&quot;,
+      &quot;title&quot;: &quot;The Politics of Ritual&quot;,
+      &quot;authors&quot;: [
+        {
+          &quot;family&quot;: &quot;Farneth&quot;,
+          &quot;given&quot;: &quot;Molly&quot;
+        }
+      ],
+      &quot;identifiers&quot;: [
+        {
+          &quot;scheme&quot;: &quot;doi&quot;,
+          &quot;value&quot;: &quot;10.2307/j.ctv2wr4wbd&quot;
+        }
+      ],
+      &quot;locations&quot;: [
+        {
+          &quot;kind&quot;: &quot;library&quot;,
+          &quot;url&quot;: &quot;https://www.jstor.org/stable/j.ctv2wr4wbd&quot;,
+          &quot;provider&quot;: &quot;JSTOR&quot;,
+          &quot;verifiedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;version&quot;: null,
+          &quot;service&quot;: null,
+          &quot;access&quot;: &quot;unknown&quot;
+        }
+      ],
+      &quot;provenance&quot;: [
+        {
+          &quot;provider&quot;: &quot;citation.inator editorial handoff&quot;,
+          &quot;url&quot;: &quot;&quot;,
+          &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;note&quot;: &quot;Original citation and curation preserved in the source fixtures.&quot;
+        },
+        {
+          &quot;provider&quot;: &quot;JSTOR book metadata&quot;,
+          &quot;url&quot;: &quot;https://www.jstor.org/stable/j.ctv2wr4wbd&quot;,
+          &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;note&quot;: &quot;&quot;
+        }
+      ],
+      &quot;tags&quot;: [
+        &quot;praxis&quot;
+      ],
+      &quot;citationParts&quot;: [],
+      &quot;issued&quot;: [
+        2023
+      ],
+      &quot;online&quot;: null,
+      &quot;print&quot;: null,
+      &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+      &quot;version&quot;: null,
+      &quot;integrity&quot;: null,
+      &quot;abstract&quot;: null,
+      &quot;containerTitle&quot;: &quot;&quot;,
+      &quot;publisher&quot;: &quot;Princeton University Press&quot;,
+      &quot;volume&quot;: &quot;&quot;,
+      &quot;issue&quot;: &quot;&quot;,
+      &quot;pages&quot;: &quot;&quot;,
+      &quot;articleNumber&quot;: &quot;&quot;,
+      &quot;edition&quot;: &quot;&quot;,
+      &quot;publisherPlace&quot;: &quot;&quot;,
+      &quot;containerAbbreviation&quot;: &quot;&quot;,
+      &quot;apaTitle&quot;: &quot;The politics of ritual&quot;,
+      &quot;original&quot;: &quot;The Politics of Ritual, Molly Farneth, Princeton University Press (2023)&quot;,
+      &quot;note&quot;: &quot;Digital book record identified by JSTOR. The print ISBN is tracked separately.&quot;,
+      &quot;citationText&quot;: &quot;Farneth, M. (2023). The politics of ritual. Princeton University Press. https://doi.org/10.2307/j.ctv2wr4wbd&quot;,
+      &quot;medium&quot;: &quot;&quot;,
+      &quot;dimensions&quot;: &quot;&quot;,
+      &quot;holdingInstitution&quot;: &quot;&quot;,
+      &quot;accession&quot;: &quot;&quot;,
+      &quot;platform&quot;: &quot;&quot;,
+      &quot;rightsHolder&quot;: &quot;&quot;,
+      &quot;creatorAttribution&quot;: &quot;&quot;,
+      &quot;displayDate&quot;: &quot;&quot;
+    },
+    {
+      &quot;id&quot;: &quot;feiler-2026-time-gather&quot;,
+      &quot;type&quot;: &quot;book&quot;,
+      &quot;state&quot;: &quot;resolved&quot;,
+      &quot;title&quot;: &quot;A Time to Gather: How Ritual Created the World—and How It Can Save Us&quot;,
+      &quot;authors&quot;: [
+        {
+          &quot;family&quot;: &quot;Feiler&quot;,
+          &quot;given&quot;: &quot;Bruce&quot;
+        }
+      ],
+      &quot;identifiers&quot;: [
+        {
+          &quot;scheme&quot;: &quot;isbn&quot;,
+          &quot;value&quot;: &quot;9780593656433&quot;
+        }
+      ],
+      &quot;locations&quot;: [
+        {
+          &quot;kind&quot;: &quot;publisher&quot;,
+          &quot;url&quot;: &quot;https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/&quot;,
+          &quot;provider&quot;: &quot;Penguin Random House&quot;,
+          &quot;verifiedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;version&quot;: null,
+          &quot;service&quot;: null,
+          &quot;access&quot;: &quot;unknown&quot;
+        }
+      ],
+      &quot;provenance&quot;: [
+        {
+          &quot;provider&quot;: &quot;citation.inator editorial handoff&quot;,
+          &quot;url&quot;: &quot;&quot;,
+          &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;note&quot;: &quot;Original citation and curation preserved in the source fixtures.&quot;
+        },
+        {
+          &quot;provider&quot;: &quot;Penguin Random House&quot;,
+          &quot;url&quot;: &quot;https://www.penguinrandomhouse.com/books/738772/a-time-to-gather-by-bruce-feiler/&quot;,
+          &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+          &quot;note&quot;: &quot;&quot;
+        }
+      ],
+      &quot;tags&quot;: [
+        &quot;theory&quot;,
+        &quot;praxis&quot;
+      ],
+      &quot;citationParts&quot;: [],
+      &quot;issued&quot;: [
+        2026,
+        5,
+        19
+      ],
+      &quot;online&quot;: null,
+      &quot;print&quot;: null,
+      &quot;retrievedAt&quot;: &quot;2026-11-10T00:00:00.000Z&quot;,
+      &quot;version&quot;: null,
+      &quot;integrity&quot;: null,
+      &quot;abstract&quot;: null,
+      &quot;containerTitle&quot;: &quot;&quot;,
+      &quot;publisher&quot;: &quot;Penguin Press&quot;,
+      &quot;volume&quot;: &quot;&quot;,
+      &quot;issue&quot;: &quot;&quot;,
+      &quot;pages&quot;: &quot;&quot;,
+      &quot;articleNumber&quot;: &quot;&quot;,
+      &quot;edition&quot;: &quot;Hardcover&quot;,
+      &quot;publisherPlace&quot;: &quot;&quot;,
+      &quot;containerAbbreviation&quot;: &quot;&quot;,
+      &quot;apaTitle&quot;: &quot;A time to gather: How ritual created the world—and how it can save us&quot;,
+      &quot;original&quot;: &quot;A Time to Gather: How Ritual Created the World—and How It Can Save Us, Bruce Feiler, Penguin Press (2026)&quot;,
+      &quot;note&quot;: &quot;&quot;,
+      &quot;citationText&quot;: &quot;Feiler, B. (2026). A time to gather: How ritual created the world—and how it can save us. Penguin Press.&quot;,
+      &quot;medium&quot;: &quot;&quot;,
+      &quot;dimensions&quot;: &quot;&quot;,
+      &quot;holdingInstitution&quot;: &quot;&quot;,
+      &quot;accession&quot;: &quot;&quot;,
+      &quot;platform&quot;: &quot;&quot;,
+      &quot;rightsHolder&quot;: &quot;&quot;,
+      &quot;creatorAttribution&quot;: &quot;&quot;,
+      &quot;displayDate&quot;: &quot;&quot;
+    }
+  ]
+}</pre></details></main></body></html>

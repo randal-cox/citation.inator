@@ -14,14 +14,15 @@ import { checkInspectIcons } from "./inspect-browser.mjs";
 import { checkReaderAccess } from "./access-browser.mjs";
 import { checkWebpageBrowser } from "./webpage-browser.mjs";
 import { checkStructuredDemo } from "./structured-demo-browser.mjs";
+import { checkArticleTools } from "./article-tools-browser.mjs";
 
 const executablePath = process.env.CITATION_CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const evidence = process.env.CITATION_EVIDENCE;
 const temporary = await mkdtemp(join(tmpdir(), "citation-copied-"));
-const csp = "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'";
+const csp = "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'";
 const copyHost = createServer(async (request, response) => {
   const path = new URL(request.url, "http://127.0.0.1").pathname.slice(1) || "index.html";
-  const types = { html: "text/html", css: "text/css", mjs: "text/javascript", json: "application/json" };
+  const types = { html: "text/html", css: "text/css", mjs: "text/javascript", json: "application/json", svg: "image/svg+xml" };
   const type = types[path.split(".").at(-1)];
   try {
     if (!type || !/^[\w.-]+$/.test(path)) throw new Error("unknown path");
@@ -96,6 +97,9 @@ try {
   };
 
   await page.goto(origin + "/demos/static/");
+  const tagIconResponse = await page.request.get(origin + '/demos/static/tag-book.svg');
+  assert.equal(tagIconResponse.status(), 200);
+  assert.match(tagIconResponse.headers()['content-type'], /image\/svg\+xml/);
   const geometry = await page.evaluate(() => {
     const intro = document.querySelector(".intro");
     const prose = document.querySelector(".reading citation-inspector > p");
@@ -548,6 +552,7 @@ try {
   await checkReaderAccess(browser, origin, evidence);
   await checkStructuredBrowser({ page, directory: temporary, origin: copied });
   await checkWebpageBrowser({ page, directory: temporary, origin: copied });
+  await checkArticleTools(browser, copied, evidence);
   await checkStructuredDemo(browser, origin + "/demos/static/", false, evidence);
   await checkStructuredDemo(browser, copied, true, evidence);
   console.log("Both structured demos passed static links, shared endnotes, unresolved sources, scoped theme, forced colors and nested Escape.");

@@ -315,3 +315,15 @@ citation-inspector { display: contents; }
 }
 [data-citation-part~="access-destination"] { display: inline-flex; align-items: center; gap: .35rem; }
 [data-citation-part~="access-checked"] { font-size: .75em; max-width: 16rem; }
+
+:is([data-citation-part~="tags"]) { display: inline-flex; flex-wrap: wrap; gap: .35em; margin: .3em .4em; vertical-align: middle; font: 500 .8rem/1.4 var(--citation-panel-font, system-ui, sans-serif); }
+[data-citation-part~="tag"] { display: inline-flex; align-items: center; gap: .25em; color: var(--citation-accent, #214fab); }
+[data-citation-part~="tag"] svg { flex: none; }
+[data-citation-part~="site-returns"] { margin-block: .6em; font: .9rem/1.5 var(--citation-panel-font, system-ui, sans-serif); }
+[data-citation-part~="site-returns"] h4 { margin: .5em 0; font-size: 1em; }
+[data-citation-part~="tag-filters"] { margin-block: .7em; border: 1px solid var(--citation-line, #a9bad4); border-radius: .35em; font: .9rem/1.5 var(--citation-panel-font, system-ui, sans-serif); }
+[data-citation-part~="tag-filters"] label { display: inline-flex; align-items: center; gap: .3em; margin: .2em .8em .2em 0; cursor: pointer; }
+[data-citation-part~="tag-filters"] input { accent-color: var(--citation-accent, #214fab); }
+[data-citation-part~="tag-filters"] input:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+[data-ci-reading-list] > ol > li[hidden], [data-ci-tag-filters][hidden], [data-ci-list-empty][hidden] { display: none; }
+@media (forced-colors: active) { [data-citation-part~="tag"] { color: inherit; } }

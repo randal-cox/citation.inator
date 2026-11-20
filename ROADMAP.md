@@ -2,6 +2,10 @@
 
 Version 0.1.4 adds reader access, media records and structured citation integration. See the [changelog](CHANGELOG.md).
 
+## Article-tooling milestone 0.2.0 — in progress
+
+The `0.2.0-preview.0` candidate implements F1–F3: editor-only notes/query APIs and CLI tools, cross-page occurrence indexing and return links, and record/usage tags with list filters. F4, reviewed formatted-citation import, remains planned. See [the candidate record](docs/milestones/0.2.0.md), [the implementation guide](docs/article-tools.md) and [the import plan](docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages). Independent review and complete verification passed for the preview candidate. Adopter acceptance remains pending before final release.
+
 ## Completed milestone 0.1.4
 
 **We have a citation for that**, released 18 November 2026. The [milestone record](docs/milestones/0.1.4.md) links the release, delivered scope, acceptance evidence and remaining work.
@@ -27,7 +31,7 @@ Review the milestone record and roadmap before every check-in. The [repository p
 
 ## Follow-up work
 
-- Plan editor queries and source-only marker notes (F3), a host-supplied cross-page occurrence index and bibliography return links (F1), record/usage tags and list filtering (F2), and reviewed citation import (F4). The [article-tooling plan](docs/article-tooling-plan.md) records proposed contracts, sequencing, library/host boundaries and acceptance checks. These features are not available in 0.1.4; the next milestone scope/version remains to be agreed.
+- Complete acceptance of F1–F3 in the 0.2.0 candidate. The [article-tooling plan](docs/article-tooling-plan.md) retains F4's staged import design and the original requirements. These additions are absent from stable 0.1.4.
 - Show the unknown-profile help once per reading list, while keeping a settings entry available from each inspector. Long lists currently repeat the help under every reading.
 - Provide a documented hook for adding host content before each reference item, such as topic tags, without matching generated HTML strings.
 - Build a comprehensive catalog of citation styles and variants. Cover author–date, author–page, numeric, and notes and bibliography styles, including disciplinary and publisher variants. Record each style's edition or variant, link to its governing guide where available, and show what citation.inator can format today by source type and citation form. Use real migration examples to identify which gaps matter most and whether a broader style engine would help.

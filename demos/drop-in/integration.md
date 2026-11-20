@@ -48,7 +48,7 @@ Serve `.mjs` as JavaScript and `.json` as JSON. Static links and endnotes work w
 Build the current tarball by running `npm ci` and `npm pack` in the downloaded library checkout with Node.js 22 or later. Install that tarball in your project. Copy `reading.txt` and `citations.json` from the ZIP into this directory for the example.
 
 ```sh
-npm install ./citation-inator-0.1.4.tgz
+npm install ./citation-inator-0.2.0-preview.0.tgz
 npm exec -- citation-inator reading.txt citations.json article.html my-article
 ```
 
@@ -153,6 +153,8 @@ When two records spell the same person’s name differently, give the structured
 For an act or bill, use `type: "legislation"`, `title`, and `issued`. Supply `jurisdiction`, `number`, and `session` as applicable. Use `legalCitation` for a complete legal locator such as `Pub. L. No. 103-43, 107 Stat. 122` and an HTTPS identifier for the official text. The Chicago author-date preset uses the law's name and year in prose and puts the locator in the reference. Use `inlineAuthor` for a familiar short title or `citationParts` for an editorial reference that follows local legal citation practice. [Chicago on laws, bills, and state legislation](https://www.chicagomanualofstyle.org/book/ed18/part3/ch14/toc.html)
 
 ## Compile existing HTML or Markdown
+
+For source-only editor notes, `describeCitation` / `annotateMarkers`, the JSON editor CLI, cross-page occurrence indexes, site bibliographies, record/usage tags and list filters, see [Article tools](article-tools.md). The tools have separate Node and self-contained browser entry points; reader panels still load the inspector module and stylesheet described above. These additions belong to the 0.2.0 preview, not stable 0.1.4.
 
 With npm dependencies installed, use these Node imports. From a source checkout, the same functions are available in `src/markup.mjs`.
 

@@ -7,6 +7,7 @@ import { demoCache } from "./demo-cache.mjs";
 import { compileDemoStyles, demoStyles } from "./demo-styles.mjs";
 import { structuredDemo, structuredModule } from "./structured-demo.mjs";
 import { accessDemo, accessDemoModule } from "./access-demo.mjs";
+import { writeArticleToolsDemo } from "./article-tools-demo.mjs";
 
 const version = JSON.parse(await readFile("package.json", "utf8")).version;
 const fixtures = JSON.parse(await readFile("fixtures/citation-demo-cases.json", "utf8"));
@@ -48,6 +49,18 @@ await build({
   outfile: "dist/citation-inspector.mjs",
   banner: { js: `/*! citation-inator v${version} | MIT | See LICENSE */` }
 });
+const toolsNotices = (await Promise.all([
+  ['parse5', 'LICENSE'], ['marked', 'LICENSE.md'], ['entities', 'LICENSE']
+].map(async ([name, license]) => {
+  const info = JSON.parse(await readFile(`node_modules/${name}/package.json`, 'utf8'));
+  return `${name} ${info.version}\n${await readFile(`node_modules/${name}/${license}`, 'utf8')}`;
+}))).join('\n\n');
+await build({
+  entryPoints: ["src/tools.mjs"], bundle: true, format: "esm", target: "es2022",
+  outfile: "dist/citation-tools.mjs",
+  banner: { js: `/*! citation-inator tools v${version} | MIT | See LICENSE */\n/* Bundled dependency notices:\n${toolsNotices.replaceAll('*/', '* /')}\n*/` }
+});
+await writeFile('dist/THIRD_PARTY_LICENSES.txt', toolsNotices);
 await Promise.all([
   cp("src/citation-inspector.css", "dist/citation-inspector.css"),
   cp("LICENSE", "dist/LICENSE"),
@@ -114,6 +127,7 @@ ${showPreferences ? `    ${preferences}\n` : ""}    ${content}
 }
 
 const previewClient = await readFile("scripts/structured-demo-client.mjs", "utf8");
+const articleToolsDemo = await writeArticleToolsDemo('demos/static/', cache, '../../dist/');
 const previewAssets = `<link rel="stylesheet" href="./structured-preview.css">
   <script type="module" src="./structured-preview.mjs"></script>
   <script type="module" src="./access-preview.mjs"></script>`;
@@ -131,6 +145,7 @@ await writeFile("demos/static/index.html", document({
     ${notationExamples}
     ${structuredDemo}
     ${accessDemo}
+    ${articleToolsDemo}
   </article>`
 }));
 await writeFile("demos/static/citations.json", json(article.cache));
@@ -243,7 +258,7 @@ await writeFile("demos/static/guide.html", document({
   content: `<article class="reading guide">
     <section aria-labelledby="guide-load">
       <h2 id="guide-load">Load and initialize</h2>
-      <p>Download or clone the <a href="https://github.com/randal-cox/citation.inator">repository</a>. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>.</p>
+      <p>Clone the <a href="https://github.com/randal-cox/citation.inator/tree/codex/article-tooling">preview branch</a> with <code>git clone --branch codex/article-tooling https://github.com/randal-cox/citation.inator.git</code>. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Stable 0.1.4 does not include these editor/bibliography additions.</p>
       <pre><code>${escapeHTML(demoServer)}</code></pre>
       <p>Without npm, serve the prebuilt <code>demos/drop-in/</code> directory or extracted ZIP with any static server. The standalone <a href="../drop-in/README.md">README</a> includes a Python command.</p>
       <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/citation-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
@@ -289,6 +304,13 @@ await writeFile("demos/static/guide.html", document({
       <p>Try the examples in the <a href="./#structured-preview">Reading room</a> or <a href="../drop-in/#structured-preview">Plain HTML</a>. Follow the two return links from one reference, inspect an unresolved source, and press Escape twice in Map details. The regular reading on the same page still uses compiled notation.</p>
       <p>The dark switch also changes the inspector’s body font and compact modal styling. If your site reuses the same inspector across views, call <code>inspector.dismiss({ restoreFocus: false })</code> during navigation, then focus the destination.</p>
     </section>
+    <section aria-labelledby="guide-article-tools">
+      <h2 id="guide-article-tools">Article editors, shared bibliographies and tags</h2>
+      <p>This preview adds editor-only notes such as <code>{citation source-one | note:"Cox 1995"}</code>. Notes do not replace reader labels. Import <code>describeCitation</code> and <code>annotateMarkers</code> from <code>citation-inator/tools</code> in Node, or copy the self-contained <code>citation-tools.mjs</code> into a browser editor. JSON CLI operations <code>--describe --json</code>, <code>--annotate --json</code> and <code>--check-notes --json</code> let other build systems use the same API.</p>
+      <p>The compiler returns actual <code>occurrences</code>. Join them to page routes with <code>createSiteOccurrenceIndex</code>, then supply <code>siteOccurrences</code> when compiling the shared bibliography. Its cross-page return links work without JavaScript; the inspector shows <strong>Cited on this site</strong>.</p>
+      <p>Records accept <code>tags</code>; configure <code>tagCatalogue</code> for labels and same-origin masked icons. Use <code>listItemTags</code> for article-specific roles, <code>listFilters: true</code> for browser checkboxes, and notation such as <code>{citation list source-one; source-two | tags:theory,praxis | tag-mode:all}</code> for build-time filtering. <code>inlineTags: true</code> adds tags beside in-text citations.</p>
+      <p>Try the <a href="./bibliography.html">site bibliography and two articles</a> and the <a href="./editor-tools.html">offline editor tool</a>. Read the <a href="../drop-in/article-tools.md">complete tools guide</a> for API results, source-preservation limits, CLI requests, safe routes, tag configuration and the two-pass build. Formatted-document import remains planned.</p>
+    </section>
     <section aria-labelledby="guide-access">
       <h2 id="guide-access">Reader access and media</h2>
       <p>Try the <a href="./#access-preview">reader access example</a> or its <a href="../drop-in/#access-preview">Plain HTML copy</a>. The access sheet remembers services in this browser. A PDF is open only when its location says <code>access: "open"</code>. Choose <code>access-settings="host"</code> to open your own settings page in response to <code>access-settings-request</code>.</p>
@@ -305,12 +327,13 @@ await writeFile("demos/static/guide.html", document({
 }));
 
 const portable = "demos/drop-in/";
-await Promise.all(["citation-inspector.mjs", "citation-inspector.css", "LICENSE"].map(name => cp(`dist/${name}`, portable + name)));
+const portableArticleToolsDemo = await writeArticleToolsDemo(portable, cache, './');
+await Promise.all(["citation-inspector.mjs", "citation-inspector.css", "citation-tools.mjs", "THIRD_PARTY_LICENSES.txt", "LICENSE"].map(name => cp(`dist/${name}`, portable + name)));
 await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
   cp("CITATION.cff", portable + "CITATION.cff"),
-  ...["integration.md", "reader-access.md", "media-support.md"].map(name => cp("docs/" + name, portable + name)),
+  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md"].map(name => cp("docs/" + name, portable + name)),
   writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),
   cp("demos/static/structured-preview.css", portable + "structured-preview.css"),
   writeFile(portable + "structured-preview.mjs", structuredModule("./citation-inspector.mjs", previewClient))
@@ -334,6 +357,7 @@ await writeFile(portable + "index.html", `<!doctype html>
     ${notationExamples}
     ${structuredDemo}
     ${accessDemo}
+    ${portableArticleToolsDemo}
   </main>
 </body>
 </html>

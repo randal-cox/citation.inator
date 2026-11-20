@@ -2,6 +2,8 @@ export const CACHE_SCHEMA = "citation-inator.cache.v1";
 export const DAY = 86_400_000;
 
 export const cleanText = value => typeof value === "string" ? value.trim() : "";
+export const normalizeTags = value => [...new Set((Array.isArray(value) ? value : [])
+  .filter(tag => typeof tag === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag)))];
 const stableId = /^[a-z0-9][a-z0-9.-]{0,159}$/;
 const doi = value => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value) && !value.split("/").some(part => part === "." || part === "..");
 const kinds = new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document", "artwork", "image"]);
@@ -224,6 +226,7 @@ export function normalizeRecord(input) {
       })
     }),
     title, authors, identifiers: [...identifiers.values()], locations, provenance,
+    ...(Array.isArray(input.tags) && { tags: normalizeTags(input.tags) }),
     ...(relatedIdentifiers.length && { relatedIdentifiers }),
     citationParts: normalizeTextParts(input.citationParts),
     ...(input.authorsComplete === false && { authorsComplete: false }),

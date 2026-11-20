@@ -1,6 +1,6 @@
 # Article editing, site bibliographies and citation import
 
-20 November 2026. **Proposed implementation plan; these APIs and features are not available in 0.1.4.** No next milestone version has been chosen. This plan responds to four adopter requests: cross-page return links (F1), record tags (F2), editor queries and marker notes (F3), and formatted-document import (F4).
+20 November 2026. **Original design and retained import plan.** F1–F3 are implemented in the 0.2.0 preview candidate; use [the actual API guide](article-tools.md) and [milestone record](milestones/0.2.0.md) for current contracts and acceptance. They are absent from stable 0.1.4. F4 remains planned. The sections below preserve the design discussion and proposed shapes, which may differ from the implemented contracts. This plan responds to four adopter requests: cross-page return links (F1), record tags (F2), editor queries and marker notes (F3), and formatted-document import (F4).
 
 ## Design direction
 

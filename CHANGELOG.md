@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Develop 0.2.0-preview.0 with editor-only marker notes, query/annotation APIs and JSON CLI checks; site occurrence indexes and cross-page bibliography returns; record tags, per-list roles and build/browser filters. Include browser tools, static multi-page examples and integration documentation. Candidate acceptance is pending; formatted-citation import remains planned.
 - Document proposed article-editor query tools, cross-page bibliography links, tags and reviewed citation import; implementation scope and version are pending.
 - Add browser regression coverage for unboxed inspector headings, visible keyboard control focus and isolation from host focus styling.
 - Establish a repository check-in and milestone procedure with staged consistency checks, a local hook and a milestone record template.

@@ -3,6 +3,7 @@ export { getAccessProfile, setAccessProfile } from "./access-profile.mjs";
 import { defaultClassPrefix, partClassNames, partSelector, validClassPrefix, validateClassPrefix } from "./class-names.mjs";
 import { brandIconMarkup, iconMarkup } from "./icons.mjs";
 import { bibliographyText } from "./compiler.mjs";
+import { groupSiteOccurrences, occurrenceLetter, prepareReferences, siteReturnLabel, siteURL } from "./reference-features.mjs";
 import { fullAuthorName, httpsURL, identifierURL, readCache } from "./records.mjs";
 
 const componentName = "citation-inspector";
@@ -99,6 +100,13 @@ class CitationInspector extends HTMLElement {
   #owner;
   #access = new AccessView(this);
   #settingsCommand;
+  #references = prepareReferences();
+
+  configureReferences(options = {}) {
+    this.#references = prepareReferences({ siteOrigin: this.ownerDocument.location.origin, ...options });
+    const record = this.#record(this.#trigger);
+    if (record) this.#refresh(record, this.#trigger);
+  }
 
   constructor() {
     super();
@@ -437,6 +445,9 @@ class CitationInspector extends HTMLElement {
     window.visualViewport?.addEventListener("scroll", () => this.#schedulePosition(), { signal });
     this.#panelSize = new ResizeObserver(() => this.#schedulePosition());
     this.#panelSize.observe(this.#dialog);
+    this.addEventListener("change", event => {
+      if (event.target.matches('[data-ci-tag-filter]') && event.target.closest(componentName) === this) this.#filterLists();
+    }, { signal });
     this.#observer = new MutationObserver(() => {
       this.#applyClassPrefix();
       this.#enhance();
@@ -603,6 +614,7 @@ class CitationInspector extends HTMLElement {
       if (trigger.closest(componentName) !== this) this.#bindings.delete(trigger);
     }
     if (!this.#style.sheet || typeof this.#dialog.showModal !== "function") return;
+    this.#filterLists();
     if (this.#cache) this.#access.enhanceNotes(this.#cache.byId, name => this.#providerHidden(name));
     const candidates = [...this.querySelectorAll(triggerSelector), ...this.#bindings.keys()];
     for (const trigger of candidates) {
@@ -625,6 +637,32 @@ class CitationInspector extends HTMLElement {
     this.#observer?.disconnect();
     this.#panelSize?.disconnect();
     for (const [trigger, attributes] of this.#enhanced) this.#restore(trigger, attributes);
+    for (const filters of this.querySelectorAll('[data-ci-tag-filters]')) filters.hidden = true;
+    for (const row of this.querySelectorAll('[data-ci-reading-list] > ol > li')) row.hidden = false;
+  }
+
+  #filterLists() {
+    for (const list of this.querySelectorAll('[data-ci-reading-list]')) {
+      if (list.closest(componentName) !== this) continue;
+      const filters = list.querySelector('[data-ci-tag-filters]');
+      if (!filters) continue;
+      const selected = [...filters.querySelectorAll('input:checked')].map(node => node.value);
+      const rows = [...list.querySelectorAll(':scope > ol > li')];
+      let shown = 0;
+      for (const row of rows) {
+        let tags = [];
+        try { tags = JSON.parse(row.dataset.ciTags || '[]'); } catch { /* An edited row has no usable tags. */ }
+        row.hidden = selected.length > 0 && !selected.some(tag => tags.includes(tag));
+        if (!row.hidden) shown++;
+      }
+      const category = new Intl.PluralRules('en').select(shown);
+      const count = `${shown} ${category === 'one' ? 'reference' : 'references'} shown out of ${rows.length}`;
+      const status = filters.querySelector('[data-ci-list-count]');
+      if (status.textContent !== count) status.textContent = count;
+      list.querySelector('[data-ci-list-empty]').hidden = shown > 0;
+      filters.hidden = false;
+      if (this.#trigger && rows.some(row => row.hidden && row.contains(this.#trigger))) this.#dismiss(false);
+    }
   }
 
   #open(trigger, hover = false) {
@@ -871,6 +909,55 @@ class CitationInspector extends HTMLElement {
     const titleNode = element("h3", title);
     titleNode.dir = "auto";
     fragment.append(titleNode);
+    const bindingMetadata = this.#bindings.get(trigger);
+    let tags = bindingMetadata?.tags || this.#references.tags(record);
+    let siteOccurrences = bindingMetadata?.siteOccurrences || this.#references.occurrences(record.id);
+    try {
+      const metadata = JSON.parse(trigger.dataset.ciTags || 'null');
+      if (Array.isArray(metadata)) tags = metadata;
+      const usage = JSON.parse(trigger.dataset.ciSiteOccurrences || 'null');
+      if (Array.isArray(usage)) siteOccurrences = usage;
+    } catch { /* Invalid host metadata falls back to configured record data. */ }
+    const tagLine = element('p', '', 'tags');
+    for (const tag of Array.isArray(tags) ? tags : []) {
+      if (typeof tag?.label !== 'string') continue;
+      const badge = element('span', '', 'tag');
+      const iconURL = siteURL(tag.icon, this.ownerDocument.location.origin);
+      if (iconURL) {
+        const ns = 'http://www.w3.org/2000/svg';
+        const icon = document.createElementNS(ns, 'svg');
+        icon.setAttribute('width', '16'); icon.setAttribute('height', '16'); icon.setAttribute('viewBox', '0 0 24 24');
+        icon.setAttribute('aria-hidden', 'true'); icon.setAttribute('focusable', 'false');
+        const mask = document.createElementNS(ns, 'mask');
+        mask.id = 'citation-tag-' + crypto.randomUUID(); mask.setAttribute('mask-type', 'alpha');
+        const image = document.createElementNS(ns, 'image');
+        image.setAttribute('href', iconURL); image.setAttribute('width', '24'); image.setAttribute('height', '24');
+        mask.append(image);
+        const rect = document.createElementNS(ns, 'rect');
+        rect.setAttribute('width', '24'); rect.setAttribute('height', '24'); rect.setAttribute('fill', 'currentColor');
+        rect.setAttribute('mask', `url(#${mask.id})`); icon.append(mask, rect); badge.append(icon);
+      }
+      badge.append(tag.label); tagLine.append(badge);
+    }
+    if (tagLine.childNodes.length) fragment.append(tagLine);
+    const acceptedUsage = prepareReferences({ siteOrigin: this.ownerDocument.location.origin,
+      siteOccurrences: { [record.id]: Array.isArray(siteOccurrences) ? siteOccurrences : [] } }).occurrences(record.id);
+    if (acceptedUsage.length) {
+      const section = element('section', '', 'site-returns');
+      section.append(element('h4', 'Cited on this site'));
+      const list = element('ul');
+      for (const group of groupSiteOccurrences(acceptedUsage)) {
+        const row = element('li', group.label + ' (');
+        group.entries.forEach((item, index) => {
+          if (index) row.append(', ');
+          const link = element('a', occurrenceLetter(index));
+          link.href = item.href; link.setAttribute('aria-label', siteReturnLabel(group, item, index));
+          link.title = item.context || group.label; row.append(link);
+        });
+        row.append(')'); list.append(row);
+      }
+      section.append(list); fragment.append(section);
+    }
     if (record.license || record.rightsHolder) {
       const rights = element("p", "", "rights");
       if (record.license) rights.append(record.license.url ? external(record.license.url, record.license.name) : record.license.name);
@@ -1038,7 +1125,8 @@ export function bindCitationTrigger(inspector, trigger, occurrence, options) {
 
 export function initializeCitationInspector(element, {
   classPrefix, cache, activation, panelTitle, panelIcon, accessProviders, hiddenAccessProviders, hiddenProviders, evidenceTitle, evidenceIcon, creditTitle, creditIcon,
-  accessCatalog, accessStorageKey, accessLayout, accessCollapseAfter, accessSettings, strings, locale, staleAfterDays
+  accessCatalog, accessStorageKey, accessLayout, accessCollapseAfter, accessSettings, strings, locale, staleAfterDays,
+  tagCatalogue, siteOccurrences, siteOrigin
 } = {}) {
   if (element?.localName !== componentName) throw new TypeError("Pass a citation-inspector element.");
   if (classPrefix !== undefined) {
@@ -1055,6 +1143,7 @@ export function initializeCitationInspector(element, {
   if (accessProviders !== undefined) element.accessProviders = accessProviders;
   if (hiddenAccessProviders !== undefined) element.hiddenAccessProviders = hiddenAccessProviders;
   if (hiddenProviders !== undefined) element.hiddenProviders = hiddenProviders;
+  element.configureReferences(Object.fromEntries(Object.entries({ tagCatalogue, siteOccurrences, siteOrigin }).filter(([, value]) => value !== undefined)));
   element.configureAccess(Object.fromEntries(Object.entries({
     accessCatalog, accessStorageKey, accessLayout, accessCollapseAfter, accessSettings, strings, locale, staleAfterDays
   }).filter(([, value]) => value !== undefined)));

@@ -19,6 +19,7 @@ const attr = (node, name) => node.attrs?.find(item => item.name === name);
 const skip = node => excluded.has(node.tagName) || attr(node, "role")?.value.split(/\s+/).some(role => interactiveRoles.has(role)) ||
   ["", "true", "plaintext-only"].includes(attr(node, "contenteditable")?.value.toLowerCase()) ||
   attr(node, "data-ci-record") || attr(node, "data-citation-part");
+export { skip as isCitationTextExcluded };
 const standalone = tokens => tokens.filter(token => token.type !== "text" || token.text.trim()).length === 1 &&
   tokens.some(token => token.type === "endnotes" || token.type === "list");
 
@@ -131,7 +132,7 @@ export function rebaseCitationFragment(html, from, to) {
   }
   const fragment = parseFragment(html);
   const generated = new RegExp(`^${from}-(?:scope-[0-9]+-)?(?:cite-.+-[0-9]+|note-.+|endnotes|evidence|credit)$`);
-  const inspectMask = new RegExp(`^${from}_inspect-mask-[0-9]+$`);
+  const inspectMask = new RegExp(`^${from}_(?:inspect|tag)-mask-[0-9]+$`);
   const ids = new Set();
   const mapping = new Map();
   visit(fragment, node => {
@@ -160,6 +161,19 @@ export function rebaseCitationFragment(html, from, to) {
     if (mapping.has(id?.value)) id.value = mapping.get(id.value);
     if (href?.value.startsWith("#") && mapping.has(href.value.slice(1))) href.value = "#" + mapping.get(href.value.slice(1));
     if (labelledBy) labelledBy.value = labelledBy.value.replace(/\S+/g, word => mapping.get(word) || word);
+    const siteUses = attr(node, 'data-ci-site-occurrences');
+    if (siteUses) {
+      try {
+        const entries = JSON.parse(siteUses.value);
+        let changed = false;
+        if (Array.isArray(entries)) for (const entry of entries) {
+          if (typeof entry?.href === 'string' && entry.href.startsWith('#') && mapping.has(entry.href.slice(1))) {
+            entry.href = '#' + mapping.get(entry.href.slice(1)); changed = true;
+          }
+        }
+        if (changed) siteUses.value = JSON.stringify(entries);
+      } catch { /* Preserve unrecognized host metadata. */ }
+    }
   });
   return serialize(fragment);
 }

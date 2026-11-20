@@ -1,6 +1,7 @@
 import { defaultClassPrefix, partClassNames, validateClassPrefix } from "./class-names.mjs";
 import packageInfo from "../package.json" with { type: "json" };
 import { iconMarkup } from "./icons.mjs";
+import { groupSiteOccurrences, occurrenceLetter, prepareReferences, siteReturnLabel } from "./reference-features.mjs";
 import { canonicalIdentifierKey, fullAuthorName, httpsURL, identifierURL, localRecordId, normalizeIdentifier, normalizeRecord, readCache } from "./records.mjs";
 
 const forms = new Set(["parenthetical", "narrative", "author-only", "suppress-author", "suppress-year"]);
@@ -26,6 +27,7 @@ function parseItem(text) {
   let form = "parenthetical";
   let label = "";
   let hint = "";
+  let editorNote;
   const affixes = {};
   let formSpecified = false;
   let isolated = false;
@@ -43,6 +45,10 @@ function parseItem(text) {
       if (label || !match) return null;
       label = unescape(match[1]).trim();
       if (!label) return null;
+    } else if (option.startsWith("note:")) {
+      const match = /^note:\s*"((?:\\.|[^"\\])*)"$/.exec(option);
+      if (editorNote !== undefined || !match) return null;
+      editorNote = unescape(match[1]);
     } else if (/^(prefix|locator):/.test(option)) {
       const colon = option.indexOf(":");
       const field = option.slice(0, colon);
@@ -54,7 +60,7 @@ function parseItem(text) {
     } else if (option && !hint) hint = unescape(option);
     else return null;
   }
-  return { identifier, form, label, hint, ...(isolated && { isolated }), ...affixes };
+  return { identifier, form, label, hint, ...(editorNote !== undefined && { editorNote }), ...(isolated && { isolated }), ...affixes };
 }
 
 function validateKeyword(citationKeyword) {
@@ -80,9 +86,20 @@ function parseEndnotes(body, raw) {
   return token;
 }
 
-export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
+function directivePattern(citationKeyword) {
   validateKeyword(citationKeyword);
-  const directive = new RegExp(String.raw`\\[\\{}]|\{endnotes\}|\{(${citationKeyword}|cite)[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
+  return new RegExp(String.raw`\\[\\{}]|\{endnotes\}|\{(${citationKeyword}|cite)[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
+}
+
+export function scanCitationMarkers(source, { citationKeyword = "citation" } = {}) {
+  if (typeof source !== "string") throw new TypeError("Supply source text.");
+  return [...source.matchAll(directivePattern(citationKeyword))].filter(match => match[0].startsWith("{"))
+    .map(match => ({ start: match.index, end: match.index + match[0].length, raw: match[0],
+      token: parseDirectives(match[0], { citationKeyword })[0] }));
+}
+
+export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
+  const directive = directivePattern(citationKeyword);
   const tokens = [];
   let cursor = 0;
   for (const match of source.matchAll(directive)) {
@@ -97,9 +114,20 @@ export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
       const [, type, body] = /^(list|nocite)\s+(.+)$/.exec(match[2].trim()) || [];
       const [keys, ...options] = split(body || "", "|");
       const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
+      const listOptions = {};
+      let valid = true;
+      for (const option of options) {
+        const match = /^(sort|tags|tag-mode):(.+)$/.exec(option);
+        if (!match || Object.hasOwn(listOptions, match[1])) { valid = false; break; }
+        listOptions[match[1]] = match[2];
+      }
+      if (listOptions.sort && !["author", "year"].includes(listOptions.sort) ||
+          listOptions["tag-mode"] && !["any", "all"].includes(listOptions["tag-mode"]) ||
+          listOptions.tags && !listOptions.tags.split(",").every(tag => /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag))) valid = false;
       const identifiers = split(keys, ";").map(key => normalizeIdentifier(unescape(key)));
-      if (identifiers.every(Boolean) && (!options.length || type === "list" && options.length === 1 && sort)) {
-        tokens.push({ type, items: identifiers.map(identifier => ({ identifier })), sort, raw });
+      if (identifiers.every(Boolean) && valid && (type === "list" || !options.length)) {
+        tokens.push({ type, items: identifiers.map(identifier => ({ identifier })), sort: listOptions.sort,
+          ...(listOptions.tags && { tags: listOptions.tags.split(",") }), ...(listOptions["tag-mode"] && { tagMode: listOptions["tag-mode"] }), raw });
       } else tokens.push({ type: "text", text: raw, malformed: true });
     }
     else if (match[1] === citationKeyword && Object.hasOwn(annotationNames, match[2].trim())) {
@@ -537,7 +565,7 @@ export function compileCitationBlocks(blocks, cache, options) {
   return compileBlocks(blocks, cache, options);
 }
 
-export function planCitationOccurrences(occurrences, cache, { namespace, citationStyle, reprintYear, suffixScope } = {}) {
+export function planCitationOccurrences(occurrences, cache, { namespace, citationStyle, reprintYear, suffixScope, ...referenceOptions } = {}) {
   if (!namespace) throw new TypeError("A structured citation plan requires a document namespace.");
   if (!Array.isArray(occurrences)) throw new TypeError("Supply an ordered array of citation occurrences.");
   const keys = new Set();
@@ -558,14 +586,15 @@ export function planCitationOccurrences(occurrences, cache, { namespace, citatio
     keys.add(occurrenceId);
     return [{ type: "citation", items: [item] }];
   });
-  return compileBlocks(blocks, cache, { namespace, citationStyle, reprintYear, suffixScope }, true);
+  return compileBlocks(blocks, cache, { ...referenceOptions, namespace, citationStyle, reprintYear, suffixScope }, true);
 }
 
 function compileBlocks(blocks, cache, {
   namespace = "cit", classPrefix = defaultClassPrefix, citationStyle = "default",
   endnotesHeading = "Endnotes", markup = false, closingMarkup = "",
   references = "endnotes", isolatedHref, reprintYear = "both", suffixScope = "fragment",
-  inspectAppearance = "text", inspectPlacement = "after", inspectIcon, inspectIconMode = "image"
+  inspectAppearance = "text", inspectPlacement = "after", inspectIcon, inspectIconMode = "image",
+  siteOccurrences, occurrences, siteOrigin, tagCatalogue, listItemTags, listFilters = false, inlineTags = false
 } = {}, structured = false) {
   if (!/^[a-z][a-z0-9-]{0,39}$/.test(namespace)) throw new TypeError("Use a stable lowercase document namespace.");
   validateClassPrefix(classPrefix);
@@ -586,6 +615,7 @@ function compileBlocks(blocks, cache, {
   const index = readCache(cache);
   const used = new Map();
   const diagnostics = [];
+  const features = prepareReferences({ siteOccurrences, occurrences, siteOrigin, tagCatalogue, listItemTags }, diagnostics);
   const missing = new Map();
   const markerFor = block => {
     const tokens = block.filter(token => token.type !== "text" || token.text.trim());
@@ -612,6 +642,12 @@ function compileBlocks(blocks, cache, {
       if (token.misplaced) diagnostics.push({ state: "misplaced-directive", source: token.text });
       if (!["citation", "list", "nocite"].includes(token.type)) continue;
       if (token.type === "list" && block.some(other => other !== token && (other.type !== "text" || other.text.trim()))) continue;
+      if (token.type === "list" && token.tags) token.items = token.items.filter(item => {
+        const record = item.identifier.scheme === 'local' ? index.byId.get(item.identifier.value) : index.byIdentifier.get(canonicalIdentifierKey(item.identifier));
+        if (!record) diagnostics.push({ state: 'unresolved', identifier: canonicalIdentifierKey(item.identifier) });
+        const tags = record ? features.tags(record, true) : [];
+        return token.tags[token.tagMode === 'all' ? 'every' : 'some'](tag => tags.some(value => value.id === tag));
+      });
       for (const item of token.items) {
         const { identifier } = item;
         const key = canonicalIdentifierKey(identifier);
@@ -743,6 +779,27 @@ function compileBlocks(blocks, cache, {
   const scopeName = scope => scope === 0 ? namespace : `${namespace}-scope-${scope + 1}`;
   const noteID = (record, scope) => `${structured ? structuredPrefix : scopeName(scope)}-note-${record.id}`;
   const bibliography = ({ record, suffix }) => bibliographyParts(record, suffix, citationStyle);
+  let nextTagIcon = 0;
+  const tagsHTML = tags => tags.length ? `<span ${part("tags")}>${tags.map(tag => {
+    const mask = `${namespace}_tag-mask-${++nextTagIcon}`;
+    const icon = tag.icon ? `<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><defs><mask id="${mask}" mask-type="alpha"><image href="${escapeHTML(tag.icon)}" width="24" height="24"/></mask></defs><rect width="24" height="24" fill="currentColor" mask="url(#${mask})"/></svg>` : "";
+    return `<span ${part("tag")}>${icon}<span>${escapeHTML(tag.label)}</span></span>`;
+  }).join("")}</span>` : "";
+  const siteLinks = recordId => {
+    const groups = groupSiteOccurrences(features.occurrences(recordId));
+    if (!groups.length) return "";
+    return `<div ${part("site-returns")}><span>Cited in: </span>${groups.map(group =>
+      `<span>${escapeHTML(group.label)} (${group.entries.map((item, index) =>
+        `<a href="${escapeHTML(item.href)}" aria-label="${escapeHTML(siteReturnLabel(group, item, index))}" title="${escapeHTML(item.context || group.label)}">${occurrenceLetter(index)}</a>`).join(", ")})</span>`).join(" · ")}</div>`;
+  };
+  const citationDescriptions = blocks.flatMap(block => block.filter(token => token.type === "citation").map(token => ({
+    items: token.items.map(item => ({
+      recordId: item.entry.record.id, identifier: canonicalIdentifierKey(item.identifier),
+      state: item.entry.record.state,
+      text: inlineText(item.entry, { form: "parenthetical" }, citationStyle, reprintYear).replace(/\s+/g, ' ').trim(),
+      anchorId: item.occurrence, context: item.entry.occurrences.find(value => value.id === item.occurrence)?.context || ""
+    }))
+  })));
   if (structured) {
     const occurrences = blocks.map(([{ items: [item] }]) => {
       const label = inlineText(item.entry, item, citationStyle, reprintYear);
@@ -751,6 +808,7 @@ function compileBlocks(blocks, cache, {
         occurrenceId: item.occurrenceId,
         anchorId: item.occurrence,
         recordId: item.entry.record.id,
+        tags: features.tags(item.entry.record), siteOccurrences: features.occurrences(item.entry.record.id),
         endnoteId: noteID(item.entry.record, 0),
         label: parenthetical ? `(${label})` : label,
         bibliographyParts: bibliography(item.entry)
@@ -763,6 +821,7 @@ function compileBlocks(blocks, cache, {
       integrity: entry.record.integrity,
       parts: bibliography(entry),
       destinations: destinationEntries(entry.record),
+      tags: features.tags(entry.record), siteOccurrences: features.occurrences(entry.record.id),
       backlinks: entry.occurrences.map(({ id, context }) => ({ href: `#${id}`, context }))
     }));
     return { schema: "citation-inator.occurrence-plan.v1", occurrences, endnotes, diagnostics };
@@ -772,10 +831,15 @@ function compileBlocks(blocks, cache, {
     const parts = bibliography(item.entry);
     const text = parts.map(part => part.text).join("");
     const formatting = parts.some(part => part.emphasis || part.href) ? ` data-ci-bibliography-parts="${escapeHTML(JSON.stringify(parts))}"` : "";
+    const tags = features.tags(record, item.list);
+    const usage = features.occurrences(record.id);
+    const metadata = (tags.length ? ` data-ci-tags="${escapeHTML(JSON.stringify(tags))}"` : "") +
+      (usage.length ? ` data-ci-site-occurrences="${escapeHTML(JSON.stringify(usage))}"` : "") +
+      (siteOrigin ? ` data-ci-site-origin="${escapeHTML(siteOrigin)}"` : "");
     const fallback = isolatedHref && safeFallback(isolatedHref.replaceAll("{id}", encodeURIComponent(record.id))) ||
       record.identifiers.map(identifierURL).find(Boolean) || record.locations[0]?.url;
     const href = item.occurrence ? "#" + noteID(record, item.scope) : fallback;
-    return `<a ${part("cite")}${item.occurrence ? ` id="${item.occurrence}"` : ""}${href ? ` href="${escapeHTML(href)}"` : ""} data-ci-record="${record.id}"${inspectLabel ? ` data-ci-inspect-label="${escapeHTML(inspectLabel)}" aria-label="${escapeHTML(inspectLabel)}"` : ""} data-ci-bibliography="${escapeHTML(text)}"${formatting} dir="auto">${escapeHTML(label)}</a>`;
+    return `<a ${part("cite")}${item.occurrence ? ` id="${item.occurrence}"` : ""}${href ? ` href="${escapeHTML(href)}"` : ""} data-ci-record="${record.id}"${inspectLabel ? ` data-ci-inspect-label="${escapeHTML(inspectLabel)}" aria-label="${escapeHTML(inspectLabel)}"` : ""} data-ci-bibliography="${escapeHTML(text)}"${formatting}${metadata} dir="auto">${escapeHTML(label)}</a>${inlineTags && !inspectLabel ? tagsHTML(tags) : ""}`;
   };
 
   function titleOffset(parts, record, suffix) {
@@ -801,7 +865,7 @@ function compileBlocks(blocks, cache, {
 
   function referencesHTML(items, scope, list = false, marker = {}) {
     const local = localEntries.get(scope);
-    if (!items.length) return "";
+    if (!items.length) return list ? `<section ${part("endnotes")} aria-label="Reading list"><p>No references match the selected tags.</p></section>` : "";
     const heading = `${scopeName(scope)}-endnotes`;
     const rows = items.map(item => {
       const { record } = item.entry;
@@ -817,7 +881,7 @@ function compileBlocks(blocks, cache, {
         return iconLink(part, `#${id}`, label, "", label, "", letter);
       }).join("");
       let inspect = list || inspectAppearance === "icon" || inspectPlacement === "before"
-        ? trigger(item, "Inspect", "Inspect reference: " + titleFor(record)) : "";
+        ? trigger({ ...item, list }, "Inspect", "Inspect reference: " + titleFor(record)) : "";
       if (inspect && inspectAppearance === "icon") {
         let icon = iconMarkup("book");
         if (inspectIcon) {
@@ -837,13 +901,17 @@ function compileBlocks(blocks, cache, {
         ? `<p ${part("list-annotation")}>${record.listAnnotationParts.map(value => renderBibliographyPart(value)).join("")}</p>` : "";
       const attrs = list ? ` data-ci-list-record="${record.id}"` : ` id="${noteID(record, scope)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
       const actions = controls ? `<div ${part("note-actions")} data-ci-note-record="${record.id}">${controls}</div>` : "";
-      return `<li${attrs} data-ci-reference-record="${record.id}">${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${annotation}${actions}</li>`;
+      const tags = features.tags(record, list);
+      return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map(tag => tag.id)))}">${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${annotation}${siteLinks(record.id)}${actions}</li>`;
     }).join("\n");
-    if (list) return `<ol ${part("reference-list")}>${rows}</ol>`;
+    if (list && !listFilters) return `<ol ${part("reference-list")}>${rows}</ol>`;
     const level = marker.level ?? 2;
-    const label = marker.heading === null ? `aria-label="${escapeHTML(endnotesHeading)}"` : `aria-labelledby="${heading}"`;
-    const title = marker.heading === null ? "" : `<h${level} id="${heading}">${escapeHTML(marker.heading ?? endnotesHeading)}</h${level}>`;
-    return `<section ${part("endnotes")} ${label}>${title}<ol>${rows}</ol></section>`;
+    const label = list ? 'aria-label="Reading list"' : marker.heading === null ? `aria-label="${escapeHTML(endnotesHeading)}"` : `aria-labelledby="${heading}"`;
+    const title = list || marker.heading === null ? "" : `<h${level} id="${heading}">${escapeHTML(marker.heading ?? endnotesHeading)}</h${level}>`;
+    const filterTags = [...new Map(items.flatMap(item => features.tags(item.entry.record, true)).map(tag => [tag.id, tag])).values()];
+    const filters = list && listFilters && filterTags.length
+      ? `<fieldset ${part("tag-filters")} data-ci-tag-filters hidden><legend>Show references with any selected tag</legend>${filterTags.map(tag => `<label><input type="checkbox" value="${escapeHTML(tag.id)}" data-ci-tag-filter> ${escapeHTML(tag.label)}</label>`).join(" ")}<p data-ci-list-count role="status" aria-live="polite"></p></fieldset>` : "";
+    return `<section ${part("endnotes")}${list ? ' data-ci-reading-list' : ''} ${label}>${title}${filters}<ol>${rows}</ol>${filters ? '<p data-ci-list-empty hidden>No references match the selected tags.</p>' : ''}</section>`;
 
   }
   const scopeItems = scope => {
@@ -910,6 +978,8 @@ function compileBlocks(blocks, cache, {
   return {
     html: [html, ...supplementary].join("\n") + closingMarkup,
     cache: { schema: cache.schema, records },
+    citationDescriptions,
+    occurrences: citationDescriptions.flatMap(marker => marker.items.filter(item => item.anchorId)),
     diagnostics
   };
 }

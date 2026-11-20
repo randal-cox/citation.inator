@@ -31,12 +31,17 @@ try {
   for (const path of ["dist/citation-inspector.mjs", "demos/drop-in/citation-inspector.mjs"]) {
     if (!(await read(path)).startsWith(banner)) fail(path + " has a stale version banner. Run npm run build.");
   }
+  for (const path of ["dist/citation-tools.mjs", "demos/drop-in/citation-tools.mjs"]) {
+    if (!(await read(path)).startsWith("/*! citation-inator tools v" + pkg.version + " |")) fail(path + " has a stale tools version banner. Run npm run build.");
+  }
   for (const [source, copy] of [
     ["src/citation-inspector.css", "dist/citation-inspector.css"],
     ["dist/citation-inspector.css", "demos/drop-in/citation-inspector.css"],
     ["dist/citation-inspector.mjs", "demos/drop-in/citation-inspector.mjs"],
+    ["dist/citation-tools.mjs", "demos/drop-in/citation-tools.mjs"],
+    ["dist/THIRD_PARTY_LICENSES.txt", "demos/drop-in/THIRD_PARTY_LICENSES.txt"],
     ["CITATION.cff", "demos/drop-in/CITATION.cff"],
-    ...["integration.md", "reader-access.md", "media-support.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
+    ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
   ]) {
     if (await read(source) !== await read(copy)) fail(copy + " differs from " + source + ". Run npm run build.");
   }
