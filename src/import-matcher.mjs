@@ -18,6 +18,13 @@ function authors(text) {
 }
 
 function dated(text) {
+  const undated = /^\s*n\.d\.(?:-?([a-z]))?(.*)$/iu.exec(text);
+  if (undated) {
+    const tail=undated[2].trim();
+    const location=tail && /^(?:,|:)\s*((?:pp?\.\s*)?\d+(?:\s*[-–—]\s*\d+)?)$/u.exec(tail);
+    if (tail && (!location || new RegExp(`^${year}$`).test(location[1]))) return null;
+    return {year:null,undated:true,sourceSuffix:(undated[1] || "").toLowerCase(),...(location && {locator:location[1]})};
+  }
   const match = new RegExp(`^\\s*(?:\\[(${year})\\]\\s*)?(${year})([a-z]?)(.*)$`, 'u').exec(text);
   if (!match) return null;
   let printedYear = Number(match[2]), sourceSuffix = match[3], originalYear = match[1] ? Number(match[1]) : undefined;
@@ -41,7 +48,7 @@ function dated(text) {
 function parentheticalItem(text) {
   const prefix = /^(see also|see|cf\.|e\.g\.,?)\s+/i.exec(text.trim());
   const body = text.trim().slice(prefix?.[0].length || 0);
-  const dateAt = new RegExp(`(?:\\[${year}\\]\\s*)?${year}[a-z]?`).exec(body);
+  const dateAt = new RegExp(`(?:(?:\\[${year}\\]\\s*)?${year}[a-z]?|n\\.d\\.(?:-?[a-z])?)`, 'iu').exec(body);
   if (!dateAt) return null;
   const byline = authors(body.slice(0, dateAt.index).replace(/,\s*$/, '').trim());
   const date = dated(body.slice(dateAt.index));
@@ -93,7 +100,7 @@ export function parseInTextCitations(text, options = {}) {
         if (alternatives.length > 1) diagnostics.push({ code: 'import-uncertain-narrative-boundary', start: alternatives[0].start, end });
         form = 'narrative';
       } else {
-        if (new RegExp(`\\p{L}[^()]*${year}`, 'u').test(match[1])) diagnostics.push({ code: 'import-unparsed-author-date', start, end, raw: match[0] });
+        if (new RegExp(`\\p{L}[^()]*${year}`, 'u').test(match[1]) || /n\.d\./iu.test(match[1])) diagnostics.push({ code: 'import-unparsed-author-date', start, end, raw: match[0] });
         continue;
       }
     }
@@ -169,7 +176,8 @@ export function matchCitations(detection, references) {
     seen.add(record.id);
     if (input.sourceSuffix !== undefined && !/^[a-z]+$/.test(input.sourceSuffix)) throw new TypeError('A sourceSuffix must be a lowercase year letter.');
     if (input.referenceNumber !== undefined && (!Number.isInteger(input.referenceNumber) || input.referenceNumber < 1 || input.referenceNumber > 9999)) throw new TypeError('A referenceNumber must be an integer from 1 to 9999.');
-    return { record, sourceSuffix: input.sourceSuffix || '', referenceNumber:input.referenceNumber };
+    if (input.undated === true && record.issued) throw new TypeError('An explicitly undated record cannot also have an issued date.');
+    return { record, sourceSuffix: input.sourceSuffix || '', referenceNumber:input.referenceNumber, undated:input.undated === true };
   });
   return { schema: 'citation-inator.import-matches.v1', matches: detection.citations.map(citation => ({
     citation,
@@ -181,18 +189,18 @@ export function matchCitations(detection, references) {
         return {item,state:!candidates.length ? 'unmatched' : candidates.length === 1 ? 'unique' : 'ambiguous',candidates,requiresReview:true};
       }
       let uncertain = Boolean(item.boundaryUncertain);
-      const candidates = records.flatMap(({ record, sourceSuffix }) => {
-        if (record.state === 'unresolved' || !record.issued) return [];
+      const candidates = records.flatMap(({ record, sourceSuffix, undated }) => {
+        if (record.state === 'unresolved' || !item.undated && !record.issued || item.undated && record.issued) return [];
         const bylines = (item.authorAlternatives || [item]).filter(byline =>
           byline.authors.every((name, index) => record.authors[index] && authorMatches(name, record.authors[index])) &&
           (byline.etAl ? record.authors.length > byline.authors.length || record.authorsComplete === false && record.authors.length >= byline.authors.length
             : record.authors.length === byline.authors.length));
         if (!bylines.length) return [];
-        const yearField = record.issued[0] === item.year ? 'issued' : record.originalIssued?.[0] === item.year ? 'originalIssued' : '';
+        const yearField = item.undated ? (undated ? 'explicitly-undated' : 'date-not-recorded') : record.issued[0] === item.year ? 'issued' : record.originalIssued?.[0] === item.year ? 'originalIssued' : '';
         if (!yearField || item.originalYear && (record.originalIssued?.[0] !== item.originalYear || record.issued[0] !== item.year)) return [];
         if (item.sourceSuffix && sourceSuffix && item.sourceSuffix !== sourceSuffix) return [];
         const missingSuffix = Boolean(item.sourceSuffix && !sourceSuffix);
-        uncertain ||= missingSuffix || record.authorsComplete === false;
+        uncertain ||= missingSuffix || record.authorsComplete === false || item.undated && !undated;
         return [{ recordId: record.id, title: record.title, ...(item.authorAlternatives && { authorStarts: bylines.map(byline => byline.start) }), evidence: {
           authors: record.authorsComplete === false ? 'incomplete-byline' : item.boundaryUncertain ? 'uncertain-narrative-span' : 'exact-normalized', year: yearField,
           suffix: missingSuffix ? 'unknown-source-suffix' : item.sourceSuffix ? 'exact-source-suffix' : 'not-specified' } }];

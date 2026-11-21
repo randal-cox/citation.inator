@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Recognize undated author–date citations while keeping absent dates ambiguous unless per-import metadata explicitly affirms an undated work. Preserve the original challenge miss and later regression report separately.
+
 - Add source-only partial reference rules and explicit revision-bound review/edit planning. Preserve unsupported entries, uncertain spans and rich-text/linked conversion decisions without destructive replacement.
 - Add an independently authored synthetic challenge set, evaluation runner and retained reports, with explicit unsupported cases and small-corpus limits.
 - Show unknown-profile access help once per owned list while retaining inspector settings, and add a synchronous escaped-text referenceItemPrefix host hook.

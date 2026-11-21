@@ -143,3 +143,22 @@ test('numeric notation and bibliography boundaries remain protected',()=>{
  const result=parseInTextCitations(text,{style:'vancouver',range:{start:0,end:text.indexOf('\nReferences')}});
  assert.deepEqual(result.citations.map(c=>c.raw),['[2]']);
 });
+
+test('undated citations recognize locators but missing dates do not become verified undated identity',()=>{
+ const detection=parseInTextCitations('(Avery, n.d., p. 5)');assert.equal(detection.citations[0].items[0].undated,true);
+ const reference={...record('undated',['Avery'],2021),issued:null};
+ const unknown=matchCitations(detection,[reference]).matches[0].items[0];assert.equal(unknown.state,'ambiguous');assert.equal(unknown.candidates[0].evidence.year,'date-not-recorded');
+ assert.equal(matchCitations(detection,[{...reference,undated:true}]).matches[0].items[0].state,'unique');
+ assert.equal(matchCitations(detection,[record('dated',['Avery'],2021)]).matches[0].items[0].state,'unmatched');
+ assert.throws(()=>matchCitations(detection,[{...record('conflict',['Avery'],2021),undated:true}]),/cannot also/);
+});
+
+test('undated letters support APA hyphens, case variants and visible unsupported-shape diagnostics',()=>{
+ for(const text of ['(Avery, n.d.-a)','(Avery, N.D.-A)','(Avery, N.D.)']) {
+  const detected=parseInTextCitations(text);assert.equal(detected.citations.length,1,text);assert.equal(detected.citations[0].items[0].undated,true);
+ }
+ assert.equal(parseInTextCitations('(Avery, n.d.-a)').citations[0].items[0].sourceSuffix,'a');
+ const refs=[{...record('a',['Avery'],2020),issued:null,undated:true,sourceSuffix:'a'},{...record('b',['Avery'],2020),issued:null,undated:true,sourceSuffix:'b'}];
+ assert.deepEqual(matchCitations(parseInTextCitations('(Avery, n.d.-a)'),refs).matches[0].items[0].candidates.map(c=>c.recordId),['a']);
+ for(const text of ['(Avery, n.d.-)','(Avery, n.d., pp. iv–v)']) {const detected=parseInTextCitations(text);assert.equal(detected.citations.length,0);assert.equal(detected.diagnostics[0].code,'import-unparsed-author-date');}
+});

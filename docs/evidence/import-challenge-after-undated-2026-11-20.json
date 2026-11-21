@@ -1,0 +1,381 @@
+{
+  "schema": "citation-inator.import-evaluation.v1",
+  "protocol": "First evaluation of independently authored synthetic challenge cases. After this run these cases are regression material, not unseen held-out evidence. No private documents or providers used.",
+  "adapters": [
+    "Fixture entries omit record.state: complete supplied title/author/date fields map to resolved; incomplete entries to partial. This means metadata completeness, not independently verified identity.",
+    "Fixture numeric style maps to vancouver.",
+    "Explicit fixture yearSuffix maps to sourceSuffix; no inferred year letters."
+  ],
+  "limits": "Small synthetic set; not a general accuracy estimate. Candidate-set agreement permits conservative ambiguity and does not establish claim support or field parsing accuracy.",
+  "summary": {
+    "cases": 12,
+    "baselinePassed": 7,
+    "baselineTotal": 7,
+    "challengePassed": 5,
+    "challengeTotal": 5,
+    "expectedGroups": 11,
+    "predictedGroups": 11,
+    "correctGroups": 11,
+    "detectionPrecision": 1,
+    "detectionRecall": 1,
+    "expectedItems": 16,
+    "correctCandidateSets": 16,
+    "falseUnique": 0
+  },
+  "cases": [
+    {
+      "id": "apa-single",
+      "tier": "baseline",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "(Rivera, 2021)",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "rivera-2021"
+              ],
+              "actualCandidates": [
+                "rivera-2021"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "apa-group-locator-missing",
+      "tier": "baseline",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "(Rivera, 2021; Hart & Stone, 2019, pp. 12–14; Quill, 2017)",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "rivera-2021"
+              ],
+              "actualCandidates": [
+                "rivera-2021"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            },
+            {
+              "expectedCandidates": [
+                "hart-stone-2019"
+              ],
+              "actualCandidates": [
+                "hart-stone-2019"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            },
+            {
+              "expectedCandidates": [],
+              "actualCandidates": [],
+              "state": "unmatched",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "apa-ambiguous-family-year",
+      "tier": "baseline",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "Chen (2020)",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "chen-amy-2020",
+                "chen-lei-2020"
+              ],
+              "actualCandidates": [
+                "chen-amy-2020",
+                "chen-lei-2020"
+              ],
+              "state": "ambiguous",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "apa-narrative-initial-unicode",
+      "tier": "challenge",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "É. Núñez (2022, p. 8)",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "nunez-2022"
+              ],
+              "actualCandidates": [
+                "nunez-2022"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "chicago-narrative-locator",
+      "tier": "baseline",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "Osei (2018, 47)",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "osei-2018"
+              ],
+              "actualCandidates": [
+                "osei-2018"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "chicago-reprint-dual-date",
+      "tier": "challenge",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "(Duval [1898] 2004, 61)",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "duval-reprint-2004"
+              ],
+              "actualCandidates": [
+                "duval-reprint-2004"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "numeric-explicit-number-not-array-index",
+      "tier": "baseline",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "[11]",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "numeric-eleven"
+              ],
+              "actualCandidates": [
+                "numeric-eleven"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        },
+        {
+          "raw": "[2]",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "numeric-two"
+              ],
+              "actualCandidates": [
+                "numeric-two"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "numeric-group-range-missing",
+      "tier": "challenge",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "[2, 7–8]",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "numeric-two"
+              ],
+              "actualCandidates": [
+                "numeric-two"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            },
+            {
+              "expectedCandidates": [
+                "numeric-seven"
+              ],
+              "actualCandidates": [
+                "numeric-seven"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            },
+            {
+              "expectedCandidates": [],
+              "actualCandidates": [],
+              "state": "unmatched",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "apa-undated",
+      "tier": "challenge",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "(Idris, n.d., p. 5)",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "idris-undated"
+              ],
+              "actualCandidates": [
+                "idris-undated"
+              ],
+              "state": "ambiguous",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "noncitation-years-measurements-and-labels",
+      "tier": "baseline",
+      "pass": true,
+      "groups": [],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "body-boundary-excludes-reference-list",
+      "tier": "baseline",
+      "pass": true,
+      "groups": [],
+      "unexpected": [],
+      "diagnostics": []
+    },
+    {
+      "id": "apa-explicit-year-suffixes",
+      "tier": "challenge",
+      "pass": true,
+      "groups": [
+        {
+          "raw": "(Chen, 2020a, p. 4; Chen, 2020b, pp. 9–10)",
+          "spanCorrect": true,
+          "itemCountCorrect": true,
+          "items": [
+            {
+              "expectedCandidates": [
+                "chen-first-2020"
+              ],
+              "actualCandidates": [
+                "chen-first-2020"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            },
+            {
+              "expectedCandidates": [
+                "chen-second-2020"
+              ],
+              "actualCandidates": [
+                "chen-second-2020"
+              ],
+              "state": "unique",
+              "candidatesCorrect": true,
+              "unsafeUnique": false
+            }
+          ]
+        }
+      ],
+      "unexpected": [],
+      "diagnostics": []
+    }
+  ],
+  "fixtureSha256": "7f0a72c8bee00a39dd83f12770e8c19c80b5b629df76cb8fa4c4398ed4078d8e"
+}
