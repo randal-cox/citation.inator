@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- Begin source-only F4/0.3.0 author-date detection and reviewable matching experiments, paired-format corpus analysis and synthetic regressions. Add initial text/HTML extraction with conservative source fragments and developer-checked local matching cases. No new installed API or document-file import is exposed in 0.2.0.
+- Begin source-only F4/0.3.0 author-date detection and reviewable matching experiments, paired-format corpus analysis and synthetic regressions. Add text/HTML/Markdown extraction with conservative original-source fragments, developer-checked local matching cases and explicit Crossref bibliographic search proposals with field comparisons, pacing, validated search caching and failure evidence. No new installed API or document-file import is exposed in 0.2.0.
 
 ## 0.2.0 · 2026-11-20
 
