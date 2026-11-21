@@ -1,6 +1,6 @@
 # F4 import development for milestone 0.4.0
 
-**In progress.** The current release remains 0.2.0. The initial prototype is source-only and is not exposed by the package exports, browser bundle or CLI. No 0.4.0 package or release is claimed.
+**In progress.** The current stable release is 0.3.0; import remains separate development work. The initial prototype is source-only and is not exposed by the package exports, browser bundle or CLI. No 0.4.0 package or release is claimed.
 
 ## First implementation
 

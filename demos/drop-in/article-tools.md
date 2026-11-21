@@ -2,9 +2,12 @@
 
 These features are available in 0.2.0 and later. They are absent from 0.1.4; see the [milestone record](https://github.com/randal-cox/citation.inator/blob/main/docs/milestones/0.2.0.md). Formatted-citation import remains [planned work](https://github.com/randal-cox/citation.inator/blob/main/docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages).
 
-## Unreleased draft.inator compatibility additions
+<a id="unreleased-draftinator-compatibility-additions"></a>
+<a id="030-draftinator-compatibility-additions"></a>
 
-The 0.3.0 development checkout adds `markerKind` to `citation-inator/tools`, the self-contained `citation-tools.mjs` and the main `citation-inspector.mjs` browser bundle. These additions are not in the published 0.2.0 artifacts.
+## Marker classification and work-context notes (0.3.0)
+
+The 0.3.0 release candidate adds `markerKind` to `citation-inator/tools`, the self-contained `citation-tools.mjs` and the main `citation-inspector.mjs` browser bundle. These additions are not in the published 0.2.0 artifacts.
 
 ```js
 import { markerKind } from './citation-tools.mjs'; // also citation-inspector.mjs
@@ -217,9 +220,12 @@ Use `listFilters: { minItems: 6, minTags: 2 }` to show controls only for lists w
 
 Unresolved diagnostics carry `code: 'citation-unresolved'`; malformed-citation diagnostics carry `code: 'citation-malformed'`. The existing `state` values stay `unresolved` and `malformed`. These additive codes are present in compiler, editor-query/annotation and JSON CLI results, including unresolved/malformed entries in the cross-fragment report. Hosts can key on `code` without parsing message text. Other diagnostic states retain their existing contracts.
 
-## Unreleased 0.3.0 host prefix hook
+<a id="unreleased-030-host-prefix-hook"></a>
+<a id="030-host-prefix-hook"></a>
 
-In the development checkout, `referenceItemPrefix` is a synchronous compiler callback that adds escaped text before each reference item. It is not part of the released 0.2.0 package and cannot be supplied through JSON CLI requests. This is separate from record tags and per-list tag overrides.
+## Host reference-prefix hook (0.3.0)
+
+In 0.3.0, `referenceItemPrefix` is a synchronous compiler callback that adds escaped text before each reference item. It is not part of the older 0.2.0 package and cannot be supplied through JSON CLI requests. This is separate from record tags and per-list tag overrides.
 
 ```js
 const result = compileCitations(source, cache, {

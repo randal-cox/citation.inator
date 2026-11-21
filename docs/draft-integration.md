@@ -8,9 +8,9 @@ The [data contract](https://github.com/randal-cox/draft.inator/blob/main/docs/da
 
 ## Shared classification and work notes
 
-The 0.3.0 integration candidate exports `markerKind(raw, { citationKeyword })` for work/directive classification, including legacy forms and identifiers such as `list-2001`. The Cite block can use this instead of copying compiler grammar.
+The 0.3.0 release exports `markerKind(raw, { citationKeyword })` for work/directive classification, including legacy forms and identifiers such as `list-2001`. The Cite block can use this instead of copying compiler grammar.
 
-Use `annotateMarkers(source, cache, { noteContext: "work", ...styleOptions })` for both build refresh and stale-note checks when the editor's picker uses standalone `describeCitation`. This prevents article-local year letters in notes from fighting with context-free picker descriptions. It does not change reader-facing citation letters. These features are in the development checkout, not released 0.2.0 archives. See [the compatibility API guide](article-tools.md#unreleased-draftinator-compatibility-additions).
+Use `annotateMarkers(source, cache, { noteContext: "work", ...styleOptions })` for both build refresh and stale-note checks when the editor's picker uses standalone `describeCitation`. This prevents article-local year letters in notes from fighting with context-free picker descriptions. It does not change reader-facing citation letters. These features are released in 0.3.0; older 0.2.0 archives remain unchanged. See [the compatibility API guide](article-tools.md#unreleased-draftinator-compatibility-additions).
 
 ## Boundary to agree and test
 

@@ -48,7 +48,7 @@ Serve `.mjs` as JavaScript and `.json` as JSON. Static links and endnotes work w
 Build the current tarball by running `npm ci` and `npm pack` in the downloaded library checkout with Node.js 22 or later. Install that tarball in your project. Copy `reading.txt` and `citations.json` from the ZIP into this directory for the example.
 
 ```sh
-npm install ./citation-inator-0.2.0.tgz
+npm install ./citation-inator-0.3.0.tgz
 npm exec -- citation-inator reading.txt citations.json article.html my-article
 ```
 
@@ -391,13 +391,13 @@ The JSON report lists unused records, unresolved and malformed directives by fra
 
 For custom notation or mixed build inputs, use `--report --json` and send `{ cache, fragments }` on standard input. Each fragment can supply `name`, `source` or `paragraphs`, `format`, and compiler `options`.
 
-## Unreleased 0.3.0 integration additions
+## 0.3.0 integration additions
 
-Development tools and both browser bundles export `markerKind` for canonical/legacy/custom marker classification. `annotateMarkers(..., { noteContext: "work" })` keeps notes consistent with an editor works picker built from standalone `describeCitation`. See [the compatibility contract](article-tools.md#unreleased-draftinator-compatibility-additions). These additions are not present in released 0.2.0 artifacts.
+Development tools and both browser bundles export `markerKind` for canonical/legacy/custom marker classification. `annotateMarkers(..., { noteContext: "work" })` keeps notes consistent with an editor works picker built from standalone `describeCitation`. See [the compatibility contract](article-tools.md#030-draftinator-compatibility-additions). These additions are not present in released 0.2.0 artifacts.
 
-Run the [local import-review demo](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-demo.md) from the source checkout with `npm start`. It uses plaintext, supplied records and a local Node endpoint; it does not require a provider or save documents.
+The [experimental import demo](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-demo.md) lives on the separate import branch. Its modules and local service are excluded from this candidate.
 
 
-The source checkout includes a text-only `referenceItemPrefix` callback for host badges before reference items; see [the callback contract](article-tools.md#unreleased-030-host-prefix-hook). Unknown access-profile help now appears once per owned list while inspector help remains available. These changes are not in the published 0.2.0 artifacts.
+The source checkout includes a text-only `referenceItemPrefix` callback for host badges before reference items; see [the callback contract](article-tools.md#030-host-prefix-hook). Unknown access-profile help now appears once per owned list while inspector help remains available. These changes are not in the published 0.2.0 artifacts.
 
 See the [style catalogue and coverage matrix](citation-styles.md) to distinguish reference formatting from experimental import recognition. Reviewed import remains source-only: [development APIs and measured limits](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-development.md).

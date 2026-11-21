@@ -113,6 +113,6 @@ Translate catalogue labels through `accessCatalog`.
 
 OpenURL field mapping follows the [OCLC reference](https://help.oclc.org/Resource_Sharing/Tipasa/Reference/Configure_OpenURL). Chapters use the book format with a chapter title and collection title.
 
-## Unreleased 0.3.0 list prompts
+## Once-per-list access prompts (0.3.0)
 
-When the reader has not configured an access profile, the development browser build shows one settings prompt after each owned reading/reference list, rather than repeating it in every item. Each inspector panel keeps its settings prompt. The list prompt is outside the numbered items, so filtering items does not hide the only prompt or change reference numbering. Lists outside the component are never modified; standalone reference items retain local help. Saving/clearing settings updates these controls and restores focus when a replacement helper survives. Disabling access settings removes the prompts; it does not guarantee a surviving prompt to focus.
+When the reader has not configured an access profile, the 0.3.0 browser build shows one settings prompt after each owned reading/reference list, rather than repeating it in every item. Each inspector panel keeps its settings prompt. The list prompt is outside the numbered items, so filtering items does not hide the only prompt or change reference numbering. Lists outside the component are never modified; standalone reference items retain local help. Saving/clearing settings updates these controls and restores focus when a replacement helper survives. Disabling access settings removes the prompts; it does not guarantee a surviving prompt to focus.

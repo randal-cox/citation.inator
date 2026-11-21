@@ -1,6 +1,6 @@
 # Roadmap
 
-Current release 0.2.0 provides article editor tools, cross-page bibliographies and tag contributions alongside reader access, media records and structured citations. See the [changelog](CHANGELOG.md).
+Stable release 0.3.0 adds editor integration and reader polish. Version 0.2.0 introduced article editor tools, cross-page bibliographies and tag contributions alongside reader access, media records and structured citations. See the [changelog](CHANGELOG.md).
 
 ## Agreed next milestones
 
@@ -8,12 +8,12 @@ On 21 November 2026 the maintainer separated stable editor integration from the 
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
-| [0.3.0](docs/milestones/0.3.0.md) | Shared marker classification, stable work notes, reference-prefix hook, once-per-list help and usage docs/tests | Prepare isolated stable candidate for draft.inator |
+| [0.3.0](docs/milestones/0.3.0.md) | Shared marker classification, stable work notes, reference-prefix hook, once-per-list help and usage docs/tests | Released 21 November 2026; draft adoption tracked in issue8 |
 | [0.4.0](docs/milestones/0.4.0.md) | Reviewed import: PDF/paste/text/Markdown/native document adapters, recognition, reference parsing, review UI, revision-bound edits and measurement | Existing prototype preserved; in development |
 | [0.5.0](docs/milestones/0.5.0.md) | Comprehensive developer documentation, annotated examples, live learning site and worked draft.inator integration | Planned; current-feature usage docs remain part of every release |
 | [0.6.0](docs/milestones/0.6.0.md) | Zotero/other managers, interchange formats and source maintenance | Planned after learning milestone |
 
-The current public release remains 0.2.0. No import API or demo is promised in the stable 0.3.0 package. The import branch keeps the work already built; its document-first review prototype is a 0.4.0 experiment. Version changes and publication follow the check-in/review procedure.
+The current public release is 0.3.0. No import API or demo is promised in the stable 0.3.0 package. The import branch keeps the work already built; its document-first review prototype is a 0.4.0 experiment. Version changes and publication follow the check-in/review procedure.
 
 ## Completed milestone 0.2.0 — Article tooling
 

@@ -4,7 +4,7 @@
 
 Use GitHub issues in draft.inator labelled `cite.inator`, one issue per request, with small linked PRs and versioned contract/fixture files. Both agents check the label at the start of relevant sessions. Claude/draft opens adopter requests; Theandra replies with commits and package/bundle availability; draft closes after adoption. Requests in the other direction use the same label and clear acceptance criteria. Distinguish implemented, locally verified and adopter-accepted results. GitHub is asynchronous: it does not itself wake a running Claude/Codex session. A short issue update should state the candidate commit, changed contract, requested action and reproduction/evidence, rather than duplicate a long chat transcript.
 
-On 21 November 2026 the connected GitHub account reported pull/push/maintain/admin permissions on `randal-cox/draft.inator`. This verifies reported account access, not authorization to send messages or modify the other project. No write probe or issue/comment was posted. Obtain a one-time explicit go-ahead for routine cross-project issue/PR communication; then keep routine coordination in that agreed scope without relaying through the maintainer.
+On 21 November 2026 the connected GitHub account reported pull/push/maintain/admin permissions on `randal-cox/draft.inator`. The maintainer subsequently authorized routine two-way issues/comments under the `cite.inator` label, following draft.inator#7. No private corpus should enter that channel. This does not authorize unrelated messaging or unilateral implementation changes in the other project.
 
 Keep implementation ownership separate: citation.inator owns reusable recognition/matching/review data; draft.inator owns editor decorations, transactions, authentication and publishing. Shared examples should be synthetic/publicly licensed, never private manuscript extracts.
 
@@ -26,3 +26,7 @@ Keep implementation ownership separate: citation.inator owns reusable recognitio
 6. A small shared synthetic round-trip fixture that both projects run, plus pinned candidate commit IDs and explicit acceptance results.
 
 **Ownership/sequence:** Keep the current local prototype expendable. Deliver stable editor integration/reader polish in 0.3.0, reviewed import in 0.4.0, comprehensive developer learning/live demos in 0.5.0 and external bibliography connections in 0.6.0.
+
+## First handoff
+
+The maintainer explicitly authorized this channel on 21 November 2026. The first labelled adoption request is [draft.inator#8](https://github.com/randal-cox/draft.inator/issues/8), with the immutable 0.3.0 release commit/artifact links, completed checks and requested adoption criteria. Draft owns closing that issue after final-artifact verification.
