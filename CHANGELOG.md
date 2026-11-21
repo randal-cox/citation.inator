@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Promote reviewed import into a shared Node/browser API and JSON CLI, with configurable notation/preview namespace and revision/context validation. The demo becomes an example browser host.
+- Add bounded native PDF/DOCX/ODT extraction to a text working copy, retaining original files, opaque citation fields, links and excluded-text evidence.
+- Rank identity evidence ahead of title resemblance, clean edition qualifiers for search, keep book editions manual and require explicit acceptance of conflicting retrieved metadata. Withhold identifiers contested by distinct imported records instead of arbitrarily merging them.
+
 - Make import-review popups draggable and resizable, with retained geometry, keyboard controls and scrollable narrow-screen content. Recognize the explicit Anonymous author byline, including original/edition year matching.
 
 - Centralize configurable import budgets through JavaScript/JSON, raise defaults for larger documents and bound concurrent reference jobs. Fix formatted/wrapped bibliography segmentation, DOI-only bibliography links and stale document display after failed analysis; exercise all six private BEST text representations without publishing them.

@@ -2,7 +2,7 @@
 
 A small citation library. Write citations in plain text, compile them into linked references and endnotes, and add an optional browser inspector. [Try programmatic citations](#try-programmatic-citations).
 
-**Stable release: 0.3.0 — Editor integration and reader polish.** [Release and downloads](https://github.com/randal-cox/citation.inator/releases/tag/v0.3.0). This branch retains experimental 0.4.0 import work separately.
+**Stable release: 0.3.0 — Editor integration and reader polish.** [Release and downloads](https://github.com/randal-cox/citation.inator/releases/tag/v0.3.0). This branch contains the unpublished **0.4.0-preview.0** import candidate; published 0.3.0 artifacts remain unchanged.
 
 **0.2.0 — Article tooling.** Editor notes, a site-wide bibliography and tag filters are included in this milestone. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/citation.inator/releases).
 
@@ -12,7 +12,7 @@ To serve the demos from the checkout, run `npm start` from the repository root.
 
 **Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
-**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.3.0.tgz` there for this release. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
+**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.4.0-preview.0.tgz` there for this candidate (use `citation-inator-0.3.0.tgz` for the published stable release). The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">
@@ -39,7 +39,7 @@ Version 0.2.0 adds source-only `note:"Cox 1995"` metadata, `describeCitation` an
 
 Compiler results expose actual citation occurrences, including listing-only `nocite` entries. `createSiteOccurrenceIndex` joins those anchors to published page routes; pass the resulting `siteOccurrences` into a bibliography to get static **Cited in** / **Listed in** return links and corresponding inspector sections. Records can carry `tags`, with a `tagCatalogue`, per-list usage overrides, build-time filters and optional keyboard-operated browser filters. `listFilters: { minItems: 6, minTags: 2 }` limits controls to longer multi-topic lists. `inlineTags: "marker"` displays the tags contributed at a particular mention.
 
-Run `npm start` and try [the shared bibliography](http://127.0.0.1:4187/demos/static/bibliography.html) and [editor tools](http://127.0.0.1:4187/demos/static/editor-tools.html). Both examples are also in the standalone folder. See [the complete API, CLI and configuration guide](docs/article-tools.md). Formatted-document import is in [source-only 0.4.0 development](docs/import-development.md); the experimental matcher, text/HTML/Markdown extraction and Crossref bibliographic search are not installed 0.2.0 APIs.
+Run `npm start` and try [the shared bibliography](http://127.0.0.1:4187/demos/static/bibliography.html) and [editor tools](http://127.0.0.1:4187/demos/static/editor-tools.html). Both examples are also in the standalone folder. See [the complete API, CLI and configuration guide](docs/article-tools.md). The [0.4.0 import candidate API](docs/import-api.md) provides reviewed import and native working-copy extraction separately from these stable tools.
 
 ## Reader access and media
 
@@ -61,7 +61,7 @@ Empathic concern can deepen partisan polarization {citation doi:10.1017/S0003055
 
 ## Compile a page
 
-With Node.js 22 or later, run this command from the downloaded repository. It writes `article.html` and its matching `article.html.json` cache.
+With Node.js 22.13 or later, run this command from the downloaded repository. It writes `article.html` and its matching `article.html.json` cache.
 
 ```sh
 node scripts/compile.mjs --style chicago-author-date --endnotes-heading References \
@@ -76,7 +76,7 @@ Keep the default `suffixScope: "fragment"` for articles with their own reference
 
 Write `{citation isbn:9780593656433 | prefix:see also | locator:34}` for an affix and locator. Use `citationParts` for editorial italics or bold. Use `originalIssued` and `issued` for the original and edition dates. Use `library` and `full-text` locations for access links. Apply reader preferences with `accessProviders` and `hiddenAccessProviders`. The panel exposes an `open` attribute while visible.
 
-See the [citation-style catalogue and support matrix](docs/citation-styles.md). The development checkout also includes an unreleased host reference-prefix hook and once-per-list access help, documented in the integration guide.
+See the [citation-style catalogue and support matrix](docs/citation-styles.md). Version 0.3.0 also includes the host reference-prefix hook and once-per-list access help, documented in the integration guide.
 
 See the [integration guide](docs/integration.md) for HTML and Markdown examples, reused fragments, the Python command, ISBN lookup and title-and-author search, and the browser API. See the [roadmap](ROADMAP.md) for follow-up work.
 
@@ -84,11 +84,11 @@ See the [integration guide](docs/integration.md) for HTML and Markdown examples,
 
 On `codex/citation-import`, run `npm ci`, `npm run build` and `npm start`, then open [Import review](http://127.0.0.1:4187/demos/import/). Choose an example, paste a complete document, or choose/drop a UTF-8 TXT/Markdown file. Raw Document includes its bibliography; edits rebuild references and matches. Format is detected from the source with a manual override. Radio choices update Converted Document live. Import popups can be dragged from blank space and resized at the lower-right corner. Download both Markdown and the reference cache for local-ID citations; the original bibliography is preserved.
 
-This development demo requires a local server and saves no documents. Selected references automatically receive Crossref DOI and Open Library ISBN suggestions; known identifiers fetch metadata directly. Stacked Looking up and Needs review counts separate background activity from human decisions; click a colored count to jump to its first item. Real Einstein/Planck examples exercise same-year ambiguity and DOI lookup. Optional local manuscript examples load from a gitignored catalogue; all six BEST text representations are available locally. Import limits accept JavaScript/JSON configuration; see [configuration and defaults](docs/import-demo.md#configure-import-limits). Strict DOI matches can complete automatically; ISBNs need an edition choice. Manual identifiers and completion without an identifier work offline. Native PDF/Word files and browser-native review/apply remain unfinished. It is not a service in the static ZIP. See [the demo guide](docs/import-demo.md) for boundaries, keyboard controls and limits. Published 0.3.0 artifacts are unchanged.
+This development demo saves no documents and uses the shared import API in the browser; `npm start` serves its files and optional private catalogue. Selected references automatically receive Crossref DOI and Open Library ISBN suggestions; known identifiers fetch metadata directly. Stacked Looking up and Needs review counts separate background activity from human decisions; click a colored count to jump to its first item. Real Einstein/Planck examples exercise same-year ambiguity and DOI lookup. Optional local manuscript examples load from a gitignored catalogue; all six BEST text representations are available locally. Import limits accept JavaScript/JSON configuration; see [configuration and defaults](docs/import-demo.md#configure-import-limits). Strict DOI matches can complete automatically; ISBNs need an edition choice. Manual identifiers and completion without an identifier work offline. Bounded PDF/DOCX/ODT extraction and browser-native review/apply are implemented in the 0.4.0 candidate; native-format round trips and editor integration remain separate. See the [import API guide](docs/import-api.md) for Node, copied-browser and JSON CLI use. See [the demo guide](docs/import-demo.md) for boundaries, keyboard controls and limits. Published 0.3.0 artifacts are unchanged.
 
 ## Work on the source checkout
 
-Clone the [GitHub repository](https://github.com/randal-cox/citation.inator) and use Node.js 22 or later.
+Clone the [GitHub repository](https://github.com/randal-cox/citation.inator) and use Node.js 22.13 or later.
 
 ```sh
 git clone https://github.com/randal-cox/citation.inator.git

@@ -2,7 +2,7 @@
 var readableImportSource = (source) => source.replace(/data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/giu, "[embedded image]");
 
 // src/import-limits.mjs
-var IMPORT_LIMITS = Object.freeze({ sourceCharacters: 15e5, fileBytes: 6e6, recordCharacters: 3e5, requestBytes: 12e6, references: 300, citationGroups: 300, citedItems: 900, candidateChoices: 3e3, parallelLookups: 4, titleCharacters: 1500, authorsPerRecord: 150 });
+var IMPORT_LIMITS = Object.freeze({ sourceCharacters: 15e5, fileBytes: 18e6, recordCharacters: 3e5, requestBytes: 12e6, references: 300, citationGroups: 300, citedItems: 900, candidateChoices: 3e3, parallelLookups: 4, titleCharacters: 1500, authorsPerRecord: 150, pdfPages: 500, archiveEntryBytes: 24e6 });
 function normalizeImportLimits(overrides = {}) {
   if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) throw new TypeError("Supply an import limits object.");
   for (const [key, value] of Object.entries(overrides)) if (!Object.hasOwn(IMPORT_LIMITS, key) || !Number.isSafeInteger(value) || value < 1) throw new TypeError("Use positive integer values for known import limits.");
@@ -323,7 +323,75 @@ function compareIdentity(source, candidate) {
   for (const key of ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "originalIssued", "language", "format"]) if (present(source[key])) comparisons[key] = present(candidate[key]) && norm(source[key]) === norm(candidate[key]);
   return { policy: ENRICHMENT_POLICY, comparisons, exact: Object.values(comparisons).every(Boolean) };
 }
+var editionQualifier = /\s*\((?:(?:\d+(?:st|nd|rd|th)?|first|second|third|fourth|revised|rev\.?|updated|expanded)\s+(?:ed\.?|edition)\b[^)]*|repr\.?|reprint(?:ed)?(?:\s+\d{4})?)\)\s*\.?$/iu;
+function importSearchTitle(source) {
+  const title = typeof source === "string" ? source : source?.title;
+  return typeof title === "string" ? title.replace(editionQualifier, "").trim() : "";
+}
+function rankingAuthorEqual(a, b) {
+  if (a.id && b.id && a.id !== b.id || a.suffix && b.suffix && norm(a.suffix) !== norm(b.suffix)) return false;
+  if (authorEqual(a, b)) return true;
+  const family = norm(a.family), otherFamily = norm(b.family);
+  if (family && otherFamily) {
+    if (family !== otherFamily) return false;
+    const x = norm(a.given), y = norm(b.given);
+    return !x || !y || initials(x) === initials(y) || x.startsWith(y + " ") || y.startsWith(x + " ");
+  }
+  const structured = family ? a : otherFamily ? b : null, literal = family ? b.literal : a.literal;
+  if (!structured || !literal) return false;
+  const name = norm(literal), surname = norm(structured.family);
+  let given;
+  if (name.endsWith(" " + surname)) given = name.slice(0, -surname.length).trim();
+  else if (name.startsWith(surname + " ")) given = name.slice(surname.length).trim();
+  else return false;
+  const required = norm(structured.given);
+  return !required || initials(required) === initials(given) || given.startsWith(required + " ") || required.startsWith(given + " ");
+}
+var publicationType = (type) => type === "book-chapter" ? "chapter" : ["book", "edited-book", "monograph", "reference-book"].includes(type) ? "book" : ["article-journal", "journal-article"].includes(type) ? "article-journal" : type;
+var rankingTitle = (value) => norm(importSearchTitle(value));
+function assessImportCandidate(source, candidate) {
+  const strict = compareIdentity(source, candidate), conflicts = [], differences = [], missing = [], reasons = [];
+  const title = rankingTitle(source.title), otherTitle = rankingTitle(candidate.title), a = new Set(title.split(" ").filter(Boolean)), b = new Set(otherTitle.split(" ").filter(Boolean));
+  const overlap = [...a].filter((word) => b.has(word)).length, titleSimilarity = a.size && b.size ? overlap / Math.max(a.size, b.size) : 0;
+  if (!title || !otherTitle) missing.push("title");
+  else if (title !== otherTitle && titleSimilarity < 0.8) conflicts.push("title");
+  else if (title !== otherTitle) differences.push("title");
+  const authors = source.authors || [], otherAuthors = candidate.authors || [];
+  let authorsMatch = false;
+  if (!authors.length || !otherAuthors.length) missing.push("authors");
+  else {
+    authorsMatch = (source.authorsComplete === false ? otherAuthors.length >= authors.length : otherAuthors.length === authors.length) && authors.every((author, index) => rankingAuthorEqual(author, otherAuthors[index]));
+    if (!authorsMatch) conflicts.push("authors");
+  }
+  const expectedType = publicationType(source.type === "document" && (present(source.edition) || editionQualifier.test(source.title || "")) ? "book" : source.type), actualType = publicationType(candidate.type);
+  if (!expectedType || expectedType === "document" || !actualType || actualType === "document") missing.push("type");
+  else if (expectedType !== actualType) conflicts.push("type");
+  const sourceYear = source.issued?.[0], candidateYear = candidate.issued?.[0], yearDistance = sourceYear && candidateYear ? Math.abs(sourceYear - candidateYear) : null;
+  if (sourceYear && !candidateYear) missing.push("year");
+  else if (yearDistance) differences.push("year");
+  for (const key of ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "originalIssued", "language", "format"]) {
+    if (!present(source[key])) continue;
+    if (!present(candidate[key])) missing.push(key);
+    else if (norm(source[key]) !== norm(candidate[key])) (key === "originalIssued" ? conflicts : differences).push(key);
+  }
+  if (expectedType === "document" && actualType === "chapter") reasons.push("unconfirmed-chapter");
+  if (candidate.version || candidate.noticeRelations?.length) {
+    conflicts.push("version");
+    reasons.push("version-or-notice");
+  }
+  if (conflicts.includes("authors")) reasons.push("different-authors");
+  if (conflicts.includes("type")) reasons.push(actualType === "chapter" ? "different-work-type-chapter" : "different-work-type");
+  if (conflicts.includes("title")) reasons.push("different-title");
+  if (yearDistance > 2) reasons.push("distant-year");
+  const primary = !conflicts.length && !reasons.includes("unconfirmed-chapter") && authorsMatch && titleSimilarity >= 0.8 && (yearDistance === null || yearDistance <= 2);
+  const score = (primary ? 1e3 : 0) + (authorsMatch ? 200 : 0) + (expectedType && expectedType !== "document" && expectedType === actualType ? 100 : 0) + Math.round(titleSimilarity * 100) - (yearDistance === null ? 0 : Math.min(yearDistance, 100)) - conflicts.length * 100;
+  return { policy: "candidate-ranking-v1", comparisons: strict.comparisons, exact: strict.exact, conflicts, differences, missing, reasons, primary, score, titleSimilarity, yearDistance };
+}
+function rankImportCandidates(source, candidates) {
+  return candidates.map((candidate, index) => ({ candidate, assessment: assessImportCandidate(source, candidate), index })).sort((a, b) => b.assessment.score - a.assessment.score || a.index - b.index).map(({ candidate, assessment }) => ({ candidate, assessment }));
+}
 function automaticCandidate(source, candidates) {
+  if (publicationType(source.type) === "book") return null;
   const identifier = (candidate) => {
     const id = candidate.identifiers?.[0];
     return id && normalizeIdentifier(id.scheme + ":" + id.value);
@@ -456,7 +524,7 @@ function createBrowserEnrichment({ fetch: request = globalThis.fetch, now = Date
     }
     if (!source.title || !source.authors?.length) throw Error("Add a title and author in Raw Document, or paste an ISBN.");
     const author = source.authors[0].family || source.authors[0].literal;
-    const url = "https://openlibrary.org/search.json?" + new URLSearchParams({ title: source.title, author, limit: "3", fields: "key,title,author_name" }), raw = await get(url);
+    const url = "https://openlibrary.org/search.json?" + new URLSearchParams({ title: importSearchTitle(source), author, limit: "3", fields: "key,title,author_name" }), raw = await get(url);
     if (!Array.isArray(raw?.docs)) throw Error("Invalid Open Library results.");
     const candidates = [], seen = /* @__PURE__ */ new Set();
     for (const work of raw.docs.slice(0, 3)) {
@@ -521,12 +589,15 @@ function createBrowserEnrichment({ fetch: request = globalThis.fetch, now = Date
 export {
   ENRICHMENT_POLICY,
   IMPORT_LIMITS,
+  assessImportCandidate,
   automaticCandidate,
   compareIdentity,
   createBrowserEnrichment,
   enrichmentIdentifier,
+  importSearchTitle,
   mergeCompletion,
   normalizeImportIdentifier,
   normalizeImportLimits,
+  rankImportCandidates,
   readableImportSource
 };

@@ -19,14 +19,14 @@ export async function checkEnrichment(browser,origin){
   if(await page.locator('#source').isHidden())await page.locator('#input-details>summary').click();
   await page.locator('#source').fill('A book (Bello, 2020).\n\n## References\n\nBello, N. (2020). Transport test.');
   await page.waitForFunction(()=>/Needs review: [1-9]/.test(document.querySelector('#lookup-activity')?.textContent || ''));
-  await open();await page.getByRole('radio',{name:/Second edition/}).check();await page.keyboard.press('Escape');
+  await open();await page.getByRole('radio',{name:/Second edition/}).check();await page.getByRole('button',{name:'Use this identifier anyway',exact:true}).click();await page.keyboard.press('Escape');
   await page.locator('#reading-details>summary').click();await page.waitForFunction(()=>document.getElementById('output').value.includes('isbn:9780593656433'));assert.equal(await page.locator('[data-review-group="0"]').getAttribute('data-review-state'),'selected');
   // A selected work starts lookup even when another work in the citation group is unresolved.
   if(await page.locator('#source').isHidden())await page.locator('#input-details>summary').click();
   await page.locator('#source').fill(source.replace('(Bello, 2020).','(Bello, 2020; Unknown, 2001).').replace('12(3)','12(77)'));
   await page.waitForFunction(()=>/Needs review: [1-9]/.test(document.querySelector('#lookup-activity')?.textContent || ''));assert.equal(await page.locator('#review-group-0').getAttribute('data-action'),'defer');
   // Reanalysis cancels the old session. Ambiguous DOI choices stay orange until a radio is chosen.
-  mode='ambiguous';await chooseSource();await page.waitForFunction(()=>document.querySelector('.completion-status')?.textContent==='2 identifier matches');await open();await page.getByRole('radio',{name:/DOI: 10.5555\/enrichment.other/}).check();await page.keyboard.press('Escape');await page.locator('#preview').click();await page.waitForFunction(()=>document.getElementById('output').value.includes('doi:10.5555/enrichment.other'));
+  mode='ambiguous';await chooseSource();await page.waitForFunction(()=>document.querySelector('.completion-status')?.textContent==='2 identifier matches');await open();await page.getByRole('radio',{name:/DOI: 10.5555\/enrichment.other/}).check();await page.getByRole('button',{name:'Use this identifier anyway',exact:true}).click();await page.keyboard.press('Escape');await page.locator('#preview').click();await page.waitForFunction(()=>document.getElementById('output').value.includes('doi:10.5555/enrichment.other'));
   await open();await page.locator('#identifier-0-0').fill('10.5555/enrichment.manual');await page.waitForFunction(()=>JSON.parse(document.getElementById('lookup-evidence').textContent).some(entry=>entry.reference==='manual:10.5555/enrichment.manual'&&entry.state==='ready'));assert.equal(await page.locator('#review-group-0 .identifier-completion').isHidden(),true);await page.keyboard.press('Escape');await page.waitForFunction(()=>document.getElementById('output').value.includes('doi:10.5555/enrichment.manual'));
   const knownCalls=calls.length;if(await page.locator('#source').isHidden())await page.locator('#input-details>summary').click();
   await page.locator('#source').fill(source+' https://doi.org/10.5555/enrichment.known');await knownStarted;

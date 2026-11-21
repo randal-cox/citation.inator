@@ -10,6 +10,11 @@ async function compile(source, cache, options, format = "text") {
   return (format === "html" ? compileHTML : compileMarkdown)(source, cache, options);
 }
 
+if(process.argv[2]==='import'){
+  const {runImportCli}=await import('./import.mjs');
+  process.exitCode=await runImportCli(process.argv.slice(3));
+}else{
+
 try {
   const { positionals, values } = parseArgs({
     allowPositionals: true,
@@ -97,4 +102,6 @@ try {
 } catch (error) {
   console.error(error.message);
   process.exitCode = 1;
+}
+
 }

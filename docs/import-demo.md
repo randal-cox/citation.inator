@@ -1,6 +1,6 @@
 # Import-review development demo
 
-Run from the `codex/citation-import` checkout with Node 22 or later:
+Run from the `codex/citation-import` checkout with Node 22.13 or later:
 
 ```sh
 npm ci
@@ -8,13 +8,13 @@ npm run build
 npm start
 ```
 
-Open [http://127.0.0.1:4187/demos/import/](http://127.0.0.1:4187/demos/import/), or choose Import review from the Reading room navigation. This is a development demonstration for 0.4.0, not a completed milestone or a public import API.
+Open [http://127.0.0.1:4187/demos/import/](http://127.0.0.1:4187/demos/import/), or choose Import review from the Reading room navigation. This is the example host for the 0.4.0 import candidate; the milestone is not yet released. The [headless API guide](import-api.md) documents integration independently of this layout.
 
 ## Import Document
 
 Import Document and Resolve Citations are independent accordion disclosures, open by default. Headers and revealed content share one bordered panel; the other main disclosures use the same style; closing a section preserves its source and decisions. Lookups continue in the background while sections are closed.
 
-Choose an example, paste a complete document into Raw Document, or choose/drop a UTF-8 `.txt`, `.md` or `.markdown` file. Body and bibliography share one editable source. The selector shows **Dropped file** or **Chosen file** after a successful import, and the filename appears beside Choose file. Unsupported files leave the previous document intact.
+Choose an example, paste a complete document into Raw Document, or choose/drop a UTF-8 text/Markdown or a PDF, DOCX or ODT file. Body and bibliography share one editable source. The selector shows **Dropped file** or **Chosen file** after a successful import, and the filename appears beside Choose file. Unsupported files leave the previous document intact.
 
 Citation format starts at **Detected format** and is inferred from the visible body, not an example-specific answer. APA, Chicago author–date and bracket-numeric modes have manual overrides. Mixed or insufficient evidence requires a choice. Format changes analyze immediately; raw edits analyze after a short pause.
 
@@ -36,7 +36,7 @@ Open Converted Document to see literal `{cite …}` Markdown. It stays open and 
 
 Download both **Markdown** (`reviewed-citations.md`) and **references** (`citations.json`) when local-ID markers are present. Supply that cache to the compiler in your project; the Markdown alone does not embed local records. Reading Preview is a separate disclosure beside Converted Document, with the same heading style. Either can open independently and refresh live. It renders the converted body with generated endnotes without duplicating the original bibliography in that preview. The exported Markdown still retains the original bibliography.
 
-Uploaded original bytes remain separately available through Download original, even after working-source edits. Textarea display normalizes line endings; unchanged source ranges and exported bibliography retain their original line endings. New lines follow the source’s initial newline convention. Files must be UTF-8, at most 6 MB, and decode to at most 1,500,000 UTF-16 characters. PDF, DOCX and ODT imports are not supported yet; paste extracted text instead.
+Uploaded original bytes remain separately available through Download original, even after working-source edits. Textarea display normalizes line endings; unchanged source ranges and exported bibliography retain their original line endings. New lines follow the source’s initial newline convention. Files must be UTF-8, at most 18 MB, and decode to at most 1,500,000 UTF-16 characters. PDF/DOCX/ODT produce an editable text working copy with extraction diagnostics and retained metadata; original native bytes remain separately downloadable. See the [native support matrix](import-api.md#native-file-extraction).
 
 ## Real references and lookup development
 
@@ -50,13 +50,13 @@ Lookup is always automatic in the demo. Selecting a reference, or finding one un
 
 Two stacked counters beside Resolve Citations separate machine work from human decisions. **Looking up** counts queued/running selected reference lookups; a returned result no longer counts there. **Needs review** counts unselected/invalid work targets, source-span issues, and identifier choices or failed unknown-identifier lookups requiring a decision. Repeated mentions of one reference share its metadata task/decision, while ambiguous in-text work choices remain occurrence-specific. These are reference tasks, not HTTP request totals. Existing valid identifiers remain usable if optional metadata retrieval fails. Nonzero counters are colored; zero uses the normal text color. Click a colored number to open the first corresponding item. Both counters use 13px type and remain available when Resolve is collapsed. Retry failed lookups retries selected failures as a batch.
 
-A DOI/ISBN already present in the bibliography, or entered manually, bypasses discovery and goes directly to metadata resolution. Its hover contains no identifier-search status, controls or suggestions; background progress stays in the overall display, and response evidence is under Diagnostics → Identifier evidence. Known bibliography identifiers are used in converted markers even if metadata retrieval fails.
+A DOI/ISBN already present in the bibliography, or entered manually, bypasses discovery and goes directly to metadata resolution. Its hover contains no discovery controls or suggestions; background progress stays in the overall display, and response evidence is under Diagnostics → Identifier evidence. If retrieved metadata conflicts with the supplied reference, a concise identity-review section appears and conversion waits for explicit acceptance or correction. Known bibliography identifiers remain usable when retrieval fails; failure is different from an observed conflict.
 
 Selected journal entries search Crossref; books search Open Library; unknown publication types search both. Selecting a bibliography target starts its lookup automatically; there are no per-reference Find buttons. An unambiguous selected item starts even if another item in the same citation group still needs a work choice. Searches are shared only for the same complete query/identity fingerprint, including available edition constraints. Results stay in page memory. Source edits invalidate pending applications; changing sources cancels requests and rejects late responses. Accepted metadata stays available during review until the source changes.
 
 A DOI is chosen automatically only under the versioned **exact-identity-v1** policy: exact normalized full title, compatible complete author sequence, exact cited year, known matching publication type and agreement with every supplied journal/publisher/volume/issue/page/edition field. Meaningful title symbols and notice prefixes survive comparison. Any same-title competing DOI, preprint/version flag or correction/retraction relation prevents automatic acceptance. The DOI is independently resolved before applying the automatic result. This conservative rule is not a probability or proof of global uniqueness.
 
-Other candidates appear as radios with author/year, identifiers and fields to check. Candidates more than two years from a supplied citation year sit under More results. Missing years remain visible, and a selected result always stays visible. This is presentation only: all candidates and evidence remain available, and the automatic acceptance policy is unchanged. One selection resolves that DOI/ISBN and updates the output when it succeeds; there is no second confirmation. Provider errors keep a previous good identifier available; Retry or Keep without identifier lets you continue.
+Other candidates appear as radios with author/year, identifiers and fields to check. Candidates more than two years from a supplied citation year sit under More results. Missing years remain visible, and a selected result always stays visible. This is presentation only: all candidates and evidence remain available, and the automatic acceptance policy is unchanged. One selection resolves that DOI/ISBN and updates output immediately when supplied fields agree. Conflicting or missing supplied metadata stays red and needs an explicit Use this identifier anyway decision; the old override does not survive source changes. Provider errors keep a previous good identifier available; Retry or Keep without identifier lets you continue.
 
 ISBNs always need an edition choice in this increment. Open Library search checks at most three works and five editions per work, displaying at most fifteen distinct ISBNs and combining ISBN-10/13 aliases. This limited window may omit the cited edition. Author names can come from the work rather than the edition; dates, publishers, edition/format/language clues are shown for review. A lone result is not automatically the right edition. No results does not prove no ISBN exists.
 
@@ -66,11 +66,11 @@ Provider requests use allowlisted HTTPS origins, omitted credentials and no refe
 
 ## Processing and limits
 
-The page posts the working text to its local `/demos/import/review` endpoint. No persistent documents or project-file changes occur. Only the selected bibliographic fields go directly from the browser to the metadata providers. Uploaded original bytes remain in browser memory. This requires `npm start`; it is not a static GitHub Pages service or an installed import API.
+By default the page analyzes and converts working text locally in the browser through `processImportRequest`; it does not post the full document to a review server. Only selected bibliographic fields go directly to metadata providers. Uploaded original bytes remain in browser memory, and no persistent documents or project files are changed. The optional `processing: "server"` configuration uses the local `/demos/import/review` adapter for the same protocol. `npm start` also supplies the private local catalogue. Static public HTTPS deployment remains to be verified.
 
 The document path is bounded to 300 references, 300 citation groups and 900 cited items. Review also limits total candidate choices to 3,000 and requests to 12 MB. Oversized work is rejected rather than partly applied. The server checks loopback host, same-origin browser requests and JSON content type.
 
-Diagnostics contains optional conversion and parsing evidence. Partial parsing, conservative Markdown source mapping and unsupported bylines can leave citations requiring review. No broad extraction or metadata accuracy claim follows from the synthetic tests. Native-file adapters, browser-native review/apply APIs and host transactions remain unfinished. ISBN automation and broader identifier providers remain future work. See [development](import-development.md), [full-document flow](import-document-flow.md) and [draft integration](draft-integration.md).
+Diagnostics contains optional conversion and parsing evidence. Partial parsing, conservative Markdown source mapping and unsupported bylines can leave citations requiring review. No broad extraction or metadata accuracy claim follows from the synthetic tests. Bounded native extraction and browser-native review/apply are implemented; native-format round trips, host editor transactions and general PDF reading-order accuracy are not claimed. ISBN automation and broader identifier providers remain future work. See [development](import-development.md), [full-document flow](import-document-flow.md) and [draft integration](draft-integration.md).
 
 ## Local manuscript examples
 
@@ -80,9 +80,9 @@ The Examples menu can add a **Your documents** group from a local, gitignored `.
 [{"id":"my-paper","label":"My paper — text export","file":"my-paper.txt"}]
 ```
 
-The local server lists only registered labels and reads an example only when selected. Source files must stay inside the corpus directory (symlink/path escapes are rejected), be UTF-8 text, and fit the 6 MB/1,500,000-character defaults. `CITATION_IMPORT_EXAMPLES_DIR` can select another private directory. The native menu is populated before it becomes enabled, rather than replacing its options while open. Public/static distributions have no manuscript catalogue.
+The local server lists only registered labels and reads an example only when selected. Source files must stay inside the corpus directory (symlink/path escapes are rejected), be UTF-8 text, and fit the 18 MB/1,500,000-character defaults. `CITATION_IMPORT_EXAMPLES_DIR` can select another private directory. The native menu is populated before it becomes enabled, rather than replacing its options while open. Public/static distributions have no manuscript catalogue.
 
-Register complete extracted text when experimenting with Word, OpenDocument or PDF material; this does not turn those formats into supported native imports. Manuscript/configuration files stay outside Git and releases. Loading an example sends the full source only to the local analysis endpoint; automatic provider queries contain selected bibliographic fields. A failed load preserves the previous document, review and original-file download. Parsing accuracy and large-paper responsiveness need separate review, even when loading succeeds.
+Register complete extracted text when experimenting with Word, OpenDocument or PDF material; this does not turn those formats into supported native imports. Manuscript/configuration files stay outside Git and releases. The selected source is analyzed in the browser by default; automatic provider queries contain selected bibliographic fields. The optional server-processing mode posts source to its local analysis endpoint. A failed load preserves the previous document, review and original-file download. Parsing accuracy and large-paper responsiveness need separate review, even when loading succeeds.
 
 ## Configure import limits
 
@@ -95,7 +95,7 @@ const importer = createDocumentImporter(preferences);
 const analysis = importer.analyze(source);
 ```
 
-This is the source-checkout import API, separate from the stable citation renderer's `init`. It analyzes text/Markdown without changing the source. Omitted limits retain their defaults; unknown keys, noninteger values and nonpositive values are rejected. `analyzeImportDocument(source, options)` accepts the same options.
+This analyzer is also exported by the candidate import entry point, separate from the stable citation renderer's `init`. It analyzes text/Markdown without changing the source. Omitted limits retain their defaults; unknown keys, noninteger values and nonpositive values are rejected. `analyzeImportDocument(source, options)` accepts the same options.
 
 For the local demo, edit the inert JSON configuration in `demos/import/index.html` before loading it:
 
@@ -105,8 +105,8 @@ For the local demo, edit the inert JSON configuration in `demos/import/index.htm
 </script>
 ```
 
-The demo uses these limits for intake, analysis, preview and review-context validation. The local server separately enforces ceilings: set `CITATION_IMPORT_LIMITS` to a JSON limits object when starting `npm start` to raise them. Requested values are clamped to those host ceilings; a browser preference cannot raise a server ceiling. Local catalogue reads use the host ceilings too.
+The demo uses these limits for intake, analysis, preview and review-context validation. When using `processing: "server"`, the local server separately enforces ceilings: set `CITATION_IMPORT_LIMITS` to a JSON limits object when starting `npm start` to raise them. Server-processed values are clamped to those host ceilings; a browser preference cannot raise a server ceiling. Browser-only processing uses its configured local limits. Local catalogue reads use the host ceilings too.
 
-Defaults are 1,500,000 source characters, 6,000,000 file bytes, 300,000 serialized characters per reference record, 12,000,000 request bytes, 300 references, 300 citation groups, 900 cited items and 3,000 candidate choices. `parallelLookups` defaults to four active reference jobs; provider lanes also have their own queues and timing rules. `titleCharacters` defaults to 1,500 and `authorsPerRecord` to 150 for supplied records. These are protective budgets, not measured performance guarantees. Provider response/metadata safety bounds remain separate.
+Defaults are 1,500,000 source characters, 18,000,000 file bytes, 300,000 serialized characters per reference record, 12,000,000 request bytes, 300 references, 300 citation groups, 900 cited items and 3,000 candidate choices. `parallelLookups` defaults to four active reference jobs; provider lanes also have their own queues and timing rules. `titleCharacters` defaults to 1,500 and `authorsPerRecord` to 150 for supplied records. These are protective budgets, not measured performance guarantees. Native defaults also include 500 PDF pages and 24,000,000 bytes per selected office XML entry (`pdfPages`, `archiveEntryBytes`); source-derived bounds may be smaller. Provider response/metadata safety bounds remain separate.
 
-A synthetic single bibliography with 51 distinct works and 57 citation groups exercises three times BEST's measured reference/group counts, including a large embedded-image definition. The local BEST text, paste, Word-extracted, OpenDocument-extracted, Markdown and PDF-extracted versions each produce 17 reference blocks and 19 citation groups in the current development check. This does not certify their bibliographic accuracy. The local PDF text was prepared separately, removing diagonal-watermark text; native PDF/Word intake is still unfinished. Zotero-linked citations in TXT/Markdown can remain `accepted-needs-adapter`, with source unchanged. Embedded image data is hidden in the reading surface but retained in Raw Document and exports.
+A synthetic single bibliography with 51 distinct works and 57 citation groups exercises three times BEST's measured reference/group counts, including a large embedded-image definition. The local BEST text, paste, Word-extracted, OpenDocument-extracted, Markdown and PDF-extracted versions each produce 17 reference blocks and 19 citation groups in the current development check. This does not certify their bibliographic accuracy. The earlier local PDF text was prepared separately. Native intake now performs its own bounded extraction, retains excluded material in metadata and reports reading-order review. Zotero-linked citations in TXT/Markdown can remain `accepted-needs-adapter`, with source unchanged. Embedded image data is hidden in the reading surface but retained in Raw Document and exports.

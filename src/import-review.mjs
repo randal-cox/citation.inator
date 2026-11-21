@@ -1,8 +1,8 @@
-// Experimental Node review/edit protocol. Acceptance is supplied explicitly by the host.
-import { createHash } from 'node:crypto';
+// Revision-bound review/edit protocol shared by Node and browser hosts. Acceptance is supplied explicitly by the host.
+import {importHash} from './import-hash.mjs';
 import { normalizeIdentifier } from './records.mjs';
 import { scanCitationMarkers } from './compiler.mjs';
-const hash = value => createHash('sha256').update(value).digest('hex');
+const hash=importHash;
 const quote = value => '"'+String(value).replace(/[\\"{};|]/g,character=>'\\'+character)+'"';
 const digest = (sourceHash,matches) => hash(sourceHash+'\n'+JSON.stringify(matches));
 

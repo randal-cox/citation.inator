@@ -15,7 +15,7 @@ Use `annotateMarkers(source, cache, { noteContext: "work", ...styleOptions })` f
 ## Boundary to agree and test
 
 - citation.inator proposes extracted text, fields, matches, diagnostics and revision-bound decisions. draft.inator owns editor selection, transaction/undo, user authorization, persistence, authentication and publishing.
-- The experimental Node review API is not directly browser-loadable. A browser protocol needs equivalent revision guarantees before a browser editor uses it.
+- The 0.4.0 candidate exports the same revision/context-bound protocol in Node and a self-contained browser bundle. The editor must also validate its current document revision before applying proposals. See the [candidate API](import-api.md).
 - Generated import markers use `local:<record-id>` to avoid reserved-command collisions. The current Cite block looks up the whole marker identifier directly in its works table. The host adapter must normalize local identifiers to record IDs for lookup/picker selection while preserving a valid marker on write. Test both bare and explicit local identifiers, reserved names, DOI aliases and missing works.
 - Reuse `describeCitation`/`annotateMarkers` for notes. Import decisions must not manufacture a competing description or author/year identity system.
 - A matched reference may not yet exist in `DRAFT_WORKS`. Review and add curated records explicitly, then refresh host choices; do not make raw provider results selectable publication records automatically.
@@ -39,4 +39,4 @@ Questions for draft.inator:
 - How should ambiguous, unmatched, accepted-but-needing-span and unavailable-provider states appear without relying on color? Hover should inform; click, keyboard and touch must offer equivalent controls and explicit acceptance.
 - How do multiple cited works and uncertain author spans get reviewed without silently accepting a text boundary with a record identity?
 
-An explicit cross-project coordination proposal and issue draft are in [the coordination note](draft-coordination.md). No GitHub issue/comment has been sent by this work.
+An explicit cross-project coordination proposal and issue draft are in [the coordination note](draft-coordination.md). The next host appearance/interaction discussion is required before finalizing 0.4.0; its issue and outcome will be recorded here.

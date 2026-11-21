@@ -49,6 +49,11 @@ await build({
   outfile: "dist/citation-inspector.mjs",
   banner: { js: `/*! citation-inator v${version} | MIT | See LICENSE */` }
 });
+const importDependencies=[['@noble/hashes','LICENSE'],['fflate','LICENSE'],['@xmldom/xmldom','LICENSE'],['pdfjs-dist','LICENSE']];
+const importNotices=(await Promise.all(importDependencies.map(async ([name,file])=>`${name} ${JSON.parse(await readFile(`node_modules/${name}/package.json`,'utf8')).version}\n${await readFile(`node_modules/${name}/${file}`,'utf8')}`))).join('\n\n');
+await build({entryPoints:['src/import-api.mjs'],bundle:true,format:'esm',target:'es2022',outfile:'dist/citation-import.mjs',banner:{js:`/*! citation-inator import v${version} | MIT | See THIRD_PARTY_LICENSES.txt */`}});
+await build({entryPoints:['src/import-files.mjs'],bundle:true,format:'esm',target:'es2022',external:['node:*'],outfile:'dist/citation-import-files.mjs',banner:{js:`/*! citation-inator native import v${version} | MIT | See THIRD_PARTY_LICENSES.txt */`}});
+await cp('node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs','dist/citation-pdf.worker.mjs');
 await build({entryPoints:["src/import-enrichment.mjs"],bundle:true,format:"esm",target:"es2022",outfile:"demos/import/enrichment-browser.mjs"});
 const toolsNotices = (await Promise.all([
   ['parse5', 'LICENSE'], ['marked', 'LICENSE.md'], ['entities', 'LICENSE']
@@ -61,7 +66,7 @@ await build({
   outfile: "dist/citation-tools.mjs",
   banner: { js: `/*! citation-inator tools v${version} | MIT | See LICENSE */\n/* Bundled dependency notices:\n${toolsNotices.replaceAll('*/', '* /')}\n*/` }
 });
-await writeFile('dist/THIRD_PARTY_LICENSES.txt', toolsNotices);
+await writeFile('dist/THIRD_PARTY_LICENSES.txt', toolsNotices+'\n\n'+importNotices);
 await Promise.all([
   cp("src/citation-inspector.css", "dist/citation-inspector.css"),
   cp("LICENSE", "dist/LICENSE"),
@@ -260,7 +265,7 @@ await writeFile("demos/static/guide.html", document({
   content: `<article class="reading guide">
     <section aria-labelledby="guide-load">
       <h2 id="guide-load">Load and initialize</h2>
-      <p>Clone the <a href="https://github.com/randal-cox/citation.inator">repository</a> with <code>git clone https://github.com/randal-cox/citation.inator.git</code> and check out <code>v${version}</code>. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Stable 0.1.4 does not include these editor/bibliography additions.</p>
+      <p>Clone the <a href="https://github.com/randal-cox/citation.inator">repository</a> with <code>git clone https://github.com/randal-cox/citation.inator.git</code> and check out <code>v${version}</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; published 0.3.0 includes the stable editor and bibliography tools.</p>
       <pre><code>${escapeHTML(demoServer)}</code></pre>
       <p>Without npm, serve the prebuilt <code>demos/drop-in/</code> directory or extracted ZIP with any static server. The standalone <a href="../drop-in/README.md">README</a> includes a Python command.</p>
       <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/citation-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
@@ -268,7 +273,7 @@ await writeFile("demos/static/guide.html", document({
       <p>Set options on the element or in your site's browser module. The default classes start with <code>citation-</code>. Use <code>class-prefix</code> or <code>classPrefix</code> to give them your own prefix.</p>
       <pre><code>${escapeHTML(initExample)}</code></pre>
       <p>The matching HTML attributes are <code>panel-title</code>, <code>panel-icon</code>, <code>evidence-title</code>, <code>evidence-icon</code>, <code>credit-title</code>, <code>credit-icon</code>, <code>access-providers</code>, and <code>hidden-access-providers</code>. Icons use a same-origin URL, the built-in mark, or <code>none</code>. The <code>open</code> attribute is present on the host while any panel is visible.</p>
-      <p>To compile plain text directly from the checkout with Node.js 22 or later, run this from the repository root. The CLI writes <code>article.html</code> and <code>article.html.json</code>.</p>
+      <p>To compile plain text directly from the checkout with Node.js 22.13 or later, run this from the repository root. The CLI writes <code>article.html</code> and <code>article.html.json</code>.</p>
       <pre><code>${escapeHTML(checkoutCompile)}</code></pre>
     </section>
     <section aria-labelledby="guide-use">
@@ -314,8 +319,8 @@ await writeFile("demos/static/guide.html", document({
       <p>Records accept <code>tags</code>; configure <code>tagCatalogue</code> for labels and same-origin masked icons. Use <code>listItemTags</code> for article-specific roles, <code>listFilters: true</code> for browser checkboxes, and notation such as <code>{citation list source-one; source-two | tags:theory,praxis | tag-mode:all}</code> for build-time filtering. <code>inlineTags: true</code> adds tags beside in-text citations.</p>
       <p>Editors can contribute tags at each mention: <code>{citation source-one | note:"Cox 1995" | tags:theory,praxis}</code>. <code>collectMarkerTags(sources, cache, { includeDiagnostics: true })</code> counts contributions while reporting skipped/malformed input; the host validates topics and applies curator overrides. The browser bundle and <code>--collect-tags --json</code> expose the same function. <code>inlineTags: "marker"</code> displays only that mention's tags; record topics remain in the panel. Try the collector in the editor example.</p>
       <p>Use <code>listFilters: { minItems: 6, minTags: 2 }</code> for longer multi-topic lists. Style individual badges with <code>data-ci-tag</code>; panel badges also expose tag-specific CSS parts. Listing-only <code>nocite</code> uses get <strong>Listed in</strong> returns. Unresolved/malformed diagnostics add stable <code>citation-unresolved</code> / <code>citation-malformed</code> codes.</p>
-      <p>Try the <a href="./bibliography.html">site bibliography and two articles</a> and the <a href="./editor-tools.html">offline editor tool</a>. Read the <a href="../drop-in/article-tools.md">complete tools guide</a> for API results, source-preservation limits, CLI requests, safe routes, tag configuration and the two-pass build. Reviewed import is in source-only 0.4.0 development; it is not an installed 0.2.0 API.</p>
-      <p>The development checkout exports <code>markerKind</code> from both browser bundles and supports <code>annotateMarkers(..., { noteContext: "work" })</code> for context-free editor notes. Try the local <a href="../import/">import-review demo</a> with <code>npm start</code>. The checkout also adds a synchronous <code>referenceItemPrefix</code> callback for escaped host text before each reference; its contract is in the tools guide. Unknown reader-access profiles show one prompt after each owned list, while inspectors keep their settings entry.</p>
+      <p>Try the <a href="./bibliography.html">site bibliography and two articles</a> and the <a href="./editor-tools.html">offline editor tool</a>. Read the <a href="../drop-in/article-tools.md">complete tools guide</a> for API results, source-preservation limits, CLI requests, safe routes, tag configuration and the two-pass build. The 0.4.0 import candidate adds a shared headless API and optional native-file extraction; see the <a href="../drop-in/import-api.md">import API guide</a> for candidate installation and support limits. Published 0.3.0 artifacts do not include import.</p>
+      <p>Version 0.3.0 exports <code>markerKind</code> from both browser bundles and supports <code>annotateMarkers(..., { noteContext: "work" })</code> for context-free editor notes. Try the local <a href="../import/">import-review demo</a> with <code>npm start</code>. Version 0.3.0 also adds a synchronous <code>referenceItemPrefix</code> callback for escaped host text before each reference; its contract is in the tools guide. Unknown reader-access profiles show one prompt after each owned list, while inspectors keep their settings entry.</p>
     </section>
     <section aria-labelledby="guide-access">
       <h2 id="guide-access">Reader access and media</h2>
@@ -334,12 +339,12 @@ await writeFile("demos/static/guide.html", document({
 
 const portable = "demos/drop-in/";
 const portableArticleToolsDemo = await writeArticleToolsDemo(portable, cache, './');
-await Promise.all(["citation-inspector.mjs", "citation-inspector.css", "citation-tools.mjs", "THIRD_PARTY_LICENSES.txt", "LICENSE"].map(name => cp(`dist/${name}`, portable + name)));
+await Promise.all(["citation-inspector.mjs", "citation-inspector.css", "citation-tools.mjs", "citation-import.mjs", "citation-import-files.mjs", "citation-pdf.worker.mjs", "THIRD_PARTY_LICENSES.txt", "LICENSE"].map(name => cp(`dist/${name}`, portable + name)));
 await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
   cp("CITATION.cff", portable + "CITATION.cff"),
-  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md"].map(name => cp("docs/" + name, portable + name)),
+  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md"].map(name => cp("docs/" + name, portable + name)),
   writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),
   cp("demos/static/structured-preview.css", portable + "structured-preview.css"),
   writeFile(portable + "structured-preview.mjs", structuredModule("./citation-inspector.mjs", previewClient))

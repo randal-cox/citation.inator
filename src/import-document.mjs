@@ -1,12 +1,12 @@
 import {normalizeImportLimits} from './import-limits.mjs';
 // Experimental full-source text/Markdown import. Original source is never rewritten here.
 import {Lexer} from 'marked';
-import {createHash} from 'node:crypto';
+import {importHash} from './import-hash.mjs';
 import {parseReference,parseAPAAuthorList} from './import-references.mjs';
 import {extractImportText,detectExtractedCitations,mapImportRange} from './import-extraction.mjs';
 import {detectCitationFormat} from './import-format.mjs';
-import {normalizeRecord} from './records.mjs';
-const digest=text=>createHash('sha256').update(text).digest('hex');
+import {normalizeRecord,canonicalIdentifierKey} from './records.mjs';
+const digest=importHash;
 const heading=/^ {0,3}(?:#{1,6}[ \t]+)?(References|Bibliography|Works cited):?[ \t]*(?:#+[ \t]*)?$/iu;
 function sourceLines(source) {
  const lines=[];let start=0;
@@ -24,10 +24,10 @@ function markdownBlocks(source) {
   return block;
  });
 }
-export function partitionImportDocument(source,{startLine='auto',endLine=null,limits:overrides}={}) {
+export function partitionImportDocument(source,{startLine='auto',endLine=null,limits:overrides,citationKeyword='citation'}={}) {
  const limits=normalizeImportLimits(overrides);
  if(typeof source!=='string'||source.length>limits.sourceCharacters)throw new TypeError('Use a document of at most '+limits.sourceCharacters.toLocaleString('en')+' characters.');
- const lines=sourceLines(source),blocks=markdownBlocks(source),headings=[],eligible=extractImportText(source,{format:'markdown'}).segments;
+ const lines=sourceLines(source),blocks=markdownBlocks(source),headings=[],eligible=extractImportText(source,{format:'markdown',citationKeyword}).segments;
  let blockIndex=0;
  for(const line of lines){
   while(blockIndex<blocks.length&&blocks[blockIndex].end<=line.start)blockIndex++;
@@ -128,10 +128,10 @@ function bibliographyEntries(source,document,style,limits) {
   return {...parsed,...entry,line,raw,id:'ref-'+digest(raw).slice(0,20),evidence};
  });
 }
-export function analyzeImportDocument(source,{style='auto',bibliography={},limits:overrides}={}) {
- const limits=normalizeImportLimits(overrides),document=partitionImportDocument(source,{...bibliography,limits});
+export function analyzeImportDocument(source,{style='auto',bibliography={},limits:overrides,citationKeyword='citation'}={}) {
+ const limits=normalizeImportLimits(overrides),document=partitionImportDocument(source,{...bibliography,limits,citationKeyword});
  const parts=document.bodyRanges.filter(range=>range.end>range.start).map(range=>{
-  const extraction=extractImportText(source.slice(range.start,range.end),{format:'markdown'});return {range,extraction};
+  const extraction=extractImportText(source.slice(range.start,range.end),{format:'markdown',citationKeyword});return {range,extraction};
  });
  const visible=parts.map(part=>part.extraction.text).join('\n\n');
  const formatDetection=detectCitationFormat(visible,{limits}),formatChoiceRequired=style==='auto'&&!formatDetection.style&&visible.trim().length>0;
@@ -143,6 +143,16 @@ export function analyzeImportDocument(source,{style='auto',bibliography={},limit
   records.push({...record,...(entry.fields.referenceNumber&&{referenceNumber:entry.fields.referenceNumber}),...(entry.fields.sourceSuffix&&{sourceSuffix:entry.fields.sourceSuffix}),...(entry.fields.undated&&{undated:true})});
  }
  const citations=[],diagnostics=[];
+ // Imported prose can repeat a page-header DOI across unrelated entries. Keep
+ // every source proposal, but give no local record ownership of a disputed ID.
+ const claims=new Map();
+ for(const record of records)for(const identifier of record.identifiers){
+  if(!['doi','isbn'].includes(identifier.scheme))continue;
+  const key=canonicalIdentifierKey(identifier);if(!claims.has(key))claims.set(key,new Set());claims.get(key).add(record.id);
+ }
+ const contested=new Set();
+ for(const [key,recordIds] of claims)if(recordIds.size>1){contested.add(key);diagnostics.push({code:'import-conflicting-source-identifier',key,recordIds:[...recordIds]});}
+ if(contested.size)for(const record of records)record.identifiers=record.identifiers.filter(identifier=>!contested.has(canonicalIdentifierKey(identifier)));
  for(const {range,extraction} of parts){const localFormat=detectCitationFormat(extraction.text,{limits}),detected=detectExtractedCitations(extraction,{style:effectiveStyle,maxCitations:limits.citationGroups,maxItems:limits.citedItems});diagnostics.push(...detected.diagnostics.map(item=>{
    if(Number.isInteger(item.sourceStart))return {...item,sourceStart:item.sourceStart+range.start,sourceEnd:item.sourceEnd+range.start};
    if(Number.isInteger(item.start)&&Number.isInteger(item.end)&&item.end>item.start){const mapped=mapImportRange(extraction,item);if(mapped.length)return {...item,extractedRange:{start:item.start,end:item.end},start:mapped[0].sourceStart+range.start,end:mapped.at(-1).sourceEnd+range.start,sourceStart:mapped[0].sourceStart+range.start,sourceEnd:mapped.at(-1).sourceEnd+range.start};}

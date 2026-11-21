@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve, posix } from "node:path";
 
 const staged = process.argv.includes("--staged");
-const git = (...args) => execFileSync("git", args, { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+const git = (...args) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 16 * 1024 * 1024, stdio: ["pipe", "pipe", "pipe"] });
 const root = git("rev-parse", "--show-toplevel").trim();
 const listing = staged ? ["ls-files", "-z"] : ["ls-files", "--cached", "--others", "--exclude-standard", "-z"];
 const files = new Set(git(...listing).split("\0").filter(Boolean));
@@ -39,9 +39,10 @@ try {
     ["dist/citation-inspector.css", "demos/drop-in/citation-inspector.css"],
     ["dist/citation-inspector.mjs", "demos/drop-in/citation-inspector.mjs"],
     ["dist/citation-tools.mjs", "demos/drop-in/citation-tools.mjs"],
+    ...["citation-import.mjs","citation-import-files.mjs","citation-pdf.worker.mjs"].map(name=>["dist/"+name,"demos/drop-in/"+name]),
     ["dist/THIRD_PARTY_LICENSES.txt", "demos/drop-in/THIRD_PARTY_LICENSES.txt"],
     ["CITATION.cff", "demos/drop-in/CITATION.cff"],
-    ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
+    ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
   ]) {
     if (await read(source) !== await read(copy)) fail(copy + " differs from " + source + ". Run npm run build.");
   }

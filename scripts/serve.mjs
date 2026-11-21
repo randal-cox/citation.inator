@@ -103,7 +103,7 @@ const files = /^\/(?:dist|docs|demos\/(?:static|dynamic|drop-in|import))\/[\w.-]
 const directories = /^\/demos\/(?:static|dynamic|drop-in|import)\/?$/;
 const server = createServer(async (request, response) => {
   const send = (status, type, content) => {
-    response.writeHead(status, { "Content-Type": type, "Content-Security-Policy": request.url.startsWith("/demos/import/") ? csp.replace("connect-src 'self'", "connect-src 'self' https://api.crossref.org https://openlibrary.org") : csp, "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Cache-Control": "no-store" });
+    response.writeHead(status, { "Content-Type": type, "Content-Security-Policy": request.url.startsWith("/demos/import/") ? csp.replace("connect-src 'self'", "connect-src 'self' https://api.crossref.org https://openlibrary.org; worker-src 'self'") : csp, "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Cache-Control": "no-store" });
     response.end(content);
   };
   const plain = types.get(".txt");

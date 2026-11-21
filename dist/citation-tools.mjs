@@ -1,4 +1,4 @@
-/*! citation-inator tools v0.3.0 | MIT | See LICENSE */
+/*! citation-inator tools v0.4.0-preview.0 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -9110,7 +9110,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.3.0",
+  version: "0.4.0-preview.0",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9123,7 +9123,7 @@ var package_default = {
     url: "git+https://github.com/randal-cox/citation.inator.git"
   },
   engines: {
-    node: ">=22"
+    node: ">=22.13.0"
   },
   exports: {
     ".": "./src/compiler.mjs",
@@ -9137,7 +9137,11 @@ var package_default = {
     "./openlibrary": "./src/openlibrary.mjs",
     "./access": "./src/access.mjs",
     "./tools": "./src/tools.mjs",
-    "./tools-browser": "./dist/citation-tools.mjs"
+    "./tools-browser": "./dist/citation-tools.mjs",
+    "./import": "./src/import-api.mjs",
+    "./import-browser": "./dist/citation-import.mjs",
+    "./import-files": "./src/import-files.mjs",
+    "./import-files-browser": "./dist/citation-import-files.mjs"
   },
   bin: {
     "citation-inator": "./scripts/compile.mjs"
@@ -9154,7 +9158,11 @@ var package_default = {
     "ROADMAP.md",
     "CHANGELOG.md",
     "CITATION.cff",
-    "docs"
+    "docs",
+    "dist/citation-import.mjs",
+    "dist/citation-import-files.mjs",
+    "dist/citation-pdf.worker.mjs",
+    "scripts/import.mjs"
   ],
   scripts: {
     build: "node scripts/build.mjs",
@@ -9172,8 +9180,12 @@ var package_default = {
     "playwright-core": "1.55.0"
   },
   dependencies: {
+    "@noble/hashes": "2.4.0",
+    "@xmldom/xmldom": "0.9.12",
+    fflate: "0.8.3",
     marked: "16.4.2",
-    parse5: "7.3.0"
+    parse5: "7.3.0",
+    "pdfjs-dist": "6.5.438"
   }
 };
 
