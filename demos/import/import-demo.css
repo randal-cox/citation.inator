@@ -85,3 +85,15 @@
 .import-demo .review-header blockquote { min-width:0; margin:0; }
 .import-demo .review-navigation { display:flex; gap:6px; flex:none; }
 .import-demo .review-navigation button { padding:3px 8px; min-width:34px; min-height:34px; font-size:20px; line-height:1; }
+
+.import-demo .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0; }
+.import-demo #preview { font-size:22px; }
+.import-demo #preview[aria-disabled="true"] { opacity:.5; cursor:default; }
+.import-demo #output { margin-top:18px; }
+
+.import-demo :is(#converted-document,#input-details,#diagnostics)>summary { font-size:22px; line-height:1.3; }
+.import-demo #diagnostics>details { margin:14px 0 14px 24px; }
+.import-demo #diagnostics>details>summary { font-size:16px; }
+
+.import-demo .review-citation[data-review-state="completing"] { background:#fde5c5; color:#844400; border-bottom:1px solid #bd6d13; }
+@media(prefers-color-scheme:dark) { .import-demo .review-citation[data-review-state="completing"] { background:#513c26; color:#f5d4a3; border-bottom-color:#c5914e; } }

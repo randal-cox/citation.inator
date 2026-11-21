@@ -4,7 +4,7 @@ This procedure applies to citation.inator commits and milestone releases. The cu
 
 ## Before every check-in
 
-1. Inspect the change and the staged diff. Keep the commit focused.
+1. Inspect the change and the staged diff. Keep the commit focused. For UI changes, run the reader-copy pass in AGENTS.md; substantial passes or repeated misses require an independent reader-copy review.
 2. Review the current record under `docs/milestones/` and `ROADMAP.md`. Update scope, status, evidence, known limits and follow-up work affected by the change. A review can confirm that an existing entry already describes the change accurately.
 3. Update `CHANGELOG.md` for changes adopters need to know about. Update the README, integration guide, generated Guide, feature guides and demos where behavior, configuration or usage changes.
 4. Run checks appropriate to the change. Documentation-only work needs link and consistency checks. Runtime changes need the relevant unit and browser regressions. Run `npm run build` when source changes affect generated assets or standalone guides, then inspect and stage the output.

@@ -2,7 +2,7 @@
 // DOIs are deliberately withheld here; see real-reference-answer-key.json.
 export const realReferenceExample={
  style:'apa',
- source:'Try a single-author citation (Ioannidis, 2005). The later correction is a separate publication (Ioannidis, 2022).\n\nThis citation names two authors (Feinberg & Willer, 2019). These real references have their DOIs deliberately omitted for future lookup testing.',
+ source:'Try a single-author citation (Ioannidis, 2005). The later correction is a separate publication (Ioannidis, 2022).\n\nThis citation names two authors (Feinberg & Willer, 2019).',
  records:[
   {id:'ioannidis-2005',type:'article-journal',state:'partial',title:'Why Most Published Research Findings Are False',authors:[{family:'Ioannidis',given:'John P. A.'}],issued:[2005],containerTitle:'PLOS Medicine',volume:'2',issue:'8',pages:'e124',identifiers:[]},
   {id:'ioannidis-2022-correction',type:'article-journal',state:'partial',title:'Correction: Why Most Published Research Findings Are False',authors:[{family:'Ioannidis',given:'John P. A.'}],issued:[2022],containerTitle:'PLOS Medicine',volume:'19',issue:'8',pages:'e1004085',identifiers:[]},

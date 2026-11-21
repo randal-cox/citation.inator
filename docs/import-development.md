@@ -22,6 +22,12 @@ Supply explicit `referenceNumber` metadata on each reference record. Array/cache
 
 Undated author–date citations such as `(Avery, n.d., p. 5)` are recognized, including case variants and source letters such as `n.d.-a`. Unsupported no-date/locator forms retain diagnostics. A record with no issued date remains only an ambiguous candidate (`date-not-recorded`); omission of a date is not proof of an undated work. Per-import input metadata `undated: true` can explicitly affirm that distinction, yielding `explicitly-undated` evidence. It cannot coexist with an issued date, and is not a new canonical cache/export field. Known issued dates do not match `n.d.`. All proposals still require review.
 
+## Citation-format inference
+
+`src/import-format.mjs` provides experimental `detectCitationFormat(source)` for the local demo. It returns a supported mode or `null`, a detected/ambiguous/mixed/unknown state, counted source cues and `ignoredNumericRanges`. It infers only among the current APA-like, Chicago author–date and bracketed-numeric shapes; it does not identify arbitrary named styles. Narrative-only and mixed clues stay uncertain. The demo blocks conversion in automatic mode until the editor chooses a format when inference is inconclusive. Manual overrides reanalyze immediately.
+
+Bracketed reprint years inside plausible author–date contexts are excluded from numeric proposals, even when the full author–date locator is unsupported. The service carries these exclusions into numeric reparsing, including manual numeric mode, so a later parse cannot restore an original year as a numbered reference. Source and requested-format context remain bound to the reviewed snapshot. This helper is source-only and not a public installed export.
+
 ## Reference rules and review/edit protocol
 
 `src/import-references.mjs` exposes experimental `parseReference(text, { style })` and `parseReferences(entries, options)`. Entries must be separated explicitly by the caller. They are not full-document bibliography splitters. Each result retains `raw`, partial proposed `fields`, source `evidence`, diagnostics and `requiresReview: true`.

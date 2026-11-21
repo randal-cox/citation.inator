@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Keep Converted Document open with live choice updates and stale-response/export protection. Auto-load examples and reanalyze format changes; add conservative source-based Detected format mode with manual override for uncertainty. Match the key to citation tints, including reserved orange; align disclosure headings as Converted Document, Raw Document and Diagnostics.
+
+- Remove maintainer-facing narration from import review. Converted Document is now a disclosure that generates raw Markdown on opening; technical evidence is grouped under Diagnostics. Add a standard reader-copy pass and independent review for substantial cleanup.
+
 - Make raw Markdown with `{cite …}` markers the primary import result; export `.md` and place the rendered reading preview under a disclosure.
 
 - Plan browser-only identifier/metadata completion, including proposed gray/red/orange/green statuses, conservative automatic matching, edition-aware ISBN selection and manual/offline fallback. Record bounded provider HTTP/CORS observations; runtime enrichment remains unimplemented.
