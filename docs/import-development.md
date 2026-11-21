@@ -204,4 +204,8 @@ Before a preview is shared, run the [milestone checks and independent reviews](c
 
 Earlier full-source follow-up: 163 unit tests, build and full Chrome browser suite passed with Node 26.13.1; see the [0.4.0 milestone evidence](milestones/0.4.0.md). This supersedes earlier test-count snapshots without changing their historical scope.
 
-Current identifier-completion follow-up: **184 unit tests**, build and the full Chrome 158.0.8127.36 browser suite passed on Node 26.13.1. Independent identity/API/testing and UX/reader-copy/docs reviews returned scoped PASS. See the [milestone evidence](milestones/0.4.0.md) for scope and remaining platform/release checks.
+Earlier identifier-completion follow-up: **184 unit tests**, build and the full Chrome 158.0.8127.36 browser suite passed on Node 26.13.1. Independent identity/API/testing and UX/reader-copy/docs reviews returned scoped PASS. See the [milestone evidence](milestones/0.4.0.md) for scope and remaining platform/release checks.
+
+Current real-example/review follow-up: **203 unit tests**, build and the full Chrome 158.0.8127.36 suite passed on Node 26.13.1. Coverage includes queued-vs-human navigation, shared review counts, clickable colored counter accessibility, distant-year results, local corpus boundaries and native selector stability during background updates. [Current milestone evidence](milestones/0.4.0.md).
+
+The source importer now offers `createDocumentImporter({limits})`; options can come from JSON. Effective budgets reach format detection, parsing, matching and preview context validation. See [configuration and defaults](import-demo.md#configure-import-limits). Native-format extraction and safe rewriting of linked Zotero citations remain unfinished.

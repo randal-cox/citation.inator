@@ -1,7 +1,8 @@
 // Experimental citation-shape inference; a format clue is not work identification.
+import {normalizeImportLimits} from './import-limits.mjs';
 import {parseInTextCitations} from './import-matcher.mjs';
-export function detectCitationFormat(source) {
- const options={maxCitations:100,maxItems:300};
+export function detectCitationFormat(source,{limits:overrides}={}) {
+ const limits=normalizeImportLimits(overrides),options={maxCitations:limits.citationGroups,maxItems:limits.citedItems};
  const authorDate=parseInTextCitations(source,{...options,style:'apa'}).citations;
  const ignoredNumericRanges=[];let unsupportedAuthorDate=0;
  const parentheses=[...source.matchAll(/\([^()]*\)/gu)];

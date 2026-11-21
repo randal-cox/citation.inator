@@ -2,10 +2,10 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {partitionImportDocument,analyzeImportDocument} from '../src/import-document.mjs';
 import {importDemoRequest} from '../scripts/import-demo-service.mjs';
 import {compileCitations} from '../src/compiler.mjs';import {readCache} from '../src/records.mjs';
-import {documentExamples} from '../demos/import/document-examples.mjs';
+import {syntheticDocuments as documentExamples} from './fixtures/import-documents.mjs';
 const analyze=(source,extra={})=>importDemoRequest({mode:'document',source,style:'auto',...extra});
 const preview=(source,result,decisions,extra={})=>importDemoRequest({mode:'document',source,style:'auto',action:'preview',review:result.review,reviewId:result.review.reviewId,decisions,...extra});
-test('the default examples derive matching records only from the full source bibliography',()=>{
+test('synthetic edit fixtures derive matching records only from the full source bibliography',()=>{
  const expected={apa:[3,4],chicago:[3,3],numeric:[2,4],undated:[2,2],real:[3,3],books:[1,1]};
  for(const [key,source] of Object.entries(documentExamples)){const result=analyze(source);assert.equal(result.referenceEntries.length,expected[key][0]);assert.equal(result.review.matches.length,expected[key][1]);assert.ok(result.referenceEntries.every(entry=>source.slice(entry.start,entry.start+entry.raw.length)===entry.raw));}
  assert.throws(()=>analyze(documentExamples.apa,{records:[]}),/derives references/);

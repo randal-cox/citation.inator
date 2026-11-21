@@ -1,3 +1,5 @@
+import {readableImportSource} from '../src/import-display.mjs';
+import {normalizeImportLimits} from '../src/import-limits.mjs';
 import {createHash} from 'node:crypto';
 import {parseInTextCitations,matchCitations} from '../src/import-matcher.mjs';
 import {parseReferences} from '../src/import-references.mjs';
@@ -10,30 +12,31 @@ import {mergeCompletion} from '../src/import-enrichment.mjs';
 
 // Local demo only: no files, records, credentials or provider services are written.
 export function importDemoRequest(input) {
-  if (!input || typeof input !== 'object' || typeof input.source !== 'string' || input.source.length>100000) throw new TypeError('Use a document of at most 100,000 characters.');
+  const limits=normalizeImportLimits(input?.limits);
+  if (!input || typeof input !== 'object' || typeof input.source !== 'string' || input.source.length>limits.sourceCharacters) throw new TypeError('Use a document of at most '+limits.sourceCharacters.toLocaleString('en')+' characters.');
   const {source,style:requestedStyle='apa',action='analyze'}=input;
   if (!['auto','apa','chicago-author-date','vancouver'].includes(requestedStyle)) throw new TypeError('Choose APA, Chicago author–date or Vancouver.');
   const fullDocument=input.mode==='document';
   if(fullDocument && (input.records!==undefined || input.referenceText!==undefined))throw new TypeError('Full-document import derives references from the source.');
-  const model=fullDocument?analyzeImportDocument(source,{style:requestedStyle,bibliography:input.bibliography}):null;
+  const model=fullDocument?analyzeImportDocument(source,{style:requestedStyle,bibliography:input.bibliography,limits}):null;
   const records=model?.records ?? input.records;
-  if(!Array.isArray(records)||records.length>100)throw new TypeError('Supply at most 100 reference records.');
-  if(input.referenceText !== undefined && (typeof input.referenceText!=='string'||input.referenceText.length>100000)) throw new TypeError('Supply bounded reference text.');
-  const formatDetection=model?.formatDetection ?? detectCitationFormat(source),formatChoiceRequired=model?.formatChoiceRequired ?? (requestedStyle==='auto'&&!formatDetection.style);
+  if(!Array.isArray(records)||records.length>limits.references)throw new TypeError('Supply at most '+limits.references+' reference records.');
+  if(input.referenceText !== undefined && (typeof input.referenceText!=='string'||input.referenceText.length>limits.sourceCharacters)) throw new TypeError('Supply bounded reference text.');
+  const formatDetection=model?.formatDetection ?? detectCitationFormat(source,{limits}),formatChoiceRequired=model?.formatChoiceRequired ?? (requestedStyle==='auto'&&!formatDetection.style);
   const style=model?.effectiveStyle ?? (requestedStyle==='auto'?(formatDetection.style || 'apa'):requestedStyle);
-  const contextHash=createHash('sha256').update(JSON.stringify({mode:fullDocument?'document':'fixture',bibliography:input.bibliography ?? {},records,style:requestedStyle,referenceText:input.referenceText || ''})).digest('hex');
+  const contextHash=createHash('sha256').update(JSON.stringify({limits,mode:fullDocument?'document':'fixture',bibliography:input.bibliography ?? {},records,style:requestedStyle,referenceText:input.referenceText || ''})).digest('hex');
   const cache=makeCache(records);
-  if(cache.records.some(record=>record.title.length>500 || record.authors.length>50) || records.some(record=>JSON.stringify(record).length>8000))throw new TypeError('Use shorter reference records in this demo.');
-  const detect=()=>{if(model)return model.detection;const result=parseInTextCitations(source,{style,maxCitations:100,maxItems:300});if(style==='vancouver')result.citations=result.citations.filter(item=>!formatDetection.ignoredNumericRanges.some(range=>item.start<range.end&&item.end>range.start));return result;};
-  const match=()=>{const result=matchCitations(detect(),records);if(result.matches.reduce((n,m)=>n+m.items.reduce((n,i)=>n+i.candidates.length,0),0)>1000)throw new RangeError('Too many candidate choices. Use a smaller reference set.');return result;};
+  if(cache.records.some(record=>record.title.length>limits.titleCharacters || record.authors.length>limits.authorsPerRecord) || records.some(record=>JSON.stringify(record).length>limits.recordCharacters))throw new TypeError('Use shorter reference records in this demo.');
+  const detect=()=>{if(model)return model.detection;const result=parseInTextCitations(source,{style,maxCitations:limits.citationGroups,maxItems:limits.citedItems});if(style==='vancouver')result.citations=result.citations.filter(item=>!formatDetection.ignoredNumericRanges.some(range=>item.start<range.end&&item.end>range.start));return result;};
+  const match=()=>{const result=matchCitations(detect(),records);if(result.matches.reduce((n,m)=>n+m.items.reduce((n,i)=>n+i.candidates.length,0),0)>limits.candidateChoices)throw new RangeError('Too many candidate choices. Use a smaller reference set.');return result;};
   if (action==='analyze') {
     const matched=match();
     const review={...createImportReview(source,matched),contextHash};
     let parsedReferences=model?{entries:model.entries}:undefined;
     if(input.referenceText !== undefined) {
-      if(typeof input.referenceText!=='string'||input.referenceText.length>100000) throw new TypeError('Supply bounded reference text.');
+      if(typeof input.referenceText!=='string'||input.referenceText.length>limits.sourceCharacters) throw new TypeError('Supply bounded reference text.');
       const entries=input.referenceText.split(/\r?\n/).filter(line=>line.trim());
-      if(entries.length>200)throw new TypeError('Use at most 200 explicitly separated entries.');
+      if(entries.length>limits.references)throw new TypeError('Use at most '+limits.references+' explicitly separated entries.');
       parsedReferences=parseReferences(entries,{style});
     }
     return {review,document:model?.document,referenceEntries:model?.entries,formatDetection,formatChoiceRequired,effectiveStyle:style,diagnostics:matched.diagnostics,parsedReferences,referenceRecords:cache.records.map(record=>({id:record.id,type:record.type,authorsComplete:record.authorsComplete,title:record.title,authors:record.authors,issued:record.issued,originalIssued:record.originalIssued,publisher:record.publisher,publisherPlace:record.publisherPlace,containerTitle:record.containerTitle,volume:record.volume,issue:record.issue,pages:record.pages,articleNumber:record.articleNumber,identifiers:record.identifiers,referenceNumber:records.find(input=>input.id===record.id)?.referenceNumber,undated:records.find(input=>input.id===record.id)?.undated === true}))};
@@ -46,7 +49,7 @@ export function importDemoRequest(input) {
   if(current.reviewId!==input.review?.reviewId || contextHash!==input.review?.contextHash)throw new Error('Source, reference records or style changed. Analyze again.');
   // Session completions are editor-accepted proposals. They cannot alter source-derived matching context.
   const completions=input.completions ?? [];
-  if(!Array.isArray(completions)||completions.length>100||JSON.stringify(completions).length>300000)throw new TypeError('Use bounded reference completions.');
+  if(!Array.isArray(completions)||completions.length>limits.references||JSON.stringify(completions).length>limits.recordCharacters*10)throw new TypeError('Use bounded reference completions.');
   const enriched=new Map(),extra=[],completionIds=new Set();
   for(const original of records){const identifier=original.identifiers?.find(id=>['doi','isbn'].includes(id.scheme));if(identifier&&input.decisions?.some(decision=>decision.action==='accept'&&decision.targets?.some(target=>target.recordId===original.id)))enriched.set(original.id,{record:normalizeRecord(original),identifier});}
   for(const completion of completions){
@@ -84,6 +87,6 @@ export function importDemoRequest(input) {
   const partialNumeric=style==='vancouver' && current.matches.some((match,index)=>!plan.edits.some(edit=>edit.citationIndex===index));
   const previewNotice=partialNumeric ? 'Some original reference numbers remain. The reading preview is withheld until every numeric group is converted; the reviewed source remains available.' : '';
   const readingSource=model?model.document.bodyRanges.map(range=>{let part=source.slice(range.start,range.end);for(const edit of [...plan.edits].reverse())if(edit.start>=range.start&&edit.end<=range.end)part=part.slice(0,edit.start-range.start)+edit.text+part.slice(edit.end-range.start);return part;}).join('\n\n'):output.source;
-  const reader=compileCitations(readingSource+(hasEndnotes?'':'\n\n{citation endnote}'),completedCache,{citationStyle:style,namespace:'import-preview'});
+  const reader=compileCitations(readableImportSource(readingSource)+(hasEndnotes?'':'\n\n{citation endnote}'),completedCache,{citationStyle:style,namespace:'import-preview'});
   return {source:output.source,changed:output.changed,outcomes:plan.outcomes,edits:plan.edits,html:partialNumeric?'':reader.html,previewNotice,cache:completedCache,diagnostics:reader.diagnostics};
 }

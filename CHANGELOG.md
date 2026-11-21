@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Centralize configurable import budgets through JavaScript/JSON, raise defaults for larger documents and bound concurrent reference jobs. Fix formatted/wrapped bibliography segmentation, DOI-only bibliography links and stale document display after failed analysis; exercise all six private BEST text representations without publishing them.
+
+- Separate queued/running lookup counts from human review decisions; stack equal-size colored counters with jump actions, and make arrow navigation use that same review set.
+- Replace live invented bibliography examples with publisher-verified Einstein/Planck references, including three Einstein works from 1905; retain synthetic cases only in tests. Group distant-year provider hits under More results without changing acceptance policy.
+- Contain disclosure headers and contents in one panel, improve selector arrow spacing and initialization, and rename the menu Examples. Support an optional private local-document catalogue; add BEST text representations locally without publishing manuscripts.
+
 - Start DOI/ISBN lookups automatically for selected/unambiguous references; add live remaining/progress/choice counts and batch retry. Known or pasted identifiers bypass discovery and have no search UI in their hover.
 - Add automatic direct browser DOI/ISBN lookup to import review, conservative resolved-DOI automatic acceptance, edition radios, metadata/provenance in portable caches, manual/no-identifier fallback and privacy/race/rate-limit guards. Unknown reference types search both providers; ISBN choices remain manual within bounded edition coverage.
 - Style demo disclosures as accordion bars; make Import Document and Resolve Citations open-by-default disclosures, with Lookups left aligned beside Resolve.

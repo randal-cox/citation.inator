@@ -142,3 +142,30 @@
 .import-demo #retry-lookups { float:right; }
 @media(prefers-color-scheme:dark) { .import-demo details>summary { background:#21384e; border-color:#526b83; } .import-demo details>summary:hover { background:#2b465f; } }
 @media(max-width:560px) { .import-demo summary.resolve-heading { font-size:19px; gap:10px; padding:12px; } .import-demo #lookup-count { font-size:14px; } .import-demo #lookup-activity { font-size:11px; } }
+
+/* A disclosure is one panel: its header and revealed content share the outline. */
+.import-demo details { border:1px solid #a5b9cf; border-radius:7px; background:#f7faff; }
+.import-demo details>summary { border:0; border-radius:6px; }
+.import-demo details[open] { padding-bottom:14px; }
+.import-demo details[open]>summary { border-bottom:1px solid #a5b9cf; border-bottom-left-radius:0; border-bottom-right-radius:0; }
+.import-demo details[open]>:not(summary) { margin-left:16px; margin-right:16px; max-width:calc(100% - 32px); }
+.import-demo .supplied-bibliography { padding:0; }
+.import-demo .lookup-progress :is(#lookup-count,#lookup-activity) { font-size:14px; font-weight:650; white-space:nowrap; }
+@media(prefers-color-scheme:dark) { .import-demo details { background:#1b3044; border-color:#526b83; } .import-demo details[open]>summary { border-color:#526b83; } }
+@media(max-width:560px) { .import-demo .lookup-progress :is(#lookup-count,#lookup-activity) { font-size:12px; } }
+
+.import-demo .resolve-section { position:relative; }
+.import-demo .resolve-section>details { margin:0; }
+.import-demo .resolve-section>details>summary { min-height:60px; padding-right:160px; }
+.import-demo .resolve-section>.lookup-progress { position:absolute; top:10px; right:16px; display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
+.import-demo .resolve-section .lookup-progress :is(#lookup-count,#lookup-activity) { font-size:13px; line-height:18px; font-weight:600; }
+.import-demo .lookup-progress button { font:inherit; color:inherit; background:none; border:0; padding:0 2px; border-radius:2px; }
+.import-demo .lookup-progress button[aria-disabled="true"] { cursor:default; }
+.import-demo .lookup-progress button[aria-disabled="false"] { text-decoration:underline; text-underline-offset:3px; }
+.import-demo #lookup-count[data-active="true"] { color:#844400; }
+.import-demo #lookup-activity[data-active="true"] { color:#a02237; }
+@media(prefers-color-scheme:dark) { .import-demo #lookup-count[data-active="true"] { color:#f5d4a3; } .import-demo #lookup-activity[data-active="true"] { color:#ffb4b1; } }
+@media(max-width:560px) { .import-demo .resolve-section>details>summary { padding-right:140px; } .import-demo .resolve-section>.lookup-progress { right:12px; } }
+
+.import-demo select { padding-inline-end:2.5rem; }
+.import-demo .more-results { margin:10px 0; }

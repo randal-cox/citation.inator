@@ -1,3 +1,4 @@
+import {normalizeImportLimits} from './import-limits.mjs';
 // Experimental full-source text/Markdown import. Original source is never rewritten here.
 import {Lexer} from 'marked';
 import {createHash} from 'node:crypto';
@@ -18,13 +19,14 @@ function markdownBlocks(source) {
  let cursor=0;return Lexer.lex(normalized).map(token=>{
   const at=normalized.indexOf(token.raw,cursor),until=at+token.raw.length;if(at<cursor)throw new Error('Cannot map Markdown blocks to source.');cursor=until;
   const html=item=>item.type==='html'||(item.tokens || item.items || []).some(html);
-  const block={eligible:!html(token),type:token.type,start:offsets[at],end:offsets[until],text:token.text,depth:token.depth,ordered:token.ordered};
+  const block={eligible:!html(token),type:token.type,start:offsets[at],end:offsets[until],text:token.type==='heading'?extractImportText(token.raw,{format:'markdown'}).text.trim():token.text,depth:token.depth,ordered:token.ordered};
   if(token.type==='list'){let itemCursor=at;block.items=token.items.map(item=>{const start=normalized.indexOf(item.raw,itemCursor),end=start+item.raw.length;if(start<itemCursor||end>until)throw new Error('Cannot map reference list to source.');itemCursor=end;return {start:offsets[start],end:offsets[end]};});}
   return block;
  });
 }
-export function partitionImportDocument(source,{startLine='auto',endLine=null}={}) {
- if(typeof source!=='string'||source.length>100000)throw new TypeError('Use a document of at most 100,000 characters.');
+export function partitionImportDocument(source,{startLine='auto',endLine=null,limits:overrides}={}) {
+ const limits=normalizeImportLimits(overrides);
+ if(typeof source!=='string'||source.length>limits.sourceCharacters)throw new TypeError('Use a document of at most '+limits.sourceCharacters.toLocaleString('en')+' characters.');
  const lines=sourceLines(source),blocks=markdownBlocks(source),headings=[],eligible=extractImportText(source,{format:'markdown'}).segments;
  let blockIndex=0;
  for(const line of lines){
@@ -45,7 +47,7 @@ export function partitionImportDocument(source,{startLine='auto',endLine=null}={
  const start=selected?.start ?? source.length;
  let end=selected?(endLine===null?source.length:lines[endLine-1].end):source.length;
  // A subsequent Markdown heading ends this reference section; never swallow an appendix.
- if(selected&&endLine===null){const next=blocks.find(block=>block.start>=selected.end&&block.type==='heading');if(next)end=next.start;}
+ if(selected&&endLine===null){const next=blocks.find(block=>block.start>=selected.end&&(block.type==='heading'||block.type==='paragraph'&&/^(?:Notes|Appendix|Appendices|Acknowledg(?:e)?ments|Supporting information)\s*$/iu.test(block.text || '')));if(next)end=next.start;}
  const entriesStart=selected?(heading.test(selected.text ?? selected.label)?selected.end:selected.start):source.length;
  const bodyRanges=selected?[{start:0,end:start},...(end<source.length?[{start:end,end:source.length}]:[])]:[{start:0,end:boundaryRequired?headings[0].start:source.length}];
  return {schema:'citation-inator.import-document.v1',sourceHash:digest(source),headings,boundaryRequired,
@@ -72,17 +74,26 @@ function entryFields(raw,style) {
  if(style==='chicago-author-date'&&!fields.authors&&fields.authorText){const people=chicagoAuthors(fields.authorText);if(people){fields.authors=people;fields.authorsComplete=true;}}
  if(style==='apa'&&!fields.issued){const date=/^(.+?)\s+\(n\.d\.(?:-?([a-z]))?\)\.\s+(.+)$/iu.exec(raw);if(date){const people=parseAPAAuthorList(date[1]);if(people){fields.authors=people;fields.authorsComplete=true;fields.undated=true;fields.title=date[3].split(/\.\s/u)[0].replace(/\.$/u,'');if(date[2])fields.sourceSuffix=date[2].toLowerCase();}}}
  // Only structured journal tails supply publication-type evidence for automatic DOI matching.
- if(fields.title&&style==='apa'){
+ if(fields.title&&['apa','chicago-author-date'].includes(style)){
   const titleEnd=parsed.evidence.find(item=>item.field==='title')?.end;
   const tail=titleEnd===undefined?'':raw.slice(titleEnd).replace(/^\.\s*/, '');
-  const journal=/^([^,]+),\s*(\d+)(?:\(([^)]+)\))?,\s*(e?\d+(?:[-–]\d+)?)\.?$/u.exec(tail.trim());
+  const journal=/^([^,]+),\s*(\d+)(?:\(([^)]+)\))?,\s*(e?\d+(?:[-–]\d+)?)\.?$/u.exec(tail.trim()) || /^(.+?)\s+(\d+)\s*\(([^)]+)\):\s*(\d+(?:[-–]\d+)?)\.?$/u.exec(tail.trim());
   if(journal){fields.type='article-journal';fields.containerTitle=journal[1];fields.volume=journal[2];if(journal[3])fields.issue=journal[3];if(journal[4].startsWith('e'))fields.articleNumber=journal[4];else fields.pages=journal[4];}
  }
  const original=/\b(?:original(?:ly)?(?: work)?|first)\s+published\s+(1[5-9]\d{2}|20\d{2})\b/iu.exec(raw);if(original)fields.originalIssued=[Number(original[1])];
  const diagnostics=parsed.diagnostics.filter(item=>!(fields.authors&&item.code==='import-reference-byline-unparsed')&&!(fields.undated&&item.code==='import-reference-unparsed'));
  return {...parsed,fields,state:Object.keys(fields).length?'partial':'unparsed',diagnostics};
 }
-function bibliographyEntries(source,document,style) {
+function semanticReferenceText(source){
+ const walk=tokens=>tokens.map(token=>token.type==='html'||token.type==='image'||token.type==='def'?'':token.tokens?walk(token.tokens):['text','escape','codespan'].includes(token.type)?token.text:['br','space'].includes(token.type)?'\n':'').join('');
+ return walk(Lexer.lex(source));
+}
+function referenceExtraction(source,style){
+ const extraction=extractImportText(source,{format:style==='vancouver'?'text':'markdown',includeURLLabels:true});
+ const mapped=!extraction.diagnostics.length&&Boolean(extraction.text.trim());
+ return {extraction,text:mapped?extraction.text:semanticReferenceText(source),mapped};
+}
+function bibliographyEntries(source,document,style,limits) {
  if(!document.bibliography)return [];
  const {entriesStart,end}=document.bibliography;
  const entries=[];
@@ -90,38 +101,49 @@ function bibliographyEntries(source,document,style) {
   if(block.type==='list'){for(const item of block.items)if(item.start>=entriesStart&&item.start<end)entries.push({start:item.start,end:Math.min(item.end,end)});}
   else if(block.type==='paragraph'&&block.eligible){
    const lines=document.lines.filter(line=>line.start>=Math.max(block.start,entriesStart)&&line.start<Math.min(block.end,end)&&line.text.trim());
-   const starts=text=>style==='vancouver'?/^\s*[1-9]\d{0,3}\.\s+/u.test(text):style==='apa'?/^[^,\n]+,.*\((?:1[5-9]\d{2}|20\d{2}|n\.d\.)/iu.test(text):/^[^,\n]+,.*\.\s+(?:1[5-9]\d{2}|20\d{2})/u.test(text);
-   if(lines.length>100&&lines.every(line=>starts(line.text)))throw new RangeError('Use at most 100 reference entries.');
-   if(lines.length>1&&lines.every(line=>starts(line.text)))for(const line of lines)entries.push({start:line.start,end:line.end});
-   else entries.push({start:Math.max(block.start,entriesStart),end:Math.min(block.end,end)});
+   const starts=text=>style==='vancouver'?/^\s*[1-9]\d{0,3}\.\s+/u.test(text):style==='apa'?/^(?:[^,\n]+,.*|[\p{L}\p{M} .&’'-]{1,150})\s*\((?:1[5-9]\d{2}|20\d{2}|n\.d\.)[a-z]?\)\.\s+/iu.test(text):/^[^,\n]+,.*\.\s+(?:1[5-9]\d{2}|20\d{2})/u.test(text);
+   const boundaries=lines.filter(line=>starts(referenceExtraction(line.text,style).text.trim()));
+   if(boundaries.length>1){
+    const beginning=Math.max(block.start,entriesStart);if(boundaries[0].start>beginning&&source.slice(beginning,boundaries[0].start).trim())entries.push({start:beginning,end:boundaries[0].start});
+    for(const [index,line] of boundaries.entries())entries.push({start:line.start,end:boundaries[index+1]?.start ?? Math.min(block.end,end)});
+   }else entries.push({start:Math.max(block.start,entriesStart),end:Math.min(block.end,end)});
   }
-  if(entries.length>100)throw new RangeError('Use at most 100 reference entries.');
+  if(entries.length>limits.references)throw new RangeError('Use at most '+limits.references+' reference entries.');
  }
- if(entries.length>100)throw new RangeError('Use at most 100 reference entries.');
+ if(entries.length>limits.references)throw new RangeError('Use at most '+limits.references+' reference entries.');
  return entries.map(entry=>{
   const raw=source.slice(entry.start,entry.end).trimEnd(),line=document.lines.find(line=>line.start<=entry.start&&entry.start<line.end)?.line;
   const bullet=style!=='vancouver'?/^ {0,3}[-+*]\s+/u.exec(raw):null;
-  const parsed=entryFields(bullet?raw.slice(bullet[0].length):raw,style);
-  const evidence=parsed.evidence.map(item=>({...item,start:item.start+(bullet?.[0].length || 0),end:item.end+(bullet?.[0].length || 0)}));
+  const offset=bullet?.[0].length || 0,body=raw.slice(offset),visible=referenceExtraction(body,style),extraction=visible.extraction,map=[];let flat='';for(let index=0;index<visible.text.length;index++){map.push(index);flat+=visible.text[index]==='\r'||visible.text[index]==='\n'?' ':visible.text[index];if(visible.text[index]==='\r'&&visible.text[index+1]==='\n')index++;}map.push(visible.text.length);
+  const parsed=flat.trim()&&flat.length<=20000?entryFields(flat,style):{schema:'citation-inator.import-reference.v1',fields:{},evidence:[],diagnostics:[{code:'import-reference-unparsed'}],requiresReview:true,state:'unparsed'};
+  const evidence=parsed.evidence.flatMap(item=>{if(!visible.mapped)return [{...item,start:0,end:raw.length,raw,exact:false,rule:'formatted-reference-text-proposal'}];const fragments=mapImportRange(extraction,{start:map[item.start],end:map[item.end]});if(!fragments.length)return [];const start=fragments[0].sourceStart+offset,end=fragments.at(-1).sourceEnd+offset;return [{...item,start,end,raw:raw.slice(start,end),exact:fragments.every(fragment=>fragment.exact)}];});
+  for(const link of extraction.links){
+   if(!link.href || link.href.length>20000)continue;
+   const identifiers=parseReference(link.href).fields.identifiers || [];
+   if(!identifiers.length)continue;
+   parsed.fields.identifiers=[...(parsed.fields.identifiers || [])];
+   for(const identifier of identifiers)if(!parsed.fields.identifiers.some(existing=>existing.scheme===identifier.scheme&&existing.value===identifier.value))parsed.fields.identifiers.push(identifier);
+   evidence.push({field:'identifiers',start:link.sourceStart+offset,end:link.sourceEnd+offset,raw:raw.slice(link.sourceStart+offset,link.sourceEnd+offset),exact:false,rule:'bibliography-link-identifier'});
+  }
   return {...parsed,...entry,line,raw,id:'ref-'+digest(raw).slice(0,20),evidence};
  });
 }
-export function analyzeImportDocument(source,{style='auto',bibliography={}}={}) {
- const document=partitionImportDocument(source,bibliography);
+export function analyzeImportDocument(source,{style='auto',bibliography={},limits:overrides}={}) {
+ const limits=normalizeImportLimits(overrides),document=partitionImportDocument(source,{...bibliography,limits});
  const parts=document.bodyRanges.filter(range=>range.end>range.start).map(range=>{
   const extraction=extractImportText(source.slice(range.start,range.end),{format:'markdown'});return {range,extraction};
  });
  const visible=parts.map(part=>part.extraction.text).join('\n\n');
- const formatDetection=detectCitationFormat(visible),formatChoiceRequired=style==='auto'&&!formatDetection.style&&visible.trim().length>0;
+ const formatDetection=detectCitationFormat(visible,{limits}),formatChoiceRequired=style==='auto'&&!formatDetection.style&&visible.trim().length>0;
  const effectiveStyle=style==='auto'?(formatDetection.style||'apa'):style;
  if(!['apa','chicago-author-date','vancouver'].includes(effectiveStyle))throw new TypeError('Choose a supported citation format.');
- const entries=bibliographyEntries(source,document,effectiveStyle),seen=new Set(),records=[];
+ const entries=bibliographyEntries(source,document,effectiveStyle,limits),seen=new Set(),records=[];
  for(const entry of entries){if(seen.has(entry.id))continue;seen.add(entry.id);
   const record=normalizeRecord({id:entry.id,type:'document',state:'partial',...entry.fields,original:entry.raw,citationText:entry.raw,citationParts:[{text:entry.raw}],provenance:[{provider:'Imported bibliography',note:`Source lines ${entry.line}; SHA-256 ${digest(entry.raw)}`} ]});
   records.push({...record,...(entry.fields.referenceNumber&&{referenceNumber:entry.fields.referenceNumber}),...(entry.fields.sourceSuffix&&{sourceSuffix:entry.fields.sourceSuffix}),...(entry.fields.undated&&{undated:true})});
  }
  const citations=[],diagnostics=[];
- for(const {range,extraction} of parts){const localFormat=detectCitationFormat(extraction.text),detected=detectExtractedCitations(extraction,{style:effectiveStyle,maxCitations:100,maxItems:300});diagnostics.push(...detected.diagnostics.map(item=>{
+ for(const {range,extraction} of parts){const localFormat=detectCitationFormat(extraction.text,{limits}),detected=detectExtractedCitations(extraction,{style:effectiveStyle,maxCitations:limits.citationGroups,maxItems:limits.citedItems});diagnostics.push(...detected.diagnostics.map(item=>{
    if(Number.isInteger(item.sourceStart))return {...item,sourceStart:item.sourceStart+range.start,sourceEnd:item.sourceEnd+range.start};
    if(Number.isInteger(item.start)&&Number.isInteger(item.end)&&item.end>item.start){const mapped=mapImportRange(extraction,item);if(mapped.length)return {...item,extractedRange:{start:item.start,end:item.end},start:mapped[0].sourceStart+range.start,end:mapped.at(-1).sourceEnd+range.start,sourceStart:mapped[0].sourceStart+range.start,sourceEnd:mapped.at(-1).sourceEnd+range.start};}
    return item;
@@ -133,9 +155,13 @@ export function analyzeImportDocument(source,{style='auto',bibliography={}}={}) 
    citations.push({...item,start:fragments[0].sourceStart,end:fragments.at(-1).sourceEnd,sourceFragments:fragments});
   }
  }
- if(citations.length>100||citations.reduce((sum,item)=>sum+item.items.length,0)>300)throw new RangeError('Citation review budget exceeded.');
+ if(citations.length>limits.citationGroups||citations.reduce((sum,item)=>sum+item.items.length,0)>limits.citedItems)throw new RangeError('Citation review budget exceeded.');
  if(document.boundaryRequired)diagnostics.push({code:'import-bibliography-boundary-required'});
  if(entries.some(entry=>entry.state==='unparsed'))diagnostics.push({code:'import-reference-review-required'});
  return {document:{...document,lines:undefined,blocks:undefined},entries,records,formatDetection,formatChoiceRequired,effectiveStyle,
   detection:{schema:'citation-inator.import-detection.v1',style:effectiveStyle,citations,diagnostics},diagnostics};
+}
+
+export function createDocumentImporter(options={}){
+ const limits=normalizeImportLimits(options.limits);return {limits,analyze:source=>analyzeImportDocument(source,{...options,limits})};
 }

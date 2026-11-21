@@ -19,7 +19,7 @@ Orange always means completing an identified reference. Its short label distingu
 
 A DOI is not a universal requirement. Ready means sufficient bibliographic fields for the chosen source type and an accepted identity, not that every possible field is filled. Missing optional fields do not prevent completion. Allow **Keep without identifier** for a usable selected reference when no identifier exists or the editor wants to finish manually. Record this decision honestly; do not label it provider-verified. Keep **Don't fix** as the separate choice that retains the original citation.
 
-Previous/Next should visit unresolved gray/red and orange items requiring an editor's decision, skipping background-only work, ready references and explicit skips. This changes today's red-only navigation and must be documented with the color change. A small page summary can show “3 choices · 2 looking up · 8 ready” without forcing an editor to wait in each popup.
+Previous/Next should visit unresolved gray/red and orange items requiring an editor's decision, skipping background-only work, ready references and explicit skips. This changes today's red-only navigation and must be documented with the color change. Two independent stacked counters show Looking up and Needs review. Queued/running tasks leave Looking up when the request finishes; only unresolved human decisions enter Needs review. Clicking either nonzero count opens its first item, and arrow navigation follows the same human-review set. Known-identifier metadata errors do not create false identifier-selection decisions.
 
 ## Trigger and ownership
 

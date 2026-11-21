@@ -1,3 +1,14 @@
+// src/import-display.mjs
+var readableImportSource = (source) => source.replace(/data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/giu, "[embedded image]");
+
+// src/import-limits.mjs
+var IMPORT_LIMITS = Object.freeze({ sourceCharacters: 15e5, fileBytes: 6e6, recordCharacters: 3e5, requestBytes: 12e6, references: 300, citationGroups: 300, citedItems: 900, candidateChoices: 3e3, parallelLookups: 4, titleCharacters: 1500, authorsPerRecord: 150 });
+function normalizeImportLimits(overrides = {}) {
+  if (!overrides || typeof overrides !== "object" || Array.isArray(overrides)) throw new TypeError("Supply an import limits object.");
+  for (const [key, value] of Object.entries(overrides)) if (!Object.hasOwn(IMPORT_LIMITS, key) || !Number.isSafeInteger(value) || value < 1) throw new TypeError("Use positive integer values for known import limits.");
+  return Object.freeze({ ...IMPORT_LIMITS, ...overrides });
+}
+
 // src/records.mjs
 var cleanText = (value) => typeof value === "string" ? value.trim() : "";
 var normalizeTags = (value) => [...new Set((Array.isArray(value) ? value : []).filter((tag) => typeof tag === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag)))];
@@ -509,10 +520,13 @@ function createBrowserEnrichment({ fetch: request = globalThis.fetch, now = Date
 }
 export {
   ENRICHMENT_POLICY,
+  IMPORT_LIMITS,
   automaticCandidate,
   compareIdentity,
   createBrowserEnrichment,
   enrichmentIdentifier,
   mergeCompletion,
-  normalizeImportIdentifier
+  normalizeImportIdentifier,
+  normalizeImportLimits,
+  readableImportSource
 };

@@ -1,3 +1,5 @@
+import {normalizeImportLimits} from '../src/import-limits.mjs';
+import {localImportExamples} from './local-import-examples.mjs';
 import { importDemoRequest } from "./import-demo-service.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
@@ -95,6 +97,7 @@ const types = new Map([
   [".html", "text/html; charset=utf-8"], [".css", "text/css; charset=utf-8"], [".mjs", "text/javascript; charset=utf-8"],
   [".json", "application/json; charset=utf-8"], [".md", "text/plain; charset=utf-8"], [".txt", "text/plain; charset=utf-8"], [".svg", "image/svg+xml"]
 ]);
+const serverImportLimits=normalizeImportLimits(JSON.parse(process.env.CITATION_IMPORT_LIMITS || '{}'));
 const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 const files = /^\/(?:dist|docs|demos\/(?:static|dynamic|drop-in|import))\/[\w.-]+\.(html|css|mjs|json|md|txt|svg)$/;
 const directories = /^\/demos\/(?:static|dynamic|drop-in|import)\/?$/;
@@ -117,13 +120,23 @@ const server = createServer(async (request, response) => {
       let size=0;const chunks=[];
       for await (const chunk of request) {
         size+=chunk.length;
-        if(size>1_000_000)return send(413,plain,'The demo request is too large.');
+        if(size>serverImportLimits.requestBytes)return send(413,plain,'The demo request is too large.');
         chunks.push(chunk);
       }
       try {
-        const result=importDemoRequest(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+        const input=JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        const requestedLimits=normalizeImportLimits(input.limits);
+        input.limits=Object.fromEntries(Object.entries(requestedLimits).map(([key,value])=>[key,Math.min(value,serverImportLimits[key])]));
+        const result=importDemoRequest(input);
         return send(200,types.get('.json'),JSON.stringify(result));
       } catch(error) { return send(400,types.get('.json'),JSON.stringify({error:error.message})); }
+    }
+    if(url.pathname==='/demos/import/examples'||url.pathname.startsWith('/demos/import/examples/')){
+      if(request.method!=='GET'||request.headers.origin&&request.headers.origin!==`http://${request.headers.host}`||request.headers['sec-fetch-site']&&!['same-origin','none'].includes(request.headers['sec-fetch-site']))return send(403,plain,'Use local examples from the demo.');
+      const examples=await localImportExamples(process.env.CITATION_IMPORT_EXAMPLES_DIR,{limits:serverImportLimits});
+      if(url.pathname==='/demos/import/examples')return send(200,types.get('.json'),JSON.stringify(examples.map(({id,label})=>({id,label}))));
+      const selected=examples.find(item=>item.id===url.pathname.slice('/demos/import/examples/'.length));if(!selected)return send(404,plain,'Example not found.');
+      try{return send(200,types.get('.json'),JSON.stringify({source:await selected.read()}));}catch{return send(400,types.get('.json'),JSON.stringify({error:'This local example cannot be read within the current import limits.'}));}
     }
     if (request.method !== "GET") return send(405, plain, "GET only.");
     if (url.pathname === "/") {

@@ -1,0 +1,52 @@
+{
+  "date": "2026-11-21",
+  "scope": "Public metadata checked independently against Crossref and Wiley. Not loaded by the demo.",
+  "numbering": "Modern publisher/Crossref volume numbering is retained for exact matching.",
+  "references": [
+    {
+      "title": "Über einen die Erzeugung und Verwandlung des Lichtes betreffenden heuristischen Gesichtspunkt",
+      "doi": "10.1002/andp.19053220607",
+      "year": 1905,
+      "container": "Annalen der Physik",
+      "volume": "322",
+      "issue": "6",
+      "pages": "132–148",
+      "publisher": "https://onlinelibrary.wiley.com/doi/10.1002/andp.19053220607",
+      "metadata": "https://api.crossref.org/works/10.1002/andp.19053220607"
+    },
+    {
+      "title": "Über die von der molekularkinetischen Theorie der Wärme geforderte Bewegung von in ruhenden Flüssigkeiten suspendierten Teilchen",
+      "doi": "10.1002/andp.19053220806",
+      "year": 1905,
+      "container": "Annalen der Physik",
+      "volume": "322",
+      "issue": "8",
+      "pages": "549–560",
+      "publisher": "https://onlinelibrary.wiley.com/doi/10.1002/andp.19053220806",
+      "metadata": "https://api.crossref.org/works/10.1002/andp.19053220806"
+    },
+    {
+      "title": "Zur Elektrodynamik bewegter Körper",
+      "doi": "10.1002/andp.19053221004",
+      "year": 1905,
+      "container": "Annalen der Physik",
+      "volume": "322",
+      "issue": "10",
+      "pages": "891–921",
+      "publisher": "https://onlinelibrary.wiley.com/doi/10.1002/andp.19053221004",
+      "metadata": "https://api.crossref.org/works/10.1002/andp.19053221004"
+    },
+    {
+      "title": "Ueber das Gesetz der Energieverteilung im Normalspectrum",
+      "doi": "10.1002/andp.19013090310",
+      "year": 1901,
+      "container": "Annalen der Physik",
+      "volume": "309",
+      "issue": "3",
+      "pages": "553–563",
+      "publisher": "https://onlinelibrary.wiley.com/doi/10.1002/andp.19013090310",
+      "metadata": "https://api.crossref.org/works/10.1002/andp.19013090310"
+    }
+  ],
+  "boundedRetrievalObservation": "Independent Node-hosted browser-transport calls retrieved each expected DOI at rank 1 and accepted it after resolution; not a browser/CSP or general accuracy claim."
+}

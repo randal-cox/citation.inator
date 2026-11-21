@@ -11,6 +11,7 @@ import { compileHTML } from "../src/markup.mjs";
 import { makeCache } from "../src/records.mjs";
 import { checkStructuredBrowser } from "./structured-browser.mjs";
 import { checkInspectIcons } from "./inspect-browser.mjs";
+import { checkReviewNavigation } from './import-review-navigation-browser.mjs';
 import { checkEnrichment } from './import-enrichment-browser.mjs';
 import { checkImportDemo } from "./import-demo-browser.mjs";
 import { checkReaderAccess } from "./access-browser.mjs";
@@ -35,7 +36,8 @@ const copyHost = createServer(async (request, response) => {
     response.writeHead(404).end();
   }
 });
-const demo = spawn(process.execPath, ["scripts/serve.mjs"], { env: { ...process.env, CITATION_PORT: "0", CITATION_CACHE_DIR: join(temporary, "provider-cache") }, stdio: ["ignore", "pipe", "inherit"] });
+const localExamples=join(temporary,'local-examples');await mkdir(localExamples);await writeFile(join(localExamples,'paper.txt'),'A local example (Bello, 2020).\n\n## References\n\nBello, N. (2020). Transport test.');await writeFile(join(localExamples,'examples.json'),JSON.stringify([{id:'test-paper',label:'Local test paper',file:'paper.txt'}]));
+const demo = spawn(process.execPath, ["scripts/serve.mjs"], { env: { ...process.env, CITATION_PORT: "0", CITATION_IMPORT_EXAMPLES_DIR:localExamples, CITATION_CACHE_DIR: join(temporary, "provider-cache") }, stdio: ["ignore", "pipe", "inherit"] });
 let browser;
 try {
   const [stdout] = await Promise.race([
@@ -554,6 +556,7 @@ try {
   await checkReaderAccess(browser, origin, evidence);
   await checkImportDemo(browser, origin, evidence);
   await checkEnrichment(browser, origin);
+  await checkReviewNavigation(browser, origin);
   await checkStructuredBrowser({ page, directory: temporary, origin: copied });
   await checkWebpageBrowser({ page, directory: temporary, origin: copied });
   await checkArticleTools(browser, copied, evidence);

@@ -28,7 +28,7 @@ test('demo bounds numeric expansion and candidate-choice fanout before cloning r
  const numbered=Array.from({length:100},(_,index)=>({...records[0],id:`ref-${index}`,referenceNumber:index+1}));
  assert.throws(()=>importDemoRequest({source:'[1–100] '.repeat(50),style:'vancouver',records:numbered}),/budget/);
  const sameAuthor=numbered.map(({referenceNumber,...record})=>record);
- assert.throws(()=>importDemoRequest({source:'(Avery, 2021) '.repeat(11),records:sameAuthor}),/candidate/);
+ assert.throws(()=>importDemoRequest({source:'(Avery, 2021) '.repeat(31),records:sameAuthor}),/candidate/);
 });
 
 test('partial numeric conversion does not show mixed old/new numbers as a reading preview',()=>{

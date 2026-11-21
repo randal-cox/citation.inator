@@ -43,7 +43,7 @@ function protectedMarkers(source,citationKeyword) {
  * Links contribute visible text; their targets are opaque provenance only.
  * HTML/CSS rendering is not simulated: external CSS visibility is unknown.
  */
-export function extractImportText(source, { format = 'text', citationKeyword = 'citation' } = {}) {
+export function extractImportText(source, { format = 'text', citationKeyword = 'citation', includeURLLabels=false } = {}) {
   if (typeof source !== 'string') throw new TypeError('Supply source text.');
   if (!['text','html','markdown'].includes(format)) throw new TypeError('Experimental extraction supports text, html and markdown.');
   const result = { schema:'citation-inator.import-extraction.v1', format, citationKeyword, excludedSourceRanges:protectedMarkers(source,citationKeyword), text:'', segments:[], links:[], diagnostics:[] };
@@ -62,7 +62,7 @@ export function extractImportText(source, { format = 'text', citationKeyword = '
   // Synthetic paragraph boundaries prevent matching across blocks or excluded content.
   const boundary = () => { if (result.text && !result.text.endsWith('\n\n')) result.text += '\n\n'; };
   if (format === 'markdown') {
-    extractMarkdown(source, { result, append, boundary });
+    extractMarkdown(source, { result, append, boundary, includeURLLabels });
     return result;
   }
   function visit(node, link) {
@@ -118,7 +118,7 @@ export function detectExtractedCitations(extraction, options = {}) {
 
 // Marked's tokens can omit list indentation or quote prefixes. When an exact
 // source location cannot be recovered, skip that region instead of guessing.
-function extractMarkdown(source, { result, append, boundary }) {
+function extractMarkdown(source, { result, append, boundary, includeURLLabels=false }) {
   let normalized = '';
   const offsets = [];
   for (let index = 0; index < source.length; index++) {
@@ -162,7 +162,7 @@ function extractMarkdown(source, { result, append, boundary }) {
       if (['code','codespan','image','def','hr','br','space'].includes(token.type)) { boundary(); continue; }
       if (token.type === 'table') { skipped(at,until,'table-not-supported'); continue; }
       let currentLink = link;
-      if (token.type === 'link' && urlLabel(token.text)) { boundary(); continue; }
+      if (!includeURLLabels && token.type === 'link' && urlLabel(token.text)) { boundary(); continue; }
       if (token.type === 'link') {
         currentLink = result.links.length;
         result.links.push({ href:token.href, sourceStart:offsets[at], sourceEnd:offsets[until], start:result.text.length, end:result.text.length });
