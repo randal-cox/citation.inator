@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Analyze supplied import-demo examples automatically so hover targets appear on first load; edited inputs still require explicit reanalysis.
 - Prototype document-first import review: visible supplied bibliography, highlighted in-text citations and hover/click/keyboard candidate comparisons with human matching reasons.
 - Prioritize a dedicated developer-learning milestone before external bibliography connections; retain proposed labels pending maintainer agreement.
 

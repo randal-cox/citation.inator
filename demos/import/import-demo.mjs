@@ -14,10 +14,11 @@ function invalidate(message='Source changed. Analyze again.') {
  $('errors').textContent='';$('groups').replaceChildren();$('analyze-form').querySelector('button[type="submit"]').disabled=false;
 }
 function loadExample() {
- const sample=examples[$('example').value];invalidate('Example loaded. Analyze to inspect the candidates.');
+ const sample=examples[$('example').value];invalidate('Loading example…');
  $('source').value=sample.source;$('style').value=sample.style;$('records').value=JSON.stringify(sample.records,null,2);$('reference-text').value=sample.referenceText;
  referenceRecords=sample.records;renderDocument();renderBibliography();
- $('groups').replaceChildren();$('evidence').hidden=true;$('review-intro').textContent='Analyze, then hover over or click a highlighted citation to review it. These fictional examples include ambiguity the citation alone cannot resolve.';
+ $('groups').replaceChildren();$('evidence').hidden=true;$('review-intro').textContent='Hover over or click a highlighted citation to review it. Examples are analyzed automatically; after editing, use Analyze citations. These fictional examples include ambiguity the citation alone cannot resolve.';
+ void analyzeSource();
 }
 async function request(action,extra={}) {
  const records=JSON.parse($('records').value);
@@ -118,8 +119,8 @@ function renderGroups() {
   $('groups').append(group);
  });
 }
-$('analyze-form').addEventListener('submit',async event=>{
- event.preventDefault();invalidate('Analyzing citation shapes and supplied records…');const ticket=version;
+async function analyzeSource() {
+ invalidate('Analyzing citation shapes and supplied records…');const ticket=version;
  $('analyze-form').querySelector('button[type="submit"]').disabled=true;
  try {
   const result=await request('analyze');if(ticket!==version)return;
@@ -128,7 +129,8 @@ $('analyze-form').addEventListener('submit',async event=>{
   $('status').textContent=`${review.matches.length} citation groups highlighted. Hover, click or press Enter on a citation to compare the supplied works.`;
  } catch(error){if(ticket===version){$('errors').textContent=error.message;$('status').textContent='';}}
  finally{if(ticket===version)$('analyze-form').querySelector('button[type="submit"]').disabled=false;}
-});
+}
+$('analyze-form').addEventListener('submit',event=>{event.preventDefault();void analyzeSource();});
 $('preview').addEventListener('click',async()=>{
  if(!review)return;closeReview();const ticket=version;$('preview').disabled=true;$('errors').textContent='';
  const decisions=[...$('groups').children].map((group,citationIndex)=>({citationIndex,action:group.querySelector('[data-action]').value,recordIds:[...group.querySelectorAll('[data-item]')].map(select=>select.value)}));

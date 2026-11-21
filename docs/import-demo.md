@@ -12,7 +12,7 @@ Open [http://127.0.0.1:4187/demos/import/](http://127.0.0.1:4187/demos/import/),
 
 ## What to try
 
-1. Load APA and analyze. The document and muted supplied bibliography are visible together; candidates come from those records, not an online search. Hover over a highlighted citation, click it, or focus it and press Enter. The popup shows complete candidate references and human matching reasons. Tab moves through its controls; Escape returns to the citation when the popup owned focus (hover-only dismissal preserves your prior focus), and clicking outside closes it.
+1. The initial APA example analyzes automatically, as does each supplied example loaded with **Load example**. After editing source, records or citation format, click **Analyze citations** again. The document and muted supplied bibliography are visible together; candidates come from those records, not an online search. Hover over a highlighted citation, click it, or focus it and press Enter. The popup shows complete candidate references and human matching reasons. Tab moves through its controls; Escape returns to the citation when the popup owned focus (hover-only dismissal preserves your prior focus), and clicking outside closes it.
 
    The two Avery books deliberately share author and year. There is no title clue in the citation, so the demo cannot tell you which book was used. Defer is appropriate unless you have other knowledge; choosing either fictional book merely exercises the controls.
 
