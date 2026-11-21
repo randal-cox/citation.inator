@@ -6,13 +6,19 @@
 
 `src/import-matcher.mjs` contains experimental `parseInTextCitations(text, options)` and `matchCitations(detection, references)` functions. They accept already-extracted visible plain text and supplied bibliographic records. They make no network requests, modify no records and produce no article edits.
 
-Detection returns UTF-16 source ranges, original text, parenthetical/narrative form and item fields for initial APA/Chicago author-date shapes. Groups, simple prefixes/page locators, year letters, original/edition date pairs and known author initials have synthetic regressions. The `range` option explicitly bounds the body under examination; reference-list boundaries are not guessed or removed. Existing citation.inator notation is protected.
+Detection returns UTF-16 source ranges, original text, parenthetical/narrative form and item fields for initial APA/Chicago author-date and Vancouver bracket-numeric shapes. Groups, simple prefixes/page locators, year letters, original/edition date pairs and known author initials have synthetic regressions. The `range` option explicitly bounds the body under examination; reference-list boundaries are not guessed or removed. Existing citation.inator notation is protected.
 
 Matching returns `unique`, `ambiguous` or `unmatched` proposals, all requiring review. It uses supplied author/year information and optional document-specific `sourceSuffix` metadata. It never computes imported year letters from global cache ordering. Incomplete bylines and uncertain narrative boundaries cannot become unique evidence. Candidate identity does not establish that a source supports a manuscript's claim.
 
 Narrative boundaries are still experimental. Capitalized prose, organizations and comma-separated author lists can have multiple plausible starts. Alternatives retain their offsets and carry uncertainty. Weak alternatives are labelled `uncertain-narrative-span`, not exact byline evidence. No rewrite adapter should apply these proposals until a user has accepted the author span and record identity.
 
-This prototype is not a style-compliance validator. It does not yet support undated references, bracket-numeric citations, broader locators or every valid author spelling. Literal full-person names are not heuristically split into family names. The detector itself rejects raw Markdown, HTML and document files; it expects already-extracted text. The initial HTML/Markdown extraction adapters below supply that text with source provenance. Native file adapters remain unfinished.
+This prototype is not a style-compliance validator. It does not yet support undated references, superscript numeric citations, broader locators or every valid author spelling. Literal full-person names are not heuristically split into family names. The detector itself rejects raw Markdown, HTML and document files; it expects already-extracted text. The initial HTML/Markdown extraction adapters below supply that text with source provenance. Native file adapters remain unfinished.
+
+### Numeric proposals
+
+Set `style: "vancouver"` to recognize bracketed numbers, comma groups and ranges such as `[1, 3–5]`. Each item retains its `referenceNumber`. Ranges expand to at most 100 items per group; descending, malformed or excessive ranges are diagnosed without partial import. Repeated numbers are retained with a diagnostic. Numeric-looking brackets can also be arrays or other prose notation, so these are review proposals rather than a claim of perfect citation recognition.
+
+Supply explicit `referenceNumber` metadata on each reference record. Array/cache order is never used as numbering. Missing labels remain unmatched and duplicate labels produce ambiguous candidates. A unique label links to one local reference entry; it does not verify its metadata, DOI or claim support. Body/reference boundaries remain caller-reviewed. Escaped numeric labels inside Markdown links can still be skipped with a source-location diagnostic; this is a known extraction gap. Markdown reference links may consume bracket syntax: inspect extraction diagnostics and source context rather than assuming every bracket is a citation.
 
 ## Initial extraction adapter
 
@@ -93,6 +99,10 @@ A matching Zotero CSL-JSON export is useful for identity and author/date checks.
 
 The original authoring document should remain intact. A future adapter should use structured citation identities and locators where available, retain provenance and fall back to a reviewed text match when they are absent. It must not unlink or overwrite live Zotero fields as an incidental part of importing an article.
 
+## Milestone boundary
+
+All five import tracks are authorized for 0.3.0: recognition/matching, measured reference rules, extraction, review/edit decisions and quality evaluation. Smaller reader fixes, host hooks, citation-style documentation and native accessibility/device checks are included too. See the [milestone scope](milestones/0.3.0.md#agreed-scope-and-active-tracks). Preserving existing embedded Zotero metadata belongs here; external bibliography-file ingestion/connectors and source maintenance are planned for [0.4.0](milestones/0.4.0.md).
+
 ## Next slices
 
 - Expand developer-checked citation matches into independently checked and held-out cases; separate extraction failures from recognition and matching failures.
@@ -106,7 +116,7 @@ Crossref search and local matching remain separate operations. Any later AI adap
 
 ## Evidence and scope
 
-The current source-only test run passes 107 unit tests on Node 22.23.3, including ten matcher, seventeen extraction and twelve Crossref-search tests. Independent review challenged narrative boundaries, incomplete bylines, control boundaries, native visibility and link-role handling; regression tests now constrain those cases. The extraction/search reviewer returned PASS after independently running all 107 tests and rechecking Markdown offsets, entities, protected notation and persisted search-cache validation. This is approval to continue experimenting, not acceptance of a public 0.3.0 API. Browser/runtime assets are unchanged, so existing browser verification is not represented as evidence for unimplemented file adapters.
+The current source-only test run passes 111 unit tests on Node 22.23.3, including fourteen matcher, seventeen extraction and twelve Crossref-search tests. Independent review challenged narrative boundaries, incomplete bylines, control boundaries, native visibility and link-role handling; regression tests now constrain those cases. The extraction/search reviewer returned PASS after independently running all 107 tests and rechecking Markdown offsets, entities, protected notation and persisted search-cache validation. This is approval to continue experimenting, not acceptance of a public 0.3.0 API. Browser/runtime assets are unchanged, so existing browser verification is not represented as evidence for unimplemented file adapters.
 
 Two bounded live searches used only the supplied public article: bibliographic title search returned its expected DOI first with exact title/year/DOI comparisons; using the DOI alone as bibliographic query text returned unrelated candidates, all marked with DOI conflicts. These checks establish request/response behavior for that sample, not general retrieval accuracy. No private manuscript data was sent.
 

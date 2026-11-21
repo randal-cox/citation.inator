@@ -28,7 +28,7 @@ test('existing notation, noncitations and out-of-range reference lists are left 
  const text='A date (2021), a rate (p = 0.04), and a marker {citation alpha | note:"Avery (2021)"}. Real (Bennett, 2019).\n\nReferences\nAvery (2021) Bibliography.';
  const result=parseInTextCitations(text,{range:{start:0,end:text.indexOf('\n\nReferences')}});
  assert.deepEqual(result.citations.map(c=>c.raw),['(Bennett, 2019)']);
- assert.throws(()=>parseInTextCitations(text,{style:'vancouver'}),/Initial detection/);
+ assert.throws(()=>parseInTextCitations(text,{style:'unknown'}),/Initial detection/);
  assert.throws(()=>parseInTextCitations(text,{format:'markdown'}),/visible plain text/);
  assert.throws(()=>parseInTextCitations(text,{range:{start:-1,end:4}}),/range/);
 });
@@ -108,4 +108,38 @@ test('narrative alternatives retain known initials and mark weak name-boundary e
  const comma=matchCitations(parseInTextCitations('Avery, Bennett, and Chan (2021)'),[record('three',['Avery','Bennett','Chan'],2021),record('two',['Bennett','Chan'],2021)]).matches[0].items[0];
  assert.equal(comma.state,'ambiguous');
  assert.ok(comma.candidates.every(c=>c.evidence.authors==='uncertain-narrative-span'));
+});
+
+test('numeric citations preserve grouped ranges and UTF-16 source spans',()=>{
+ const text='😀 Reading [1, 3–5, 8].';
+ const result=parseInTextCitations(text,'vancouver');
+ assert.equal(result.citations.length,1);const citation=result.citations[0];
+ assert.equal(citation.raw,'[1, 3–5, 8]');assert.equal(text.slice(citation.start,citation.end),citation.raw);
+ assert.deepEqual(citation.items.map(item=>item.referenceNumber),[1,3,4,5,8]);assert.equal(citation.requiresReview,true);
+});
+
+test('numeric matching requires explicit document-local labels rather than cache order',()=>{
+ const refs=[{...record('two',['Bennett'],2020),referenceNumber:2},{...record('one',['Avery'],2021),referenceNumber:1},record('unlabelled',['Chan'],2019)];
+ const detection=parseInTextCitations('[1–3]','vancouver');
+ const result=matchCitations(detection,refs).matches[0].items;
+ assert.deepEqual(result.map(item=>item.state),['unique','unique','unmatched']);
+ assert.deepEqual(result.slice(0,2).map(item=>item.candidates[0].recordId),['one','two']);
+ assert.equal(result[0].candidates[0].evidence.identity,'document-local-label');
+ const collision=matchCitations(detection,[...refs,{...record('other',['Duval'],2000),referenceNumber:1}]);
+ assert.equal(collision.matches[0].items[0].state,'ambiguous');
+ assert.throws(()=>matchCitations(detection,[{...refs[0],referenceNumber:0}]),/referenceNumber/);
+});
+
+test('numeric malformed groups are not partially imported and expansion is bounded',()=>{
+ for(const text of ['[3–1]','[0]','[1,]','[1–9999]','[1 2]','[1,[2]]','[[1]]','[1]]','[1,2']) {
+  const result=parseInTextCitations(text,'vancouver');assert.equal(result.citations.length,0);assert.equal(result.diagnostics[0].code,'import-unparsed-numeric-citation');
+ }
+ const duplicate=parseInTextCitations('[1,1]','vancouver');assert.equal(duplicate.citations[0].items.length,2);assert.equal(duplicate.diagnostics[0].code,'import-repeated-reference-number');
+ assert.equal(parseInTextCitations('[95%] [p < 0.05]','vancouver').citations.length,0);
+});
+
+test('numeric notation and bibliography boundaries remain protected',()=>{
+ const text='{citation alpha | note:"[1]"} Body [2].\nReferences\n[3] Book';
+ const result=parseInTextCitations(text,{style:'vancouver',range:{start:0,end:text.indexOf('\nReferences')}});
+ assert.deepEqual(result.citations.map(c=>c.raw),['[2]']);
 });

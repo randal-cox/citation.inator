@@ -2,7 +2,7 @@
 import { normalizeRecord } from './records.mjs';
 import { scanCitationMarkers } from './compiler.mjs';
 
-const styles = new Set(['apa', 'chicago-author-date']);
+const styles = new Set(['apa', 'chicago-author-date', 'vancouver']);
 const particles = new Set(['de', 'del', 'da', 'dos', 'van', 'von', 'der', 'den', 'la', 'le']);
 const nonNames = new Set(['in', 'see', 'however', 'according', 'figure', 'table', 'equation', 'appendix', 'since', 'from', 'between']);
 const folded = text => text.normalize('NFKC').toLocaleLowerCase('en').replace(/’/g, "'").replace(/\s+/g, ' ').trim();
@@ -55,11 +55,12 @@ export function parseInTextCitations(text, options = {}) {
   const { style = 'apa', range = { start: 0, end: text?.length }, citationKeyword, format = 'text' } = options;
   if (typeof text !== 'string') throw new TypeError('Supply visible plain text.');
   if (format !== 'text') throw new TypeError('Initial detection accepts visible plain text, not markup or files.');
-  if (!styles.has(style)) throw new TypeError('Initial detection supports apa and chicago-author-date.');
+  if (!styles.has(style)) throw new TypeError('Initial detection supports apa, chicago-author-date and vancouver.');
   if (!range || !Number.isInteger(range.start) || !Number.isInteger(range.end) || range.start < 0 || range.end < range.start || range.end > text.length) throw new TypeError('Supply a valid source range.');
   const protectedRanges = scanCitationMarkers(text, { citationKeyword });
   const citations = [], diagnostics = [];
   const source = text.slice(range.start, range.end);
+  if (style === 'vancouver') return detectNumeric(source,range.start,protectedRanges,style);
   for (const match of source.matchAll(/\(([^()]*)\)/gu)) {
     let start = range.start + match.index;
     const end = start + match[0].length;
@@ -101,6 +102,51 @@ export function parseInTextCitations(text, options = {}) {
   return { schema: 'citation-inator.import-detection.v1', style, citations, diagnostics };
 }
 
+function* bracketGroups(source) {
+  let start = -1, depth = 0, nested = false;
+  for (let index=0;index<source.length;index++) {
+    if (source[index] === '[') {
+      if (!depth) { start=index; nested=false; } else nested=true;
+      depth++;
+    } else if (source[index] === ']' && depth) {
+      depth--;
+      if (!depth) {
+        let end=index+1;
+        while (source[end] === ']') { nested=true; end++; }
+        yield {index:start,raw:source.slice(start,end),body:source.slice(start+1,index),malformed:nested};
+        index=end-1;
+      }
+    }
+  }
+  if (depth) yield {index:start,raw:source.slice(start),body:source.slice(start+1),malformed:true};
+}
+
+// Bracket shapes are proposals; only the caller's document-local labels map them.
+function detectNumeric(source,offset,protectedRanges,style) {
+  const citations = [], diagnostics = [];
+  for (const match of bracketGroups(source)) {
+    const start = offset+match.index, end = start+match.raw.length;
+    if (protectedRanges.some(item=>start<item.end && end>item.start) || /\n\s*\n/.test(match.body)) continue;
+    if (match.malformed) {
+      if (/\d/.test(match.body)) diagnostics.push({code:'import-unparsed-numeric-citation',start,end,raw:match.raw});
+      continue;
+    }
+    if (!/^\s*\d[\d\s,–—-]*$/u.test(match.body)) continue;
+    const numbers = []; let valid = true;
+    for (const part of match.body.split(',')) {
+      const span = /^\s*([1-9]\d{0,3})(?:\s*[-–—]\s*([1-9]\d{0,3}))?\s*$/u.exec(part);
+      if (!span) { valid=false; break; }
+      const first = Number(span[1]), last = Number(span[2] || span[1]);
+      if (last < first || last-first+1+numbers.length > 100) { valid=false; break; }
+      for (let number=first;number<=last;number++) numbers.push(number);
+    }
+    if (!valid) { diagnostics.push({code:'import-unparsed-numeric-citation',start,end,raw:match.raw}); continue; }
+    if (new Set(numbers).size !== numbers.length) diagnostics.push({code:'import-repeated-reference-number',start,end,raw:match.raw});
+    citations.push({start,end,raw:match.raw,form:'numeric',items:numbers.map(referenceNumber=>({referenceNumber})),requiresReview:true});
+  }
+  return {schema:'citation-inator.import-detection.v1',style,citations,diagnostics};
+}
+
 function authorMatches(name, author) {
   const initials = /^(?:(?:\p{Lu}\.\s*)+)(.+)$/u.exec(name);
   const family = initials ? initials[1] : name;
@@ -122,11 +168,18 @@ export function matchCitations(detection, references) {
     if (seen.has(record.id)) throw new TypeError('Reference IDs must be unique.');
     seen.add(record.id);
     if (input.sourceSuffix !== undefined && !/^[a-z]+$/.test(input.sourceSuffix)) throw new TypeError('A sourceSuffix must be a lowercase year letter.');
-    return { record, sourceSuffix: input.sourceSuffix || '' };
+    if (input.referenceNumber !== undefined && (!Number.isInteger(input.referenceNumber) || input.referenceNumber < 1 || input.referenceNumber > 9999)) throw new TypeError('A referenceNumber must be an integer from 1 to 9999.');
+    return { record, sourceSuffix: input.sourceSuffix || '', referenceNumber:input.referenceNumber };
   });
   return { schema: 'citation-inator.import-matches.v1', matches: detection.citations.map(citation => ({
     citation,
     items: citation.items.map(item => {
+      if (item.referenceNumber !== undefined) {
+        const candidates = records.filter(entry=>entry.referenceNumber === item.referenceNumber).map(({record})=>({
+          recordId:record.id,title:record.title,evidence:{referenceNumber:item.referenceNumber,identity:'document-local-label'}
+        }));
+        return {item,state:!candidates.length ? 'unmatched' : candidates.length === 1 ? 'unique' : 'ambiguous',candidates,requiresReview:true};
+      }
       let uncertain = Boolean(item.boundaryUncertain);
       const candidates = records.flatMap(({ record, sourceSuffix }) => {
         if (record.state === 'unresolved' || !record.issued) return [];
