@@ -73,6 +73,10 @@ Attach each request to the selected record's identity, query fingerprint and imp
 
 On offline, timeout, rate limit, blocked CORS/CSP or malformed provider data, keep the selected local reference and show “Lookup unavailable” with Retry and paste input. Keep errors distinct from “No identifier found.” Offer manual completion/Keep without identifier rather than stranding a usable reference forever in orange. Never undo a good match because an optional abstract, URL or other field was unavailable.
 
+## Prerequisite: source-derived references
+
+Complete the [full-document text/bibliography edit loop](import-document-flow.md) before wiring automatic enrichment into the default demo. The current separate reference lines and supplied-record JSON can drift; provider automation must operate on the selected source-derived reference revision. File inputs will feed the same session through format-specific adapters.
+
 ## First implementation and acceptance
 
 1. Implement the state/status model and revised actionable-item navigation with injected/mock providers first. Cover two bibliography matches, no match, queued search, ambiguous identifiers, outage, skip, manual correction, source-span review and an identifier-free completed reference.

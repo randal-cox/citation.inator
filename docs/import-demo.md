@@ -39,6 +39,10 @@ Choose **Real references: DOIs omitted**. It contains Ioannidis’s 2005 article
 
 The [input module](../demos/import/real-reference-example.mjs) deliberately omits identifiers. The [separate answer key](../demos/import/real-reference-answer-key.json) records the expected DOI and publisher source for each work; it is not loaded by the demo or matcher. This is a small development set, not an independent search benchmark. Automatic DOI suggestions are still upcoming; the [browser enrichment plan](import-enrichment-plan.md) describes the proposed states, automatic matching and manual fallback. You can paste an answer-key DOI into a citation’s identifier field to exercise manual correction now.
 
+## Full-document limitation
+
+The current Raw Document contains separate article-body, reference-line and record-JSON inputs. It is not yet one complete raw source. Body edits update detection/matching; record edits update matching; reference-line edits update parsing evidence but do not rebuild the matching records. The displayed bibliography comes from those supplied records. This is a developer-harness gap, not the intended import flow. The [full-document plan](import-document-flow.md) makes example/paste/file inputs share a canonical source containing its bibliography and defines source-derived records, synchronized editing and portable output. Native file selection/drop remains future adapter work.
+
 ## Reference data
 
 Expand Raw Document to inspect/edit the supplied record JSON and separate raw reference lines. The field parser proposes partial fields and retains raw entries; those proposals are not silently inserted into the curated records used by matching. Keep one reference per line for this demonstration. Optional matching JSON is inside each popup; reference-rule evidence is below the form.

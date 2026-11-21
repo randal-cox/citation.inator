@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Document the current detached body/reference/record fixture limitation and plan one full-source import flow shared by examples, paste and file adapters. Prioritize source-derived bibliography synchronization and portable output before default enrichment.
+
 - Remove the remaining Analyze button; raw document/reference edits now reanalyze automatically after a short pause, alongside immediate selector analysis.
 
 - Keep Converted Document open with live choice updates and stale-response/export protection. Auto-load examples and reanalyze format changes; add conservative source-based Detected format mode with manual override for uncertainty. Match the key to citation tints, including reserved orange; align disclosure headings as Converted Document, Raw Document and Diagnostics.
