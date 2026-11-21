@@ -1,7 +1,7 @@
 // Experimental rules propose fields. Original entries are always retained for review.
 import { normalizeIdentifier } from './records.mjs';
 const year='(?:1[5-9]\\d{2}|20\\d{2})';
-function apaAuthors(text) {
+export function parseAPAAuthorList(text) {
   const authors=[];let remainder=text.trim();
   while (remainder) {
     const match=/^([^,]+),\s*((?:\p{Lu}\.(?:-\p{Lu}\.)?\s*)+)(?:,\s*(?:&\s*)?|$)/u.exec(remainder);
@@ -37,7 +37,7 @@ export function parseReference(text,{style='apa'}={}) {
       propose('authorText',authorText,0,date.index,'author-before-date');
       propose('issued',[Number(date[1])],date.index,date.index+date[0].length,'explicit-style-date');
       if (date[2]) fields.sourceSuffix=date[2];
-      const authors=style==='apa' && apaAuthors(authorText);
+      const authors=style==='apa' && parseAPAAuthorList(authorText);
       if (authors) { fields.authors=authors;fields.authorsComplete=true; }
       else diagnostics.push({code:'import-reference-byline-unparsed',message:'Retain and review the original author text.'});
       const after=date.index+date[0].length, tail=text.slice(after);

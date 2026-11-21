@@ -269,7 +269,7 @@ Use `originalIssued` for the original work and `issued` for the edition you cons
 
 The Chicago preset produces `(Durkheim [1912] 1995)` inline and `Durkheim, Émile. (1912) 1995.` at the start of the reference. APA produces `(Durkheim, 1912/1995)` and an original-publication note. For Chicago, set `reprintYear: "original"` for `(Durkheim 1912)`, `"edition"` for `(Durkheim 1995)`, or `"both"` for the default bracketed form. The reference keeps both dates. Supply `label` or `citationParts` for a house style with different punctuation.
 
-For editorial bibliography text, provide `citationParts` in the style the page uses. Each part has `text` and optional `emphasis: "italic"` or `"bold"`. Add an HTTPS `href` to link that part in both the reference and panel. Other schemes leave the text unlinked. Text is escaped and the same formatting appears in the panel and endnotes. For an author–date suffix, write the year as `1990.` in Chicago or `(1990)` in the other author–date formats so the compiler can insert the letter.
+For editorial bibliography text, provide `citationParts` in the style the page uses. In the development checkout, an explicitly `partial` record with nonempty valid `citationParts` can omit an unparsed title and still render that authored reference; missing titles in other states remain unresolved. Each part has `text` and optional `emphasis: "italic"` or `"bold"`. Add an HTTPS `href` to link that part in both the reference and panel. Other schemes leave the text unlinked. Text is escaped and the same formatting appears in the panel and endnotes. For an author–date suffix, write the year as `1990.` in Chicago or `(1990)` in the other author–date formats so the compiler can insert the letter.
 
 ```json
 {

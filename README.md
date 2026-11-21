@@ -82,9 +82,9 @@ See the [integration guide](docs/integration.md) for HTML and Markdown examples,
 
 ## Try the import-review development demo
 
-On `codex/citation-import`, run `npm ci`, `npm run build` and `npm start`, then open [Import review](http://127.0.0.1:4187/demos/import/). Try APA ambiguity, Chicago narrative/reprint forms, numeric labels and undated records. Choose works and explicitly accept groups before previewing changes. Preview leaves the original article unchanged. Use reviewed source replaces the demo textarea; Download text exports a separate reviewed copy.
+On `codex/citation-import`, run `npm ci`, `npm run build` and `npm start`, then open [Import review](http://127.0.0.1:4187/demos/import/). Choose an example, paste a complete document, or choose/drop a UTF-8 TXT/Markdown file. Raw Document includes its bibliography; edits rebuild references and matches. Format is detected from the source with a manual override. Radio choices update Converted Document live. Download both Markdown and the reference cache for local-ID citations; the original bibliography is preserved.
 
-This local-server demo uses plain text and supplied records; it makes no provider calls and saves no documents. It is not included as a working service in the standalone static ZIP. See [the demo guide](docs/import-demo.md) for limits and steps. Development bundles also provide [marker classification and context-free editor notes](docs/article-tools.md#unreleased-draftinator-compatibility-additions); published 0.2.0 artifacts are unchanged.
+This development demo requires a local server, makes no provider calls and saves no documents. Native PDF/Word files and automatic identifier lookup remain unfinished. It is not a service in the static ZIP. See [the demo guide](docs/import-demo.md) for boundaries, keyboard controls and limits. Published 0.3.0 artifacts are unchanged.
 
 ## Work on the source checkout
 

@@ -38,7 +38,7 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
       }
       if(!target || typeof target.identifier!=='string' || target.recordId!==undefined) throw new TypeError('Choose a candidate or supply an identifier for each item.');
       const raw=target.identifier.trim(), identifier=normalizeIdentifier(/^[\dXx\s-]{10,30}$/.test(raw)?'isbn:'+raw:raw);
-      if(!identifier || !['doi','isbn','url','pmid','pmcid','arxiv'].includes(identifier.scheme)) throw new TypeError('Enter a valid DOI, ISBN, HTTPS URL, PMID, PMCID or arXiv identifier.');
+      if(!identifier || !['doi','isbn','url','pmid','pmcid','arxiv'].includes(identifier.scheme)) throw new TypeError('Enter a valid DOI, ISBN, URL, PMID, PMCID or arXiv identifier.');
       return identifier;
     });
     const selection=decision.targets ? {targets:identities.map(id=>id.scheme==='local'?{recordId:id.value}:{identifier:id.scheme+':'+id.value})} : {recordIds:[...decision.recordIds]};

@@ -97,3 +97,16 @@
 
 .import-demo .review-citation[data-review-state="completing"] { background:#fde5c5; color:#844400; border-bottom:1px solid #bd6d13; }
 @media(prefers-color-scheme:dark) { .import-demo .review-citation[data-review-state="completing"] { background:#513c26; color:#f5d4a3; border-bottom-color:#c5914e; } }
+
+.import-demo #file-drop { border:1px dashed #8da6bf; padding:14px; display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.import-demo #input-name { overflow-wrap:anywhere; }
+.import-demo #reference-summary { white-space:pre-wrap; }
+.import-demo #input-details>textarea { margin:18px 0; }
+.import-demo #boundary-custom input { width:100%; max-width:180px; color:inherit; background:transparent; border:1px solid #8da6bf; padding:8px; font:inherit; }
+
+.import-demo .source-controls { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); align-items:stretch; gap:16px; }
+.import-demo .source-controls>.toolbar { margin:0; }
+.import-demo .source-controls label { margin:0; min-width:0; width:100%; }
+.import-demo .source-controls select { width:100%; }
+.import-demo .review-divider { border:0; border-top:1px solid #8da6bf; margin:24px 0; }
+@media(max-width:560px) { .import-demo .source-controls { grid-template-columns:1fr; } }

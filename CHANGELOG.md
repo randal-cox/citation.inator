@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- Document the current detached body/reference/record fixture limitation and plan one full-source import flow shared by examples, paste and file adapters. Prioritize source-derived bibliography synchronization and portable output before default enrichment.
+- Replace default detached import fixtures with one full document and source-derived bibliography records. Add adjustable bibliography boundaries, live edits, UTF-8 TXT/Markdown selection/drop, preserved original downloads and portable Markdown/cache exports. Retain unsupported references as raw partial records without invented titles.
+- Group source inputs under Import Document and review under Resolve Citations, separated by a rule. Show Dropped file or Chosen file in the example selector after importing, infer citation format from the source, and close review at either navigation endpoint. Label manual targets DOI, ISBN or URL.
 
 - Remove the remaining Analyze button; raw document/reference edits now reanalyze automatically after a short pause, alongside immediate selector analysis.
 

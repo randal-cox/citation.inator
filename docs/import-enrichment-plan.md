@@ -75,7 +75,7 @@ On offline, timeout, rate limit, blocked CORS/CSP or malformed provider data, ke
 
 ## Prerequisite: source-derived references
 
-Complete the [full-document text/bibliography edit loop](import-document-flow.md) before wiring automatic enrichment into the default demo. The current separate reference lines and supplied-record JSON can drift; provider automation must operate on the selected source-derived reference revision. File inputs will feed the same session through format-specific adapters.
+The [full-document text/bibliography edit loop](import-document-flow.md) is implemented for text and Markdown, including UTF-8 file selection/drop. Future provider automation must bind to the selected source-derived reference revision. Native-file adapters remain separate work.
 
 ## First implementation and acceptance
 
@@ -88,3 +88,11 @@ Complete the [full-document text/bibliography edit loop](import-document-flow.md
 ## Plan review
 
 Independent API/testing review returned scoped PASS for this planning document. It requested explicit pause/disable invalidation of in-flight results, edition-safe request sharing, and versioned executable matching criteria before accuracy claims; those requirements are included above. This verdict is not runtime, browser or release acceptance.
+
+## Identifier and occurrence-locator model
+
+Design direction, not new runtime namespace support: keep a work’s identifier separate from the location cited on each occurrence. The existing manual field accepts DOI, ISBN, safe HTTPS URLs and the library’s PMID/PMCID/arXiv forms. Future candidates include [Handle](https://www.handle.net/) for repository objects and [SWHID](https://www.softwareheritage.org/how-to-archive-reference-code/) for specific software artifacts. Prefer explicit namespaces over guessing arbitrary catalogue numbers. Resolver support and metadata availability must be tracked separately from recognizing an identifier.
+
+For typed locators, follow the [CSL citation-item schema](https://github.com/citation-style-language/schema/blob/master/schemas/input/csl-citation.json): a `locator` string plus a `label` such as page, chapter, section, paragraph, figure or timestamp. Citation.inator currently accepts a free-form `locator` in its marker; adding typed locator syntax is future work and must retain existing strings. This per-occurrence value must not mutate the shared work’s identity or bibliographic page span. A separately published chapter can have its own work identifier; citing chapter 3 of a whole book can instead be a locator. An edition or translation must not be merged solely because its title matches.
+
+For playable audio/video, [W3C Media Fragments](https://www.w3.org/TR/media-frags/) defines time fragments such as `#t=60,90`; the citation should retain a readable timestamp even when a player does not honor that fragment. Standards alignment does not establish browser/player interoperability. Test deep-link behavior independently, and keep copy/export identity separate from the reader’s location link.

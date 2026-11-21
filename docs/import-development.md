@@ -2,6 +2,16 @@
 
 **In progress.** The current stable release is 0.3.0; import remains separate development work. The initial prototype is source-only and is not exposed by the package exports, browser bundle or CLI. No 0.4.0 package or release is claimed.
 
+## Full-source development adapter
+
+`src/import-document.mjs` provides source-only `partitionImportDocument(source, { startLine: "auto", endLine: null })` and `analyzeImportDocument(source, { style: "auto", bibliography: {} })`. These Node helpers are not package exports. The demo requests `mode: "document"`, rejecting detached record/reference inputs in that mode. Boundaries, extracted citation fragments and raw reference entries map to the full canonical source. Code, quotes and raw HTML are excluded from heading detection; actual Markdown blocks bound bibliography entries. Ambiguous headings require a manual boundary.
+
+Reference IDs hash raw entry content: reordering preserves identity, while changing the entry creates a new identity. Records retain source range/hash evidence and raw authored `citationParts`; partial APA/Chicago/numeric rules propose fields without backfilling fixture metadata. Complex unparsed bylines stay raw. The GUI clears decisions after source changes; source/context hashes still reject stale requests.
+
+Explicit `state: "partial"` records with nonempty valid authored `citationParts` now retain partial state even without a parsed title. Empty parts and missing titles in other states remain unresolved. This permits clean consumers to render exported raw references without inventing title metadata; it does not promote incomplete provider records to resolved.
+
+The [demo guide](import-demo.md) documents file budgets, canonical newline preservation, manual boundaries and paired Markdown/cache export. The [flow design](import-document-flow.md) distinguishes this delivered text path from future native adapters and provider enrichment.
+
 ## First implementation
 
 `src/import-matcher.mjs` contains experimental `parseInTextCitations(text, options)` and `matchCitations(detection, references)` functions. They accept already-extracted visible plain text and supplied bibliographic records. They make no network requests, modify no records and produce no article edits.
@@ -162,7 +172,7 @@ Crossref search and local matching remain separate operations. Any later AI adap
 
 ## Evidence and scope
 
-The current source-only test run passes 138 unit tests on Node 22.23.3, including recognition, extraction, search, reference-rule, review/edit and evaluator regressions. Independent review challenged narrative boundaries, incomplete bylines, control boundaries, native visibility and link-role handling; regression tests now constrain those cases. The extraction/search reviewer returned PASS after independently running all 107 tests and rechecking Markdown offsets, entities, protected notation and persisted search-cache validation. This is approval to continue experimenting, not acceptance of a public 0.4.0 API. The rebuilt browser suite verifies reader-help/host-hook behavior and the local plaintext import demo. It does not verify native file adapters or a browser-native import API; reusable import modules still have no installed exports.
+The earlier source-only test run passed 138 unit tests on Node 22.23.3, including recognition, extraction, search, reference-rule, review/edit and evaluator regressions. Independent review challenged narrative boundaries, incomplete bylines, control boundaries, native visibility and link-role handling; regression tests now constrain those cases. The extraction/search reviewer returned PASS after independently running all 107 tests and rechecking Markdown offsets, entities, protected notation and persisted search-cache validation. This is approval to continue experimenting, not acceptance of a public 0.4.0 API. The rebuilt browser suite verifies reader-help/host-hook behavior and the local plaintext import demo. It does not verify native file adapters or a browser-native import API; reusable import modules still have no installed exports.
 
 Two bounded live searches used only the supplied public article: bibliographic title search returned its expected DOI first with exact title/year/DOI comparisons; using the DOI alone as bibliographic query text returned unrelated candidates, all marked with DOI conflicts. These checks establish request/response behavior for that sample, not general retrieval accuracy. No private manuscript data was sent.
 
@@ -185,3 +195,5 @@ Before a preview is shared, run the [milestone checks and independent reviews](c
 - [Zotero field-code storage](https://www.zotero.org/support/kb/word_field_codes): explains the reference data hidden behind rendered Word fields and LibreOffice reference marks.
 - [Zotero document troubleshooting](https://www.zotero.org/support/kb/existing_citations_not_detected): active citation data can be lost by document transformations.
 - [Crossref reference-matching guidance](https://github.com/CrossRef/rest-api-doc/blob/master/api_tips.md): recommends bibliographic queries and comparison of returned candidates.
+
+Current full-source follow-up: 163 unit tests, build and full Chrome browser suite passed with Node 26.13.1; see the [0.4.0 milestone evidence](milestones/0.4.0.md). This supersedes earlier test-count snapshots without changing their historical scope.

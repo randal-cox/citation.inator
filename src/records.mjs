@@ -206,6 +206,7 @@ export function normalizeRecord(input) {
     }] : [];
   });
   const title = cleanText(input.title);
+  const citationParts = normalizeTextParts(input.citationParts);
   const abstract = cleanText(input.abstract?.text);
   const abstractSource = cleanText(input.abstract?.source);
   const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
@@ -215,7 +216,7 @@ export function normalizeRecord(input) {
   return {
     id: input.id.trim(),
     type: kinds.has(input.type) ? input.type : "document",
-    state: title ? state : "unresolved",
+    state: title ? state : state === "partial" && citationParts.length ? "partial" : "unresolved",
     ...(input.license && cleanText(input.license.name) && {
       license: { name: cleanText(input.license.name), url: httpsURL(input.license.url) }
     }),
@@ -228,7 +229,7 @@ export function normalizeRecord(input) {
     title, authors, identifiers: [...identifiers.values()], locations, provenance,
     ...(Array.isArray(input.tags) && { tags: normalizeTags(input.tags) }),
     ...(relatedIdentifiers.length && { relatedIdentifiers }),
-    citationParts: normalizeTextParts(input.citationParts),
+    citationParts,
     ...(input.authorsComplete === false && { authorsComplete: false }),
     ...(Array.isArray(input.listAnnotationParts) && { listAnnotationParts: normalizeTextParts(input.listAnnotationParts) }),
     ...Object.fromEntries(optional.map(field => [field, cleanText(input[field])]).filter(([, value]) => value)),
