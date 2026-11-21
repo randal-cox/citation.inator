@@ -4,7 +4,7 @@ Current release 0.2.0 provides article editor tools, cross-page bibliographies a
 
 ## Milestone 0.3.0 — Reviewed import in development
 
-F4 is the next substantial milestone, targeted at 0.3.0 once confidence is established. Initial work is a source-only author-date detector/matcher and a private paired-format corpus audit. See [the milestone record](docs/milestones/0.3.0.md) and [corpus/development protocol](docs/import-development.md). Public file adapters, Crossref search, reviewed edits and measured import accuracy remain unfinished. Released metadata/assets stay at 0.2.0 until a distinct preview is ready.
+F4 is the next substantial milestone, targeted at 0.3.0 once confidence is established. Initial work includes a source-only author-date detector/matcher, text/HTML extraction with source provenance, and developer-checked private paired-format matches. See [the milestone record](docs/milestones/0.3.0.md) and [corpus/development protocol](docs/import-development.md). Public file adapters, Crossref search, reviewed edits and measured import accuracy remain unfinished. Released metadata/assets stay at 0.2.0 until a distinct preview is ready.
 
 ## Completed milestone 0.2.0 — Article tooling
 

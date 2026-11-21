@@ -12,7 +12,17 @@ Matching returns `unique`, `ambiguous` or `unmatched` proposals, all requiring r
 
 Narrative boundaries are still experimental. Capitalized prose, organizations and comma-separated author lists can have multiple plausible starts. Alternatives retain their offsets and carry uncertainty. Weak alternatives are labelled `uncertain-narrative-span`, not exact byline evidence. No rewrite adapter should apply these proposals until a user has accepted the author span and record identity.
 
-This prototype is not a style-compliance validator. It does not yet support undated references, bracket-numeric citations, broader locators or every valid author spelling. Literal full-person names are not heuristically split into family names. Raw Markdown, HTML and document files are explicitly rejected; extraction adapters must preserve eligible visible text and map its positions back to the original source.
+This prototype is not a style-compliance validator. It does not yet support undated references, bracket-numeric citations, broader locators or every valid author spelling. Literal full-person names are not heuristically split into family names. The detector itself rejects raw Markdown, HTML and document files; it expects already-extracted text. The initial HTML extraction adapter below supplies that text with source provenance. Markdown and native file adapters remain unfinished.
+
+## Initial extraction adapter
+
+`src/import-extraction.mjs` provides experimental `extractImportText(source, { format: "text" | "html" })`, `detectExtractedCitations(extraction, options)` and `mapImportRange(extraction, { start, end })`. These are source-only functions, with no package export or CLI command yet.
+
+HTML extraction reads eligible text across inline formatting and ordinary links, including citation labels inside bibliography-manager hyperlinks. It excludes code, scripts, controls, explicit hidden/ARIA-hidden elements, closed native details/dialogs, editable regions and generated citation UI. Paragraphs and skipped regions introduce boundaries so detection cannot bridge them. Link targets are opaque provenance: extraction neither follows them nor treats them as work identities.
+
+Offsets use UTF-16 code units. Each extracted text segment retains its original HTML text-node range. Unchanged text maps precisely; entity decoding and newline normalization conservatively map to the whole original text node with `exact: false`. Citation proposals retain separate `sourceFragments`, including link indexes where applicable. These fragments are evidence for review, not an edit plan: replacing the span from the first fragment to the last could erase formatting or links. No replacement API is provided.
+
+The adapter parses HTML without executing it and does not model CSS visibility or visual reading order; it always reports that limitation. It does not sanitize or render HTML. Markdown, DOCX, ODT and PDF extraction remain separate future adapters.
 
 ## Corpus design
 
@@ -31,7 +41,9 @@ Initial intake has demonstrated why these layers matter:
 - PDF extractors can produce different line boundaries and include rotated/overlay text. Extraction quality must be evaluated before scoring citation matching.
 - A bracket-numeric article is needed alongside author-date material; its reference numbers must be mapped using its own ordered bibliography, never a global reference cache.
 
-The local corpus is excluded from Git across branch changes. No manuscript text or opaque document tokens are copied into public tests, and no metadata provider is contacted by intake/detection. The original documents remain untouched. The corpus audit, extracted text views and unscored detector proposals are local working evidence.
+A first developer-labelled text case contains 19 citation groups / 25 cited items: 21 proposals match the supplied bibliography and four correctly remain unmatched because their entries are absent. Transferred labels give the same candidate results across four extracted text views. The same proposals also survive a local Markdown-to-HTML rendering check; its source maps refer to the intermediate HTML, not to the original Markdown. These are development results from one document, not independent curator acceptance, a held-out accuracy estimate or verification of the cited claims. The labels and source content remain private.
+
+The local corpus is excluded from Git across branch changes. No manuscript text or opaque document tokens are copied into public tests, and no metadata provider is contacted by intake/detection. The original documents remain untouched. The corpus audit, extracted text views and preliminary checked matching results are local working evidence.
 
 ## Structured reference sources
 
@@ -41,8 +53,8 @@ The original authoring document should remain intact. A future adapter should us
 
 ## Next slices
 
-- Curate per-citation expected matches for the paired corpus; separate extraction failures from recognition and matching failures.
-- Add a Markdown/HTML visible-text adapter, including citation-looking hyperlinks, with a map to original source ranges and protected code/attribute regions.
+- Expand developer-checked citation matches into independently checked and held-out cases; separate extraction failures from recognition and matching failures.
+- Extend the initial HTML adapter with Markdown extraction and more precise decoded-entity maps; preserve citation-looking hyperlinks while protecting code/attribute regions.
 - Add reviewable Crossref bibliographic search with field agreement/conflicts, rate limits, recorded evidence and no automatic cache mutation. Send references only when the host explicitly invokes lookup, not the manuscript.
 - Measure a small rule-based reference parser against real reference lists. Expand only after recording field accuracy and error cases.
 - Add DOCX/ODT adapters, numeric/reference-number mapping, and PDF extraction/reading-order tests as independent components. OCR is a later, separately measured path.
@@ -52,7 +64,7 @@ Crossref search and local matching remain separate operations. Any later AI adap
 
 ## Evidence and scope
 
-The first source-only test run passed 78 unit tests on Node 22.23.3, including ten focused import tests. Independent review challenged narrative boundaries and incomplete bylines; regression tests now constrain those cases. This is approval to continue experimenting, not acceptance of a public 0.3.0 API. Browser/runtime assets are unchanged, so existing browser verification is not represented as evidence for unimplemented file adapters.
+The current source-only test run passes 84 unit tests on Node 22.23.3, including ten matcher and six extraction tests. Independent review challenged narrative boundaries, incomplete bylines, control boundaries, native visibility and link-role handling; regression tests now constrain those cases. The extraction reviewer returned PASS for the experimental development check-in after rechecking the fixes. This is approval to continue experimenting, not acceptance of a public 0.3.0 API. Browser/runtime assets are unchanged, so existing browser verification is not represented as evidence for unimplemented file adapters.
 
 Before a preview is shared, run the [milestone checks and independent reviews](checkin-procedure.md), provide installed Node/browser APIs and JSON CLI equivalents, update the Guide/README, and document measured format/style coverage. Corpus breadth, matching quality and preservation of review decisions determine confidence; a green synthetic test suite alone does not.
 
