@@ -1,6 +1,6 @@
 # Verification history
 
-The current released milestone is [0.1.4 — We have a citation for that](milestones/0.1.4.md). The assays below retain their original version and environment scopes.
+The current milestone is [0.3.0 — Editor integration and reader polish](milestones/0.3.0.md). The assays below retain their original version and environment scopes.
 
 Assay date 2026-11-10. Build 0.1.0. The checked artifacts were freshly built, with the plain HTML directory copied outside the checkout and served independently. Chrome 156.0.8078.80 ran headless. The zoom assay used actual tab zoom in Chrome for Testing. The demo servers were temporary.
 
