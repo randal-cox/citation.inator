@@ -45,11 +45,11 @@
 .import-demo .supplied-bibliography { background:#edf3f8; border-top:1px solid #bccbdc; padding:20px; margin-top:30px; color:#435c78; }
 .import-demo .supplied-bibliography h3 { color:#142b46; }
 .import-demo #reference-summary p { margin:12px 0; }
-.import-demo .review-citation { display:inline; font:inherit; padding:1px 3px; border:0; border-bottom:2px dashed #a45f61; background:#f7e8e7; color:#713d40; border-radius:3px; }
+.import-demo .review-citation { display:inline; font:inherit; padding:1px 3px; border:0; border-bottom:2px dashed #b83f48; background:#fbd6d9; color:#882a34; border-radius:3px; }
 .import-demo .review-citation[data-review-state="selected"] { background:#eaf1eb; border-bottom:1px solid #83a18c; color:#365640; }
 .import-demo .review-citation[data-review-state="kept"] { background:#eef0f2; border-bottom:1px dotted #8a939d; color:#54606b; }
 @media(prefers-color-scheme:dark) {
- .import-demo .review-citation { background:#3b3035; border-bottom-color:#bb8689; color:#e7c3c5; }
+ .import-demo .review-citation { background:#642f3a; border-bottom-color:#f19aa2; color:#ffe1e4; }
  .import-demo .review-citation[data-review-state="selected"] { background:#293c37; border-bottom-color:#628879; color:#c1d6c9; }
  .import-demo .review-citation[data-review-state="kept"] { background:#303b46; border-bottom-color:#82909f; color:#c2cbd5; }
 }
@@ -80,3 +80,8 @@
 .import-demo .review-actions { display:flex; flex-wrap:wrap; gap:10px; }
 .import-demo input:focus-visible { outline:3px solid #0c716f; outline-offset:3px; }
 @media(prefers-color-scheme:dark) { .import-demo input:focus-visible { outline-color:#89d9cf; } .import-demo .target-choice input { accent-color:#91c3ff; } }
+
+.import-demo .review-header { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; position:sticky; top:-20px; padding:12px 0 8px; margin-top:-12px; background:inherit; z-index:1; }
+.import-demo .review-header blockquote { min-width:0; margin:0; }
+.import-demo .review-navigation { display:flex; gap:6px; flex:none; }
+.import-demo .review-navigation button { padding:3px 8px; min-width:34px; min-height:34px; font-size:20px; line-height:1; }

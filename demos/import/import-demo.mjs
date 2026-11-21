@@ -70,22 +70,39 @@ function selectedTargets(group) {
  return [...group.querySelectorAll('fieldset[data-item]')].map(fieldset=>{
   const radio=fieldset.querySelector('input[type="radio"]:checked');
   if(!radio)return null;
+  if(radio.dataset.skip!==undefined)return {skip:true};
   return radio.dataset.manual!==undefined ? {identifier:fieldset.querySelector('input[type="text"]').value.trim()} : {recordId:radio.value};
  });
 }
 function updateReviewAppearance(group) {
  const anchor=document.querySelector(`[data-review-group="${group.dataset.group}"]`);if(!anchor)return;
- const state=group.dataset.action==='accept'?'selected':group.dataset.action==='reject'?'kept':'needs-review';
+ const state=group.dataset.needsSpan==='true' && group.dataset.action==='accept'?'needs-review':group.dataset.action==='accept'?'selected':group.dataset.action==='reject'?'kept':'needs-review';
  anchor.dataset.reviewState=state;
  const description=state==='selected'?(group.dataset.automatic==='true'?'Selected automatically':'Selected for replacement'):state==='kept'?'Left unchanged':'Needs review';
- anchor.setAttribute('aria-label',`Review citation ${Number(group.dataset.group)+1}: ${anchor.textContent} (${description.toLowerCase()})`);anchor.title=description;
+ anchor.setAttribute('aria-label',`Review citation ${Number(group.dataset.group)+1}: ${anchor.textContent} (${description.toLowerCase()})`);anchor.title=description;updateReviewNavigation();
+}
+function redTarget(index,direction) {
+ const anchors=[...document.querySelectorAll('[data-review-state="needs-review"]')];
+ return direction>0 ? anchors.find(anchor=>Number(anchor.dataset.reviewGroup)>index) : anchors.reverse().find(anchor=>Number(anchor.dataset.reviewGroup)<index);
+}
+function updateReviewNavigation() {
+ for(const group of $('groups').children)for(const button of group.querySelectorAll('[data-direction]'))button.disabled=!redTarget(Number(group.dataset.group),Number(button.dataset.direction));
+}
+function moveReview(index,direction) {
+ const anchor=redTarget(index,direction);if(!anchor)return;
+ anchor.scrollIntoView({block:'center',behavior:'instant'});openReview(Number(anchor.dataset.reviewGroup),true);
 }
 function renderGroups() {
  $('groups').replaceChildren();
  review.matches.forEach((match,index)=>{
-  const group=el('div');group.className='citation-group';group.dataset.group=String(index);group.dataset.action='defer';group.id=`review-group-${index}`;group.hidden=true;group.tabIndex=-1;
+  const group=el('div');group.className='citation-group';group.dataset.group=String(index);group.dataset.action='defer';group.dataset.needsSpan=String(match.items.some(proposal=>proposal.item.boundaryUncertain));group.id=`review-group-${index}`;group.hidden=true;group.tabIndex=-1;
   group.addEventListener('pointerenter',()=>clearTimeout(closeTimer));group.addEventListener('pointerleave',scheduleClose);group.addEventListener('focusout',scheduleClose);
-  const caption=el('blockquote',match.citation.raw);caption.id=`group-label-${index}`;group.setAttribute('role','dialog');group.setAttribute('aria-labelledby',caption.id);group.append(caption);
+  const caption=el('blockquote',match.citation.raw);caption.id=`group-label-${index}`;group.setAttribute('role','dialog');group.setAttribute('aria-labelledby',caption.id);
+  const header=el('div');header.className='review-header';const navigation=el('nav');navigation.className='review-navigation';navigation.setAttribute('aria-label','Unresolved citations');
+  for(const [direction,icon,name,key] of [[-1,'←','Previous','ArrowLeft'],[1,'→','Next','ArrowRight']]) {
+   const button=el('button',icon);button.type='button';button.dataset.direction=String(direction);button.setAttribute('aria-label',name+' red citation');button.title=name+' red citation ('+(direction>0?'Right':'Left')+' arrow outside fields)';button.setAttribute('aria-keyshortcuts',key);button.addEventListener('click',()=>moveReview(index,direction));navigation.append(button);
+  }
+  header.append(caption,navigation);group.append(header);
   match.items.forEach((proposal,itemIndex)=>{
    const fieldset=el('fieldset');fieldset.dataset.item=String(itemIndex);
    fieldset.append(el('legend',`${match.items.length>1?'Work '+(itemIndex+1)+' · ':''}${proposal.candidates.length} suggested target${proposal.candidates.length===1?'':'s'}`));
@@ -101,24 +118,23 @@ function renderGroups() {
    manualLabel.append(manual,el('span','Use an identifier'));fieldset.append(manualLabel);
    const input=el('input');input.type='text';input.id=`identifier-${index}-${itemIndex}`;input.maxLength=2048;input.placeholder='Paste DOI, ISBN or HTTPS URL';input.setAttribute('aria-label',`Identifier for work ${itemIndex+1}`);input.setAttribute('aria-describedby',`identifier-help-${index}-${itemIndex}`);
    input.addEventListener('input',()=>{manual.checked=true;});fieldset.append(input);
-   const help=el('small','Saved without an online lookup.');help.id=`identifier-help-${index}-${itemIndex}`;fieldset.append(help);group.append(fieldset);
+   const help=el('small','Saved without an online lookup.');help.id=`identifier-help-${index}-${itemIndex}`;fieldset.append(help);
+   const skipLabel=el('label');skipLabel.className='target-choice';const skip=el('input');skip.type='radio';skip.name=`target-${index}-${itemIndex}`;skip.dataset.skip='';skip.id=`skip-${index}-${itemIndex}`;skipLabel.append(skip,el('span',"Don't fix"));fieldset.append(skipLabel);group.append(fieldset);
   });
-  const actions=el('div');actions.className='review-actions';const accept=el('button','Use selected targets');accept.type='button';accept.dataset.accept='';accept.disabled=true;
-  const reject=el('button',"Don't fix");reject.type='button';reject.dataset.reject='';
   const state=el('p','Not changed');state.className='item-state';state.setAttribute('aria-live','polite');
   const activeReview=review;
-  if(match.items.every(proposal=>proposal.state==='unique' && proposal.candidates.length===1 && !proposal.item.boundaryUncertain)){group.dataset.action='accept';group.dataset.automatic='true';state.textContent='Selected automatically';accept.disabled=false;}
+  if(match.items.every(proposal=>proposal.state==='unique' && proposal.candidates.length===1 && !proposal.item.boundaryUncertain)){group.dataset.action='accept';group.dataset.automatic='true';state.textContent='Selected automatically';}
   function changed() {
    if(review!==activeReview)return;
-   version++;output=null;$('output-section').hidden=true;$('errors').textContent='';group.dataset.action='defer';group.dataset.automatic='false';state.textContent='Not changed';updateReviewAppearance(group);
-   accept.disabled=!selectedTargets(group).every(target=>target && (target.recordId || target.identifier));
-   $('preview').disabled=false;$('status').textContent='Preview to check your changes.';
+   version++;output=null;$('output-section').hidden=true;$('errors').textContent='';group.dataset.automatic='false';
+   const targets=selectedTargets(group);
+   group.dataset.action=targets.some(target=>target?.skip)?'reject':targets.every(target=>target && (target.recordId || target.identifier))?'accept':'defer';
+   state.textContent=group.dataset.action==='reject'?"Won’t change":group.dataset.action==='accept'?(group.dataset.needsSpan==='true'?'Author span needs review':'Selected for replacement'):'Choose a target';
+   updateReviewAppearance(group);$('preview').disabled=false;$('status').textContent='Preview to check your changes.';
   }
   group.addEventListener('input',changed);group.addEventListener('change',changed);
-  group.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.matches('input[type="text"]')){event.preventDefault();if(!accept.disabled)accept.focus();}});
-  accept.addEventListener('click',()=>{changed();group.dataset.action='accept';state.textContent='Selected for replacement';updateReviewAppearance(group);closeReview();document.querySelector(`[data-review-group="${index}"]`)?.focus({preventScroll:true});});
-  reject.addEventListener('click',()=>{changed();group.dataset.action='reject';state.textContent="Won’t change";updateReviewAppearance(group);closeReview();document.querySelector(`[data-review-group="${index}"]`)?.focus({preventScroll:true});});
-  actions.append(accept,reject);group.append(actions,state);
+  group.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.matches('input[type="text"]'))event.preventDefault();});
+  group.append(state);
   const details=el('details');details.append(el('summary','Matching evidence'),el('pre',JSON.stringify(match.items,null,2)));group.append(details);$('groups').append(group);updateReviewAppearance(group);
  });
 }
@@ -136,7 +152,7 @@ async function analyzeSource() {
 $('analyze-form').addEventListener('submit',event=>{event.preventDefault();void analyzeSource();});
 $('preview').addEventListener('click',async()=>{
  if(!review)return;closeReview();const ticket=version;$('preview').disabled=true;$('errors').textContent='';
- const decisions=[...$('groups').children].map((group,citationIndex)=>({citationIndex,action:group.dataset.action,targets:selectedTargets(group)}));
+ const decisions=[...$('groups').children].map((group,citationIndex)=>({citationIndex,action:group.dataset.action,targets:group.dataset.action==='accept'?selectedTargets(group):[]}));
  try {
   const result=await request('preview',{review,reviewId:review.reviewId,decisions});if(ticket!==version)return;
   for(const outcome of result.outcomes){if(outcome.state==='accepted-needs-span'||outcome.state==='accepted-needs-adapter'){const group=$('groups').children[outcome.citationIndex];group.dataset.action='defer';updateReviewAppearance(group);}}
@@ -151,7 +167,10 @@ $('preview').addEventListener('click',async()=>{
  finally{if(ticket===version)$('preview').disabled=false;}
 });
 for(const id of ['source','records','reference-text','style'])$(id).addEventListener('input',()=>{invalidate();renderDocument();if(id==='records'){$('reference-summary').replaceChildren();$('bibliography-explanation').textContent='Supplied record data changed. Analyze to refresh the checked bibliography.';}});
-document.addEventListener('keydown',event=>{if(event.key==='Escape'&&activeGroup){const restore=activeGroup.contains(document.activeElement),anchor=document.querySelector(`[data-review-group="${activeGroup.dataset.group}"]`);closeReview();if(restore)anchor?.focus({preventScroll:true});}});
+document.addEventListener('keydown',event=>{
+ const navigationIndex=activeGroup?.contains(event.target)?activeGroup.dataset.group:event.target.closest('[data-review-group]')?.dataset.reviewGroup;
+ if(navigationIndex!==undefined && ['ArrowLeft','ArrowRight'].includes(event.key) && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.target.closest('input,textarea,select,[contenteditable]')){event.preventDefault();moveReview(Number(navigationIndex),event.key==='ArrowRight'?1:-1);return;}
+ if(event.key==='Escape'&&activeGroup){const restore=activeGroup.contains(document.activeElement),anchor=document.querySelector(`[data-review-group="${activeGroup.dataset.group}"]`);closeReview();if(restore)anchor?.focus({preventScroll:true});}});
 document.addEventListener('pointerdown',event=>{if(activeGroup&&!activeGroup.contains(event.target)&&!event.target.closest('[data-review-group]'))closeReview();});
 window.addEventListener('resize',closeReview);
 $('load-example').addEventListener('click',loadExample);

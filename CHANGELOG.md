@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Apply import radio decisions immediately, make Don’t fix a radio choice, and add Previous/Next red-citation arrows with keyboard navigation that preserves native control keys. Strengthen unresolved red highlighting.
+
 - Use subdued green for selected import targets, muted red for citations needing review and gray for Don’t fix. Automatically select unique candidates; incomplete evidence and uncertain spans remain for review.
 - Simplify import review to suggested-target counts and radio choices, with manual DOI/ISBN/URL corrections, an explicit Don’t fix action, clearer fictional examples and a collapsed supplied bibliography. Identifier entry validates syntax/check digits without provider lookups.
 
