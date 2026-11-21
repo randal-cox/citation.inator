@@ -599,9 +599,10 @@ function compileBlocks(blocks, cache, {
   endnotesHeading = "Endnotes", markup = false, closingMarkup = "",
   references = "endnotes", isolatedHref, reprintYear = "both", suffixScope = "fragment",
   inspectAppearance = "text", inspectPlacement = "after", inspectIcon, inspectIconMode = "image",
-  siteOccurrences, occurrences, siteOrigin, tagCatalogue, listItemTags, listFilters = false, inlineTags = false
+  siteOccurrences, occurrences, siteOrigin, tagCatalogue, listItemTags, listFilters = false, inlineTags = false, referenceItemPrefix
 } = {}, structured = false) {
   if (!/^[a-z][a-z0-9-]{0,39}$/.test(namespace)) throw new TypeError("Use a stable lowercase document namespace.");
+  if (referenceItemPrefix !== undefined && typeof referenceItemPrefix !== "function") throw new TypeError("referenceItemPrefix must be a function.");
   validateClassPrefix(classPrefix);
   if (!citationStyles.has(citationStyle)) throw new TypeError("Unknown citation style.");
   if (typeof endnotesHeading !== "string" || !endnotesHeading.trim()) throw new TypeError("Supply a nonempty endnotes heading.");
@@ -915,7 +916,10 @@ function compileBlocks(blocks, cache, {
       const attrs = list ? ` data-ci-list-record="${record.id}"` : ` id="${noteID(record, scope)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
       const actions = controls ? `<div ${part("note-actions")} data-ci-note-record="${record.id}">${controls}</div>` : "";
       const tags = features.tags(record, list);
-      return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map(tag => tag.id)))}">${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${actions}${annotation}${siteLinks(record.id)}</li>`;
+      const prefixValue = referenceItemPrefix?.(structuredClone({ record, tags, namespace, number:item.entry.number, kind:list ? 'reading-list' : 'endnote' }));
+      if (prefixValue !== undefined && prefixValue !== null && typeof prefixValue !== 'string') throw new TypeError('referenceItemPrefix must return text, null or undefined.');
+      const prefix = prefixValue ? `<span ${part('reference-prefix')}>${escapeHTML(prefixValue)}</span>` : '';
+      return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map(tag => tag.id)))}">${prefix}${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${actions}${annotation}${siteLinks(record.id)}</li>`;
     }).join("\n");
     if (list && !listFilters) return `<ol ${part("reference-list")}>${rows}</ol>`;
     const level = marker.level ?? 2;

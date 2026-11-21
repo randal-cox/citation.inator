@@ -2,7 +2,13 @@
 
 ## Unreleased
 
+- Add source-only partial reference rules and explicit revision-bound review/edit planning. Preserve unsupported entries, uncertain spans and rich-text/linked conversion decisions without destructive replacement.
+- Add an independently authored synthetic challenge set, evaluation runner and retained reports, with explicit unsupported cases and small-corpus limits.
+- Show unknown-profile access help once per owned list while retaining inspector settings, and add a synchronous escaped-text referenceItemPrefix host hook.
+- Add the citation-style catalogue/support matrix, source-development API documentation and initial draft.inator compatibility notes.
+
 - Add experimental bracket-numeric import proposals and matching against explicit document-local reference numbers; malformed groups stay unimported and duplicate labels stay ambiguous.
+- Plan a 0.4.0 developer learning site, live playground, annotated feature documentation and draft.inator integration.
 - Confirm 0.3.0 scope as reviewed import plus outstanding reader/host/style-documentation fixes; plan external bibliography integration and source maintenance separately for 0.4.0.
 
 - Begin source-only F4/0.3.0 author-date detection and reviewable matching experiments, paired-format corpus analysis and synthetic regressions. Add text/HTML/Markdown extraction with conservative original-source fragments, developer-checked local matching cases and explicit Crossref bibliographic search proposals with field comparisons, pacing, validated search caching and failure evidence. No new installed API or document-file import is exposed in 0.2.0.

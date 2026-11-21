@@ -191,3 +191,17 @@ Use `listFilters: { minItems: 6, minTags: 2 }` to show controls only for lists w
 ## Diagnostic codes
 
 Unresolved diagnostics carry `code: 'citation-unresolved'`; malformed-citation diagnostics carry `code: 'citation-malformed'`. The existing `state` values stay `unresolved` and `malformed`. These additive codes are present in compiler, editor-query/annotation and JSON CLI results, including unresolved/malformed entries in the cross-fragment report. Hosts can key on `code` without parsing message text. Other diagnostic states retain their existing contracts.
+
+## Unreleased 0.3.0 host prefix hook
+
+In the development checkout, `referenceItemPrefix` is a synchronous compiler callback that adds escaped text before each reference item. It is not part of the released 0.2.0 package and cannot be supplied through JSON CLI requests. This is separate from record tags and per-list tag overrides.
+
+```js
+const result = compileCitations(source, cache, {
+  referenceItemPrefix({ record, tags, namespace, number, kind }) {
+    return kind === "reading-list" && tags.some(tag => tag.id === "theory") ? "Theory · " : "";
+  }
+});
+```
+
+The callback receives `{ record, tags, namespace, number, kind }`; `kind` is `reading-list` or `endnote`. Metadata is cloned so changing it cannot mutate the cache. Return a string, `null` or `undefined`. Text is escaped and wrapped in the configurable `reference-prefix` class/part. HTML/object results are rejected. Prefix text is presentation only: it does not enter copied citations, bibliographic records, exports or source marker notes.

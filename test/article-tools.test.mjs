@@ -253,3 +253,12 @@ test('tag collection shares HTML and Markdown exclusions and supports custom not
     assert.equal(diagnostics[0].state,'invalid-site-occurrence');
   }
 });
+
+test('referenceItemPrefix receives isolated metadata and emits safe text before each reference',()=>{
+ const before=JSON.stringify(cache);const seen=[];
+ const result=compileCitations('{citation list alpha; beta}',cache,{classPrefix:'host',referenceItemPrefix:info=>{seen.push({id:info.record.id,kind:info.kind});info.record.title='Changed';return '<Theory> ';}});
+ assert.equal(seen.length,2);assert.ok(seen.every(item=>item.kind==='reading-list'));assert.equal(JSON.stringify(cache),before);
+ assert.match(result.html,/class="host-reference-prefix"[^>]*>&lt;Theory&gt; <\/span>/);assert.ok(!result.html.includes('Changed'));
+ assert.throws(()=>compileCitations('{citation list alpha}',cache,{referenceItemPrefix:'text'}),/function/);
+ assert.throws(()=>compileCitations('{citation list alpha}',cache,{referenceItemPrefix:()=>({html:'<b>unsafe</b>'})}),/return text/);
+});

@@ -20,6 +20,30 @@ Set `style: "vancouver"` to recognize bracketed numbers, comma groups and ranges
 
 Supply explicit `referenceNumber` metadata on each reference record. Array/cache order is never used as numbering. Missing labels remain unmatched and duplicate labels produce ambiguous candidates. A unique label links to one local reference entry; it does not verify its metadata, DOI or claim support. Body/reference boundaries remain caller-reviewed. Escaped numeric labels inside Markdown links can still be skipped with a source-location diagnostic; this is a known extraction gap. Markdown reference links may consume bracket syntax: inspect extraction diagnostics and source context rather than assuming every bracket is a citation.
 
+## Reference rules and review/edit protocol
+
+`src/import-references.mjs` exposes experimental `parseReference(text, { style })` and `parseReferences(entries, options)`. Entries must be separated explicitly by the caller. They are not full-document bibliography splitters. Each result retains `raw`, partial proposed `fields`, source `evidence`, diagnostics and `requiresReview: true`.
+
+Initial APA rules propose initial-based personal bylines, issued dates, source suffixes and a first title segment. Complex/omitted/corporate bylines stay as raw author text rather than becoming complete invented people. Chicago rules propose an explicit date boundary and a title segment; numeric rules propose a leading reference number and explicit DOI text. Publication containers, editions, full bylines, undated entries and title-boundary edge cases still need review. DOI trailing punctuation/wrappers can be ambiguous; extracted identifiers are proposals, not verified identities. No parsing result enters the citation cache automatically.
+
+`src/import-review.mjs` is a Node-only experimental protocol using SHA-256 revision checks:
+
+```js
+import { createImportReview, planImportEdits, applyImportEdits } from "./src/import-review.mjs";
+
+const review = createImportReview(originalSource, matchedProposals);
+// Populate decisions only after the host has presented proposals for explicit review.
+const plan = planImportEdits(originalSource, review, {
+  reviewId: review.reviewId,
+  decisions: [{ citationIndex: 0, action: "accept", recordIds: ["chosen-record-id"] }]
+});
+const changed = applyImportEdits(originalSource, plan);
+```
+
+Decisions address whole citation groups: accept one supplied candidate per item, reject, or defer. Groups without decisions stay pending. Unmatched entries must first be curated/rematched before acceptance. The protocol validates the entire plan before applying any edit to the same source revision; changed source, snapshots, invalid candidates, overlapping edits or changed plans fail closed. Hashes detect revision changes/accidental corruption; they are not signatures or an authorization service. The host owns user authorization and persistence.
+
+Generated markers use explicit `local:` IDs to avoid collisions with commands such as `endnote` and `evidence`. Prefixes, locators and narrative form are retained. Uncertain author boundaries yield `accepted-needs-span` without edits. Linked, decoded or noncontiguous source yields `accepted-needs-adapter` without edits, so acceptance cannot erase markup or strand notation inside an existing link. These accepted decisions remain available to a future editor adapter. The API never deletes the original bibliography or writes records, files or Git commits. Browser-native hashing, rich-text/editor transactions and review UI remain unfinished.
+
 ## Initial extraction adapter
 
 `src/import-extraction.mjs` provides experimental `extractImportText(source, { format: "text" | "html" | "markdown", citationKeyword: "citation" })`, `detectExtractedCitations(extraction, options)` and `mapImportRange(extraction, { start, end })`. These are source-only functions, with no package export or CLI command yet.
@@ -108,17 +132,27 @@ All five import tracks are authorized for 0.3.0: recognition/matching, measured 
 - Expand developer-checked citation matches into independently checked and held-out cases; separate extraction failures from recognition and matching failures.
 - Broaden Markdown quote/list/table/raw-HTML coverage and improve decoded HTML entity maps without losing protected regions or source fidelity.
 - Integrate the experimental Crossref search into a review UI/installed API and measure candidate retrieval across more public reference types. Preserve explicit lookup consent and avoid automatic cache mutation.
-- Measure a small rule-based reference parser against real reference lists. Expand only after recording field accuracy and error cases.
+- Expand the initial partial reference rules through measured fields and error cases; explicit entry boundaries remain required.
 - Add DOCX/ODT adapters, numeric/reference-number mapping, and PDF extraction/reading-order tests as independent components. OCR is a later, separately measured path.
-- Build a review UI and an explicit accepted-edit plan tied to the original source revision. No unsupported text or bibliography entry is silently discarded.
+- Build a review UI, browser protocol and rich-text adapters around the initial revision-bound Node edit plan. No unsupported text or bibliography entry is silently discarded.
 
 Crossref search and local matching remain separate operations. Any later AI adapter is optional and behind the rules; import must work offline without it. Zotero and other bibliography-manager integrations should reuse the same records/provenance model rather than introducing a competing citation identity system.
 
 ## Evidence and scope
 
-The current source-only test run passes 111 unit tests on Node 22.23.3, including fourteen matcher, seventeen extraction and twelve Crossref-search tests. Independent review challenged narrative boundaries, incomplete bylines, control boundaries, native visibility and link-role handling; regression tests now constrain those cases. The extraction/search reviewer returned PASS after independently running all 107 tests and rechecking Markdown offsets, entities, protected notation and persisted search-cache validation. This is approval to continue experimenting, not acceptance of a public 0.3.0 API. Browser/runtime assets are unchanged, so existing browser verification is not represented as evidence for unimplemented file adapters.
+The current source-only test run passes 128 unit tests on Node 22.23.3, including 43 matcher/extraction/search tests plus reference-rule, review/edit and evaluator regressions. Independent review challenged narrative boundaries, incomplete bylines, control boundaries, native visibility and link-role handling; regression tests now constrain those cases. The extraction/search reviewer returned PASS after independently running all 107 tests and rechecking Markdown offsets, entities, protected notation and persisted search-cache validation. This is approval to continue experimenting, not acceptance of a public 0.3.0 API. The rebuilt browser suite verifies the separate reader-help and host-hook changes; it does not verify an import UI or native file adapters. Import modules remain source-only.
 
 Two bounded live searches used only the supplied public article: bibliographic title search returned its expected DOI first with exact title/year/DOI comparisons; using the DOI alone as bibliographic query text returned unrelated candidates, all marked with DOI conflicts. These checks establish request/response behavior for that sample, not general retrieval accuracy. No private manuscript data was sent.
+
+### Independent challenge results
+
+An independent reviewer authored [12 synthetic cases](../test/fixtures/import-challenge.json) without inspecting the importer or private corpus. Its sealed SHA-256 is recorded in the [evaluation report](evidence/import-challenge-2026-11-20.json). Run `node scripts/evaluate-import.mjs` to reproduce the current evaluation; it makes no provider calls.
+
+With explicitly documented input adapters, 7/7 baseline and 4/5 challenge cases meet the detection/candidate targets: 10/11 expected groups and 15/16 candidate sets, with zero observed false unique predictions. The remaining miss is `n.d.` recognition. A first contract run omitted record states and therefore left many references unresolved; the [initial report](evidence/import-challenge-initial-contract-2026-11-20.json) is retained rather than overwritten. The adapter translates metadata completeness, numeric style names and explicit year-suffix vocabulary without consulting expected answers. The [first adapted report](evidence/import-challenge-first-adapted-2026-11-20.json) is also retained before scorer hardening.
+
+The scorer pairs spans one-to-one, checks exact item counts and includes unique predictions in unexpected spans/extra items in the unsafe-uniqueness count. Candidate-set agreement permits conservative ambiguity. These measurements cover recognition and association against supplied records, not reference parsing, locators, reprint preservation, claims or general accuracy. After evaluation this fixture is regression material, not an unseen holdout. Future evaluation needs fresh cases.
+
+Separately, reference rules on the private developer-labelled reference list propose all 17 issued years and 16 of 17 expected bylines, retaining all raw entries. The unparsed byline remains raw. This is same-document development evidence; title accuracy and independently checked field accuracy are not claimed.
 
 Before a preview is shared, run the [milestone checks and independent reviews](checkin-procedure.md), provide installed Node/browser APIs and JSON CLI equivalents, update the Guide/README, and document measured format/style coverage. Corpus breadth, matching quality and preservation of review decisions determine confidence; a green synthetic test suite alone does not.
 

@@ -10,13 +10,13 @@ F4 is the next substantial milestone, targeted at 0.3.0 once confidence is estab
 
 The maintainer confirmed this split on 20 November 2026. Work starts now on all five import tracks: broader citation recognition, rule-based reference parsing, extraction adapters, reviewed revision-bound edits, and independently checked/held-out quality measurement. Current prototypes are foundations; these tracks are not marked complete.
 
-The smaller work also belongs in 0.3.0: once-per-list unknown-profile help, a documented host insertion hook before reference items, the citation-style catalogue/support matrix, further host regression coverage, and native Safari/VoiceOver/physical-phone checks. Device checks require actual observations and remain pending until performed. Packaging, demos, documentation and full milestone reviews remain release gates.
+The smaller work also belongs in 0.3.0 (per-list help, the prefix hook and initial style matrix are implemented; further host/native checks remain open): once-per-list unknown-profile help, a documented host insertion hook before reference items, the citation-style catalogue/support matrix, further host regression coverage, and native Safari/VoiceOver/physical-phone checks. Device checks require actual observations and remain pending until performed. Packaging, demos, documentation and full milestone reviews remain release gates.
 
 Preserving embedded Zotero fields during document extraction is part of import fidelity in 0.3.0. Connecting to external bibliography managers or importing their collections belongs in 0.4.0.
 
 ## Planned milestone 0.4.0 — Connected bibliographies and source maintenance
 
-External bibliography-system integration and ongoing source care form a separate milestone: BibTeX/RIS/CSL-JSON ingestion, opt-in bibliography-manager connections, broken-link review and related correction/retraction maintenance. See [the planned milestone](docs/milestones/0.4.0.md). This work is scoped, not implemented; the version is a future target rather than a package bump.
+External bibliography-system integration and ongoing source care form a separate milestone: BibTeX/RIS/CSL-JSON ingestion, opt-in bibliography-manager connections, broken-link review and related correction/retraction maintenance. Add a public developer learning site with a live playground, progressive annotated tutorials, npm/non-npm examples, a feature coverage matrix and a worked draft.inator integration. GitHub Pages is the planned static-hosting candidate; deployment and backend-dependent provider behavior still require implementation and verification. See [the planned milestone](docs/milestones/0.4.0.md). This work is scoped, not implemented; the version is a future target rather than a package bump.
 
 ## Completed milestone 0.2.0 — Article tooling
 
@@ -50,9 +50,9 @@ Review the milestone record and roadmap before every check-in. The [repository p
 ## Remaining 0.3.0 work
 
 - Continue F4 with the in-text matcher and optional Crossref bibliographic search; measure rule-based reference parsing before expanding backends. The [article-tooling plan](docs/article-tooling-plan.md) retains its review and fallback requirements.
-- Show the unknown-profile help once per reading list, while keeping a settings entry available from each inspector. Long lists currently repeat the help under every reading.
-- Provide a documented hook for adding host content before each reference item, such as topic tags, without matching generated HTML strings.
-- Build a comprehensive catalog of citation styles and variants. Cover author–date, author–page, numeric, and notes and bibliography styles, including disciplinary and publisher variants. Record each style's edition or variant, link to its governing guide where available, and show what citation.inator can format today by source type and citation form. Use real migration examples to identify which gaps matter most and whether a broader style engine would help.
+- Verify the implemented once-per-list unknown-profile help across additional host integrations; each inspector retains settings access.
+- Extend the documented text-only referenceItemPrefix hook through host integration tests; richer content should use explicit APIs rather than generated-HTML string matching.
+- Maintain and extend the [style catalogue and support matrix](docs/citation-styles.md), including its link to the maintained broad style registry. Cover author–date, author–page, numeric, and notes and bibliography styles, including disciplinary and publisher variants. Record each style's edition or variant, link to its governing guide where available, and show what citation.inator can format today by source type and citation form. Use real migration examples to identify which gaps matter most and whether a broader style engine would help.
 - Extend the reported host-site verification to additional integrations and retain regression checks for formatted references, year letters, service preferences and return links.
 - Test on a physical phone and with Safari and VoiceOver. Cover opening the inspector, moving it, dismissing it, and returning from an endnote.
 

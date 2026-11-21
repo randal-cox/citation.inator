@@ -507,6 +507,7 @@ var AccessView = class {
   #unsubscribe;
   #rows = /* @__PURE__ */ new Map();
   #titles = /* @__PURE__ */ new Map();
+  #listHelps = /* @__PURE__ */ new Map();
   #sheet;
   #returnFocus;
   #returnContainer;
@@ -657,12 +658,12 @@ var AccessView = class {
       container.append(item);
     } else container.append(link);
   }
-  group(container, links, record, { flat = false, hidden } = {}) {
+  group(container, links, record, { flat = false, hidden, showHelp = true } = {}) {
     this.decorate(container, record, hidden);
     links = [...container.querySelectorAll("a")];
     if (this.layout === "flat") {
       for (const link of links) this.#appendLink(container, link);
-      this.help(container, links);
+      if (showHelp) this.help(container, links);
       return;
     }
     const groups = groupAccess(links.map((link) => ({
@@ -689,7 +690,7 @@ var AccessView = class {
         for (const { link } of entries) this.#appendLink(container, link);
       }
     }
-    this.help(container, links);
+    if (showHelp) this.help(container, links);
   }
   help(container, links) {
     if (this.settings === "off") return;
@@ -804,13 +805,13 @@ var AccessView = class {
     sheet.append(form);
     this.#owner.shadowRoot.append(sheet);
     this.#returnFocus = trigger;
-    this.#returnContainer = trigger.closest("[data-ci-note-record]");
+    this.#returnContainer = trigger.closest("[data-ci-note-record]") || trigger.closest('[data-citation-part="access-list-help"]')?.previousElementSibling;
     const finish = () => {
       if (this.#sheet !== sheet) return;
       this.#sheet = null;
       if (this.#returnFocus?.isConnected) this.#returnFocus.focus({ preventScroll: true });
       else {
-        const replacement = this.#returnContainer?.querySelector('[data-citation-part="access-help"]');
+        const replacement = this.#returnContainer?.querySelector('[data-citation-part="access-help"]') || this.#listHelps.get(this.#returnContainer?.closest("ol,ul"))?.querySelector('[data-citation-part="access-help"]');
         if (replacement?.isConnected) replacement.focus({ preventScroll: true });
         else if (this.#owner.hasAttribute("open")) this.#owner.shadowRoot.querySelector("#panel-name")?.focus({ preventScroll: true });
       }
@@ -844,11 +845,15 @@ var AccessView = class {
       if (!this.#owner.contains(row)) this.#restoreRow(row);
     }
     const references = this.#owner.querySelectorAll("[data-ci-reference-record], [data-ci-note-record]");
-    const visited = /* @__PURE__ */ new Set();
+    const visited = /* @__PURE__ */ new Set(), lists = /* @__PURE__ */ new Set();
+    const unknown = this.profile === null;
     for (const reference of references) {
       if (reference.closest("citation-inspector") !== this.#owner) continue;
       const record = records.get(reference.dataset.ciReferenceRecord || reference.dataset.ciNoteRecord);
       if (!record) continue;
+      const ancestorList = reference.closest("ol,ul");
+      const list = ancestorList && this.#owner.contains(ancestorList) && ancestorList.closest("citation-inspector") === this.#owner ? ancestorList : null;
+      if (list) lists.add(list);
       let row = reference.matches("[data-ci-note-record]") ? reference : reference.querySelector(":scope > [data-ci-note-record]");
       if (!row) {
         if (this.settings === "off" && !this.items(record, hidden).length) continue;
@@ -875,9 +880,22 @@ var AccessView = class {
         const group = node(row.ownerDocument, "span", "", "access-inline");
         row.prepend(group);
         for (const link of links) group.append(link);
-        this.group(group, [...group.querySelectorAll("a")], record, { flat: true, hidden });
+        this.group(group, [...group.querySelectorAll("a")], record, { flat: true, hidden, showHelp: !unknown || !list });
       }
       this.#title(row.closest("li"), record, hidden);
+    }
+    for (const [list, help] of this.#listHelps) {
+      if (!lists.has(list) || !unknown || this.settings === "off") {
+        help.remove();
+        this.#listHelps.delete(list);
+      }
+    }
+    if (unknown && this.settings !== "off") for (const list of lists) {
+      if (this.#listHelps.has(list)) continue;
+      const help = node(list.ownerDocument, "div", "", "access-list-help");
+      this.help(help, []);
+      list.after(help);
+      this.#listHelps.set(list, help);
     }
   }
   #title(row, record, hidden) {
@@ -935,6 +953,8 @@ var AccessView = class {
     }
   }
   restore() {
+    for (const help of this.#listHelps.values()) help.remove();
+    this.#listHelps.clear();
     for (const row of this.#rows.keys()) this.#restoreRow(row);
   }
 };

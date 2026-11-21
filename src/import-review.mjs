@@ -1,0 +1,76 @@
+// Experimental Node review/edit protocol. Acceptance is supplied explicitly by the host.
+import { createHash } from 'node:crypto';
+import { normalizeIdentifier } from './records.mjs';
+import { scanCitationMarkers } from './compiler.mjs';
+const hash = value => createHash('sha256').update(value).digest('hex');
+const quote = value => '"'+String(value).replace(/[\\"{};|]/g,character=>'\\'+character)+'"';
+const digest = (sourceHash,matches) => hash(sourceHash+'\n'+JSON.stringify(matches));
+
+/** Retain a revision-bound snapshot. This is local data, not a provider request. */
+export function createImportReview(source, matched) {
+  if (typeof source !== 'string' || matched?.schema !== 'citation-inator.import-matches.v1' || !Array.isArray(matched.matches)) throw new TypeError('Supply original source and matched proposals.');
+  const sourceHash=hash(source), matches=structuredClone(matched.matches);
+  return {schema:'citation-inator.import-review.v1',sourceHash,sourceLength:source.length,
+    reviewId:digest(sourceHash,matches),matches};
+}
+
+/** Plan whole-group edits. Rejected, deferred, absent and unsafe decisions preserve source. */
+export function planImportEdits(source,review,{reviewId,decisions=[],citationKeyword='citation'}={}) {
+  if (typeof source !== 'string' || review?.schema !== 'citation-inator.import-review.v1' || review.sourceHash !== hash(source) || review.sourceLength !== source.length) throw new Error('The source revision has changed; review again.');
+  if (reviewId !== review.reviewId || review.reviewId !== digest(review.sourceHash,review.matches)) throw new Error('Review decisions belong to a different or changed snapshot.');
+  scanCitationMarkers('',{citationKeyword});
+  if (!Array.isArray(decisions)) throw new TypeError('Supply review decisions.');
+  const edits=[], outcomes=[], seen=new Set();
+  for (const decision of decisions) {
+    const index=decision?.citationIndex;
+    if (!Number.isInteger(index) || index<0 || index>=review.matches.length || seen.has(index)) throw new TypeError('Each decision must address one distinct citation group.');
+    seen.add(index);
+    if (!['accept','reject','defer'].includes(decision.action)) throw new TypeError('Choose accept, reject or defer.');
+    const match=review.matches[index], citation=match.citation;
+    if (decision.action !== 'accept') { outcomes.push({citationIndex:index,state:decision.action}); continue; }
+    if (!Array.isArray(decision.recordIds) || decision.recordIds.length !== match.items.length) throw new TypeError('Accept a record for every item in the citation group.');
+    const items=match.items.map((proposal,itemIndex)=>{
+      const id=decision.recordIds[itemIndex], identifier=typeof id === 'string' && normalizeIdentifier(id);
+      if (!identifier || identifier.scheme !== 'local' || identifier.value !== id || !proposal.candidates.some(candidate=>candidate.recordId===id)) throw new TypeError('Choose a supplied candidate record ID for each item.');
+      const item=proposal.item;
+      return 'local:'+id + (item.prefix ? ' | prefix:'+quote(item.prefix) : '') + (item.locator ? ' | locator:'+quote(item.locator) : '') +
+        (citation.form === 'narrative' ? ' | form:narrative' : '');
+    });
+    if (match.items.some(proposal=>proposal.item.boundaryUncertain)) {
+      outcomes.push({citationIndex:index,state:'accepted-needs-span',recordIds:[...decision.recordIds],code:'import-author-span-review-required'}); continue;
+    }
+    const fragments=citation.sourceFragments || [{sourceStart:citation.start,sourceEnd:citation.end,exact:true}];
+    let start=fragments[0]?.sourceStart, end=start, safe=fragments.length>0;
+    for (const fragment of fragments) {
+      safe &&= fragment.exact === true && fragment.link === undefined && Number.isInteger(fragment.sourceStart) && Number.isInteger(fragment.sourceEnd) &&
+        fragment.sourceStart === end && fragment.sourceEnd>fragment.sourceStart && fragment.sourceEnd<=source.length;
+      end=fragment.sourceEnd;
+    }
+    safe &&= start>=0 && source.slice(start,end) === citation.raw;
+    if (!safe) { outcomes.push({citationIndex:index,state:'accepted-needs-adapter',recordIds:[...decision.recordIds],code:'import-noncontiguous-or-decoded-source'}); continue; }
+    const text=`{${citationKeyword} ${items.join('; ')}}`;
+    const token=scanCitationMarkers(text,{citationKeyword})[0]?.token;
+    if (token?.type !== 'citation' || token.items.length !== decision.recordIds.length || token.items.some((item,index)=>item.identifier.scheme !== 'local' || item.identifier.value !== decision.recordIds[index])) throw new Error('Could not encode accepted record identities.');
+    edits.push({start,end,before:source.slice(start,end),text,citationIndex:index,recordIds:[...decision.recordIds]});
+    outcomes.push({citationIndex:index,state:'accepted',recordIds:[...decision.recordIds]});
+  }
+  for (let index=0;index<review.matches.length;index++) if (!seen.has(index)) outcomes.push({citationIndex:index,state:'pending'});
+  edits.sort((a,b)=>a.start-b.start);
+  for (let index=1;index<edits.length;index++) if (edits[index].start<edits[index-1].end) throw new Error('Citation edits overlap; review source boundaries again.');
+  const plan={schema:'citation-inator.import-edit-plan.v1',sourceHash:review.sourceHash,reviewId:review.reviewId,edits,outcomes};
+  return {...plan,planHash:hash(JSON.stringify(plan))};
+}
+
+/** Apply a reviewed plan atomically to the same source revision. No record/cache writes. */
+export function applyImportEdits(source,plan) {
+  const {planHash,...snapshot}=plan || {};
+  if (typeof source !== 'string' || plan?.schema !== 'citation-inator.import-edit-plan.v1' || planHash !== hash(JSON.stringify(snapshot)) || plan.sourceHash !== hash(source) || !Array.isArray(plan.edits)) throw new Error('Source or edit plan changed; review again.');
+  let cursor=0;
+  for (const edit of plan.edits) {
+    if (!Number.isInteger(edit.start) || !Number.isInteger(edit.end) || edit.start<cursor || edit.end<=edit.start || edit.end>source.length || source.slice(edit.start,edit.end)!==edit.before || typeof edit.text !== 'string') throw new Error('Invalid edit boundary; nothing was applied.');
+    cursor=edit.end;
+  }
+  let output=source;
+  for (const edit of [...plan.edits].reverse()) output=output.slice(0,edit.start)+edit.text+output.slice(edit.end);
+  return {source:output,changed:output!==source,sourceHash:hash(output),outcomes:structuredClone(plan.outcomes)};
+}

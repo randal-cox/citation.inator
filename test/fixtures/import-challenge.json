@@ -1,0 +1,647 @@
+{
+  "schema": "citation-inator.independent-import-challenge.v1",
+  "authoredOn": "2026-11-20",
+  "provenance": {
+    "authoringRole": "independent adversarial evaluation author",
+    "sourceMaterial": "All prose, people, titles and reference records are synthetic.",
+    "independence": "Authored without reading src/import*.mjs, the current importer implementation, or any private corpus during this task.",
+    "limitation": "Expected outcomes are scholarly interpretation targets. They do not assert that the current importer promises or implements every challenge feature. Style names are descriptive input families.",
+    "sealedFile": "test/fixtures/import-challenge.json"
+  },
+  "contract": {
+    "offsetUnits": "Unicode code points, zero-based, end-exclusive. Sources include accented BMP characters and an en dash, with no supplementary-plane characters, so code-point and JavaScript UTF-16 offsets agree.",
+    "boundaryMeaning": "bodyBoundary selects importable prose. referenceBoundary selects the separately supplied bibliography. Text before and after the body must not generate body citations.",
+    "expectedCitations": "One item per whole citation span. raw is the exact source substring. recordIds follows source cluster order and contains null for unresolved or ambiguous items.",
+    "candidateRecordIds": "Optional array parallel to recordIds, with one candidate set per citation item. Empty sets denote missing references. Multi-item sets must remain ambiguous. Candidate order is immaterial.",
+    "expectedNonCitations": "Exact negative-example strings within the body. These are explanatory expectations, and are not separate citation spans.",
+    "evaluationTier": {
+      "baseline": "A target for ordinary author–year or explicit-number imports, safe ambiguity handling and boundary isolation. Actual supported scope must be declared by the runner.",
+      "challenge": "Additional notation or metadata variation. Report failures separately from baseline results and identify unsupported syntax honestly."
+    },
+    "recordExtensions": {
+      "referenceNumber": "Explicit bibliography number for numeric inputs.",
+      "originalIssued": "Original publication date for a reprint. issued is the consulted edition date.",
+      "yearSuffix": "Explicit suffix from the supplied reference text, such as 2020a."
+    }
+  },
+  "cases": [
+    {
+      "id": "apa-single",
+      "style": "apa",
+      "evaluationTier": "baseline",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nShared practice can shape attention (Rivera, 2021).\n\nReferences\nRivera, A. (2021). Synthetic gardens.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 115
+      },
+      "referenceBoundary": {
+        "start": 128,
+        "end": 165
+      },
+      "records": [
+        {
+          "id": "rivera-2021",
+          "type": "book",
+          "title": "Synthetic Gardens",
+          "authors": [
+            {
+              "family": "Rivera",
+              "given": "Ana"
+            }
+          ],
+          "issued": [
+            2021
+          ]
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "(Rivera, 2021)",
+          "recordIds": [
+            "rivera-2021"
+          ]
+        }
+      ],
+      "expectedNonCitations": []
+    },
+    {
+      "id": "apa-group-locator-missing",
+      "style": "apa",
+      "evaluationTier": "baseline",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nCompare the two accounts (Rivera, 2021; Hart & Stone, 2019, pp. 12–14; Quill, 2017).\n\nReferences\nRivera, A. (2021). Synthetic gardens.\nHart, B., & Stone, C. (2019). Synthetic shared fields.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 148
+      },
+      "referenceBoundary": {
+        "start": 161,
+        "end": 253
+      },
+      "records": [
+        {
+          "id": "rivera-2021",
+          "type": "book",
+          "title": "Synthetic Gardens",
+          "authors": [
+            {
+              "family": "Rivera",
+              "given": "Ana"
+            }
+          ],
+          "issued": [
+            2021
+          ]
+        },
+        {
+          "id": "hart-stone-2019",
+          "type": "book",
+          "title": "Synthetic Shared Fields",
+          "authors": [
+            {
+              "family": "Hart",
+              "given": "Bea"
+            },
+            {
+              "family": "Stone",
+              "given": "Cai"
+            }
+          ],
+          "issued": [
+            2019
+          ]
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "(Rivera, 2021; Hart & Stone, 2019, pp. 12–14; Quill, 2017)",
+          "recordIds": [
+            "rivera-2021",
+            "hart-stone-2019",
+            null
+          ],
+          "candidateRecordIds": [
+            [
+              "rivera-2021"
+            ],
+            [
+              "hart-stone-2019"
+            ],
+            []
+          ]
+        }
+      ],
+      "expectedNonCitations": [],
+      "note": "Expected items follow cluster order. The missing Quill item remains unresolved."
+    },
+    {
+      "id": "apa-ambiguous-family-year",
+      "style": "apa",
+      "evaluationTier": "baseline",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nThe claim is attributed to Chen (2020).\n\nReferences\nChen, A. (2020). Synthetic north.\nChen, L. (2020). Synthetic south.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 103
+      },
+      "referenceBoundary": {
+        "start": 116,
+        "end": 183
+      },
+      "records": [
+        {
+          "id": "chen-amy-2020",
+          "type": "book",
+          "title": "Synthetic North",
+          "authors": [
+            {
+              "family": "Chen",
+              "given": "Amy"
+            }
+          ],
+          "issued": [
+            2020
+          ]
+        },
+        {
+          "id": "chen-lei-2020",
+          "type": "book",
+          "title": "Synthetic South",
+          "authors": [
+            {
+              "family": "Chen",
+              "given": "Lei"
+            }
+          ],
+          "issued": [
+            2020
+          ]
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "Chen (2020)",
+          "recordIds": [
+            null
+          ],
+          "candidateRecordIds": [
+            [
+              "chen-amy-2020",
+              "chen-lei-2020"
+            ]
+          ]
+        }
+      ],
+      "expectedNonCitations": [],
+      "note": "Family name plus year cannot identify which Chen wrote the cited work. Candidate order is immaterial."
+    },
+    {
+      "id": "apa-narrative-initial-unicode",
+      "style": "apa",
+      "evaluationTier": "challenge",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nÉ. Núñez (2022, p. 8) describes a different arrangement.\n\nReferences\nNúñez, É. (2022). Synthetic accents.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 120
+      },
+      "referenceBoundary": {
+        "start": 133,
+        "end": 169
+      },
+      "records": [
+        {
+          "id": "nunez-2022",
+          "type": "book",
+          "title": "Synthetic Accents",
+          "authors": [
+            {
+              "family": "Núñez",
+              "given": "Élise"
+            }
+          ],
+          "issued": [
+            2022
+          ]
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "É. Núñez (2022, p. 8)",
+          "recordIds": [
+            "nunez-2022"
+          ]
+        }
+      ],
+      "expectedNonCitations": [],
+      "note": "The raw span includes the initial and accented family name. Preserve Unicode spelling and the locator."
+    },
+    {
+      "id": "chicago-narrative-locator",
+      "style": "chicago-author-date",
+      "evaluationTier": "baseline",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nOsei (2018, 47) interprets the archive differently.\n\nReferences\nOsei, Kojo. 2018. Synthetic Archive.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 115
+      },
+      "referenceBoundary": {
+        "start": 128,
+        "end": 164
+      },
+      "records": [
+        {
+          "id": "osei-2018",
+          "type": "book",
+          "title": "Synthetic Archive",
+          "authors": [
+            {
+              "family": "Osei",
+              "given": "Kojo"
+            }
+          ],
+          "issued": [
+            2018
+          ]
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "Osei (2018, 47)",
+          "recordIds": [
+            "osei-2018"
+          ]
+        }
+      ],
+      "expectedNonCitations": []
+    },
+    {
+      "id": "chicago-reprint-dual-date",
+      "style": "chicago-author-date",
+      "evaluationTier": "challenge",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nThe reprinted text makes the same distinction (Duval [1898] 2004, 61).\n\nReferences\nDuval, Mira. (1898) 2004. Synthetic Reprint.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 134
+      },
+      "referenceBoundary": {
+        "start": 147,
+        "end": 191
+      },
+      "records": [
+        {
+          "id": "duval-reprint-2004",
+          "type": "book",
+          "title": "Synthetic Reprint",
+          "authors": [
+            {
+              "family": "Duval",
+              "given": "Mira"
+            }
+          ],
+          "issued": [
+            2004
+          ],
+          "originalIssued": [
+            1898
+          ]
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "(Duval [1898] 2004, 61)",
+          "recordIds": [
+            "duval-reprint-2004"
+          ]
+        }
+      ],
+      "expectedNonCitations": [],
+      "note": "The supplied record identifies the consulted 2004 reprint and preserves original publication in 1898. A parser must avoid splitting the two dates into separate citations."
+    },
+    {
+      "id": "numeric-explicit-number-not-array-index",
+      "style": "numeric",
+      "evaluationTier": "baseline",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nThe first cited observation [11] precedes the earlier catalog entry [2].\n\nReferences\n7. Sato A. Synthetic Seventh Reference. 2011.\n2. Vale I. Synthetic Second Reference. 2010.\n11. West U. Synthetic Eleventh Reference. 2012.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 136
+      },
+      "referenceBoundary": {
+        "start": 149,
+        "end": 287
+      },
+      "records": [
+        {
+          "id": "numeric-seven",
+          "type": "book",
+          "title": "Synthetic Seventh Reference",
+          "authors": [
+            {
+              "family": "Sato",
+              "given": "Aki"
+            }
+          ],
+          "issued": [
+            2011
+          ],
+          "referenceNumber": 7
+        },
+        {
+          "id": "numeric-two",
+          "type": "book",
+          "title": "Synthetic Second Reference",
+          "authors": [
+            {
+              "family": "Vale",
+              "given": "Ivo"
+            }
+          ],
+          "issued": [
+            2010
+          ],
+          "referenceNumber": 2
+        },
+        {
+          "id": "numeric-eleven",
+          "type": "book",
+          "title": "Synthetic Eleventh Reference",
+          "authors": [
+            {
+              "family": "West",
+              "given": "Uma"
+            }
+          ],
+          "issued": [
+            2012
+          ],
+          "referenceNumber": 11
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "[11]",
+          "recordIds": [
+            "numeric-eleven"
+          ]
+        },
+        {
+          "raw": "[2]",
+          "recordIds": [
+            "numeric-two"
+          ]
+        }
+      ],
+      "expectedNonCitations": [],
+      "note": "Use explicit referenceNumber. Supplied array order and first-citation order deliberately differ from reference numbers."
+    },
+    {
+      "id": "numeric-group-range-missing",
+      "style": "numeric",
+      "evaluationTier": "challenge",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nThe review combines these observations [2, 7–8].\n\nReferences\n7. Sato A. Synthetic Seventh Reference. 2011.\n2. Vale I. Synthetic Second Reference. 2010.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 112
+      },
+      "referenceBoundary": {
+        "start": 125,
+        "end": 215
+      },
+      "records": [
+        {
+          "id": "numeric-seven",
+          "type": "book",
+          "title": "Synthetic Seventh Reference",
+          "authors": [
+            {
+              "family": "Sato",
+              "given": "Aki"
+            }
+          ],
+          "issued": [
+            2011
+          ],
+          "referenceNumber": 7
+        },
+        {
+          "id": "numeric-two",
+          "type": "book",
+          "title": "Synthetic Second Reference",
+          "authors": [
+            {
+              "family": "Vale",
+              "given": "Ivo"
+            }
+          ],
+          "issued": [
+            2010
+          ],
+          "referenceNumber": 2
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "[2, 7–8]",
+          "recordIds": [
+            "numeric-two",
+            "numeric-seven",
+            null
+          ],
+          "candidateRecordIds": [
+            [
+              "numeric-two"
+            ],
+            [
+              "numeric-seven"
+            ],
+            []
+          ]
+        }
+      ],
+      "expectedNonCitations": [],
+      "note": "Expand the inclusive range 7–8 in cluster order. Reference 8 has no supplied record."
+    },
+    {
+      "id": "apa-undated",
+      "style": "apa",
+      "evaluationTier": "challenge",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nAn undated account reaches a similar conclusion (Idris, n.d., p. 5).\n\nReferences\nIdris, N. (n.d.). Synthetic undated notes.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 132
+      },
+      "referenceBoundary": {
+        "start": 145,
+        "end": 187
+      },
+      "records": [
+        {
+          "id": "idris-undated",
+          "type": "book",
+          "title": "Synthetic Undated Notes",
+          "authors": [
+            {
+              "family": "Idris",
+              "given": "Nora"
+            }
+          ],
+          "issued": null
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "(Idris, n.d., p. 5)",
+          "recordIds": [
+            "idris-undated"
+          ]
+        }
+      ],
+      "expectedNonCitations": []
+    },
+    {
+      "id": "noncitation-years-measurements-and-labels",
+      "style": "apa",
+      "evaluationTier": "baseline",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nThe room opened in 2021. Figure 2 shows 34 participants (n = 34). The heading reads \"Rivera, 2021\" as a catalog label, not a source attribution. Turn to p. 14 for the worksheet.\n\nReferences\nRivera, A. (2021). Synthetic gardens.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 241
+      },
+      "referenceBoundary": {
+        "start": 254,
+        "end": 291
+      },
+      "records": [
+        {
+          "id": "rivera-2021",
+          "type": "book",
+          "title": "Synthetic Gardens",
+          "authors": [
+            {
+              "family": "Rivera",
+              "given": "Ana"
+            }
+          ],
+          "issued": [
+            2021
+          ]
+        }
+      ],
+      "expectedCitations": [],
+      "expectedNonCitations": [
+        "2021",
+        "Figure 2",
+        "(n = 34)",
+        "\"Rivera, 2021\"",
+        "p. 14"
+      ],
+      "note": "The quoted catalog label is deliberately a negative contextual example. No bracketed author–year citation or narrative attribution occurs in the body."
+    },
+    {
+      "id": "body-boundary-excludes-reference-list",
+      "style": "apa",
+      "evaluationTier": "baseline",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nThis paragraph contains no citations. The reference list is supplied for later use.\n\nReferences\nRivera, A. (2021). Synthetic gardens.\nHart, B., & Stone, C. (2019). Synthetic shared fields.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 147
+      },
+      "referenceBoundary": {
+        "start": 160,
+        "end": 252
+      },
+      "records": [
+        {
+          "id": "rivera-2021",
+          "type": "book",
+          "title": "Synthetic Gardens",
+          "authors": [
+            {
+              "family": "Rivera",
+              "given": "Ana"
+            }
+          ],
+          "issued": [
+            2021
+          ]
+        },
+        {
+          "id": "hart-stone-2019",
+          "type": "book",
+          "title": "Synthetic Shared Fields",
+          "authors": [
+            {
+              "family": "Hart",
+              "given": "Bea"
+            },
+            {
+              "family": "Stone",
+              "given": "Cai"
+            }
+          ],
+          "issued": [
+            2019
+          ]
+        }
+      ],
+      "expectedCitations": [],
+      "expectedNonCitations": [],
+      "note": "Reference text has author/year patterns outside bodyBoundary. Import only body content."
+    },
+    {
+      "id": "apa-explicit-year-suffixes",
+      "style": "apa",
+      "evaluationTier": "challenge",
+      "source": "Synthetic import challenge\nPrepared for independent evaluation\n\nThe two works remain distinct (Chen, 2020a, p. 4; Chen, 2020b, pp. 9–10).\n\nReferences\nChen, A. (2020a). Synthetic first work.\nChen, A. (2020b). Synthetic second work.\n",
+      "bodyBoundary": {
+        "start": 64,
+        "end": 137
+      },
+      "referenceBoundary": {
+        "start": 150,
+        "end": 230
+      },
+      "records": [
+        {
+          "id": "chen-first-2020",
+          "type": "book",
+          "title": "Synthetic First Work",
+          "authors": [
+            {
+              "family": "Chen",
+              "given": "Amy"
+            }
+          ],
+          "issued": [
+            2020
+          ],
+          "yearSuffix": "a"
+        },
+        {
+          "id": "chen-second-2020",
+          "type": "book",
+          "title": "Synthetic Second Work",
+          "authors": [
+            {
+              "family": "Chen",
+              "given": "Amy"
+            }
+          ],
+          "issued": [
+            2020
+          ],
+          "yearSuffix": "b"
+        }
+      ],
+      "expectedCitations": [
+        {
+          "raw": "(Chen, 2020a, p. 4; Chen, 2020b, pp. 9–10)",
+          "recordIds": [
+            "chen-first-2020",
+            "chen-second-2020"
+          ]
+        }
+      ],
+      "expectedNonCitations": [],
+      "note": "yearSuffix is independently supplied reference evidence, not an expectation that import invents suffixes from arbitrary order."
+    }
+  ]
+}

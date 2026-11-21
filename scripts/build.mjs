@@ -292,6 +292,7 @@ await writeFile("demos/static/guide.html", document({
     <section aria-labelledby="guide-formats">
       <h2 id="guide-formats">Styles and existing markup</h2>
       <p>Choose <code>chicago-author-date</code>, <code>apa</code>, <code>mla</code>, <code>harvard</code> (Cite Them Right), <code>vancouver</code>, or <code>default</code>. The named styles cover common books and journal articles. Set <code>endnotesHeading</code> to a heading such as References or Works Cited.</p>
+      <p>The <a href="../drop-in/citation-styles.md">style catalogue and support matrix</a> distinguishes citation families, named presets, source types and experimental import coverage.</p>
       <p>In Chicago author–date, set the same <code>id</code> on an author in each record to identify a single person across bylines such as Richard Wrangham and Richard W. Wrangham. The bibliography keeps each record’s spelling.</p>
       <p>Keep the default <code>suffixScope: "fragment"</code> for articles with independent reference lists. Use <code>suffixScope: "cache"</code> for pages that share one bibliography, such as chapters of an online book. The compiler reports when a year letter in a page’s endnotes has a companion work outside those endnotes.</p>
       <p>With npm dependencies installed, compile trusted HTML or Markdown using <code>citation-inator/markup</code>, or pass <code>--format html</code> or <code>--format markdown</code> to the CLI. Each directive must stay inside one text node. Use a distinct namespace for each copy of a fragment on the same page.</p>
@@ -311,7 +312,8 @@ await writeFile("demos/static/guide.html", document({
       <p>Records accept <code>tags</code>; configure <code>tagCatalogue</code> for labels and same-origin masked icons. Use <code>listItemTags</code> for article-specific roles, <code>listFilters: true</code> for browser checkboxes, and notation such as <code>{citation list source-one; source-two | tags:theory,praxis | tag-mode:all}</code> for build-time filtering. <code>inlineTags: true</code> adds tags beside in-text citations.</p>
       <p>Editors can contribute tags at each mention: <code>{citation source-one | note:"Cox 1995" | tags:theory,praxis}</code>. <code>collectMarkerTags(sources, cache, { includeDiagnostics: true })</code> counts contributions while reporting skipped/malformed input; the host validates topics and applies curator overrides. The browser bundle and <code>--collect-tags --json</code> expose the same function. <code>inlineTags: "marker"</code> displays only that mention's tags; record topics remain in the panel. Try the collector in the editor example.</p>
       <p>Use <code>listFilters: { minItems: 6, minTags: 2 }</code> for longer multi-topic lists. Style individual badges with <code>data-ci-tag</code>; panel badges also expose tag-specific CSS parts. Listing-only <code>nocite</code> uses get <strong>Listed in</strong> returns. Unresolved/malformed diagnostics add stable <code>citation-unresolved</code> / <code>citation-malformed</code> codes.</p>
-      <p>Try the <a href="./bibliography.html">site bibliography and two articles</a> and the <a href="./editor-tools.html">offline editor tool</a>. Read the <a href="../drop-in/article-tools.md">complete tools guide</a> for API results, source-preservation limits, CLI requests, safe routes, tag configuration and the two-pass build. Formatted-document import remains planned.</p>
+      <p>Try the <a href="./bibliography.html">site bibliography and two articles</a> and the <a href="./editor-tools.html">offline editor tool</a>. Read the <a href="../drop-in/article-tools.md">complete tools guide</a> for API results, source-preservation limits, CLI requests, safe routes, tag configuration and the two-pass build. Reviewed import is in source-only 0.3.0 development; it is not an installed 0.2.0 API.</p>
+      <p>The development checkout adds a synchronous <code>referenceItemPrefix</code> callback for escaped host text before each reference; its contract is in the tools guide. Unknown reader-access profiles show one prompt after each owned list, while inspectors keep their settings entry.</p>
     </section>
     <section aria-labelledby="guide-access">
       <h2 id="guide-access">Reader access and media</h2>
@@ -335,7 +337,7 @@ await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
   cp("CITATION.cff", portable + "CITATION.cff"),
-  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md"].map(name => cp("docs/" + name, portable + name)),
+  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md"].map(name => cp("docs/" + name, portable + name)),
   writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),
   cp("demos/static/structured-preview.css", portable + "structured-preview.css"),
   writeFile(portable + "structured-preview.mjs", structuredModule("./citation-inspector.mjs", previewClient))

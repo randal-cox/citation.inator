@@ -390,3 +390,9 @@ node scripts/compile.mjs --report citations.json essay.html lexicon.md bibliogra
 The JSON report lists unused records, unresolved and malformed directives by fragment, duplicate DOI and ISBN claims, and same-title records by the same first author. It also identifies those title groups with differing edition years. The report flags records for review and leaves the source and cache intact. When a duplicate identifier appears in the input, the first claim supplies the lookup used by the report.
 
 For custom notation or mixed build inputs, use `--report --json` and send `{ cache, fragments }` on standard input. Each fragment can supply `name`, `source` or `paragraphs`, `format`, and compiler `options`.
+
+## Unreleased 0.3.0 integration additions
+
+The source checkout includes a text-only `referenceItemPrefix` callback for host badges before reference items; see [the callback contract](article-tools.md#unreleased-030-host-prefix-hook). Unknown access-profile help now appears once per owned list while inspector help remains available. These changes are not in the published 0.2.0 artifacts.
+
+See the [style catalogue and coverage matrix](citation-styles.md) to distinguish reference formatting from experimental import recognition. Reviewed import remains source-only: [development APIs and measured limits](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-development.md).
