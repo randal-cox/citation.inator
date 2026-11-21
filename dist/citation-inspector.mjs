@@ -1,4 +1,38 @@
-/*! citation-inator v0.2.0 | MIT | See LICENSE */
+/*! citation-inator v0.3.0 | MIT | See LICENSE */
+
+// src/class-names.mjs
+var defaultClassPrefix = "citation";
+var partSelector = "[data-citation-part]";
+function validClassPrefix(prefix) {
+  return typeof prefix === "string" && /^[a-z][a-z0-9-]{0,31}$/.test(prefix);
+}
+function validateClassPrefix(prefix) {
+  if (!validClassPrefix(prefix)) throw new TypeError("Use a lowercase citation class prefix.");
+}
+function partClassNames(prefix, parts) {
+  return parts.split(" ").map((part) => `${prefix}-${part}`);
+}
+
+// src/icons.mjs
+var paths = {
+  pdf: '<path d="M6 3h8l4 4v14H6z M14 3v5h4"/><path d="m8 17 3-5 2 4 3 1-4 1z"/>',
+  publisher: '<path d="M3 9 12 4l9 5z M5 20h14 M7 11v7m5-7v7m5-7v7"/>',
+  book: '<path d="M5 4h14v16H7a2 2 0 0 1-2-2z M5 17h14 M8 8h8m-8 3h6"/>',
+  link: '<path d="m9 15 6-6 M8 16l-1 1a3 3 0 0 1-4-4l5-5a3 3 0 0 1 4 0 M16 8l1-1a3 3 0 0 1 4 4l-5 5a3 3 0 0 1-4 0"/>',
+  repository: '<path d="M4 4h16v5H4z M6 9v11h12V9 M10 13h4"/>',
+  article: '<path d="M6 4h12v16H6z M9 8h6m-6 4h6m-6 4h4"/>',
+  external: '<path d="M13 4h7v7m0-7-9 9m7 0v7H4V6h7"/>',
+  library: '<path d="M4 19V5h4v14zm4 0V5h4v14zm6-13 4-1 3 14-4 1z"/>',
+  status: '<path d="M12 3 4 7v5c0 5 4 8 8 9 4-1 8-4 8-9V7z M12 8v5m0 3h.01"/>',
+  back: '<path d="m10 6-6 6 6 6 M4 12h11a4 4 0 0 0 4-4"/>',
+  endnote: '<path d="M4 5h16M4 10h10m-10 5h5m6-2v7m-3-3 3 3 3-3"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
+};
+function iconMarkup(name) {
+  return `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${Object.hasOwn(paths, name) ? paths[name] : paths.link}</svg>`;
+}
+var brandIconMarkup = '<svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg>';
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -262,683 +296,6 @@ function readCache(input) {
   return { byId, byIdentifier };
 }
 
-// src/access.mjs
-var DEFAULT_ACCESS_STORAGE_KEY = "citation-inator.access.v1";
-var accessKinds = ["free", "publisher", "subscription", "library", "lending", "accessibility", "discovery"];
-var defaultAccessCatalog = [
-  { id: "open-access", label: "Open-access copy", kind: "free" },
-  { id: "author-preprint", label: "Author\u2019s preprint", kind: "free" },
-  { id: "jstor", label: "JSTOR", kind: "subscription" },
-  { id: "project-muse", label: "Project MUSE", kind: "subscription" },
-  { id: "perlego", label: "Perlego", kind: "subscription" },
-  { id: "worldcat", label: "WorldCat", kind: "library" },
-  { id: "internet-archive", label: "Internet Archive", kind: "lending" },
-  { id: "open-library", label: "Open Library", kind: "lending" },
-  { id: "bookshare", label: "Bookshare", kind: "accessibility" },
-  { id: "google-scholar", label: "Google Scholar", kind: "discovery" }
-].map(Object.freeze);
-Object.freeze(defaultAccessCatalog);
-function accessCatalog(overrides = []) {
-  if (!Array.isArray(overrides)) throw new TypeError("Supply an access catalogue array.");
-  const catalog = new Map(defaultAccessCatalog.map((item) => [item.id, { ...item }]));
-  for (const item of overrides) {
-    if (!item || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(item.id)) throw new TypeError("Supply a stable service id.");
-    if (item.remove) catalog.delete(item.id);
-    else {
-      const entry = { ...catalog.get(item.id), ...item };
-      if (!cleanText(entry.label) || !accessKinds.includes(entry.kind)) throw new TypeError("Supply a service label and kind.");
-      catalog.set(item.id, { id: item.id, label: cleanText(entry.label), kind: entry.kind });
-    }
-  }
-  return [...catalog.values()];
-}
-function normalizeAccessProfile(value) {
-  if (value === null) return null;
-  if (!value || !Array.isArray(value.services) || value.services.some((id) => typeof id !== "string" || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(id))) {
-    throw new TypeError("Supply services as an array of service ids, or null to clear the profile.");
-  }
-  const services = [...new Set(value.services)];
-  const preferred = cleanText(value.preferred);
-  if (preferred && !services.includes(preferred)) throw new TypeError("Choose a preferred service from your services.");
-  let library = null;
-  if (value.library) {
-    const { kind, base } = value.library;
-    const safe = httpsURL(base);
-    if (!["proxy", "openurl"].includes(kind) || !safe || new URL(safe).hash) {
-      throw new TypeError("Supply an HTTPS proxy or OpenURL address without a fragment.");
-    }
-    library = { kind, base: safe };
-  }
-  return { services, preferred: preferred || null, library, updatedAt: value.updatedAt && Number.isFinite(Date.parse(value.updatedAt)) ? new Date(value.updatedAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString() };
-}
-function accessProfileState(profile) {
-  return profile === null ? "unknown" : profile.services.length ? [...profile.services] : "none";
-}
-function serviceFor(location, catalog = defaultAccessCatalog) {
-  const original = defaultAccessCatalog.find((item) => item.label.toLowerCase() === location.provider?.toLowerCase());
-  return catalog.find((item) => item.id === location.service) || catalog.find((item) => item.label.toLowerCase() === location.provider?.toLowerCase()) || catalog.find((item) => item.id === original?.id) || { id: location.service || location.provider?.toLowerCase() || "publisher", label: location.provider || "Publisher", kind: "publisher" };
-}
-function libraryURL(record, library) {
-  if (!library) return "";
-  const best = identifierURL(record.identifiers.find((id) => id.scheme === "doi")) || identifierURL(record.identifiers.find((id) => id.scheme === "url")) || record.locations.find((location) => location.kind === "publisher")?.url;
-  if (library.kind === "proxy") return best ? httpsURL(library.base + encodeURIComponent(best)) : "";
-  const url = new URL(library.base);
-  url.searchParams.set("url_ver", "Z39.88-2004");
-  url.searchParams.set("ctx_ver", "Z39.88-2004");
-  const book = ["book", "chapter"].includes(record.type);
-  url.searchParams.set("rft_val_fmt", "info:ofi/fmt:kev:mtx:" + (book ? "book" : "journal"));
-  url.searchParams.set("rft.genre", record.type === "chapter" ? "bookitem" : book ? "book" : record.type === "article-journal" ? "article" : "unknown");
-  for (const id of record.identifiers) {
-    if (id.scheme === "doi") url.searchParams.append("rft_id", "info:doi/" + id.value);
-    if (id.scheme === "isbn") url.searchParams.append("rft.isbn", id.value);
-    if (id.scheme === "issn") url.searchParams.append("rft.issn", id.value);
-  }
-  if (record.title) url.searchParams.set(record.type === "book" ? "rft.btitle" : "rft.atitle", record.title);
-  if (record.containerTitle) url.searchParams.set(book ? "rft.btitle" : "rft.jtitle", record.containerTitle);
-  if (record.issued?.[0]) url.searchParams.set("rft.date", String(record.issued[0]));
-  const author = record.authors[0];
-  if (author?.literal) url.searchParams.set("rft.au", author.literal);
-  else if (author) {
-    url.searchParams.set("rft.aulast", author.family);
-    if (author.given) url.searchParams.set("rft.aufirst", author.given);
-  }
-  return url.href;
-}
-function groupAccess(items, profile) {
-  const free = [], selected = [], other = [];
-  for (const item of items) {
-    if (item.access === "open") free.push(item);
-    else if (item.service === "reader-library" || profile?.services.includes(item.service)) selected.push(item);
-    else other.push(item);
-  }
-  selected.sort((a, b) => Number(b.service === profile?.preferred) - Number(a.service === profile?.preferred));
-  return { free, selected, other };
-}
-
-// src/access-profile.mjs
-var stores = /* @__PURE__ */ new WeakMap();
-function storeFor({ accessStorageKey = DEFAULT_ACCESS_STORAGE_KEY, window: view = globalThis.window } = {}) {
-  if (!view) throw new TypeError("Access profiles need a browser window.");
-  if (typeof accessStorageKey !== "string" || !accessStorageKey.trim()) throw new TypeError("Supply a nonempty access storage key.");
-  let storesForWindow = stores.get(view);
-  if (!storesForWindow) {
-    storesForWindow = /* @__PURE__ */ new Map();
-    stores.set(view, storesForWindow);
-    view.addEventListener("storage", (event) => {
-      for (const [key, store] of storesForWindow) {
-        if (event.key === key || event.key === null) {
-          store.profile = readProfile(view, key);
-          for (const notify of store.listeners) notify();
-        }
-      }
-    });
-  }
-  if (!storesForWindow.has(accessStorageKey)) storesForWindow.set(accessStorageKey, {
-    profile: readProfile(view, accessStorageKey),
-    listeners: /* @__PURE__ */ new Set(),
-    view,
-    key: accessStorageKey
-  });
-  return storesForWindow.get(accessStorageKey);
-}
-function readProfile(view, key) {
-  try {
-    const value = JSON.parse(view.localStorage.getItem(key));
-    return value === null ? null : normalizeAccessProfile(value);
-  } catch {
-    return null;
-  }
-}
-function getAccessProfile(options) {
-  return structuredClone(storeFor(options).profile);
-}
-function setAccessProfile(profile, options) {
-  const store = storeFor(options);
-  store.profile = normalizeAccessProfile(profile === null ? null : { ...profile, updatedAt: (/* @__PURE__ */ new Date()).toISOString() });
-  try {
-    if (store.profile === null) store.view.localStorage.removeItem(store.key);
-    else store.view.localStorage.setItem(store.key, JSON.stringify(store.profile));
-  } catch {
-  }
-  for (const notify of store.listeners) notify();
-  return structuredClone(store.profile);
-}
-function subscribeAccessProfile(callback, options) {
-  const store = storeFor(options);
-  const notify = () => callback({ profile: structuredClone(store.profile), state: accessProfileState(store.profile) });
-  store.listeners.add(notify);
-  return () => store.listeners.delete(notify);
-}
-
-// src/icons.mjs
-var paths = {
-  pdf: '<path d="M6 3h8l4 4v14H6z M14 3v5h4"/><path d="m8 17 3-5 2 4 3 1-4 1z"/>',
-  publisher: '<path d="M3 9 12 4l9 5z M5 20h14 M7 11v7m5-7v7m5-7v7"/>',
-  book: '<path d="M5 4h14v16H7a2 2 0 0 1-2-2z M5 17h14 M8 8h8m-8 3h6"/>',
-  link: '<path d="m9 15 6-6 M8 16l-1 1a3 3 0 0 1-4-4l5-5a3 3 0 0 1 4 0 M16 8l1-1a3 3 0 0 1 4 4l-5 5a3 3 0 0 1-4 0"/>',
-  repository: '<path d="M4 4h16v5H4z M6 9v11h12V9 M10 13h4"/>',
-  article: '<path d="M6 4h12v16H6z M9 8h6m-6 4h6m-6 4h4"/>',
-  external: '<path d="M13 4h7v7m0-7-9 9m7 0v7H4V6h7"/>',
-  library: '<path d="M4 19V5h4v14zm4 0V5h4v14zm6-13 4-1 3 14-4 1z"/>',
-  status: '<path d="M12 3 4 7v5c0 5 4 8 8 9 4-1 8-4 8-9V7z M12 8v5m0 3h.01"/>',
-  back: '<path d="m10 6-6 6 6 6 M4 12h11a4 4 0 0 0 4-4"/>',
-  endnote: '<path d="M4 5h16M4 10h10m-10 5h5m6-2v7m-3-3 3 3 3-3"/>',
-  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
-  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
-};
-function iconMarkup(name) {
-  return `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${Object.hasOwn(paths, name) ? paths[name] : paths.link}</svg>`;
-}
-var brandIconMarkup = '<svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg>';
-
-// src/class-names.mjs
-var defaultClassPrefix = "citation";
-var partSelector = "[data-citation-part]";
-function validClassPrefix(prefix) {
-  return typeof prefix === "string" && /^[a-z][a-z0-9-]{0,31}$/.test(prefix);
-}
-function validateClassPrefix(prefix) {
-  if (!validClassPrefix(prefix)) throw new TypeError("Use a lowercase citation class prefix.");
-}
-function partClassNames(prefix, parts) {
-  return parts.split(" ").map((part) => `${prefix}-${part}`);
-}
-
-// src/access-view.mjs
-var defaults = {
-  "access.links": "Source links",
-  "access.action.pdf": "Download PDF",
-  "access.action.publisher": "Open publisher page",
-  "access.action.repository": "Open repository",
-  "access.action.preprint": "Open preprint",
-  "access.action.library": "Find at {service}",
-  "access.action.full-text": "Read full text at {service}",
-  "access.version": "{label} ({version})",
-  "access.free": "Read free",
-  "access.selected": "Through your services",
-  "access.other": "Other places to look",
-  "access.more": { one: "{count} more", other: "{count} more" },
-  "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
-  "access.help.none": "None of these is on your list. Add a service, or try your library.",
-  "access.help.match": "Change where you read",
-  "access.settings": "Where you can read",
-  "access.services": "Services you can use",
-  "access.preferred": "Open titles in",
-  "access.noPreference": "No preference",
-  "access.library": "Through my library",
-  "access.library.kind": "Library access type",
-  "access.library.none": "No library configured",
-  "access.library.proxy": "Proxy prefix",
-  "access.library.openurl": "OpenURL resolver",
-  "access.library.address": "Library address",
-  "access.library.help": "Use the HTTPS address supplied by your library. It is used only when you open a library link.",
-  "access.privacy": "Saved in this browser for this site. Services may have the work. Availability varies by title.",
-  "access.save": "Save",
-  "access.clear": "Clear settings",
-  "access.cancel": "Cancel",
-  "access.at": "at {service}",
-  "access.checked": "Checked {date}",
-  "access.stale": "May have moved",
-  "access.destination": "Open at {service}",
-  "access.invalid": "Check your library address and preferred service.",
-  "access.kind.free": "Open copies",
-  "access.kind.publisher": "Publishers",
-  "access.kind.subscription": "Subscriptions",
-  "access.kind.library": "Libraries",
-  "access.kind.lending": "Lending",
-  "access.kind.accessibility": "Accessible editions",
-  "access.kind.discovery": "Discovery"
-};
-function node(doc, tag, text, part) {
-  const value = doc.createElement(tag);
-  if (text) value.textContent = text;
-  if (part) {
-    value.dataset.citationPart = part;
-    value.className = partClassNames(defaultClassPrefix, part).join(" ");
-  }
-  return value;
-}
-function containerIsPanel(container) {
-  return container.getRootNode().host?.localName === "citation-inspector";
-}
-var AccessView = class {
-  #owner;
-  #options = {};
-  #unsubscribe;
-  #rows = /* @__PURE__ */ new Map();
-  #titles = /* @__PURE__ */ new Map();
-  #sheet;
-  #returnFocus;
-  #returnContainer;
-  constructor(owner) {
-    this.#owner = owner;
-  }
-  configure(options) {
-    this.#options = { ...this.#options, ...options };
-    accessCatalog(this.#options.accessCatalog);
-    if (this.#options.accessLayout && !["flat", "grouped"].includes(this.#options.accessLayout)) throw new TypeError("Use grouped or flat access.");
-    if (this.#options.accessSettings && !["builtin", "host", "off"].includes(this.#options.accessSettings)) throw new TypeError("Use builtin, host or off access settings.");
-    for (const key of ["accessCollapseAfter", "staleAfterDays"]) {
-      if (this.#options[key] !== void 0 && (!Number.isFinite(this.#options[key]) || this.#options[key] < 0)) throw new TypeError("Supply a nonnegative " + key + ".");
-    }
-    this.connect();
-    this.restore();
-  }
-  get catalog() {
-    return accessCatalog(this.#options.accessCatalog);
-  }
-  get storageOptions() {
-    return { accessStorageKey: this.#options.accessStorageKey, window: this.#owner.ownerDocument.defaultView };
-  }
-  get profile() {
-    return getAccessProfile(this.storageOptions);
-  }
-  get settings() {
-    return this.#owner.getAttribute("access-settings") || this.#options.accessSettings || "builtin";
-  }
-  get layout() {
-    return this.#owner.getAttribute("access-layout") || this.#options.accessLayout || "grouped";
-  }
-  text(key, values = {}) {
-    let template = this.#options.strings?.[key] ?? defaults[key] ?? key;
-    if (typeof template === "object") {
-      const rule = new Intl.PluralRules(this.#options.locale).select(values.count ?? 0);
-      template = template[rule] ?? template.other ?? defaults[key]?.other ?? key;
-    }
-    return String(template).replace(/\{(\w+)\}/g, (_, key2) => values[key2] ?? "");
-  }
-  connect() {
-    this.#unsubscribe?.();
-    if (!this.#owner.isConnected) return;
-    this.#unsubscribe = subscribeAccessProfile((detail) => {
-      this.restore();
-      this.#owner.refreshAccess();
-      this.#owner.dispatchEvent(new CustomEvent("access-profile-changed", { detail, bubbles: true, composed: true }));
-    }, this.storageOptions);
-  }
-  disconnect() {
-    this.#unsubscribe?.();
-    this.#unsubscribe = null;
-    if (this.#sheet?.open) this.#sheet.close();
-    this.#sheet?.remove();
-    this.#sheet = null;
-    this.restore();
-  }
-  owns(event) {
-    return this.#sheet && event.composedPath().includes(this.#sheet);
-  }
-  items(record, hidden = () => false) {
-    const catalog = this.catalog;
-    const items = record.locations.filter((location) => location.kind !== "status").map((location) => {
-      const service = serviceFor(location, catalog);
-      return { ...location, service: service.id, serviceLabel: service.label, label: this.text("access.destination", { service: service.label }) };
-    }).filter((item) => !hidden(item.provider) && !hidden(item.service) && !hidden(item.serviceLabel));
-    const resolver = typeof this.#owner.institutionalURL === "function" ? this.#institutional(record) : libraryURL(record, this.profile?.library);
-    if (resolver) items.push({
-      url: resolver,
-      kind: "library",
-      service: "reader-library",
-      serviceLabel: this.text("access.library"),
-      label: this.text("access.library"),
-      access: "unknown"
-    });
-    return items;
-  }
-  #institutional(record) {
-    try {
-      return httpsURL(this.#owner.institutionalURL(structuredClone(record)));
-    } catch {
-      return "";
-    }
-  }
-  // Resolve source labels and grouping from copy-level metadata, including legacy provider names.
-  decorate(list, record, hidden = () => false) {
-    const locations = this.items(record);
-    const doc = list.ownerDocument;
-    for (const item of locations) {
-      if (![...list.querySelectorAll("a")].some((link) => link.href === item.url)) {
-        const link = node(doc, "a", "", "icon");
-        link.href = item.url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-        link.innerHTML = iconMarkup(item.kind === "pdf" ? "pdf" : item.kind === "library" ? "library" : "link");
-        link.dataset.ciAccessProvider = item.provider || "";
-        if (item.kind === "pdf") link.download = "";
-        list.append(link);
-      }
-    }
-    for (const link of [...list.querySelectorAll("a")]) {
-      const provider = link.dataset.ciAccessProvider;
-      const known = provider && serviceFor({ provider }, this.catalog);
-      const item = locations.find((item2) => item2.url === link.href && (!provider || item2.provider === provider)) || known && { url: link.href, provider, service: known.id, serviceLabel: known.label, kind: "library", access: "unknown" };
-      if (!item) {
-        if (hidden(link.dataset.ciAccessProvider || "")) link.remove();
-        continue;
-      }
-      if ([item.provider, item.service, item.serviceLabel].some((value) => value && hidden(value))) {
-        link.remove();
-        continue;
-      }
-      const kind = item.kind === "preprint" && /\.pdf(?:[?#]|$)/i.test(item.url) ? "pdf" : item.kind;
-      const key = item.service === "reader-library" ? "access.library" : "access.action." + kind;
-      let label = this.text(key, { service: item.serviceLabel });
-      if (item.version) label = this.text("access.version", { label, version: item.version });
-      delete link.dataset.accessChecked;
-      delete link.dataset.accessStale;
-      link.removeAttribute("aria-description");
-      link.setAttribute("aria-label", label);
-      link.title = label + "\n" + item.url;
-      link.dataset.accessService = item.service;
-      link.dataset.accessState = item.access || "unknown";
-      if (item.verifiedAt) {
-        const date = new Intl.DateTimeFormat(this.#options.locale, { dateStyle: "medium" }).format(new Date(item.verifiedAt));
-        const checked = this.text("access.checked", { date });
-        link.title += "\n" + checked;
-        if (containerIsPanel(list)) {
-          link.dataset.accessChecked = checked;
-          link.setAttribute("aria-description", checked);
-        }
-        if (this.#options.staleAfterDays && Date.now() - Date.parse(item.verifiedAt) > this.#options.staleAfterDays * 864e5) {
-          link.title += "\n" + this.text("access.stale");
-          link.dataset.accessStale = this.text("access.stale");
-        }
-      }
-    }
-  }
-  #appendLink(container, link) {
-    if (containerIsPanel(container) && link.dataset.accessChecked) {
-      const item = node(container.ownerDocument, "span", "", "access-destination");
-      item.append(link, node(
-        container.ownerDocument,
-        "small",
-        [link.dataset.accessChecked, link.dataset.accessStale].filter(Boolean).join(" \xB7 "),
-        "access-checked"
-      ));
-      container.append(item);
-    } else container.append(link);
-  }
-  group(container, links, record, { flat = false, hidden } = {}) {
-    this.decorate(container, record, hidden);
-    links = [...container.querySelectorAll("a")];
-    if (this.layout === "flat") {
-      for (const link of links) this.#appendLink(container, link);
-      this.help(container, links);
-      return;
-    }
-    const groups = groupAccess(links.map((link) => ({
-      link,
-      access: link.dataset.accessState,
-      service: link.dataset.accessService
-    })), this.profile);
-    for (const [key, entries] of Object.entries(groups)) {
-      if (!entries.length) continue;
-      const doc = container.ownerDocument;
-      if (key === "other") {
-        const visible = this.#options.accessCollapseAfter ?? 0;
-        for (const { link } of entries.slice(0, visible)) this.#appendLink(container, link);
-        if (entries.length > visible) {
-          const more = node(doc, "details", "", "access-more");
-          more.append(node(doc, "summary", this.text("access.more", { count: entries.length - visible })));
-          const label = node(doc, "span", this.text("access.other"), "access-group-label");
-          more.append(label);
-          for (const { link } of entries.slice(visible)) this.#appendLink(more, link);
-          container.append(more);
-        }
-      } else {
-        if (!flat) container.append(node(doc, "span", this.text(key === "free" ? "access.free" : "access.selected"), "access-group-label"));
-        for (const { link } of entries) this.#appendLink(container, link);
-      }
-    }
-    this.help(container, links);
-  }
-  help(container, links) {
-    if (this.settings === "off") return;
-    const profile = this.profile;
-    const matched = links.some((link) => link.dataset.accessService === "reader-library" || profile?.services.includes(link.dataset.accessService));
-    const key = profile === null ? "unknown" : matched ? "match" : "none";
-    const help = node(container.ownerDocument, "button", this.text("access.help." + key), "access-help");
-    help.type = "button";
-    help.addEventListener("click", () => this.openSettings(help));
-    container.append(help);
-  }
-  openSettings(trigger) {
-    if (this.settings === "off") return;
-    if (this.settings === "host") {
-      this.#owner.dispatchEvent(new CustomEvent("access-settings-request", { bubbles: true, composed: true, cancelable: true }));
-      return;
-    }
-    this.#sheet?.remove();
-    const doc = this.#owner.ownerDocument;
-    const sheet = this.#sheet = node(doc, "dialog", "", "access-settings");
-    sheet.setAttribute("aria-label", this.text("access.settings"));
-    const form = node(doc, "form");
-    const title = node(doc, "h2", this.text("access.settings"));
-    form.append(title, node(doc, "p", this.text("access.privacy")));
-    const columns = node(doc, "div", "", "access-settings-columns");
-    const services = node(doc, "fieldset");
-    services.append(node(doc, "legend", this.text("access.services")));
-    const profile = this.profile;
-    const catalog = this.catalog;
-    for (const kind2 of [...new Set(catalog.map((item) => item.kind))]) {
-      const group = node(doc, "fieldset");
-      group.append(node(doc, "legend", this.text("access.kind." + kind2)));
-      for (const item of catalog.filter((item2) => item2.kind === kind2)) {
-        const label = node(doc, "label");
-        const input = node(doc, "input");
-        input.type = "checkbox";
-        input.name = "service";
-        input.value = item.id;
-        input.checked = Boolean(profile?.services.includes(item.id));
-        label.append(input, " " + item.label);
-        group.append(label);
-      }
-      services.append(group);
-    }
-    const preferences = node(doc, "fieldset");
-    preferences.append(node(doc, "legend", this.text("access.preferred")));
-    for (const item of [{ id: "", label: this.text("access.noPreference") }, ...catalog]) {
-      const label = node(doc, "label");
-      const input = node(doc, "input");
-      input.type = "radio";
-      input.name = "preferred";
-      input.value = item.id;
-      input.checked = (profile?.preferred || "") === item.id;
-      label.append(input, " " + item.label);
-      preferences.append(label);
-    }
-    columns.append(services, preferences);
-    form.append(columns);
-    const library = node(doc, "fieldset");
-    library.append(node(doc, "legend", this.text("access.library")));
-    const kindLabel = node(doc, "label", this.text("access.library.kind"));
-    const kind = node(doc, "select");
-    kind.name = "libraryKind";
-    for (const key of ["none", "proxy", "openurl"]) {
-      const option = node(doc, "option", this.text("access.library." + key));
-      option.value = key;
-      kind.append(option);
-    }
-    kind.value = profile?.library?.kind || "none";
-    kindLabel.append(kind);
-    const addressLabel = node(doc, "label", this.text("access.library.address"));
-    const address = node(doc, "input");
-    address.name = "libraryAddress";
-    address.type = "url";
-    address.value = profile?.library?.base || "";
-    addressLabel.append(address);
-    address.disabled = kind.value === "none";
-    kind.addEventListener("change", () => {
-      address.disabled = kind.value === "none";
-    });
-    library.append(kindLabel, addressLabel, node(doc, "p", this.text("access.library.help")));
-    form.append(library);
-    const error = node(doc, "p");
-    error.setAttribute("role", "alert");
-    form.append(error);
-    const save = node(doc, "button", this.text("access.save"));
-    save.type = "submit";
-    const clear = node(doc, "button", this.text("access.clear"));
-    clear.type = "button";
-    clear.addEventListener("click", () => {
-      setAccessProfile(null, this.storageOptions);
-      close();
-    });
-    const cancel = node(doc, "button", this.text("access.cancel"));
-    cancel.type = "button";
-    cancel.addEventListener("click", () => sheet.close());
-    form.append(save, clear, cancel);
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const fields = new FormData(form);
-      try {
-        setAccessProfile({
-          services: fields.getAll("service"),
-          preferred: fields.get("preferred"),
-          library: kind.value === "none" ? null : { kind: kind.value, base: address.value }
-        }, this.storageOptions);
-        close();
-      } catch {
-        error.textContent = this.text("access.invalid");
-      }
-    });
-    sheet.append(form);
-    this.#owner.shadowRoot.append(sheet);
-    this.#returnFocus = trigger;
-    this.#returnContainer = trigger.closest("[data-ci-note-record]");
-    const finish = () => {
-      if (this.#sheet !== sheet) return;
-      this.#sheet = null;
-      if (this.#returnFocus?.isConnected) this.#returnFocus.focus({ preventScroll: true });
-      else {
-        const replacement = this.#returnContainer?.querySelector('[data-citation-part="access-help"]');
-        if (replacement?.isConnected) replacement.focus({ preventScroll: true });
-        else if (this.#owner.hasAttribute("open")) this.#owner.shadowRoot.querySelector("#panel-name")?.focus({ preventScroll: true });
-      }
-      sheet.remove();
-    };
-    const close = () => {
-      sheet.close();
-      finish();
-    };
-    sheet.addEventListener("close", finish, { once: true });
-    sheet.addEventListener("cancel", (event) => {
-      event.preventDefault();
-      close();
-    });
-    let backdrop = false;
-    sheet.addEventListener("pointerdown", (event) => {
-      backdrop = event.target === sheet && this.#outside(sheet, event);
-    });
-    sheet.addEventListener("click", (event) => {
-      if (backdrop && event.target === sheet) close();
-      backdrop = false;
-    });
-    sheet.showModal();
-  }
-  #outside(sheet, event) {
-    const rect = sheet.getBoundingClientRect();
-    return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
-  }
-  enhanceNotes(records, hidden) {
-    for (const row of this.#rows.keys()) {
-      if (!this.#owner.contains(row)) this.#restoreRow(row);
-    }
-    const references = this.#owner.querySelectorAll("[data-ci-reference-record], [data-ci-note-record]");
-    const visited = /* @__PURE__ */ new Set();
-    for (const reference of references) {
-      if (reference.closest("citation-inspector") !== this.#owner) continue;
-      const record = records.get(reference.dataset.ciReferenceRecord || reference.dataset.ciNoteRecord);
-      if (!record) continue;
-      let row = reference.matches("[data-ci-note-record]") ? reference : reference.querySelector(":scope > [data-ci-note-record]");
-      if (!row) {
-        if (this.settings === "off" && !this.items(record, hidden).length) continue;
-        row = node(reference.ownerDocument, "div", "", "note-actions");
-        row.dataset.ciNoteRecord = record.id;
-        row.dataset.ciGeneratedActions = "";
-        reference.append(row);
-      }
-      if (visited.has(row)) continue;
-      visited.add(row);
-      const signature = JSON.stringify([record, this.profile, this.layout, this.settings, this.#options, this.#owner.getAttribute("hidden-providers"), this.#owner.getAttribute("hidden-access-providers"), this.#owner.getAttribute("access-providers")]);
-      if (this.#rows.get(row)?.signature === signature) continue;
-      this.#restoreRow(row);
-      if (row.hasAttribute("data-ci-generated-actions") && this.settings === "off" && !this.items(record, hidden).length) {
-        row.remove();
-        continue;
-      }
-      if (!row.isConnected) reference.append(row);
-      const statusURL = record.integrity?.url || record.locations.find((item) => item.kind === "status")?.url;
-      const links = [...row.querySelectorAll(':scope > a[href^="https:"]:not([data-ci-record]):not([data-ci-panel])')].filter((link) => link.href !== statusURL);
-      const saved = { signature, nodes: [...row.childNodes], generated: row.hasAttribute("data-ci-generated-actions"), reference: row.closest("li") };
-      this.#rows.set(row, saved);
-      {
-        const group = node(row.ownerDocument, "span", "", "access-inline");
-        row.prepend(group);
-        for (const link of links) group.append(link);
-        this.group(group, [...group.querySelectorAll("a")], record, { flat: true, hidden });
-      }
-      this.#title(row.closest("li"), record, hidden);
-    }
-  }
-  #title(row, record, hidden) {
-    const items = this.items(record, hidden);
-    const groups = groupAccess(items, this.profile);
-    const best = groups.free[0] || groups.selected.find((item) => item.service === this.profile?.preferred);
-    if (!best) return;
-    const reference = row?.querySelector(":scope > span[data-ci-title-start]");
-    if (!reference) return;
-    let remaining = Number(reference.dataset.ciTitleStart);
-    const length = Number(reference.dataset.ciTitleLength);
-    const walker = reference.ownerDocument.createTreeWalker(reference, 4);
-    let title, text;
-    while (text = walker.nextNode()) {
-      if (remaining >= text.length) {
-        remaining -= text.length;
-        continue;
-      }
-      if (length > text.length - remaining) return;
-      if (text.parentElement.closest("a")) return;
-      const isolated = text.splitText(remaining);
-      isolated.splitText(length);
-      title = node(reference.ownerDocument, "span");
-      isolated.replaceWith(title);
-      title.append(isolated);
-      break;
-    }
-    const created = true;
-    if (!title) return;
-    const saved = [...title.childNodes];
-    const link = node(title.ownerDocument, "a");
-    link.href = best.url;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    const destination2 = this.text("access.at", { service: best.serviceLabel });
-    link.setAttribute("aria-label", title.textContent + " " + destination2);
-    for (const child of saved) link.append(child.cloneNode(true));
-    for (const nested of link.querySelectorAll("a")) nested.replaceWith(...nested.childNodes);
-    const label = node(title.ownerDocument, "small", " " + destination2);
-    title.replaceChildren(link, label);
-    this.#titles.set(title, { nodes: saved, created });
-  }
-  #restoreRow(row) {
-    const saved = this.#rows.get(row);
-    const reference = saved?.reference || row.closest("li");
-    if (saved?.generated) row.remove();
-    else if (saved) row.replaceChildren(...saved.nodes);
-    this.#rows.delete(row);
-    for (const [title, titleState] of this.#titles) {
-      if (reference?.contains(title)) {
-        if (titleState.created) title.replaceWith(...titleState.nodes);
-        else title.replaceChildren(...titleState.nodes);
-        this.#titles.delete(title);
-      }
-    }
-  }
-  restore() {
-    for (const row of this.#rows.keys()) this.#restoreRow(row);
-  }
-};
-
 // src/reference-features.mjs
 var fallbackOrigin = "https://citation.invalid";
 function siteURL(value, siteOrigin, { fragment = false } = {}) {
@@ -1017,6 +374,157 @@ var occurrenceLetter = (index) => index < 26 ? String.fromCharCode(97 + index) :
 var siteReturnLabel = (group, item, index) => `Return to ${group.kind === "listed" ? "listing in " : ""}${group.label}${item.context ? " \u2014 " + item.context : ""} (${group.kind === "listed" ? "entry" : "occurrence"} ${occurrenceLetter(index)})`;
 
 // src/compiler.mjs
+var forms = /* @__PURE__ */ new Set(["parenthetical", "narrative", "author-only", "suppress-author", "suppress-year"]);
+var parentheticalForms = /* @__PURE__ */ new Set(["parenthetical", "suppress-author", "suppress-year"]);
+var annotationNames = { evidence: "Citation evidence", credit: "Citation credit" };
+var split = (value, separator) => {
+  const parts = [""];
+  for (const [token] of value.matchAll(/\\.|"[^"\\]*(?:\\.[^"\\]*)*"|./gu)) {
+    if (token === separator) parts.push("");
+    else parts[parts.length - 1] += token;
+  }
+  return parts.map((part) => part.trim());
+};
+var unescape = (value) => value.replace(/\\([\\{};|"])/g, "$1");
+function parseItem(text) {
+  const [key, ...options] = split(text, "|");
+  const identifier = normalizeIdentifier(unescape(key));
+  if (!identifier) return null;
+  let form = "parenthetical";
+  let label = "";
+  let hint = "";
+  let editorNote;
+  let markerTags;
+  const affixes = {};
+  let formSpecified = false;
+  let isolated = false;
+  for (const option of options) {
+    if (option === "isolated") {
+      if (isolated) return null;
+      isolated = true;
+    } else if (option.startsWith("form:")) {
+      const requested = option.slice(5).trim();
+      if (formSpecified || !forms.has(requested)) return null;
+      form = requested;
+      formSpecified = true;
+    } else if (option.startsWith("label:")) {
+      const match = /^label:\s*"((?:\\.|[^"\\])+)"$/.exec(option);
+      if (label || !match) return null;
+      label = unescape(match[1]).trim();
+      if (!label) return null;
+    } else if (option.startsWith("note:")) {
+      const match = /^note:\s*"((?:\\.|[^"\\])*)"$/.exec(option);
+      if (editorNote !== void 0 || !match) return null;
+      editorNote = unescape(match[1]);
+    } else if (option.startsWith("tags:")) {
+      const tags = option.slice(5).trim().split(",").map((tag) => tag.trim());
+      if (markerTags !== void 0 || !tags.every((tag) => /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag))) return null;
+      markerTags = [...new Set(tags)];
+    } else if (/^(prefix|locator):/.test(option)) {
+      const colon = option.indexOf(":");
+      const field = option.slice(0, colon);
+      const raw = option.slice(colon + 1).trim();
+      const quoted = /^"((?:\\.|[^"\\])+)"$/.exec(raw);
+      if (!raw || Object.hasOwn(affixes, field) || raw.startsWith('"') && !quoted) return null;
+      affixes[field] = unescape(quoted ? quoted[1] : raw).trim();
+      if (!affixes[field]) return null;
+    } else if (option && !hint) hint = unescape(option);
+    else return null;
+  }
+  return { identifier, form, label, hint, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
+}
+function validateKeyword(citationKeyword) {
+  if (typeof citationKeyword !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(citationKeyword)) {
+    throw new TypeError("Use a lowercase citation keyword.");
+  }
+}
+function parseEndnotes(body, raw) {
+  const [, ...options] = split(body, "|");
+  const token = { type: "endnotes", raw };
+  for (const option of options) {
+    if (option === "scope:since-last" && !token.scoped) token.scoped = true;
+    else if (option === "heading:none" && token.heading === void 0) token.heading = null;
+    else {
+      const heading = /^heading:\s*"((?:\\.|[^"\\])+)"$/.exec(option);
+      const level = /^level:\s*([1-6])$/.exec(option);
+      if (heading && heading[1].trim() && token.heading === void 0) token.heading = unescape(heading[1]).trim();
+      else if (level && token.level === void 0) token.level = Number(level[1]);
+      else return { type: "text", text: raw, malformed: true };
+    }
+  }
+  return token;
+}
+function directivePattern(citationKeyword) {
+  validateKeyword(citationKeyword);
+  return new RegExp(String.raw`\\[\\{}]|\{endnotes\}|\{(${citationKeyword}|cite)[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
+}
+function scanCitationMarkers(source, { citationKeyword = "citation" } = {}) {
+  if (typeof source !== "string") throw new TypeError("Supply source text.");
+  return [...source.matchAll(directivePattern(citationKeyword))].filter((match) => match[0].startsWith("{")).map((match) => ({
+    start: match.index,
+    end: match.index + match[0].length,
+    raw: match[0],
+    token: parseDirectives(match[0], { citationKeyword })[0]
+  }));
+}
+function markerKind(raw, options = {}) {
+  if (typeof raw !== "string") throw new TypeError("Supply a marker string.");
+  const text = raw.trim();
+  const markers = scanCitationMarkers(text, options);
+  if (markers.length !== 1 || markers[0].raw !== text || markers[0].start !== 0) return "malformed";
+  const token = markers[0].token;
+  return token?.type === "endnotes" ? "endnote" : ["citation", "list", "nocite", "annotation"].includes(token?.type) ? token.type : "malformed";
+}
+function parseDirectives(source, { citationKeyword = "citation" } = {}) {
+  const directive = directivePattern(citationKeyword);
+  const tokens = [];
+  let cursor = 0;
+  for (const match of source.matchAll(directive)) {
+    if (match.index > cursor) tokens.push({ type: "text", text: source.slice(cursor, match.index) });
+    const raw = match[0];
+    cursor = match.index + raw.length;
+    if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
+    else if (raw === "{endnotes}") tokens.push({ type: "endnotes", raw });
+    else if (match[1] === citationKeyword && /^endnote(?:\s*\||$)/.test(match[2].trim())) {
+      tokens.push(parseEndnotes(match[2], raw));
+    } else if (match[1] === citationKeyword && /^(?:list|nocite)[ \t]/.test(match[2].trim())) {
+      const [, type, body] = /^(list|nocite)\s+(.+)$/.exec(match[2].trim()) || [];
+      const [keys, ...options] = split(body || "", "|");
+      const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
+      const listOptions = {};
+      let valid = true;
+      for (const option of options) {
+        const match2 = /^(sort|tags|tag-mode):(.+)$/.exec(option);
+        if (!match2 || Object.hasOwn(listOptions, match2[1])) {
+          valid = false;
+          break;
+        }
+        listOptions[match2[1]] = match2[2];
+      }
+      if (listOptions.sort && !["author", "year"].includes(listOptions.sort) || listOptions["tag-mode"] && !["any", "all"].includes(listOptions["tag-mode"]) || listOptions.tags && !listOptions.tags.split(",").every((tag) => /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag))) valid = false;
+      const identifiers = split(keys, ";").map((key) => normalizeIdentifier(unescape(key)));
+      if (identifiers.every(Boolean) && valid && (type === "list" || !options.length)) {
+        tokens.push({
+          type,
+          items: identifiers.map((identifier) => ({ identifier })),
+          sort: listOptions.sort,
+          ...listOptions.tags && { tags: listOptions.tags.split(",") },
+          ...listOptions["tag-mode"] && { tagMode: listOptions["tag-mode"] },
+          raw
+        });
+      } else tokens.push({ type: "text", text: raw, malformed: true });
+    } else if (match[1] === citationKeyword && Object.hasOwn(annotationNames, match[2].trim())) {
+      tokens.push({ type: "annotation", name: match[2].trim(), raw });
+    } else {
+      const items = split(match[2], ";").map(parseItem);
+      if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)))) {
+        tokens.push({ type: "citation", items, raw });
+      } else tokens.push({ type: "text", text: raw, malformed: true });
+    }
+  }
+  if (cursor < source.length) tokens.push({ type: "text", text: source.slice(cursor) });
+  return tokens;
+}
 var compare = (a, b) => {
   const left = a.normalize("NFKC").toLowerCase();
   const right = b.normalize("NFKC").toLowerCase();
@@ -1246,6 +754,669 @@ function bibliographyParts(record, suffix, style) {
 function bibliographyText(record, suffix = "", style = "default") {
   return bibliographyParts(record, suffix, style).map((part) => part.text).join("");
 }
+
+// src/access.mjs
+var DEFAULT_ACCESS_STORAGE_KEY = "citation-inator.access.v1";
+var accessKinds = ["free", "publisher", "subscription", "library", "lending", "accessibility", "discovery"];
+var defaultAccessCatalog = [
+  { id: "open-access", label: "Open-access copy", kind: "free" },
+  { id: "author-preprint", label: "Author\u2019s preprint", kind: "free" },
+  { id: "jstor", label: "JSTOR", kind: "subscription" },
+  { id: "project-muse", label: "Project MUSE", kind: "subscription" },
+  { id: "perlego", label: "Perlego", kind: "subscription" },
+  { id: "worldcat", label: "WorldCat", kind: "library" },
+  { id: "internet-archive", label: "Internet Archive", kind: "lending" },
+  { id: "open-library", label: "Open Library", kind: "lending" },
+  { id: "bookshare", label: "Bookshare", kind: "accessibility" },
+  { id: "google-scholar", label: "Google Scholar", kind: "discovery" }
+].map(Object.freeze);
+Object.freeze(defaultAccessCatalog);
+function accessCatalog(overrides = []) {
+  if (!Array.isArray(overrides)) throw new TypeError("Supply an access catalogue array.");
+  const catalog = new Map(defaultAccessCatalog.map((item) => [item.id, { ...item }]));
+  for (const item of overrides) {
+    if (!item || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(item.id)) throw new TypeError("Supply a stable service id.");
+    if (item.remove) catalog.delete(item.id);
+    else {
+      const entry = { ...catalog.get(item.id), ...item };
+      if (!cleanText(entry.label) || !accessKinds.includes(entry.kind)) throw new TypeError("Supply a service label and kind.");
+      catalog.set(item.id, { id: item.id, label: cleanText(entry.label), kind: entry.kind });
+    }
+  }
+  return [...catalog.values()];
+}
+function normalizeAccessProfile(value) {
+  if (value === null) return null;
+  if (!value || !Array.isArray(value.services) || value.services.some((id) => typeof id !== "string" || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(id))) {
+    throw new TypeError("Supply services as an array of service ids, or null to clear the profile.");
+  }
+  const services = [...new Set(value.services)];
+  const preferred = cleanText(value.preferred);
+  if (preferred && !services.includes(preferred)) throw new TypeError("Choose a preferred service from your services.");
+  let library = null;
+  if (value.library) {
+    const { kind, base } = value.library;
+    const safe = httpsURL(base);
+    if (!["proxy", "openurl"].includes(kind) || !safe || new URL(safe).hash) {
+      throw new TypeError("Supply an HTTPS proxy or OpenURL address without a fragment.");
+    }
+    library = { kind, base: safe };
+  }
+  return { services, preferred: preferred || null, library, updatedAt: value.updatedAt && Number.isFinite(Date.parse(value.updatedAt)) ? new Date(value.updatedAt).toISOString() : (/* @__PURE__ */ new Date()).toISOString() };
+}
+function accessProfileState(profile) {
+  return profile === null ? "unknown" : profile.services.length ? [...profile.services] : "none";
+}
+function serviceFor(location, catalog = defaultAccessCatalog) {
+  const original = defaultAccessCatalog.find((item) => item.label.toLowerCase() === location.provider?.toLowerCase());
+  return catalog.find((item) => item.id === location.service) || catalog.find((item) => item.label.toLowerCase() === location.provider?.toLowerCase()) || catalog.find((item) => item.id === original?.id) || { id: location.service || location.provider?.toLowerCase() || "publisher", label: location.provider || "Publisher", kind: "publisher" };
+}
+function libraryURL(record, library) {
+  if (!library) return "";
+  const best = identifierURL(record.identifiers.find((id) => id.scheme === "doi")) || identifierURL(record.identifiers.find((id) => id.scheme === "url")) || record.locations.find((location) => location.kind === "publisher")?.url;
+  if (library.kind === "proxy") return best ? httpsURL(library.base + encodeURIComponent(best)) : "";
+  const url = new URL(library.base);
+  url.searchParams.set("url_ver", "Z39.88-2004");
+  url.searchParams.set("ctx_ver", "Z39.88-2004");
+  const book = ["book", "chapter"].includes(record.type);
+  url.searchParams.set("rft_val_fmt", "info:ofi/fmt:kev:mtx:" + (book ? "book" : "journal"));
+  url.searchParams.set("rft.genre", record.type === "chapter" ? "bookitem" : book ? "book" : record.type === "article-journal" ? "article" : "unknown");
+  for (const id of record.identifiers) {
+    if (id.scheme === "doi") url.searchParams.append("rft_id", "info:doi/" + id.value);
+    if (id.scheme === "isbn") url.searchParams.append("rft.isbn", id.value);
+    if (id.scheme === "issn") url.searchParams.append("rft.issn", id.value);
+  }
+  if (record.title) url.searchParams.set(record.type === "book" ? "rft.btitle" : "rft.atitle", record.title);
+  if (record.containerTitle) url.searchParams.set(book ? "rft.btitle" : "rft.jtitle", record.containerTitle);
+  if (record.issued?.[0]) url.searchParams.set("rft.date", String(record.issued[0]));
+  const author = record.authors[0];
+  if (author?.literal) url.searchParams.set("rft.au", author.literal);
+  else if (author) {
+    url.searchParams.set("rft.aulast", author.family);
+    if (author.given) url.searchParams.set("rft.aufirst", author.given);
+  }
+  return url.href;
+}
+function groupAccess(items, profile) {
+  const free = [], selected = [], other = [];
+  for (const item of items) {
+    if (item.access === "open") free.push(item);
+    else if (item.service === "reader-library" || profile?.services.includes(item.service)) selected.push(item);
+    else other.push(item);
+  }
+  selected.sort((a, b) => Number(b.service === profile?.preferred) - Number(a.service === profile?.preferred));
+  return { free, selected, other };
+}
+
+// src/access-profile.mjs
+var stores = /* @__PURE__ */ new WeakMap();
+function storeFor({ accessStorageKey = DEFAULT_ACCESS_STORAGE_KEY, window: view = globalThis.window } = {}) {
+  if (!view) throw new TypeError("Access profiles need a browser window.");
+  if (typeof accessStorageKey !== "string" || !accessStorageKey.trim()) throw new TypeError("Supply a nonempty access storage key.");
+  let storesForWindow = stores.get(view);
+  if (!storesForWindow) {
+    storesForWindow = /* @__PURE__ */ new Map();
+    stores.set(view, storesForWindow);
+    view.addEventListener("storage", (event) => {
+      for (const [key, store] of storesForWindow) {
+        if (event.key === key || event.key === null) {
+          store.profile = readProfile(view, key);
+          for (const notify of store.listeners) notify();
+        }
+      }
+    });
+  }
+  if (!storesForWindow.has(accessStorageKey)) storesForWindow.set(accessStorageKey, {
+    profile: readProfile(view, accessStorageKey),
+    listeners: /* @__PURE__ */ new Set(),
+    view,
+    key: accessStorageKey
+  });
+  return storesForWindow.get(accessStorageKey);
+}
+function readProfile(view, key) {
+  try {
+    const value = JSON.parse(view.localStorage.getItem(key));
+    return value === null ? null : normalizeAccessProfile(value);
+  } catch {
+    return null;
+  }
+}
+function getAccessProfile(options) {
+  return structuredClone(storeFor(options).profile);
+}
+function setAccessProfile(profile, options) {
+  const store = storeFor(options);
+  store.profile = normalizeAccessProfile(profile === null ? null : { ...profile, updatedAt: (/* @__PURE__ */ new Date()).toISOString() });
+  try {
+    if (store.profile === null) store.view.localStorage.removeItem(store.key);
+    else store.view.localStorage.setItem(store.key, JSON.stringify(store.profile));
+  } catch {
+  }
+  for (const notify of store.listeners) notify();
+  return structuredClone(store.profile);
+}
+function subscribeAccessProfile(callback, options) {
+  const store = storeFor(options);
+  const notify = () => callback({ profile: structuredClone(store.profile), state: accessProfileState(store.profile) });
+  store.listeners.add(notify);
+  return () => store.listeners.delete(notify);
+}
+
+// src/access-view.mjs
+var defaults = {
+  "access.links": "Source links",
+  "access.action.pdf": "Download PDF",
+  "access.action.publisher": "Open publisher page",
+  "access.action.repository": "Open repository",
+  "access.action.preprint": "Open preprint",
+  "access.action.library": "Find at {service}",
+  "access.action.full-text": "Read full text at {service}",
+  "access.version": "{label} ({version})",
+  "access.free": "Read free",
+  "access.selected": "Through your services",
+  "access.other": "Other places to look",
+  "access.more": { one: "{count} more", other: "{count} more" },
+  "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
+  "access.help.none": "None of these is on your list. Add a service, or try your library.",
+  "access.help.match": "Change where you read",
+  "access.settings": "Where you can read",
+  "access.services": "Services you can use",
+  "access.preferred": "Open titles in",
+  "access.noPreference": "No preference",
+  "access.library": "Through my library",
+  "access.library.kind": "Library access type",
+  "access.library.none": "No library configured",
+  "access.library.proxy": "Proxy prefix",
+  "access.library.openurl": "OpenURL resolver",
+  "access.library.address": "Library address",
+  "access.library.help": "Use the HTTPS address supplied by your library. It is used only when you open a library link.",
+  "access.privacy": "Saved in this browser for this site. Services may have the work. Availability varies by title.",
+  "access.save": "Save",
+  "access.clear": "Clear settings",
+  "access.cancel": "Cancel",
+  "access.at": "at {service}",
+  "access.checked": "Checked {date}",
+  "access.stale": "May have moved",
+  "access.destination": "Open at {service}",
+  "access.invalid": "Check your library address and preferred service.",
+  "access.kind.free": "Open copies",
+  "access.kind.publisher": "Publishers",
+  "access.kind.subscription": "Subscriptions",
+  "access.kind.library": "Libraries",
+  "access.kind.lending": "Lending",
+  "access.kind.accessibility": "Accessible editions",
+  "access.kind.discovery": "Discovery"
+};
+function node(doc, tag, text, part) {
+  const value = doc.createElement(tag);
+  if (text) value.textContent = text;
+  if (part) {
+    value.dataset.citationPart = part;
+    value.className = partClassNames(defaultClassPrefix, part).join(" ");
+  }
+  return value;
+}
+function containerIsPanel(container) {
+  return container.getRootNode().host?.localName === "citation-inspector";
+}
+var AccessView = class {
+  #owner;
+  #options = {};
+  #unsubscribe;
+  #rows = /* @__PURE__ */ new Map();
+  #titles = /* @__PURE__ */ new Map();
+  #listHelps = /* @__PURE__ */ new Map();
+  #sheet;
+  #returnFocus;
+  #returnContainer;
+  constructor(owner) {
+    this.#owner = owner;
+  }
+  configure(options) {
+    this.#options = { ...this.#options, ...options };
+    accessCatalog(this.#options.accessCatalog);
+    if (this.#options.accessLayout && !["flat", "grouped"].includes(this.#options.accessLayout)) throw new TypeError("Use grouped or flat access.");
+    if (this.#options.accessSettings && !["builtin", "host", "off"].includes(this.#options.accessSettings)) throw new TypeError("Use builtin, host or off access settings.");
+    for (const key of ["accessCollapseAfter", "staleAfterDays"]) {
+      if (this.#options[key] !== void 0 && (!Number.isFinite(this.#options[key]) || this.#options[key] < 0)) throw new TypeError("Supply a nonnegative " + key + ".");
+    }
+    this.connect();
+    this.restore();
+  }
+  get catalog() {
+    return accessCatalog(this.#options.accessCatalog);
+  }
+  get storageOptions() {
+    return { accessStorageKey: this.#options.accessStorageKey, window: this.#owner.ownerDocument.defaultView };
+  }
+  get profile() {
+    return getAccessProfile(this.storageOptions);
+  }
+  get settings() {
+    return this.#owner.getAttribute("access-settings") || this.#options.accessSettings || "builtin";
+  }
+  get layout() {
+    return this.#owner.getAttribute("access-layout") || this.#options.accessLayout || "grouped";
+  }
+  text(key, values = {}) {
+    let template = this.#options.strings?.[key] ?? defaults[key] ?? key;
+    if (typeof template === "object") {
+      const rule = new Intl.PluralRules(this.#options.locale).select(values.count ?? 0);
+      template = template[rule] ?? template.other ?? defaults[key]?.other ?? key;
+    }
+    return String(template).replace(/\{(\w+)\}/g, (_, key2) => values[key2] ?? "");
+  }
+  connect() {
+    this.#unsubscribe?.();
+    if (!this.#owner.isConnected) return;
+    this.#unsubscribe = subscribeAccessProfile((detail) => {
+      this.restore();
+      this.#owner.refreshAccess();
+      this.#owner.dispatchEvent(new CustomEvent("access-profile-changed", { detail, bubbles: true, composed: true }));
+    }, this.storageOptions);
+  }
+  disconnect() {
+    this.#unsubscribe?.();
+    this.#unsubscribe = null;
+    if (this.#sheet?.open) this.#sheet.close();
+    this.#sheet?.remove();
+    this.#sheet = null;
+    this.restore();
+  }
+  owns(event) {
+    return this.#sheet && event.composedPath().includes(this.#sheet);
+  }
+  items(record, hidden = () => false) {
+    const catalog = this.catalog;
+    const items = record.locations.filter((location) => location.kind !== "status").map((location) => {
+      const service = serviceFor(location, catalog);
+      return { ...location, service: service.id, serviceLabel: service.label, label: this.text("access.destination", { service: service.label }) };
+    }).filter((item) => !hidden(item.provider) && !hidden(item.service) && !hidden(item.serviceLabel));
+    const resolver = typeof this.#owner.institutionalURL === "function" ? this.#institutional(record) : libraryURL(record, this.profile?.library);
+    if (resolver) items.push({
+      url: resolver,
+      kind: "library",
+      service: "reader-library",
+      serviceLabel: this.text("access.library"),
+      label: this.text("access.library"),
+      access: "unknown"
+    });
+    return items;
+  }
+  #institutional(record) {
+    try {
+      return httpsURL(this.#owner.institutionalURL(structuredClone(record)));
+    } catch {
+      return "";
+    }
+  }
+  // Resolve source labels and grouping from copy-level metadata, including legacy provider names.
+  decorate(list, record, hidden = () => false) {
+    const locations = this.items(record);
+    const doc = list.ownerDocument;
+    for (const item of locations) {
+      if (![...list.querySelectorAll("a")].some((link) => link.href === item.url)) {
+        const link = node(doc, "a", "", "icon");
+        link.href = item.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.innerHTML = iconMarkup(item.kind === "pdf" ? "pdf" : item.kind === "library" ? "library" : "link");
+        link.dataset.ciAccessProvider = item.provider || "";
+        if (item.kind === "pdf") link.download = "";
+        list.append(link);
+      }
+    }
+    for (const link of [...list.querySelectorAll("a")]) {
+      const provider = link.dataset.ciAccessProvider;
+      const known = provider && serviceFor({ provider }, this.catalog);
+      const item = locations.find((item2) => item2.url === link.href && (!provider || item2.provider === provider)) || known && { url: link.href, provider, service: known.id, serviceLabel: known.label, kind: "library", access: "unknown" };
+      if (!item) {
+        if (hidden(link.dataset.ciAccessProvider || "")) link.remove();
+        continue;
+      }
+      if ([item.provider, item.service, item.serviceLabel].some((value) => value && hidden(value))) {
+        link.remove();
+        continue;
+      }
+      const kind = item.kind === "preprint" && /\.pdf(?:[?#]|$)/i.test(item.url) ? "pdf" : item.kind;
+      const key = item.service === "reader-library" ? "access.library" : "access.action." + kind;
+      let label = this.text(key, { service: item.serviceLabel });
+      if (item.version) label = this.text("access.version", { label, version: item.version });
+      delete link.dataset.accessChecked;
+      delete link.dataset.accessStale;
+      link.removeAttribute("aria-description");
+      link.setAttribute("aria-label", label);
+      link.title = label + "\n" + item.url;
+      link.dataset.accessService = item.service;
+      link.dataset.accessState = item.access || "unknown";
+      if (item.verifiedAt) {
+        const date = new Intl.DateTimeFormat(this.#options.locale, { dateStyle: "medium" }).format(new Date(item.verifiedAt));
+        const checked = this.text("access.checked", { date });
+        link.title += "\n" + checked;
+        if (containerIsPanel(list)) {
+          link.dataset.accessChecked = checked;
+          link.setAttribute("aria-description", checked);
+        }
+        if (this.#options.staleAfterDays && Date.now() - Date.parse(item.verifiedAt) > this.#options.staleAfterDays * 864e5) {
+          link.title += "\n" + this.text("access.stale");
+          link.dataset.accessStale = this.text("access.stale");
+        }
+      }
+    }
+  }
+  #appendLink(container, link) {
+    if (containerIsPanel(container) && link.dataset.accessChecked) {
+      const item = node(container.ownerDocument, "span", "", "access-destination");
+      item.append(link, node(
+        container.ownerDocument,
+        "small",
+        [link.dataset.accessChecked, link.dataset.accessStale].filter(Boolean).join(" \xB7 "),
+        "access-checked"
+      ));
+      container.append(item);
+    } else container.append(link);
+  }
+  group(container, links, record, { flat = false, hidden, showHelp = true } = {}) {
+    this.decorate(container, record, hidden);
+    links = [...container.querySelectorAll("a")];
+    if (this.layout === "flat") {
+      for (const link of links) this.#appendLink(container, link);
+      if (showHelp) this.help(container, links);
+      return;
+    }
+    const groups = groupAccess(links.map((link) => ({
+      link,
+      access: link.dataset.accessState,
+      service: link.dataset.accessService
+    })), this.profile);
+    for (const [key, entries] of Object.entries(groups)) {
+      if (!entries.length) continue;
+      const doc = container.ownerDocument;
+      if (key === "other") {
+        const visible = this.#options.accessCollapseAfter ?? 0;
+        for (const { link } of entries.slice(0, visible)) this.#appendLink(container, link);
+        if (entries.length > visible) {
+          const more = node(doc, "details", "", "access-more");
+          more.append(node(doc, "summary", this.text("access.more", { count: entries.length - visible })));
+          const label = node(doc, "span", this.text("access.other"), "access-group-label");
+          more.append(label);
+          for (const { link } of entries.slice(visible)) this.#appendLink(more, link);
+          container.append(more);
+        }
+      } else {
+        if (!flat) container.append(node(doc, "span", this.text(key === "free" ? "access.free" : "access.selected"), "access-group-label"));
+        for (const { link } of entries) this.#appendLink(container, link);
+      }
+    }
+    if (showHelp) this.help(container, links);
+  }
+  help(container, links) {
+    if (this.settings === "off") return;
+    const profile = this.profile;
+    const matched = links.some((link) => link.dataset.accessService === "reader-library" || profile?.services.includes(link.dataset.accessService));
+    const key = profile === null ? "unknown" : matched ? "match" : "none";
+    const help = node(container.ownerDocument, "button", this.text("access.help." + key), "access-help");
+    help.type = "button";
+    help.addEventListener("click", () => this.openSettings(help));
+    container.append(help);
+  }
+  openSettings(trigger) {
+    if (this.settings === "off") return;
+    if (this.settings === "host") {
+      this.#owner.dispatchEvent(new CustomEvent("access-settings-request", { bubbles: true, composed: true, cancelable: true }));
+      return;
+    }
+    this.#sheet?.remove();
+    const doc = this.#owner.ownerDocument;
+    const sheet = this.#sheet = node(doc, "dialog", "", "access-settings");
+    sheet.setAttribute("aria-label", this.text("access.settings"));
+    const form = node(doc, "form");
+    const title = node(doc, "h2", this.text("access.settings"));
+    form.append(title, node(doc, "p", this.text("access.privacy")));
+    const columns = node(doc, "div", "", "access-settings-columns");
+    const services = node(doc, "fieldset");
+    services.append(node(doc, "legend", this.text("access.services")));
+    const profile = this.profile;
+    const catalog = this.catalog;
+    for (const kind2 of [...new Set(catalog.map((item) => item.kind))]) {
+      const group = node(doc, "fieldset");
+      group.append(node(doc, "legend", this.text("access.kind." + kind2)));
+      for (const item of catalog.filter((item2) => item2.kind === kind2)) {
+        const label = node(doc, "label");
+        const input = node(doc, "input");
+        input.type = "checkbox";
+        input.name = "service";
+        input.value = item.id;
+        input.checked = Boolean(profile?.services.includes(item.id));
+        label.append(input, " " + item.label);
+        group.append(label);
+      }
+      services.append(group);
+    }
+    const preferences = node(doc, "fieldset");
+    preferences.append(node(doc, "legend", this.text("access.preferred")));
+    for (const item of [{ id: "", label: this.text("access.noPreference") }, ...catalog]) {
+      const label = node(doc, "label");
+      const input = node(doc, "input");
+      input.type = "radio";
+      input.name = "preferred";
+      input.value = item.id;
+      input.checked = (profile?.preferred || "") === item.id;
+      label.append(input, " " + item.label);
+      preferences.append(label);
+    }
+    columns.append(services, preferences);
+    form.append(columns);
+    const library = node(doc, "fieldset");
+    library.append(node(doc, "legend", this.text("access.library")));
+    const kindLabel = node(doc, "label", this.text("access.library.kind"));
+    const kind = node(doc, "select");
+    kind.name = "libraryKind";
+    for (const key of ["none", "proxy", "openurl"]) {
+      const option = node(doc, "option", this.text("access.library." + key));
+      option.value = key;
+      kind.append(option);
+    }
+    kind.value = profile?.library?.kind || "none";
+    kindLabel.append(kind);
+    const addressLabel = node(doc, "label", this.text("access.library.address"));
+    const address = node(doc, "input");
+    address.name = "libraryAddress";
+    address.type = "url";
+    address.value = profile?.library?.base || "";
+    addressLabel.append(address);
+    address.disabled = kind.value === "none";
+    kind.addEventListener("change", () => {
+      address.disabled = kind.value === "none";
+    });
+    library.append(kindLabel, addressLabel, node(doc, "p", this.text("access.library.help")));
+    form.append(library);
+    const error = node(doc, "p");
+    error.setAttribute("role", "alert");
+    form.append(error);
+    const save = node(doc, "button", this.text("access.save"));
+    save.type = "submit";
+    const clear = node(doc, "button", this.text("access.clear"));
+    clear.type = "button";
+    clear.addEventListener("click", () => {
+      setAccessProfile(null, this.storageOptions);
+      close();
+    });
+    const cancel = node(doc, "button", this.text("access.cancel"));
+    cancel.type = "button";
+    cancel.addEventListener("click", () => sheet.close());
+    form.append(save, clear, cancel);
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const fields = new FormData(form);
+      try {
+        setAccessProfile({
+          services: fields.getAll("service"),
+          preferred: fields.get("preferred"),
+          library: kind.value === "none" ? null : { kind: kind.value, base: address.value }
+        }, this.storageOptions);
+        close();
+      } catch {
+        error.textContent = this.text("access.invalid");
+      }
+    });
+    sheet.append(form);
+    this.#owner.shadowRoot.append(sheet);
+    this.#returnFocus = trigger;
+    this.#returnContainer = trigger.closest("[data-ci-note-record]") || trigger.closest('[data-citation-part="access-list-help"]')?.previousElementSibling;
+    const finish = () => {
+      if (this.#sheet !== sheet) return;
+      this.#sheet = null;
+      if (this.#returnFocus?.isConnected) this.#returnFocus.focus({ preventScroll: true });
+      else {
+        const replacement = this.#returnContainer?.querySelector('[data-citation-part="access-help"]') || this.#listHelps.get(this.#returnContainer?.closest("ol,ul"))?.querySelector('[data-citation-part="access-help"]');
+        if (replacement?.isConnected) replacement.focus({ preventScroll: true });
+        else if (this.#owner.hasAttribute("open")) this.#owner.shadowRoot.querySelector("#panel-name")?.focus({ preventScroll: true });
+      }
+      sheet.remove();
+    };
+    const close = () => {
+      sheet.close();
+      finish();
+    };
+    sheet.addEventListener("close", finish, { once: true });
+    sheet.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      close();
+    });
+    let backdrop = false;
+    sheet.addEventListener("pointerdown", (event) => {
+      backdrop = event.target === sheet && this.#outside(sheet, event);
+    });
+    sheet.addEventListener("click", (event) => {
+      if (backdrop && event.target === sheet) close();
+      backdrop = false;
+    });
+    sheet.showModal();
+  }
+  #outside(sheet, event) {
+    const rect = sheet.getBoundingClientRect();
+    return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+  }
+  enhanceNotes(records, hidden) {
+    for (const row of this.#rows.keys()) {
+      if (!this.#owner.contains(row)) this.#restoreRow(row);
+    }
+    const references = this.#owner.querySelectorAll("[data-ci-reference-record], [data-ci-note-record]");
+    const visited = /* @__PURE__ */ new Set(), lists = /* @__PURE__ */ new Set();
+    const unknown = this.profile === null;
+    for (const reference of references) {
+      if (reference.closest("citation-inspector") !== this.#owner) continue;
+      const record = records.get(reference.dataset.ciReferenceRecord || reference.dataset.ciNoteRecord);
+      if (!record) continue;
+      const ancestorList = reference.closest("ol,ul");
+      const list = ancestorList && this.#owner.contains(ancestorList) && ancestorList.closest("citation-inspector") === this.#owner ? ancestorList : null;
+      if (list) lists.add(list);
+      let row = reference.matches("[data-ci-note-record]") ? reference : reference.querySelector(":scope > [data-ci-note-record]");
+      if (!row) {
+        if (this.settings === "off" && !this.items(record, hidden).length) continue;
+        row = node(reference.ownerDocument, "div", "", "note-actions");
+        row.dataset.ciNoteRecord = record.id;
+        row.dataset.ciGeneratedActions = "";
+        reference.append(row);
+      }
+      if (visited.has(row)) continue;
+      visited.add(row);
+      const signature = JSON.stringify([record, this.profile, this.layout, this.settings, this.#options, this.#owner.getAttribute("hidden-providers"), this.#owner.getAttribute("hidden-access-providers"), this.#owner.getAttribute("access-providers")]);
+      if (this.#rows.get(row)?.signature === signature) continue;
+      this.#restoreRow(row);
+      if (row.hasAttribute("data-ci-generated-actions") && this.settings === "off" && !this.items(record, hidden).length) {
+        row.remove();
+        continue;
+      }
+      if (!row.isConnected) reference.append(row);
+      const statusURL = record.integrity?.url || record.locations.find((item) => item.kind === "status")?.url;
+      const links = [...row.querySelectorAll(':scope > a[href^="https:"]:not([data-ci-record]):not([data-ci-panel])')].filter((link) => link.href !== statusURL);
+      const saved = { signature, nodes: [...row.childNodes], generated: row.hasAttribute("data-ci-generated-actions"), reference: row.closest("li") };
+      this.#rows.set(row, saved);
+      {
+        const group = node(row.ownerDocument, "span", "", "access-inline");
+        row.prepend(group);
+        for (const link of links) group.append(link);
+        this.group(group, [...group.querySelectorAll("a")], record, { flat: true, hidden, showHelp: !unknown || !list });
+      }
+      this.#title(row.closest("li"), record, hidden);
+    }
+    for (const [list, help] of this.#listHelps) {
+      if (!lists.has(list) || !unknown || this.settings === "off") {
+        help.remove();
+        this.#listHelps.delete(list);
+      }
+    }
+    if (unknown && this.settings !== "off") for (const list of lists) {
+      if (this.#listHelps.has(list)) continue;
+      const help = node(list.ownerDocument, "div", "", "access-list-help");
+      this.help(help, []);
+      list.after(help);
+      this.#listHelps.set(list, help);
+    }
+  }
+  #title(row, record, hidden) {
+    const items = this.items(record, hidden);
+    const groups = groupAccess(items, this.profile);
+    const best = groups.free[0] || groups.selected.find((item) => item.service === this.profile?.preferred);
+    if (!best) return;
+    const reference = row?.querySelector(":scope > span[data-ci-title-start]");
+    if (!reference) return;
+    let remaining = Number(reference.dataset.ciTitleStart);
+    const length = Number(reference.dataset.ciTitleLength);
+    const walker = reference.ownerDocument.createTreeWalker(reference, 4);
+    let title, text;
+    while (text = walker.nextNode()) {
+      if (remaining >= text.length) {
+        remaining -= text.length;
+        continue;
+      }
+      if (length > text.length - remaining) return;
+      if (text.parentElement.closest("a")) return;
+      const isolated = text.splitText(remaining);
+      isolated.splitText(length);
+      title = node(reference.ownerDocument, "span");
+      isolated.replaceWith(title);
+      title.append(isolated);
+      break;
+    }
+    const created = true;
+    if (!title) return;
+    const saved = [...title.childNodes];
+    const link = node(title.ownerDocument, "a");
+    link.href = best.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    const destination2 = this.text("access.at", { service: best.serviceLabel });
+    link.setAttribute("aria-label", title.textContent + " " + destination2);
+    for (const child of saved) link.append(child.cloneNode(true));
+    for (const nested of link.querySelectorAll("a")) nested.replaceWith(...nested.childNodes);
+    const label = node(title.ownerDocument, "small", " " + destination2);
+    title.replaceChildren(link, label);
+    this.#titles.set(title, { nodes: saved, created });
+  }
+  #restoreRow(row) {
+    const saved = this.#rows.get(row);
+    const reference = saved?.reference || row.closest("li");
+    if (saved?.generated) row.remove();
+    else if (saved) row.replaceChildren(...saved.nodes);
+    this.#rows.delete(row);
+    for (const [title, titleState] of this.#titles) {
+      if (reference?.contains(title)) {
+        if (titleState.created) title.replaceWith(...titleState.nodes);
+        else title.replaceChildren(...titleState.nodes);
+        this.#titles.delete(title);
+      }
+    }
+  }
+  restore() {
+    for (const help of this.#listHelps.values()) help.remove();
+    this.#listHelps.clear();
+    for (const row of this.#rows.keys()) this.#restoreRow(row);
+  }
+};
 
 // src/browser.mjs
 var componentName = "citation-inspector";
@@ -2379,5 +2550,6 @@ export {
   bindCitationTrigger,
   getAccessProfile,
   initializeCitationInspector,
+  markerKind,
   setAccessProfile
 };

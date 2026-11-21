@@ -2,6 +2,34 @@
 
 These features are available in 0.2.0 and later. They are absent from 0.1.4; see the [milestone record](https://github.com/randal-cox/citation.inator/blob/main/docs/milestones/0.2.0.md). Formatted-citation import remains [planned work](https://github.com/randal-cox/citation.inator/blob/main/docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages).
 
+<a id="unreleased-draftinator-compatibility-additions"></a>
+<a id="030-draftinator-compatibility-additions"></a>
+
+## Marker classification and work-context notes (0.3.0)
+
+The 0.3.0 release candidate adds `markerKind` to `citation-inator/tools`, the self-contained `citation-tools.mjs` and the main `citation-inspector.mjs` browser bundle. These additions are not in the published 0.2.0 artifacts.
+
+```js
+import { markerKind } from './citation-tools.mjs'; // also citation-inspector.mjs
+markerKind('{citation list-2001}'); // "citation"
+markerKind('{citation list alpha}'); // "list"
+markerKind('{citation evidence}'); // "annotation"
+markerKind('{ref endnote}', { citationKeyword: 'ref' }); // "endnote"
+```
+
+The result is `citation`, `endnote`, `list`, `nocite`, `annotation`, or `malformed`. It delegates to the compiler grammar and classifies exactly one complete trimmed marker, without a cache or network. Leading/trailing prose, multiple markers, escaped literal examples and malformed options are `malformed`; invalid configuration or non-string input throws. Legacy `{cite …}` and `{endnotes}` follow their actual compiler meanings, so callers need no duplicate reserved-word regex. For example `{cite evidence}` is a work citation, whereas `{citation evidence}` is an annotation directive. `local:` explicitly addresses record IDs that collide with directive names.
+
+For a works picker whose descriptions come from `describeCitation`, keep editor/build notes in the same context:
+
+```js
+const result = annotateMarkers(source, cache, {
+  citationStyle: 'chicago-author-date',
+  noteContext: 'work'
+});
+```
+
+`noteContext: 'article'` is the unchanged default, using the full source's disambiguation. `work` describes each work independently with fragment scope, so two same-author/year works both get `note:"Cox 1995"`, matching standalone descriptions. It overrides cache-wide suffix scope for note text, not reader formatting. Use the same style/reprint options for the picker and annotation. Reader-facing suffixes still come from normal compilation. Partial records, escaping, protected regions and unresolved-group behavior retain their existing contracts. JSON CLI annotation and stale-note checks accept `options.noteContext` too; use the same value for writing and checking notes.
+
 ## Load the tools
 
 For a Node build, editor service or command-line adapter:
@@ -191,3 +219,20 @@ Use `listFilters: { minItems: 6, minTags: 2 }` to show controls only for lists w
 ## Diagnostic codes
 
 Unresolved diagnostics carry `code: 'citation-unresolved'`; malformed-citation diagnostics carry `code: 'citation-malformed'`. The existing `state` values stay `unresolved` and `malformed`. These additive codes are present in compiler, editor-query/annotation and JSON CLI results, including unresolved/malformed entries in the cross-fragment report. Hosts can key on `code` without parsing message text. Other diagnostic states retain their existing contracts.
+
+<a id="unreleased-030-host-prefix-hook"></a>
+<a id="030-host-prefix-hook"></a>
+
+## Host reference-prefix hook (0.3.0)
+
+In 0.3.0, `referenceItemPrefix` is a synchronous compiler callback that adds escaped text before each reference item. It is not part of the older 0.2.0 package and cannot be supplied through JSON CLI requests. This is separate from record tags and per-list tag overrides.
+
+```js
+const result = compileCitations(source, cache, {
+  referenceItemPrefix({ record, tags, namespace, number, kind }) {
+    return kind === "reading-list" && tags.some(tag => tag.id === "theory") ? "Theory · " : "";
+  }
+});
+```
+
+The callback receives `{ record, tags, namespace, number, kind }`; `kind` is `reading-list` or `endnote`. Metadata is cloned so changing it cannot mutate the cache. Return a string, `null` or `undefined`. Text is escaped and wrapped in the configurable `reference-prefix` class/part. HTML/object results are rejected. Prefix text is presentation only: it does not enter copied citations, bibliographic records, exports or source marker notes.

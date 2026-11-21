@@ -41,7 +41,7 @@ try {
     ["dist/citation-tools.mjs", "demos/drop-in/citation-tools.mjs"],
     ["dist/THIRD_PARTY_LICENSES.txt", "demos/drop-in/THIRD_PARTY_LICENSES.txt"],
     ["CITATION.cff", "demos/drop-in/CITATION.cff"],
-    ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
+    ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
   ]) {
     if (await read(source) !== await read(copy)) fail(copy + " differs from " + source + ". Run npm run build.");
   }

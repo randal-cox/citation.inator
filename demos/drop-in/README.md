@@ -1,6 +1,6 @@
 # citation.inator in plain HTML
 
-This distribution contains version 0.2.0. Earlier release archives remain unchanged.
+This distribution contains version 0.3.0. Earlier release archives remain unchanged.
 
 From the repository root, run `npm start` and open [Plain HTML](http://127.0.0.1:4187/demos/drop-in/).
 

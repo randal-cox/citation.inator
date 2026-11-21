@@ -149,14 +149,26 @@ export async function checkReaderAccess(browser, origin, evidence) {
     const noteSettings = root.getByRole("dialog", { name: "Where you can read" });
     await noteSettings.getByRole("button", { name: "Clear settings" }).click();
     await noteSettings.waitFor({ state: "detached" });
-    assert.equal(await noteActions.getByRole("button", { name: /Tell us where you can read/ }).evaluate(node => node === document.activeElement), true);
+    assert.equal(await root.locator('[data-citation-part="access-list-help"]').getByRole("button", { name: /Tell us where you can read/ }).evaluate(node => node === document.activeElement), true);
     await page.setViewportSize({ width: 390, height: 850 });
-    await noteActions.getByRole("button", { name: /Tell us where you can read/ }).tap();
+    assert.equal(await root.locator('[data-citation-part="access-list-help"]').count(),1);
+    assert.equal(await root.locator('li [data-citation-part="access-help"]').count(),0);
+    await root.locator('[data-citation-part="access-list-help"]').getByRole("button", { name: /Tell us where you can read/ }).tap();
     await noteSettings.waitFor();
     assert((await noteSettings.boundingBox()).width <= 390);
     if (evidence) await page.screenshot({ path: join(evidence, "reader-access-narrow.png") });
     await page.keyboard.press("Escape");
     await noteSettings.waitFor({ state: "detached" });
+
+    // An ancestor host list must never become an insertion target outside the component.
+    await root.evaluate(element => {
+      const ambient=document.createElement('ol');ambient.id='ambient-host-list';
+      const hostItem=document.createElement('li');ambient.append(hostItem);element.before(ambient);hostItem.append(element);
+      const reference=document.createElement('div');reference.id='standalone-reference';reference.dataset.ciReferenceRecord='two-copies';reference.textContent='Standalone reference';element.append(reference);
+    });
+    await root.locator('#standalone-reference [data-citation-part="access-help"]').waitFor();
+    assert.equal(await page.locator('body > [data-citation-part="access-list-help"]').count(),0);
+    assert.equal(await page.evaluate(()=>[...document.querySelectorAll('[data-citation-part="access-list-help"]')].every(node=>node.closest('citation-inspector'))),true);
 
     assert.deepEqual(errors, []);
     assert(requests.every(url => url.startsWith(origin)));

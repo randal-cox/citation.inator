@@ -48,7 +48,7 @@ Serve `.mjs` as JavaScript and `.json` as JSON. Static links and endnotes work w
 Build the current tarball by running `npm ci` and `npm pack` in the downloaded library checkout with Node.js 22 or later. Install that tarball in your project. Copy `reading.txt` and `citations.json` from the ZIP into this directory for the example.
 
 ```sh
-npm install ./citation-inator-0.2.0.tgz
+npm install ./citation-inator-0.3.0.tgz
 npm exec -- citation-inator reading.txt citations.json article.html my-article
 ```
 
@@ -390,3 +390,14 @@ node scripts/compile.mjs --report citations.json essay.html lexicon.md bibliogra
 The JSON report lists unused records, unresolved and malformed directives by fragment, duplicate DOI and ISBN claims, and same-title records by the same first author. It also identifies those title groups with differing edition years. The report flags records for review and leaves the source and cache intact. When a duplicate identifier appears in the input, the first claim supplies the lookup used by the report.
 
 For custom notation or mixed build inputs, use `--report --json` and send `{ cache, fragments }` on standard input. Each fragment can supply `name`, `source` or `paragraphs`, `format`, and compiler `options`.
+
+## 0.3.0 integration additions
+
+Development tools and both browser bundles export `markerKind` for canonical/legacy/custom marker classification. `annotateMarkers(..., { noteContext: "work" })` keeps notes consistent with an editor works picker built from standalone `describeCitation`. See [the compatibility contract](article-tools.md#030-draftinator-compatibility-additions). These additions are not present in released 0.2.0 artifacts.
+
+The [experimental import demo](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-demo.md) lives on the separate import branch. Its modules and local service are excluded from this candidate.
+
+
+The source checkout includes a text-only `referenceItemPrefix` callback for host badges before reference items; see [the callback contract](article-tools.md#030-host-prefix-hook). Unknown access-profile help now appears once per owned list while inspector help remains available. These changes are not in the published 0.2.0 artifacts.
+
+See the [style catalogue and coverage matrix](citation-styles.md) to distinguish reference formatting from experimental import recognition. Reviewed import remains source-only: [development APIs and measured limits](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-development.md).

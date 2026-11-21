@@ -1,4 +1,4 @@
-/*! citation-inator tools v0.2.0 | MIT | See LICENSE */
+/*! citation-inator tools v0.3.0 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -9110,7 +9110,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.2.0",
+  version: "0.3.0",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9665,6 +9665,14 @@ function scanCitationMarkers(source, { citationKeyword = "citation" } = {}) {
     token: parseDirectives(match[0], { citationKeyword })[0]
   }));
 }
+function markerKind(raw, options = {}) {
+  if (typeof raw !== "string") throw new TypeError("Supply a marker string.");
+  const text = raw.trim();
+  const markers = scanCitationMarkers(text, options);
+  if (markers.length !== 1 || markers[0].raw !== text || markers[0].start !== 0) return "malformed";
+  const token = markers[0].token;
+  return token?.type === "endnotes" ? "endnote" : ["citation", "list", "nocite", "annotation"].includes(token?.type) ? token.type : "malformed";
+}
 function parseDirectives(source, { citationKeyword = "citation" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];
@@ -10114,9 +10122,11 @@ function compileBlocks(blocks, cache, {
   tagCatalogue,
   listItemTags,
   listFilters = false,
-  inlineTags = false
+  inlineTags = false,
+  referenceItemPrefix
 } = {}, structured = false) {
   if (!/^[a-z][a-z0-9-]{0,39}$/.test(namespace)) throw new TypeError("Use a stable lowercase document namespace.");
+  if (referenceItemPrefix !== void 0 && typeof referenceItemPrefix !== "function") throw new TypeError("referenceItemPrefix must be a function.");
   validateClassPrefix(classPrefix);
   if (!citationStyles.has(citationStyle)) throw new TypeError("Unknown citation style.");
   if (typeof endnotesHeading !== "string" || !endnotesHeading.trim()) throw new TypeError("Supply a nonempty endnotes heading.");
@@ -10417,7 +10427,10 @@ function compileBlocks(blocks, cache, {
       const attrs = list ? ` data-ci-list-record="${record.id}"` : ` id="${noteID(record, scope2)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
       const actions = controls ? `<div ${part("note-actions")} data-ci-note-record="${record.id}">${controls}</div>` : "";
       const tags = features.tags(record, list);
-      return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map((tag) => tag.id)))}">${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${actions}${annotation}${siteLinks(record.id)}</li>`;
+      const prefixValue = referenceItemPrefix?.(structuredClone({ record, tags, namespace, number: item.entry.number, kind: list ? "reading-list" : "endnote" }));
+      if (prefixValue !== void 0 && prefixValue !== null && typeof prefixValue !== "string") throw new TypeError("referenceItemPrefix must return text, null or undefined.");
+      const prefix = prefixValue ? `<span ${part("reference-prefix")}>${escapeHTML(prefixValue)}</span>` : "";
+      return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map((tag) => tag.id)))}">${prefix}${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${actions}${annotation}${siteLinks(record.id)}</li>`;
     }).join("\n");
     if (list && !listFilters) return `<ol ${part("reference-list")}>${rows}</ol>`;
     const level = marker.level ?? 2;
@@ -10682,7 +10695,10 @@ function describeCitation(identifierOrMarker, cache, options = {}) {
   };
 }
 function annotateMarkers(source, cache, options = {}) {
+  const { noteContext = "article" } = options;
+  if (!["article", "work"].includes(noteContext)) throw new TypeError("Use article or work noteContext.");
   const { markers, descriptions, diagnostics } = analyze(source, cache, options);
+  const workDescriptions = /* @__PURE__ */ new Map();
   const edits = [];
   for (const [index, marker] of markers.entries()) {
     const description = descriptions[index];
@@ -10693,7 +10709,13 @@ function annotateMarkers(source, cache, options = {}) {
       const text = body.slice(item.start, item.end);
       const parts = splitSpans(text, "|");
       const note = parts.slice(1).find((span) => /^\s*note:/.test(text.slice(span.start, span.end)));
-      const noteText = escaped(description.items[i].text);
+      let noteText = description.items[i].text;
+      if (noteContext === "work") {
+        const recordId = description.items[i].recordId;
+        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId, describeCitation(`{${options.citationKeyword || "citation"} local:${recordId}}`, cache, { ...options, suffixScope: "fragment" }).text);
+        noteText = workDescriptions.get(recordId);
+      }
+      noteText = escaped(noteText);
       const replacement = `note:"${options.format && options.format !== "text" ? noteText.replace(/[&<>]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[character]) : noteText}"`;
       if (note) {
         const original = text.slice(note.start, note.end);
@@ -10743,5 +10765,6 @@ export {
   annotateMarkers,
   collectMarkerTags,
   createSiteOccurrenceIndex,
-  describeCitation
+  describeCitation,
+  markerKind
 };
