@@ -40,3 +40,7 @@ Questions for draft.inator:
 - How do multiple cited works and uncertain author spans get reviewed without silently accepting a text boundary with a record identity?
 
 An explicit cross-project coordination proposal and issue draft are in [the coordination note](draft-coordination.md). The next host appearance/interaction discussion is required before finalizing 0.4.0; its issue and outcome will be recorded here.
+
+## 0.4.0 host discussion
+
+The labelled discussion is [draft.inator#16](https://github.com/randal-cox/draft.inator/issues/16), opened with candidate `0.4.0-preview.0` at `dbdb4d502c4f4bc00d5d406aac0e0564112826a4`. It supplies exact copied-browser assets, the shared request protocol and five questions covering host UI ownership, styling/name hooks, source revisions/undo, input parity and the future language seam. “Localization” in this discussion means host appearance/interaction; translation/i18n is planned for 0.5.0. A reply/agreement is pending. Do not infer adopter acceptance from sending the request, and do not finalize 0.4.0 before the conversation is resolved.

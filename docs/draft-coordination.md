@@ -8,25 +8,10 @@ On 21 November 2026 the connected GitHub account reported pull/push/maintain/adm
 
 Keep implementation ownership separate: citation.inator owns reusable recognition/matching/review data; draft.inator owns editor decorations, transactions, authentication and publishing. Shared examples should be synthetic/publicly licensed, never private manuscript extracts.
 
-## Ready-to-post integration issue draft
+## Current import discussion
 
-**Title:** Agree document-first citation review contract between draft.inator and citation.inator
-
-**Problem:** Readers need to compare candidate references in the document, with the bibliography visible. A title/ID dropdown does not explain which records are being searched, why several fit, or whether a choice is actually determinable.
-
-**Prototype:** citation.inator's development checkout shows the document and supplied bibliography, marks citation spans, and opens review controls on hover/click or keyboard. Candidates include readable references and matching reasons. The Avery example intentionally cannot be resolved from author/year alone. The Node review protocol retains uncertain source spans until separate span acceptance and keeps source/reference/style context changes stale.
-
-**Contract questions:**
-
-1. Editor decoration/selection APIs and source-range to editor-position mapping.
-2. Revision and reference-data tokens, transaction/undo/cancel semantics.
-3. Candidate data: full reference, identifiers, source/provenance, field agreements/conflicts, unknown metadata and source-span uncertainty.
-4. Equivalent mouse, keyboard, touch and screen-reader paths; no automatic acceptance on hover.
-5. Grouped citations, original/edition dates, inline markers/aliases and accepted-but-needing-adapter states.
-6. A small shared synthetic round-trip fixture that both projects run, plus pinned candidate commit IDs and explicit acceptance results.
-
-**Ownership/sequence:** Keep the current local prototype expendable. Deliver stable editor integration/reader polish in 0.3.0, reviewed import in 0.4.0, comprehensive developer learning/live demos in 0.5.0 and external bibliography connections in 0.6.0.
+[Draft.inator#16](https://github.com/randal-cox/draft.inator/issues/16) contains the 0.4.0 host appearance/interaction proposal and exact `0.4.0-preview.0` source/bundle commit `dbdb4d502c4f4bc00d5d406aac0e0564112826a4`. It asks for agreement on headless ownership, any required shared review policy/UI hooks, styles/names, source revision and undo mapping, equivalent input paths and the 0.5.0 i18n seam. The full-page demo is an example host, not a mandated editor layout. A response/agreement is pending; final release waits for it.
 
 ## First handoff
 
-The maintainer explicitly authorized this channel on 21 November 2026. The first labelled adoption request is [draft.inator#8](https://github.com/randal-cox/draft.inator/issues/8), with the immutable 0.3.0 release commit/artifact links, completed checks and requested adoption criteria. Draft owns closing that issue after final-artifact verification.
+The maintainer explicitly authorized this channel on 21 November 2026. The first labelled adoption request is [draft.inator#8](https://github.com/randal-cox/draft.inator/issues/8), with the immutable 0.3.0 release commit/artifact links, completed checks and requested adoption criteria. Draft reported final-artifact verification and closed it after adoption in `865c11c`; its 39 tests and repeated note cycles passed. Reader rendering was outside draft's adoption check and remains citation.inator's responsibility.
