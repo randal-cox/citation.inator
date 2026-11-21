@@ -3,6 +3,7 @@ import { Lexer } from 'marked';
 import { compileCitationBlocks, parseDirectives, scanCitationMarkers } from './compiler.mjs';
 import { isCitationTextExcluded } from './markup.mjs';
 import { canonicalIdentifierKey, readCache } from './records.mjs';
+export { markerKind } from './compiler.mjs';
 export { createSiteOccurrenceIndex } from './reference-features.mjs';
 
 const escaped = value => value.replace(/[\\"{};|]/g, character => '\\' + character);
@@ -127,7 +128,10 @@ export function describeCitation(identifierOrMarker, cache, options = {}) {
 
 /** Refresh per-item editor notes; bytes outside proposed note edits are preserved. */
 export function annotateMarkers(source, cache, options = {}) {
+  const { noteContext = 'article' } = options;
+  if (!['article','work'].includes(noteContext)) throw new TypeError('Use article or work noteContext.');
   const { markers, descriptions, diagnostics } = analyze(source, cache, options);
+  const workDescriptions = new Map();
   const edits = [];
   for (const [index, marker] of markers.entries()) {
     const description = descriptions[index];
@@ -138,7 +142,13 @@ export function annotateMarkers(source, cache, options = {}) {
       const text = body.slice(item.start, item.end);
       const parts = splitSpans(text, '|');
       const note = parts.slice(1).find(span => /^\s*note:/.test(text.slice(span.start, span.end)));
-      const noteText = escaped(description.items[i].text);
+      let noteText=description.items[i].text;
+      if (noteContext === 'work') {
+        const recordId=description.items[i].recordId;
+        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId,describeCitation(`{${options.citationKeyword || 'citation'} local:${recordId}}`,cache,{...options,suffixScope:'fragment'}).text);
+        noteText=workDescriptions.get(recordId);
+      }
+      noteText=escaped(noteText);
       const replacement = `note:"${options.format && options.format !== 'text' ? noteText.replace(/[&<>]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[character])) : noteText}"`;
       if (note) {
         const original = text.slice(note.start, note.end);

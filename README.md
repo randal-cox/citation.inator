@@ -78,6 +78,12 @@ See the [citation-style catalogue and support matrix](docs/citation-styles.md). 
 
 See the [integration guide](docs/integration.md) for HTML and Markdown examples, reused fragments, the Python command, ISBN lookup and title-and-author search, and the browser API. See the [roadmap](ROADMAP.md) for follow-up work.
 
+## Try the import-review development demo
+
+On `codex/citation-import`, run `npm ci`, `npm run build` and `npm start`, then open [Import review](http://127.0.0.1:4187/demos/import/). Try APA ambiguity, Chicago narrative/reprint forms, numeric labels and undated records. Choose works and explicitly accept groups before previewing changes. Preview leaves the original article unchanged. Use reviewed source replaces the demo textarea; Download text exports a separate reviewed copy.
+
+This local-server demo uses plain text and supplied records; it makes no provider calls and saves no documents. It is not included as a working service in the standalone static ZIP. See [the demo guide](docs/import-demo.md) for limits and steps. Development bundles also provide [marker classification and context-free editor notes](docs/article-tools.md#unreleased-draftinator-compatibility-additions); published 0.2.0 artifacts are unchanged.
+
 ## Work on the source checkout
 
 Clone the [GitHub repository](https://github.com/randal-cox/citation.inator) and use Node.js 22 or later.

@@ -2,6 +2,31 @@
 
 These features are available in 0.2.0 and later. They are absent from 0.1.4; see the [milestone record](https://github.com/randal-cox/citation.inator/blob/main/docs/milestones/0.2.0.md). Formatted-citation import remains [planned work](https://github.com/randal-cox/citation.inator/blob/main/docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages).
 
+## Unreleased draft.inator compatibility additions
+
+The 0.3.0 development checkout adds `markerKind` to `citation-inator/tools`, the self-contained `citation-tools.mjs` and the main `citation-inspector.mjs` browser bundle. These additions are not in the published 0.2.0 artifacts.
+
+```js
+import { markerKind } from './citation-tools.mjs'; // also citation-inspector.mjs
+markerKind('{citation list-2001}'); // "citation"
+markerKind('{citation list alpha}'); // "list"
+markerKind('{citation evidence}'); // "annotation"
+markerKind('{ref endnote}', { citationKeyword: 'ref' }); // "endnote"
+```
+
+The result is `citation`, `endnote`, `list`, `nocite`, `annotation`, or `malformed`. It delegates to the compiler grammar and classifies exactly one complete trimmed marker, without a cache or network. Leading/trailing prose, multiple markers, escaped literal examples and malformed options are `malformed`; invalid configuration or non-string input throws. Legacy `{cite …}` and `{endnotes}` follow their actual compiler meanings, so callers need no duplicate reserved-word regex. For example `{cite evidence}` is a work citation, whereas `{citation evidence}` is an annotation directive. `local:` explicitly addresses record IDs that collide with directive names.
+
+For a works picker whose descriptions come from `describeCitation`, keep editor/build notes in the same context:
+
+```js
+const result = annotateMarkers(source, cache, {
+  citationStyle: 'chicago-author-date',
+  noteContext: 'work'
+});
+```
+
+`noteContext: 'article'` is the unchanged default, using the full source's disambiguation. `work` describes each work independently with fragment scope, so two same-author/year works both get `note:"Cox 1995"`, matching standalone descriptions. It overrides cache-wide suffix scope for note text, not reader formatting. Use the same style/reprint options for the picker and annotation. Reader-facing suffixes still come from normal compilation. Partial records, escaping, protected regions and unresolved-group behavior retain their existing contracts. JSON CLI annotation and stale-note checks accept `options.noteContext` too; use the same value for writing and checking notes.
+
 ## Load the tools
 
 For a Node build, editor service or command-line adapter:

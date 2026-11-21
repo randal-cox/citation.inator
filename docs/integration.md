@@ -393,6 +393,11 @@ For custom notation or mixed build inputs, use `--report --json` and send `{ cac
 
 ## Unreleased 0.3.0 integration additions
 
+Development tools and both browser bundles export `markerKind` for canonical/legacy/custom marker classification. `annotateMarkers(..., { noteContext: "work" })` keeps notes consistent with an editor works picker built from standalone `describeCitation`. See [the compatibility contract](article-tools.md#unreleased-draftinator-compatibility-additions). These additions are not present in released 0.2.0 artifacts.
+
+Run the [local import-review demo](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-demo.md) from the source checkout with `npm start`. It uses plaintext, supplied records and a local Node endpoint; it does not require a provider or save documents.
+
+
 The source checkout includes a text-only `referenceItemPrefix` callback for host badges before reference items; see [the callback contract](article-tools.md#unreleased-030-host-prefix-hook). Unknown access-profile help now appears once per owned list while inspector help remains available. These changes are not in the published 0.2.0 artifacts.
 
 See the [style catalogue and coverage matrix](citation-styles.md) to distinguish reference formatting from experimental import recognition. Reviewed import remains source-only: [development APIs and measured limits](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-development.md).

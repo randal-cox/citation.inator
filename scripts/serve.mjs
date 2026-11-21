@@ -1,3 +1,4 @@
+import { importDemoRequest } from "./import-demo-service.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
@@ -95,8 +96,8 @@ const types = new Map([
   [".json", "application/json; charset=utf-8"], [".md", "text/plain; charset=utf-8"], [".txt", "text/plain; charset=utf-8"], [".svg", "image/svg+xml"]
 ]);
 const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
-const files = /^\/(?:dist|docs|demos\/(?:static|dynamic|drop-in))\/[\w.-]+\.(html|css|mjs|json|md|txt|svg)$/;
-const directories = /^\/demos\/(?:static|dynamic|drop-in)\/?$/;
+const files = /^\/(?:dist|docs|demos\/(?:static|dynamic|drop-in|import))\/[\w.-]+\.(html|css|mjs|json|md|txt|svg)$/;
+const directories = /^\/demos\/(?:static|dynamic|drop-in|import)\/?$/;
 const server = createServer(async (request, response) => {
   const send = (status, type, content) => {
     response.writeHead(status, { "Content-Type": type, "Content-Security-Policy": csp, "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Cache-Control": "no-store" });
@@ -106,8 +107,25 @@ const server = createServer(async (request, response) => {
   try {
     const origin = `http://127.0.0.1:${server.address().port}`;
     if (![`127.0.0.1:${server.address().port}`, `localhost:${server.address().port}`].includes(request.headers.host)) return send(400, plain, "Use the loopback demo address.");
-    if (request.method !== "GET") return send(405, plain, "GET only.");
     const url = new URL(request.url, origin);
+    if (url.pathname === "/demos/import/review") {
+      if (request.method !== 'POST' || !/^application\/json(?:;|$)/i.test(request.headers['content-type'] || '') ||
+          request.headers.origin && request.headers.origin !== `http://${request.headers.host}` ||
+          request.headers['sec-fetch-site'] && !['same-origin','none'].includes(request.headers['sec-fetch-site'])) {
+        return send(403,plain,'Use this demo from its local page.');
+      }
+      let size=0;const chunks=[];
+      for await (const chunk of request) {
+        size+=chunk.length;
+        if(size>1_000_000)return send(413,plain,'The demo request is too large.');
+        chunks.push(chunk);
+      }
+      try {
+        const result=importDemoRequest(JSON.parse(Buffer.concat(chunks).toString('utf8')));
+        return send(200,types.get('.json'),JSON.stringify(result));
+      } catch(error) { return send(400,types.get('.json'),JSON.stringify({error:error.message})); }
+    }
+    if (request.method !== "GET") return send(405, plain, "GET only.");
     if (url.pathname === "/") {
       response.writeHead(302, { Location: "/demos/static/" }).end();
       return;

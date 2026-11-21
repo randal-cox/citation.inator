@@ -59,15 +59,17 @@ function parentheticalItem(text) {
 /** Initial plain-text author-date detector. All matches retain original UTF-16 spans. */
 export function parseInTextCitations(text, options = {}) {
   if (typeof options === 'string') options = { style: options };
-  const { style = 'apa', range = { start: 0, end: text?.length }, citationKeyword, format = 'text' } = options;
+  const { style = 'apa', range = { start: 0, end: text?.length }, citationKeyword, format = 'text', maxCitations = Infinity, maxItems = Infinity } = options;
   if (typeof text !== 'string') throw new TypeError('Supply visible plain text.');
   if (format !== 'text') throw new TypeError('Initial detection accepts visible plain text, not markup or files.');
   if (!styles.has(style)) throw new TypeError('Initial detection supports apa, chicago-author-date and vancouver.');
   if (!range || !Number.isInteger(range.start) || !Number.isInteger(range.end) || range.start < 0 || range.end < range.start || range.end > text.length) throw new TypeError('Supply a valid source range.');
+  if (![maxCitations,maxItems].every(value=>value === Infinity || Number.isSafeInteger(value) && value>0)) throw new TypeError('Citation limits must be positive integers.');
+  const limits={maxCitations,maxItems};let itemCount=0;
   const protectedRanges = scanCitationMarkers(text, { citationKeyword });
   const citations = [], diagnostics = [];
   const source = text.slice(range.start, range.end);
-  if (style === 'vancouver') return detectNumeric(source,range.start,protectedRanges,style);
+  if (style === 'vancouver') return detectNumeric(source,range.start,protectedRanges,style,limits);
   for (const match of source.matchAll(/\(([^()]*)\)/gu)) {
     let start = range.start + match.index;
     const end = start + match[0].length;
@@ -104,6 +106,8 @@ export function parseInTextCitations(text, options = {}) {
         continue;
       }
     }
+    itemCount+=items.length;
+    if(citations.length>=maxCitations || itemCount>maxItems)throw new RangeError('Citation review budget exceeded. Use a shorter source or smaller groups.');
     citations.push({ start, end, raw: text.slice(start, end), form, items, requiresReview: true });
   }
   return { schema: 'citation-inator.import-detection.v1', style, citations, diagnostics };
@@ -129,7 +133,8 @@ function* bracketGroups(source) {
 }
 
 // Bracket shapes are proposals; only the caller's document-local labels map them.
-function detectNumeric(source,offset,protectedRanges,style) {
+function detectNumeric(source,offset,protectedRanges,style,limits) {
+  let itemCount=0;
   const citations = [], diagnostics = [];
   for (const match of bracketGroups(source)) {
     const start = offset+match.index, end = start+match.raw.length;
@@ -149,6 +154,8 @@ function detectNumeric(source,offset,protectedRanges,style) {
     }
     if (!valid) { diagnostics.push({code:'import-unparsed-numeric-citation',start,end,raw:match.raw}); continue; }
     if (new Set(numbers).size !== numbers.length) diagnostics.push({code:'import-repeated-reference-number',start,end,raw:match.raw});
+    itemCount+=numbers.length;
+    if(citations.length>=limits.maxCitations || itemCount>limits.maxItems)throw new RangeError('Citation review budget exceeded. Use a shorter source or smaller groups.');
     citations.push({start,end,raw:match.raw,form:'numeric',items:numbers.map(referenceNumber=>({referenceNumber})),requiresReview:true});
   }
   return {schema:'citation-inator.import-detection.v1',style,citations,diagnostics};

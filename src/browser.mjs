@@ -1,3 +1,4 @@
+export { markerKind } from "./compiler.mjs";
 import { AccessView } from "./access-view.mjs";
 export { getAccessProfile, setAccessProfile } from "./access-profile.mjs";
 import { defaultClassPrefix, partClassNames, partSelector, validClassPrefix, validateClassPrefix } from "./class-names.mjs";

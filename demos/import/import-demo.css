@@ -1,0 +1,42 @@
+.import-demo { color:#142b46; background:#f7faff; font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; margin:0; color-scheme:light dark; }
+.import-demo * { box-sizing:border-box; }
+.import-demo header,.import-demo main,.import-demo footer { width:min(1440px,100%); padding:24px 36px; margin:auto; }
+.import-demo header { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #bccbdc; gap:24px; }
+.import-demo header>a { font-weight:750; font-size:20px; text-decoration:none; }
+.import-demo nav { display:flex; gap:20px; flex-wrap:wrap; }
+.import-demo a { color:#1558b0; }
+.import-demo h1 { font-size:clamp(26px,3vw,38px); line-height:1.2; display:flex; align-items:center; gap:14px; margin:12px 0 18px; }
+.import-demo h1 svg { flex:none; width:38px; height:38px; }
+.import-demo h2 { font-size:22px; line-height:1.3; margin:0 0 18px; }
+.import-demo h3 { font-size:18px; margin-top:0; }
+.import-demo .intro { font-size:19px; margin:0 0 12px; }
+.import-demo .scope { color:#435c78; margin:0 0 26px; }
+.import-demo .toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin:18px 0; }
+.import-demo .workspace { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,1fr); gap:36px; padding:24px 0; border-top:2px solid #153768; }
+.import-demo label { display:block; font-weight:600; margin:12px 0 7px; }
+.import-demo select,.import-demo button { font:inherit; color:inherit; border:1px solid #8da6bf; border-radius:5px; background:white; padding:8px 12px; }
+.import-demo select { max-width:100%; }
+.import-demo button { cursor:pointer; font-weight:600; }
+.import-demo button.primary { background:#1558b0; color:white; border-color:#1558b0; margin-top:16px; }
+.import-demo button:disabled { opacity:.5; cursor:default; }
+.import-demo textarea { width:100%; resize:vertical; min-height:100px; font:15px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; padding:14px; color:inherit; background:white; border:1px solid #8da6bf; border-radius:3px; }
+.import-demo :is(button,select,textarea,a,summary):focus-visible { outline:3px solid #0c716f; outline-offset:3px; }
+.import-demo details { margin:18px 0; }
+.import-demo summary { cursor:pointer; font-weight:650; }
+.import-demo .citation-group { border-top:1px solid #bccbdc; padding:18px 0; }
+.import-demo .citation-group:first-child { border-top:0; padding-top:0; }
+.import-demo blockquote { margin:0 0 12px; padding:0 0 0 14px; border-left:3px solid #0c716f; font:18px/1.55 Georgia,serif; overflow-wrap:anywhere; }
+.import-demo .item-state { font-size:14px; color:#435c78; margin:4px 0; }
+.import-demo #reading-preview { --citation-inline-color:#1558b0; }
+.import-demo #status { color:#0c716f; font-weight:600; }
+.import-demo #errors { color:#a12532; font-weight:600; }
+.import-demo pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#edf3fa; padding:14px; font-size:13px; }
+.import-demo #reading-preview { display:block; background:white; padding:20px; border:1px solid #bccbdc; overflow-wrap:anywhere; }
+.import-demo footer { border-top:1px solid #bccbdc; font-size:14px; }
+@media (max-width:760px) { .import-demo .workspace { grid-template-columns:1fr; gap:28px; } .import-demo header,.import-demo main,.import-demo footer { padding:20px; } .import-demo header { align-items:flex-start; flex-direction:column; } }
+@media (prefers-color-scheme:dark) { .import-demo { background:#172536; color:#e7effa; } .import-demo a { color:#91c3ff; } .import-demo textarea,.import-demo button,.import-demo select,.import-demo #reading-preview { background:#22364d; color:#e7effa; } .import-demo .scope,.import-demo .item-state { color:#c1d2e5; } .import-demo pre { background:#22364d; } .import-demo #reading-preview { --citation-inline-color:#1558b0; }
+.import-demo #status { color:#89d9cf; } .import-demo #errors { color:#ffb3bb; } }
+
+@media (prefers-color-scheme:dark) { .import-demo #reading-preview { --citation-inline-color:#91c3ff; --citation-accent:#91c3ff; --citation-paper:#22364d; --citation-ink:#e7effa; --citation-line:#8da6bf; --citation-wash:#172536; --citation-inline-active:#374d68; } .import-demo #reading-preview [data-citation-part~="cite"] { color:#91c3ff; } }
+
+@media (prefers-color-scheme:dark) { .import-demo :is(button,select,textarea,a,summary):focus-visible { outline-color:#89d9cf; } }

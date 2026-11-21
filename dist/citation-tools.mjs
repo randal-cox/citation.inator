@@ -9665,6 +9665,14 @@ function scanCitationMarkers(source, { citationKeyword = "citation" } = {}) {
     token: parseDirectives(match[0], { citationKeyword })[0]
   }));
 }
+function markerKind(raw, options = {}) {
+  if (typeof raw !== "string") throw new TypeError("Supply a marker string.");
+  const text = raw.trim();
+  const markers = scanCitationMarkers(text, options);
+  if (markers.length !== 1 || markers[0].raw !== text || markers[0].start !== 0) return "malformed";
+  const token = markers[0].token;
+  return token?.type === "endnotes" ? "endnote" : ["citation", "list", "nocite", "annotation"].includes(token?.type) ? token.type : "malformed";
+}
 function parseDirectives(source, { citationKeyword = "citation" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];
@@ -10687,7 +10695,10 @@ function describeCitation(identifierOrMarker, cache, options = {}) {
   };
 }
 function annotateMarkers(source, cache, options = {}) {
+  const { noteContext = "article" } = options;
+  if (!["article", "work"].includes(noteContext)) throw new TypeError("Use article or work noteContext.");
   const { markers, descriptions, diagnostics } = analyze(source, cache, options);
+  const workDescriptions = /* @__PURE__ */ new Map();
   const edits = [];
   for (const [index, marker] of markers.entries()) {
     const description = descriptions[index];
@@ -10698,7 +10709,13 @@ function annotateMarkers(source, cache, options = {}) {
       const text = body.slice(item.start, item.end);
       const parts = splitSpans(text, "|");
       const note = parts.slice(1).find((span) => /^\s*note:/.test(text.slice(span.start, span.end)));
-      const noteText = escaped(description.items[i].text);
+      let noteText = description.items[i].text;
+      if (noteContext === "work") {
+        const recordId = description.items[i].recordId;
+        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId, describeCitation(`{${options.citationKeyword || "citation"} local:${recordId}}`, cache, { ...options, suffixScope: "fragment" }).text);
+        noteText = workDescriptions.get(recordId);
+      }
+      noteText = escaped(noteText);
       const replacement = `note:"${options.format && options.format !== "text" ? noteText.replace(/[&<>]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[character]) : noteText}"`;
       if (note) {
         const original = text.slice(note.start, note.end);
@@ -10748,5 +10765,6 @@ export {
   annotateMarkers,
   collectMarkerTags,
   createSiteOccurrenceIndex,
-  describeCitation
+  describeCitation,
+  markerKind
 };

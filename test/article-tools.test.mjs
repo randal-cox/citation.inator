@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { compileCitations, planCitationOccurrences } from '../src/compiler.mjs';
 import { compileHTML, compileMarkdown, rebaseCitationFragment } from '../src/markup.mjs';
-import { annotateMarkers, describeCitation, createSiteOccurrenceIndex, collectMarkerTags } from '../src/tools.mjs';
+import { markerKind, annotateMarkers, describeCitation, createSiteOccurrenceIndex, collectMarkerTags } from '../src/tools.mjs';
 import { makeCache, normalizeRecord, toCSL } from '../src/records.mjs';
 import { prepareReferences } from '../src/reference-features.mjs';
 import { createCrossrefResolver } from '../src/crossref.mjs';
@@ -261,4 +261,39 @@ test('referenceItemPrefix receives isolated metadata and emits safe text before 
  assert.match(result.html,/class="host-reference-prefix"[^>]*>&lt;Theory&gt; <\/span>/);assert.ok(!result.html.includes('Changed'));
  assert.throws(()=>compileCitations('{citation list alpha}',cache,{referenceItemPrefix:'text'}),/function/);
  assert.throws(()=>compileCitations('{citation list alpha}',cache,{referenceItemPrefix:()=>({html:'<b>unsafe</b>'})}),/return text/);
+});
+
+test('markerKind classifies whole compiler markers without duplicating reserved-name heuristics',()=>{
+ for(const [raw,kind] of [
+  ['{citation list-2001}','citation'],['{citation local:list}','citation'],['{citation endnote}','endnote'],['{endnotes}','endnote'],
+  ['{citation list alpha}','list'],['{citation nocite alpha}','nocite'],['{citation evidence}','annotation'],['{citation credit}','annotation'],
+  ['{cite list-2001}','citation'],['{cite evidence}','citation'],['{citation alpha | form:wrong}','malformed'],['text {citation alpha}','malformed'],
+  ['{citation alpha} trailing','malformed'],['{citation alpha} {citation beta}','malformed'],['\\{citation alpha}','malformed']
+ ]) assert.equal(markerKind(raw),kind,raw);
+ assert.equal(markerKind('{ref endnote}',{citationKeyword:'ref'}),'endnote');assert.equal(markerKind('{ref alpha}',{citationKeyword:'ref'}),'citation');
+ assert.equal(markerKind('{cite alpha}',{citationKeyword:'ref'}),'citation');assert.equal(markerKind('{citation alpha}',{citationKeyword:'ref'}),'malformed');
+ assert.throws(()=>markerKind(null),TypeError);
+});
+
+test('work-context annotation agrees with standalone descriptions while reader year letters stay contextual',()=>{
+ const source='{citation beta; alpha | locator:12}\n\n{citation endnote}';
+ const work=annotateMarkers(source,cache,{...chicago,noteContext:'work'});
+ assert.equal((work.source.match(/note:"Cox 1995"/g)||[]).length,2);assert.ok(!work.source.includes('1995a'));assert.ok(!work.source.includes('1995b'));
+ assert.equal(annotateMarkers(work.source,cache,{...chicago,noteContext:'work'}).changed,false);
+ assert.deepEqual(compileCitations(source,cache,chicago),compileCitations(work.source,cache,chicago));
+ assert.match(annotateMarkers(source,cache,chicago).source,/1995a/);assert.match(annotateMarkers(source,cache,chicago).source,/1995b/);
+ assert.equal(describeCitation('alpha',cache,chicago).text,'Cox 1995');
+ assert.equal(annotateMarkers(source,cache,{...chicago,suffixScope:'cache',noteContext:'work'}).source,work.source);
+ assert.throws(()=>annotateMarkers(source,cache,{noteContext:'wrong'}),/noteContext/);
+});
+
+test('work notes stay consistent in markup and the JSON annotation/check CLI',()=>{
+ for(const [format,source] of [['html','<p>{citation alpha; beta}</p>'],['markdown','Text {citation alpha; beta}.']]) {
+  const annotated=annotateMarkers(source,cache,{...chicago,format,noteContext:'work'});
+  assert.equal((annotated.source.match(/note:"Cox 1995"/g)||[]).length,2);assert.equal(annotateMarkers(annotated.source,cache,{...chicago,format,noteContext:'work'}).changed,false);
+  const compile=format==='html'?compileHTML:compileMarkdown;assert.deepEqual(compile(source,cache,chicago),compile(annotated.source,cache,chicago));
+ }
+ const request={source:'{citation alpha; beta}',cache,options:{...chicago,noteContext:'work'}};
+ const run=spawnSync(process.execPath,['scripts/compile.mjs','--annotate','--json'],{input:JSON.stringify(request),encoding:'utf8'});assert.equal(run.status,0);const result=JSON.parse(run.stdout);
+ const check=spawnSync(process.execPath,['scripts/compile.mjs','--check-notes','--json'],{input:JSON.stringify({...request,source:result.source}),encoding:'utf8'});assert.equal(check.status,0);assert.equal(JSON.parse(check.stdout).changed,false);
 });

@@ -6,6 +6,12 @@ This is an integration note for the separate public [draft.inator repository](ht
 
 The [data contract](https://github.com/randal-cox/draft.inator/blob/main/docs/data-contract.md) supplies `window.DRAFT_WORKS` entries with `id`, `note`, `title` and optional `year`, plus `window.DRAFT_TOPICS`. The [Cite block](https://github.com/randal-cox/draft.inator/blob/main/src/blocks/citation.js) reads/writes marker groups, preserves unseen options/order and refreshes editor notes from the supplied work lookup. Its public contract describes this editor behavior; no reviewed-import transaction/revision interface was observed in those files.
 
+## Shared classification and work notes
+
+The 0.3.0 development bundles now export `markerKind(raw, { citationKeyword })` for work/directive classification, including legacy forms and identifiers such as `list-2001`. The Cite block can use this instead of copying compiler grammar.
+
+Use `annotateMarkers(source, cache, { noteContext: "work", ...styleOptions })` for both build refresh and stale-note checks when the editor's picker uses standalone `describeCitation`. This prevents article-local year letters in notes from fighting with context-free picker descriptions. It does not change reader-facing citation letters. These features are in the development checkout, not released 0.2.0 archives. See [the compatibility API guide](article-tools.md#unreleased-draftinator-compatibility-additions).
+
 ## Boundary to agree and test
 
 - citation.inator proposes extracted text, fields, matches, diagnostics and revision-bound decisions. draft.inator owns editor selection, transaction/undo, user authorization, persistence, authentication and publishing.
@@ -14,7 +20,7 @@ The [data contract](https://github.com/randal-cox/draft.inator/blob/main/docs/da
 - Reuse `describeCitation`/`annotateMarkers` for notes. Import decisions must not manufacture a competing description or author/year identity system.
 - A matched reference may not yet exist in `DRAFT_WORKS`. Review and add curated records explicitly, then refresh host choices; do not make raw provider results selectable publication records automatically.
 - Preserve source style, locators, prefixes, narrative forms, topics and unfamiliar options. Exact marker text is less useful than a tested semantic round-trip where intentional note refresh is the only change.
-- Reject stale review decisions after article edits. Apply accepted changes and new records in one host-controlled transaction where supported, preserving undo and cancellation. Bibliography removal requires separate explicit review and accounting for uncited entries.
+- Reject stale review decisions after article, reference-data or formatting changes. The core protocol binds source/proposals; the host must bind any additional record/style context, as the local demo does. Apply accepted changes and new records in one host-controlled transaction where supported, preserving undo and cancellation. Bibliography removal requires separate explicit review and accounting for uncited entries.
 - Linked/noncontiguous/decoded text and uncertain author boundaries remain accepted-but-pending-adapter in the prototype; an editor must not turn these into destructive broad replacements.
 
 ## Milestone placement

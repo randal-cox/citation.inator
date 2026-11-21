@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add markerKind to tools and both browser bundles so editors classify complete markers with the compiler grammar, including legacy/custom forms and directive-like record IDs.
+- Add opt-in work-context annotation notes matching standalone work descriptions; preserve default article notes and reader year letters.
+- Add a runnable local plaintext import-review demo with synthetic examples, explicit decisions, stale-context checks, bounded workloads, safe previews and downloadable reviewed text. Native files and browser-native import remain unfinished.
+
 - Recognize undated author–date citations while keeping absent dates ambiguous unless per-import metadata explicitly affirms an undated work. Preserve the original challenge miss and later regression report separately.
 
 - Add source-only partial reference rules and explicit revision-bound review/edit planning. Preserve unsupported entries, uncertain spans and rich-text/linked conversion decisions without destructive replacement.

@@ -4,7 +4,7 @@ Current release 0.2.0 provides article editor tools, cross-page bibliographies a
 
 ## Milestone 0.3.0 — Reviewed import in development
 
-F4 is the next substantial milestone, targeted at 0.3.0 once confidence is established. Initial work includes a source-only author-date detector/matcher (including conservative undated handling), text/HTML/Markdown extraction with source provenance and an explicit Crossref search prototype, and developer-checked private paired-format matches. See [the milestone record](docs/milestones/0.3.0.md) and [corpus/development protocol](docs/import-development.md). Native file adapters, installed search/review workflows, reviewed edits and measured import accuracy remain unfinished. Released metadata/assets stay at 0.2.0 until a distinct preview is ready.
+F4 is the next substantial milestone, targeted at 0.3.0 once confidence is established. Initial work includes a source-only author-date detector/matcher (including conservative undated handling), text/HTML/Markdown extraction with source provenance and an explicit Crossref search prototype, and developer-checked private paired-format matches. See [the milestone record](docs/milestones/0.3.0.md) and [corpus/development protocol](docs/import-development.md). Initial revision-bound edit planning and a local plaintext review demo are implemented. Native file adapters, installed search/review workflows, rich-text edits and broad import-quality measurement remain unfinished. Released metadata/assets stay at 0.2.0 until a distinct preview is ready.
 
 ### Agreed 0.3.0 scope
 
@@ -48,6 +48,9 @@ Review the milestone record and roadmap before every check-in. The [repository p
 - [x] Carry curated access links and reader-supplied provider preferences into the panel and endnotes. Resolve ISBN editions through Open Library.
 
 ## Remaining 0.3.0 work
+
+The local import-review demo is runnable now; see [its guide](docs/import-demo.md). The development tools/browser bundles also expose shared marker classification and work-context editor notes for draft.inator. Neither is an update to the released 0.2.0 archives.
+
 
 - Continue F4 with the in-text matcher and optional Crossref bibliographic search; measure rule-based reference parsing before expanding backends. The [article-tooling plan](docs/article-tooling-plan.md) retains its review and fallback requirements.
 - Verify the implemented once-per-list unknown-profile help across additional host integrations; each inspector retains settings access.

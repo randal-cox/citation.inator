@@ -103,6 +103,16 @@ export function scanCitationMarkers(source, { citationKeyword = "citation" } = {
       token: parseDirectives(match[0], { citationKeyword })[0] }));
 }
 
+/** Classify exactly one complete marker using the compiler's grammar. No cache needed. */
+export function markerKind(raw, options = {}) {
+  if (typeof raw !== 'string') throw new TypeError('Supply a marker string.');
+  const text=raw.trim();
+  const markers=scanCitationMarkers(text,options);
+  if (markers.length !== 1 || markers[0].raw !== text || markers[0].start !== 0) return 'malformed';
+  const token=markers[0].token;
+  return token?.type === 'endnotes' ? 'endnote' : ['citation','list','nocite','annotation'].includes(token?.type) ? token.type : 'malformed';
+}
+
 export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];

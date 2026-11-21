@@ -113,6 +113,7 @@ ${showPreferences ? '  <script type="module" src="../static/preferences.mjs"></s
     <a href="../static/" ${active === "static" ? 'aria-current="page"' : ""}>Reading room</a>
     <a href="../dynamic/" ${active === "dynamic" ? 'aria-current="page"' : ""}>Resolution bench</a>
     <a href="../drop-in/">Plain HTML</a>
+    <a href="../import/">Import review</a>
     <a class="guide-link" href="../static/guide.html" ${active === "guide" ? 'aria-current="page"' : ""}>Guide</a>
   </nav>` : ""}</header>
   <main>
@@ -313,7 +314,7 @@ await writeFile("demos/static/guide.html", document({
       <p>Editors can contribute tags at each mention: <code>{citation source-one | note:"Cox 1995" | tags:theory,praxis}</code>. <code>collectMarkerTags(sources, cache, { includeDiagnostics: true })</code> counts contributions while reporting skipped/malformed input; the host validates topics and applies curator overrides. The browser bundle and <code>--collect-tags --json</code> expose the same function. <code>inlineTags: "marker"</code> displays only that mention's tags; record topics remain in the panel. Try the collector in the editor example.</p>
       <p>Use <code>listFilters: { minItems: 6, minTags: 2 }</code> for longer multi-topic lists. Style individual badges with <code>data-ci-tag</code>; panel badges also expose tag-specific CSS parts. Listing-only <code>nocite</code> uses get <strong>Listed in</strong> returns. Unresolved/malformed diagnostics add stable <code>citation-unresolved</code> / <code>citation-malformed</code> codes.</p>
       <p>Try the <a href="./bibliography.html">site bibliography and two articles</a> and the <a href="./editor-tools.html">offline editor tool</a>. Read the <a href="../drop-in/article-tools.md">complete tools guide</a> for API results, source-preservation limits, CLI requests, safe routes, tag configuration and the two-pass build. Reviewed import is in source-only 0.3.0 development; it is not an installed 0.2.0 API.</p>
-      <p>The development checkout adds a synchronous <code>referenceItemPrefix</code> callback for escaped host text before each reference; its contract is in the tools guide. Unknown reader-access profiles show one prompt after each owned list, while inspectors keep their settings entry.</p>
+      <p>The development checkout exports <code>markerKind</code> from both browser bundles and supports <code>annotateMarkers(..., { noteContext: "work" })</code> for context-free editor notes. Try the local <a href="../import/">import-review demo</a> with <code>npm start</code>. The checkout also adds a synchronous <code>referenceItemPrefix</code> callback for escaped host text before each reference; its contract is in the tools guide. Unknown reader-access profiles show one prompt after each owned list, while inspectors keep their settings entry.</p>
     </section>
     <section aria-labelledby="guide-access">
       <h2 id="guide-access">Reader access and media</h2>
