@@ -9,11 +9,11 @@ const examples={
  numeric:{style:'vancouver',source:'The first comparison uses one source [2]. Another uses a different numbered entry [7]. Together they appear as a group [2, 7].\n\nA missing number remains in the text [99].',records:[work('seven','Bennett',2019,'Seventh numbered entry',{referenceNumber:7}),work('two','Avery',2021,'Second numbered entry',{referenceNumber:2})],referenceText:'2. Avery J. Second numbered entry. Example Press. 2021.\n7. Bennett S. Seventh numbered entry. Example Press. 2019.'},
  undated:{style:'apa',source:'A missing date is not the same as an explicitly undated work (Avery, n.d., p. 5). A curator has explicitly marked the other record undated (Bennett, n.d.).',records:[work('avery-unknown','Avery',null,'Date not recorded'),work('bennett-undated','Bennett',null,'Explicitly undated',{undated:true})],referenceText:'Avery, J. (n.d.). Date not recorded.\nBennett, S. (n.d.). Explicitly undated.'}
 };
-let review=null,version=0,output=null,referenceRecords=[],activeGroup=null,closeTimer,convertingVersion=null,conversionTimer,formatChoiceRequired=false;
+let review=null,version=0,output=null,referenceRecords=[],activeGroup=null,closeTimer,convertingVersion=null,conversionTimer,analysisTimer,formatChoiceRequired=false;
 const el=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
-function invalidate(message='Analyze again.') {
- closeReview();clearTimeout(conversionTimer);version++;review=null;output=null;$('converted-document').open=false;$('conversion-progress').hidden=true;$('detected-format').textContent='Detected format';$('format-choice').textContent='';$('evidence').hidden=true;$('evidence-json').textContent='';$('preview').setAttribute('aria-disabled','true');$('output-section').hidden=true;$('status').textContent=message;
- $('errors').textContent='';$('groups').replaceChildren();$('analyze-form').querySelector('button[type="submit"]').disabled=false;
+function invalidate(message='') {
+ closeReview();clearTimeout(conversionTimer);clearTimeout(analysisTimer);version++;review=null;output=null;$('converted-document').open=false;$('conversion-progress').hidden=true;$('detected-format').textContent='Detected format';$('format-choice').textContent='';$('evidence').hidden=true;$('evidence-json').textContent='';$('preview').setAttribute('aria-disabled','true');$('output-section').hidden=true;$('status').textContent=message;
+ $('errors').textContent='';$('groups').replaceChildren();
 }
 function loadExample() {
  const sample=examples[$('example').value];invalidate('Loading example…');
@@ -141,7 +141,7 @@ function renderGroups() {
 }
 async function analyzeSource() {
  invalidate('Analyzing…');const ticket=version;
- $('analyze-form').querySelector('button[type="submit"]').disabled=true;
+ $('analyze-form').setAttribute('aria-busy','true');
  try {
   const result=await request('analyze');if(ticket!==version)return;
   formatChoiceRequired=result.formatChoiceRequired;$('detected-format').textContent='Detected format: '+result.formatDetection.label;$('format-choice').textContent=formatChoiceRequired?'Choose a citation format.':'';
@@ -149,9 +149,8 @@ async function analyzeSource() {
   $('evidence-json').textContent=JSON.stringify({diagnostics:result.diagnostics,referenceRules:result.parsedReferences},null,2);$('evidence').hidden=false;
   $('status').textContent=`${review.matches.length} citations.`;
  } catch(error){if(ticket===version){$('errors').textContent=error.message;$('status').textContent='';}}
- finally{if(ticket===version)$('analyze-form').querySelector('button[type="submit"]').disabled=false;}
+ finally{if(ticket===version)$('analyze-form').removeAttribute('aria-busy');}
 }
-$('analyze-form').addEventListener('submit',event=>{event.preventDefault();void analyzeSource();});
 async function convertDocument() {
  if(!review || formatChoiceRequired || convertingVersion===version)return;
  if(output){$('output-section').hidden=false;return;}
@@ -171,7 +170,7 @@ async function convertDocument() {
 }
 $('preview').addEventListener('click',event=>{if(!review || formatChoiceRequired)event.preventDefault();});
 $('converted-document').addEventListener('toggle',()=>{if(!$('converted-document').open)clearTimeout(conversionTimer);else {if(!review || formatChoiceRequired){$('converted-document').open=false;return;}void convertDocument();}});
-for(const id of ['source','records','reference-text'])$(id).addEventListener('input',()=>{invalidate();renderDocument();if(id==='records'){$('reference-summary').replaceChildren();}});
+for(const id of ['source','records','reference-text'])$(id).addEventListener('input',()=>{invalidate();renderDocument();if(id==='records'){$('reference-summary').replaceChildren();}analysisTimer=setTimeout(()=>void analyzeSource(),300);});
 document.addEventListener('keydown',event=>{
  const navigationIndex=activeGroup?.contains(event.target)?activeGroup.dataset.group:event.target.closest('[data-review-group]')?.dataset.reviewGroup;
  if(navigationIndex!==undefined && ['ArrowLeft','ArrowRight'].includes(event.key) && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.target.closest('input:not([type="radio"]),textarea,select,[contenteditable]')){event.preventDefault();moveReview(Number(navigationIndex),event.key==='ArrowRight'?1:-1);return;}
@@ -180,6 +179,6 @@ document.addEventListener('pointerdown',event=>{if(activeGroup&&!activeGroup.con
 window.addEventListener('resize',closeReview);
 $('example').addEventListener('change',loadExample);
 $('style').addEventListener('change',()=>void analyzeSource());
-$('use-output').addEventListener('click',()=>{if(!output)return;const text=output.source;invalidate('Analyze again.');$('source').value=text;$('groups').replaceChildren();renderDocument();});
+$('use-output').addEventListener('click',()=>{if(!output)return;const text=output.source;invalidate();$('source').value=text;$('groups').replaceChildren();renderDocument();void analyzeSource();});
 $('download').addEventListener('click',()=>{if(!output)return;const url=URL.createObjectURL(new Blob([output.source],{type:'text/markdown;charset=utf-8'}));const link=el('a');link.href=url;link.download='reviewed-citations.md';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 loadExample();
