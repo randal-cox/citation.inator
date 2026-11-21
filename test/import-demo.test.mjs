@@ -43,3 +43,9 @@ test('demo exposes the actual supplied matching records; parsed raw lines do not
  assert.equal(result.referenceRecords.length,1);assert.equal(result.referenceRecords[0].id,'avery');assert.equal(result.referenceRecords[0].title,'Synthetic');
  assert.equal(result.review.matches[1].items[0].state,'unmatched');assert.equal(result.parsedReferences.entries[0].fields.authors[0].family,'Other');
 });
+
+test('demo previews manual identifiers and preserves explicitly rejected citations without looking up records',()=>{
+ const source='Unknown (Missing, 2000). Keep (Avery, 2021).';const input={source,records};const {review}=importDemoRequest(input);
+ const result=importDemoRequest({...input,action:'preview',review,reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{identifier:'9780140328721'}]},{citationIndex:1,action:'reject'}]});
+ assert.match(result.source,/isbn:9780140328721/);assert.ok(result.source.endsWith('Keep (Avery, 2021).'));assert.equal(result.cache.records.length,records.length);assert.equal(result.outcomes[1].state,'reject');
+});

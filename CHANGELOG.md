@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Use subdued green for selected import targets, muted red for citations needing review and gray for Don’t fix. Automatically select unique candidates; incomplete evidence and uncertain spans remain for review.
+- Simplify import review to suggested-target counts and radio choices, with manual DOI/ISBN/URL corrections, an explicit Don’t fix action, clearer fictional examples and a collapsed supplied bibliography. Identifier entry validates syntax/check digits without provider lookups.
+
 - Analyze supplied import-demo examples automatically so hover targets appear on first load; edited inputs still require explicit reanalysis.
 - Prototype document-first import review: visible supplied bibliography, highlighted in-text citations and hover/click/keyboard candidate comparisons with human matching reasons.
 - Prioritize a dedicated developer-learning milestone before external bibliography connections; retain proposed labels pending maintainer agreement.

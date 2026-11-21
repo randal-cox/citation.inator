@@ -46,6 +46,18 @@ Decisions address whole citation groups: accept one supplied candidate per item,
 
 Generated markers use explicit `local:` IDs to avoid collisions with commands such as `endnote` and `evidence`. Prefixes, locators and narrative form are retained. Uncertain author boundaries yield `accepted-needs-span` without edits. Linked, decoded or noncontiguous source yields `accepted-needs-adapter` without edits, so acceptance cannot erase markup or strand notation inside an existing link. These accepted decisions remain available to a future editor adapter. The API never deletes the original bibliography or writes records, files or Git commits. A first [plaintext browser review demo](import-demo.md) uses the local Node server protocol. Browser-native hashing, rich-text/editor transactions and richer review UI remain unfinished.
 
+For manual corrections, an accepted decision can use `targets` instead of `recordIds`:
+
+```js
+decisions: [{
+  citationIndex: 0,
+  action: "accept",
+  targets: [{ recordId: "chosen-record-id" }, { identifier: "https://doi.org/10.1234/example" }]
+}]
+```
+
+Supply one target per item. Each target has either a supplied candidate `recordId` or a manually chosen `identifier`. Bare DOI strings and ISBN-10/13 (including hyphens) are accepted, as are HTTPS URLs and prefixed DOI/ISBN/PMID/PMCID/arXiv identifiers. ISBN check digits are validated. Series identifiers such as ISSNs and arbitrary local IDs cannot serve as manual work overrides. Output targets contain normalized identifiers; input records and proposals remain unchanged. This records a curator's explicit choice without verifying identity or fetching metadata. Existing source, whole-group and span checks still apply. Identifier punctuation is escaped and the generated marker is reparsed before an edit is returned.
+
 Hosts can pass positive `maxCitations` and `maxItems` recognition budgets. Exceeding a budget throws instead of returning a partial detection result. The local demo sets explicit group/item budgets before matching and also caps candidate fanout.
 
 ## Initial extraction adapter

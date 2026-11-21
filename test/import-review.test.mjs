@@ -63,3 +63,25 @@ test('reserved local record names emit citation items instead of annotation comm
   assert.equal(token.type,'citation');assert.equal(token.items[0].identifier.value,id);
  }
 });
+
+test('explicit identifier targets retain locators, normalize pasted IDs and cannot inject notation',()=>{
+ const source='Before (Avery, 2021, p. 4).';const review=reviewFor(source);
+ for(const [raw,scheme,value] of [['https://doi.org/10.1234/Example','doi','10.1234/example'],['978-0-14-032872-1','isbn','9780140328721'],['https://example.org/work?a=1;b=2','url','https://example.org/work?a=1;b=2']]) {
+  const plan=planImportEdits(source,review,{reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{identifier:raw}]}]});
+  const result=applyImportEdits(source,plan);const markers=scanCitationMarkers(result.source);
+  assert.equal(markers.length,1);assert.equal(markers[0].token.items.length,1);assert.deepEqual(markers[0].token.items[0].identifier,{scheme,value});assert.equal(markers[0].token.items[0].locator,'p. 4');
+  assert.deepEqual(plan.outcomes[0].targets,[{identifier:scheme+':'+value}]);
+ }
+ for(const raw of ['9780140328722','javascript:alert(1)','local:invented','avery','10.1234/x} {citation credit}']) {
+  assert.throws(()=>planImportEdits(source,review,{reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{identifier:raw}]}]}),/valid/);
+ }
+});
+
+test('mixed candidate and identifier targets require every item and preserve span guards',()=>{
+ const source='(Avery, 2021; Missing, 2000)';const review=reviewFor(source);
+ const options={reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{recordId:'avery'},{identifier:'doi:10.1234/example'}]}]};
+ const result=applyImportEdits(source,planImportEdits(source,review,options));assert.match(result.source,/local:avery;/);assert.equal(scanCitationMarkers(result.source)[0].token.items.length,2);
+ assert.throws(()=>planImportEdits(source,review,{...options,decisions:[{citationIndex:0,action:'accept',targets:[{recordId:'avery'}]}]}),/every item/);
+ const rich='<p>(<i>Avery</i>, 2021)</p>';const richReview=createImportReview(rich,matchCitations(detectExtractedCitations(extractImportText(rich,{format:'html'})),refs));
+ const plan=planImportEdits(rich,richReview,{reviewId:richReview.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{identifier:'doi:10.1234/example'}]}]});assert.equal(plan.outcomes[0].state,'accepted-needs-adapter');assert.equal(applyImportEdits(rich,plan).source,rich);
+});

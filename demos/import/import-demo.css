@@ -45,9 +45,14 @@
 .import-demo .supplied-bibliography { background:#edf3f8; border-top:1px solid #bccbdc; padding:20px; margin-top:30px; color:#435c78; }
 .import-demo .supplied-bibliography h3 { color:#142b46; }
 .import-demo #reference-summary p { margin:12px 0; }
-.import-demo .review-citation { display:inline; font:inherit; padding:1px 3px; border:0; border-bottom:2px dashed #806100; background:#fff1bf; color:#453900; border-radius:3px; }
-.import-demo .review-citation[data-match-state="unmatched"] { background:#ffe0d4; border-bottom-color:#a33316; color:#76240f; }
-.import-demo .review-citation[data-match-state="candidate"] { background:#e0edff; border-bottom-color:#1558b0; color:#153768; }
+.import-demo .review-citation { display:inline; font:inherit; padding:1px 3px; border:0; border-bottom:2px dashed #a45f61; background:#f7e8e7; color:#713d40; border-radius:3px; }
+.import-demo .review-citation[data-review-state="selected"] { background:#eaf1eb; border-bottom:1px solid #83a18c; color:#365640; }
+.import-demo .review-citation[data-review-state="kept"] { background:#eef0f2; border-bottom:1px dotted #8a939d; color:#54606b; }
+@media(prefers-color-scheme:dark) {
+ .import-demo .review-citation { background:#3b3035; border-bottom-color:#bb8689; color:#e7c3c5; }
+ .import-demo .review-citation[data-review-state="selected"] { background:#293c37; border-bottom-color:#628879; color:#c1d6c9; }
+ .import-demo .review-citation[data-review-state="kept"] { background:#303b46; border-bottom-color:#82909f; color:#c2cbd5; }
+}
 .import-demo .review-citation[aria-expanded="true"] { outline:2px solid #0c716f; outline-offset:2px; }
 .import-demo .citation-group { position:fixed; z-index:100; max-height:calc(100dvh - 24px); overflow:auto; overscroll-behavior:contain; background:white; color:#142b46; border:2px solid #547391; border-radius:7px; padding:20px; box-shadow:0 9px 30px #142b4633; }
 .import-demo .citation-group:first-child { padding:20px; border-top:2px solid #547391; }
@@ -64,3 +69,14 @@
 
 .import-demo .citation-group:focus-visible { outline:3px solid #0c716f; outline-offset:2px; }
 @media(prefers-color-scheme:dark) { .import-demo .citation-group:focus-visible { outline-color:#89d9cf; } }
+
+.import-demo .citation-group fieldset { border:0; padding:0; margin:0 0 18px; min-width:0; }
+.import-demo .citation-group legend { font-weight:650; margin-bottom:8px; }
+.import-demo .target-choice { display:flex; align-items:flex-start; gap:10px; font-weight:400; cursor:pointer; padding:8px 0; margin:0; }
+.import-demo .target-choice input { flex:none; margin:6px 0 0; accent-color:#1558b0; }
+.import-demo .target-choice strong,.import-demo .target-choice small { display:block; }
+.import-demo .target-choice small { font-weight:400; }
+.import-demo .citation-group input[type="text"] { width:100%; font:inherit; color:inherit; background:transparent; border:1px solid #8da6bf; border-radius:5px; padding:9px; }
+.import-demo .review-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.import-demo input:focus-visible { outline:3px solid #0c716f; outline-offset:3px; }
+@media(prefers-color-scheme:dark) { .import-demo input:focus-visible { outline-color:#89d9cf; } .import-demo .target-choice input { accent-color:#91c3ff; } }

@@ -2,8 +2,8 @@ import {initializeCitationInspector} from '../../dist/citation-inspector.mjs';
 const $=id=>document.getElementById(id);
 const work=(id,family,year,title,extra={})=>({id,type:'book',state:year?'resolved':'partial',title,authors:[{family,given:({Avery:'Jordan',Bennett:'Sam',Duval:'Camille'})[family] || ''}],issued:year?[year]:null,publisher:'Example Press',publisherPlace:'Example City',...extra});
 const examples={
- apa:{style:'apa',source:'Two accounts share an author and year (Avery, 2021). The other account uses the same short label (Avery, 2021).\n\nA comparison has one candidate (Bennett, 2019, p. 4). One reference is absent (Unknown, 2001).',records:[work('avery-gardens','Avery',2021,'Synthetic gardens'),work('avery-fields','Avery',2021,'Synthetic fields'),work('bennett','Bennett',2019,'Comparing places')],referenceText:'Avery, J. (2021). Synthetic gardens. Example Press.\nAvery, J. (2021). Synthetic fields. Example Press.\nBennett, S. (2019). Comparing places. Example Press.'},
- chicago:{style:'chicago-author-date',source:'We compare Avery (2021, 12) with an earlier edition (Duval [1898] 2004, 61).\n\nAvery, Bennett, and Chan (2020) offer another account. This last byline needs explicit span review.',records:[work('avery','Avery',2021,'Synthetic gardens'),work('duval','Duval',2004,'An earlier account',{originalIssued:[1898]}),work('three','Avery',2020,'Three perspectives',{authors:[{family:'Avery'},{family:'Bennett'},{family:'Chan'}]})],referenceText:'Avery, Jordan. 2021. Synthetic gardens. Example Press.\nDuval, Camille. 2004. An earlier account. Example Press.'},
+ apa:{style:'apa',source:'Two books by Jordan Avery came out in 2021. This citation could refer to either book (Avery, 2021). So could this one (Avery, 2021).\n\nThis citation includes a page number (Bennett, 2019, p. 4). This one has no matching bibliography entry (Unknown, 2001).',records:[work('avery-gardens','Avery',2021,'How children learn together'),work('avery-fields','Avery',2021,'Learning through play'),work('bennett','Bennett',2019,'Teaching in small groups')],referenceText:'Avery, J. (2021). How children learn together. Example Press.\nAvery, J. (2021). Learning through play. Example Press.\nBennett, S. (2019). Teaching in small groups. Example Press.'},
+ chicago:{style:'chicago-author-date',source:'We compare Avery (2021, 12) with an earlier edition (Duval [1898] 2004, 61).\n\nAvery, Bennett, and Chan (2020) offer another perspective. This last byline needs explicit span review.',records:[work('avery','Avery',2021,'How children learn together'),work('duval','Duval',2004,'An earlier edition',{originalIssued:[1898]}),work('three','Avery',2020,'Three perspectives',{authors:[{family:'Avery'},{family:'Bennett'},{family:'Chan'}]})],referenceText:'Avery, Jordan. 2021. How children learn together. Example Press.\nDuval, Camille. 2004. An earlier edition. Example Press.'},
  numeric:{style:'vancouver',source:'The first comparison uses one source [2]. Another uses a different numbered entry [7]. Together they appear as a group [2, 7].\n\nA missing number remains in the text [99]. The supplied record order does not determine these numbers.',records:[work('seven','Bennett',2019,'Seventh numbered entry',{referenceNumber:7}),work('two','Avery',2021,'Second numbered entry',{referenceNumber:2})],referenceText:'2. Avery J. Second numbered entry. Example Press. 2021.\n7. Bennett S. Seventh numbered entry. Example Press. 2019.'},
  undated:{style:'apa',source:'A missing date is not the same as an explicitly undated work (Avery, n.d., p. 5). A curator has explicitly marked the other record undated (Bennett, n.d.).',records:[work('avery-unknown','Avery',null,'Date not recorded'),work('bennett-undated','Bennett',null,'Explicitly undated',{undated:true})],referenceText:'Avery, J. (n.d.). Date not recorded.\nBennett, S. (n.d.). Explicitly undated.'}
 };
@@ -17,7 +17,7 @@ function loadExample() {
  const sample=examples[$('example').value];invalidate('Loading example…');
  $('source').value=sample.source;$('style').value=sample.style;$('records').value=JSON.stringify(sample.records,null,2);$('reference-text').value=sample.referenceText;
  referenceRecords=sample.records;renderDocument();renderBibliography();
- $('groups').replaceChildren();$('evidence').hidden=true;$('review-intro').textContent='Hover over or click a highlighted citation to review it. Examples are analyzed automatically; after editing, use Analyze citations. These fictional examples include ambiguity the citation alone cannot resolve.';
+ $('groups').replaceChildren();$('evidence').hidden=true;$('review-intro').textContent='Green: selected · Red: needs review · Gray: left unchanged. Hover or click to check. These books are fictional examples.';
  void analyzeSource();
 }
 async function request(action,extra={}) {
@@ -35,7 +35,7 @@ function renderBibliography() {
  $('reference-summary').replaceChildren(...referenceRecords.map(record=>{
   const row=el('p',`${record.referenceNumber ? record.referenceNumber+'. ' : ''}${referenceText(record)}`);row.dataset.referenceId=record.id;return row;
  }));
- $('bibliography-explanation').textContent=`Matching searches these ${referenceRecords.length} supplied records, not the web. These are fictional example records. Raw reference parsing does not automatically add candidates to this set.`;
+ $('bibliography-explanation').textContent=`Suggestions come from these ${referenceRecords.length} supplied records, not the web.`;
 }
 function closeReview() {
  clearTimeout(closeTimer);
@@ -66,57 +66,60 @@ function renderDocument() {
  }
  container.append(document.createTextNode(source.slice(cursor)));
 }
-function reason(candidate,item) {
- const evidence=candidate.evidence;
- if(evidence.identity==='document-local-label')return `Reference number ${item.referenceNumber} matches this supplied entry's number. Record-array order is not used.`;
- const authors=item.authors?.join(' and ') || 'The cited author';
- const date=evidence.year==='date-not-recorded'?'The record has no date information; that does not confirm an undated work.':evidence.year==='explicitly-undated'?'The record is explicitly marked undated.':item.originalYear ? `Original year ${item.originalYear} and edition year ${item.year} match.`:`The ${evidence.year==='originalIssued'?'original':'publication'} year ${item.year} matches.`;
- const byline=evidence.authors==='incomplete-byline'?'The supplied byline is incomplete.':evidence.authors==='uncertain-narrative-span'?'A possible author span matches, but its text boundary still needs review.':`The cited author label “${authors}” matches the supplied byline.`;
- return `${byline} ${date}${evidence.suffix==='exact-source-suffix' ? ` The source year letter “${item.sourceSuffix}” also matches.` : ''}`;
+function selectedTargets(group) {
+ return [...group.querySelectorAll('fieldset[data-item]')].map(fieldset=>{
+  const radio=fieldset.querySelector('input[type="radio"]:checked');
+  if(!radio)return null;
+  return radio.dataset.manual!==undefined ? {identifier:fieldset.querySelector('input[type="text"]').value.trim()} : {recordId:radio.value};
+ });
 }
-function candidateComparison(proposal) {
- const comparison=el('div');comparison.className='candidate-comparison';
- if(!proposal.candidates.length){comparison.append(el('p','No supplied record matches. This demo has not searched online; add or correct a reference record, or defer.'));return comparison;}
- comparison.append(el('p',proposal.candidates.length>1?'Several supplied works fit the same citation. The matcher cannot choose the intended work from this citation alone.':'This candidate comes from the supplied bibliography. It still needs your review.'));
- for(const candidate of proposal.candidates) {
-  const record=referenceRecords.find(record=>record.id===candidate.recordId),row=el('div');row.className='candidate-reference';
-  row.append(el('h4',record?.title || candidate.title || candidate.recordId),el('p',record?referenceText(record):candidate.title),el('p',reason(candidate,proposal.item)));
-  const identifiers=(record?.identifiers || []).map(id=>`${id.scheme.toUpperCase()}: ${id.value}`).join('; ');
-  row.append(el('small',identifiers || 'No DOI or ISBN was supplied.'));comparison.append(row);
- }
- return comparison;
+function updateReviewAppearance(group) {
+ const anchor=document.querySelector(`[data-review-group="${group.dataset.group}"]`);if(!anchor)return;
+ const state=group.dataset.action==='accept'?'selected':group.dataset.action==='reject'?'kept':'needs-review';
+ anchor.dataset.reviewState=state;
+ const description=state==='selected'?(group.dataset.automatic==='true'?'Selected automatically':'Selected for replacement'):state==='kept'?'Left unchanged':'Needs review';
+ anchor.setAttribute('aria-label',`Review citation ${Number(group.dataset.group)+1}: ${anchor.textContent} (${description.toLowerCase()})`);anchor.title=description;
 }
 function renderGroups() {
  $('groups').replaceChildren();
  review.matches.forEach((match,index)=>{
-  const group=el('div');group.className='citation-group';group.dataset.group=String(index);group.id=`review-group-${index}`;group.hidden=true;group.tabIndex=-1;group.addEventListener('pointerenter',()=>clearTimeout(closeTimer));group.addEventListener('pointerleave',scheduleClose);group.addEventListener('focusout',scheduleClose);
-  const caption=el('blockquote',`Group ${index+1}: ${match.citation.raw}`);caption.id=`group-label-${index}`;group.setAttribute('role','dialog');group.setAttribute('aria-labelledby',caption.id);group.append(caption);
-  const context=el('p', 'Context: '+$('source').value.slice(Math.max(0,match.citation.start-85),Math.min($('source').value.length,match.citation.end+85)).replace(/\s+/g,' '));context.className='citation-context';group.append(context);
+  const group=el('div');group.className='citation-group';group.dataset.group=String(index);group.dataset.action='defer';group.id=`review-group-${index}`;group.hidden=true;group.tabIndex=-1;
+  group.addEventListener('pointerenter',()=>clearTimeout(closeTimer));group.addEventListener('pointerleave',scheduleClose);group.addEventListener('focusout',scheduleClose);
+  const caption=el('blockquote',match.citation.raw);caption.id=`group-label-${index}`;group.setAttribute('role','dialog');group.setAttribute('aria-labelledby',caption.id);group.append(caption);
   match.items.forEach((proposal,itemIndex)=>{
-   const label=el('label',`Work ${itemIndex+1}`);const select=el('select');select.dataset.item=String(itemIndex);select.id=`work-${index}-${itemIndex}`;label.htmlFor=select.id;
-   select.append(new Option(proposal.candidates.length?'Choose a work':'No candidate — retain this citation',''));
-   for(const candidate of proposal.candidates)select.append(new Option(candidate.title || candidate.recordId,candidate.recordId));
-   select.disabled=!proposal.candidates.length;
-   group.append(candidateComparison(proposal),label,select,el('p',proposal.state==='unique'?'One candidate; review required.':proposal.state==='ambiguous'?'Ambiguous evidence; choose only after reviewing it.':'Unmatched. Add or correct a record, then analyze again.'));
-   group.lastChild.className='item-state';
+   const fieldset=el('fieldset');fieldset.dataset.item=String(itemIndex);
+   fieldset.append(el('legend',`${match.items.length>1?'Work '+(itemIndex+1)+' · ':''}${proposal.candidates.length} suggested target${proposal.candidates.length===1?'':'s'}`));
+   for(const [candidateIndex,candidate] of proposal.candidates.entries()) {
+    const record=referenceRecords.find(record=>record.id===candidate.recordId),label=el('label');label.className='target-choice';
+    const radio=el('input');radio.type='radio';radio.name=`target-${index}-${itemIndex}`;radio.value=candidate.recordId;radio.checked=proposal.state==='unique' && proposal.candidates.length===1 && !proposal.item.boundaryUncertain;radio.id=`target-${index}-${itemIndex}-${candidateIndex}`;
+    const text=el('span');text.append(el('strong',record?.title || candidate.title || candidate.recordId));
+    const byline=(record?.authors || []).map(author=>author.literal || [author.given,author.family].filter(Boolean).join(' ')).join('; ');
+    text.append(el('small',[byline,record?.issued?.[0] || (record?.undated?'n.d.':''),record?.publisher].filter(Boolean).join(' · ')));
+    label.append(radio,text);fieldset.append(label);
+   }
+   const manualLabel=el('label');manualLabel.className='target-choice';const manual=el('input');manual.type='radio';manual.name=`target-${index}-${itemIndex}`;manual.dataset.manual='';manual.id=`manual-${index}-${itemIndex}`;
+   manualLabel.append(manual,el('span','Use an identifier'));fieldset.append(manualLabel);
+   const input=el('input');input.type='text';input.id=`identifier-${index}-${itemIndex}`;input.maxLength=2048;input.placeholder='Paste DOI, ISBN or HTTPS URL';input.setAttribute('aria-label',`Identifier for work ${itemIndex+1}`);input.setAttribute('aria-describedby',`identifier-help-${index}-${itemIndex}`);
+   input.addEventListener('input',()=>{manual.checked=true;});fieldset.append(input);
+   const help=el('small','Saved without an online lookup.');help.id=`identifier-help-${index}-${itemIndex}`;fieldset.append(help);group.append(fieldset);
   });
-  const label=el('label','Decision for this group'),action=el('select');action.id=`decision-${index}`;action.dataset.action='';label.htmlFor=action.id;
-  action.append(new Option('Defer — keep the source','defer'),new Option('Accept selected works','accept'),new Option('Reject — keep the source','reject'));
-  group.append(label,action);
-  const details=el('details');details.append(el('summary','Technical matching evidence (JSON)'),el('pre',JSON.stringify(match.items,null,2)));group.append(details);
+  const actions=el('div');actions.className='review-actions';const accept=el('button','Use selected targets');accept.type='button';accept.dataset.accept='';accept.disabled=true;
+  const reject=el('button',"Don't fix");reject.type='button';reject.dataset.reject='';
+  const state=el('p','Not changed');state.className='item-state';state.setAttribute('aria-live','polite');
   const activeReview=review;
+  if(match.items.every(proposal=>proposal.state==='unique' && proposal.candidates.length===1 && !proposal.item.boundaryUncertain)){group.dataset.action='accept';group.dataset.automatic='true';state.textContent='Selected automatically';accept.disabled=false;}
   function changed() {
    if(review!==activeReview)return;
-   version++;output=null;$('output-section').hidden=true;$('errors').textContent='';
-   const allChosen=[...group.querySelectorAll('select[data-item]')].every(select=>select.value);
-   action.querySelector('option[value="accept"]').disabled=!allChosen;
-   if(!allChosen&&action.value==='accept')action.value='defer';
-   $('preview').disabled=false;$('status').textContent='Decisions changed. Preview to check the result.';
+   version++;output=null;$('output-section').hidden=true;$('errors').textContent='';group.dataset.action='defer';group.dataset.automatic='false';state.textContent='Not changed';updateReviewAppearance(group);
+   accept.disabled=!selectedTargets(group).every(target=>target && (target.recordId || target.identifier));
+   $('preview').disabled=false;$('status').textContent='Preview to check your changes.';
   }
-  group.addEventListener('change',changed);
-  action.querySelector('option[value="accept"]').disabled=true;
-  group.append(el('p','Escape or click outside to close. Defer if you cannot identify the intended work.'));
-  $('groups').append(group);
+  group.addEventListener('input',changed);group.addEventListener('change',changed);
+  group.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.matches('input[type="text"]')){event.preventDefault();if(!accept.disabled)accept.focus();}});
+  accept.addEventListener('click',()=>{changed();group.dataset.action='accept';state.textContent='Selected for replacement';updateReviewAppearance(group);closeReview();document.querySelector(`[data-review-group="${index}"]`)?.focus({preventScroll:true});});
+  reject.addEventListener('click',()=>{changed();group.dataset.action='reject';state.textContent="Won’t change";updateReviewAppearance(group);closeReview();document.querySelector(`[data-review-group="${index}"]`)?.focus({preventScroll:true});});
+  actions.append(accept,reject);group.append(actions,state);
+  const details=el('details');details.append(el('summary','Matching evidence'),el('pre',JSON.stringify(match.items,null,2)));group.append(details);$('groups').append(group);updateReviewAppearance(group);
  });
 }
 async function analyzeSource() {
@@ -133,13 +136,15 @@ async function analyzeSource() {
 $('analyze-form').addEventListener('submit',event=>{event.preventDefault();void analyzeSource();});
 $('preview').addEventListener('click',async()=>{
  if(!review)return;closeReview();const ticket=version;$('preview').disabled=true;$('errors').textContent='';
- const decisions=[...$('groups').children].map((group,citationIndex)=>({citationIndex,action:group.querySelector('[data-action]').value,recordIds:[...group.querySelectorAll('[data-item]')].map(select=>select.value)}));
+ const decisions=[...$('groups').children].map((group,citationIndex)=>({citationIndex,action:group.dataset.action,targets:selectedTargets(group)}));
  try {
   const result=await request('preview',{review,reviewId:review.reviewId,decisions});if(ticket!==version)return;
+  for(const outcome of result.outcomes){if(outcome.state==='accepted-needs-span'||outcome.state==='accepted-needs-adapter'){const group=$('groups').children[outcome.citationIndex];group.dataset.action='defer';updateReviewAppearance(group);}}
   output=result;$('output').value=result.source;$('outcomes').textContent=JSON.stringify(result.outcomes,null,2);
   $('preview-notice').textContent=result.previewNotice || '';
   const reader=$('reading-preview');reader.innerHTML=result.html;initializeCitationInspector(reader,{cache:result.cache});
   const explanations=result.outcomes.filter(outcome=>outcome.state==='accepted-needs-span'||outcome.state==='accepted-needs-adapter').map(outcome=>`Group ${outcome.citationIndex+1}: accepted work identity, but ${outcome.state==='accepted-needs-span'?'the author-text boundary needs review':'the source needs a formatting adapter'}. Kept unchanged.`);
+  if(result.outcomes.some(outcome=>outcome.state==='accepted' && outcome.targets?.some(target=>target.identifier)))explanations.push('Identifiers saved; bibliographic details have not been looked up.');
   $('outcome-notes').replaceChildren(...explanations.map(text=>el('p',text)));
   $('output-section').hidden=false;$('status').textContent=`${result.edits.length} accepted groups can be replaced. Deferred, unmatched and unsafe spans are retained.`;
  }catch(error){if(ticket===version){$('errors').textContent=error.message;$('output-section').hidden=true;}}

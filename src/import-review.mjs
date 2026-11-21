@@ -28,16 +28,28 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
     if (!['accept','reject','defer'].includes(decision.action)) throw new TypeError('Choose accept, reject or defer.');
     const match=review.matches[index], citation=match.citation;
     if (decision.action !== 'accept') { outcomes.push({citationIndex:index,state:decision.action}); continue; }
-    if (!Array.isArray(decision.recordIds) || decision.recordIds.length !== match.items.length) throw new TypeError('Accept a record for every item in the citation group.');
+    const targets=decision.targets ?? decision.recordIds?.map(recordId=>({recordId}));
+    if (!Array.isArray(targets) || targets.length !== match.items.length) throw new TypeError('Accept a target for every item in the citation group.');
+    const identities=targets.map((target,itemIndex)=>{
+      if(target && typeof target.recordId==='string' && target.identifier===undefined) {
+        const id=target.recordId, identifier=normalizeIdentifier(id);
+        if(identifier?.scheme!=='local' || identifier.value!==id || !match.items[itemIndex].candidates.some(candidate=>candidate.recordId===id)) throw new TypeError('Choose a supplied candidate record ID for each item.');
+        return {scheme:'local',value:id};
+      }
+      if(!target || typeof target.identifier!=='string' || target.recordId!==undefined) throw new TypeError('Choose a candidate or supply an identifier for each item.');
+      const raw=target.identifier.trim(), identifier=normalizeIdentifier(/^[\dXx\s-]{10,30}$/.test(raw)?'isbn:'+raw:raw);
+      if(!identifier || !['doi','isbn','url','pmid','pmcid','arxiv'].includes(identifier.scheme)) throw new TypeError('Enter a valid DOI, ISBN, HTTPS URL, PMID, PMCID or arXiv identifier.');
+      return identifier;
+    });
+    const selection=decision.targets ? {targets:identities.map(id=>id.scheme==='local'?{recordId:id.value}:{identifier:id.scheme+':'+id.value})} : {recordIds:[...decision.recordIds]};
     const items=match.items.map((proposal,itemIndex)=>{
-      const id=decision.recordIds[itemIndex], identifier=typeof id === 'string' && normalizeIdentifier(id);
-      if (!identifier || identifier.scheme !== 'local' || identifier.value !== id || !proposal.candidates.some(candidate=>candidate.recordId===id)) throw new TypeError('Choose a supplied candidate record ID for each item.');
-      const item=proposal.item;
-      return 'local:'+id + (item.prefix ? ' | prefix:'+quote(item.prefix) : '') + (item.locator ? ' | locator:'+quote(item.locator) : '') +
+      const identifier=identities[itemIndex], item=proposal.item;
+      // Escape identifiers so punctuation cannot become notation options or extra items.
+      return (identifier.scheme==='local'?'local:'+identifier.value:(identifier.scheme+':'+identifier.value).replace(/[\\"{};|]/g,character=>'\\'+character)) + (item.prefix ? ' | prefix:'+quote(item.prefix) : '') + (item.locator ? ' | locator:'+quote(item.locator) : '') +
         (citation.form === 'narrative' ? ' | form:narrative' : '');
     });
     if (match.items.some(proposal=>proposal.item.boundaryUncertain)) {
-      outcomes.push({citationIndex:index,state:'accepted-needs-span',recordIds:[...decision.recordIds],code:'import-author-span-review-required'}); continue;
+      outcomes.push({citationIndex:index,state:'accepted-needs-span',...selection,code:'import-author-span-review-required'}); continue;
     }
     const fragments=citation.sourceFragments || [{sourceStart:citation.start,sourceEnd:citation.end,exact:true}];
     let start=fragments[0]?.sourceStart, end=start, safe=fragments.length>0;
@@ -47,12 +59,12 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
       end=fragment.sourceEnd;
     }
     safe &&= start>=0 && source.slice(start,end) === citation.raw;
-    if (!safe) { outcomes.push({citationIndex:index,state:'accepted-needs-adapter',recordIds:[...decision.recordIds],code:'import-noncontiguous-or-decoded-source'}); continue; }
+    if (!safe) { outcomes.push({citationIndex:index,state:'accepted-needs-adapter',...selection,code:'import-noncontiguous-or-decoded-source'}); continue; }
     const text=`{${citationKeyword} ${items.join('; ')}}`;
     const token=scanCitationMarkers(text,{citationKeyword})[0]?.token;
-    if (token?.type !== 'citation' || token.items.length !== decision.recordIds.length || token.items.some((item,index)=>item.identifier.scheme !== 'local' || item.identifier.value !== decision.recordIds[index])) throw new Error('Could not encode accepted record identities.');
-    edits.push({start,end,before:source.slice(start,end),text,citationIndex:index,recordIds:[...decision.recordIds]});
-    outcomes.push({citationIndex:index,state:'accepted',recordIds:[...decision.recordIds]});
+    if (token?.type !== 'citation' || token.items.length !== identities.length || token.items.some((item,index)=>item.identifier.scheme !== identities[index].scheme || item.identifier.value !== identities[index].value)) throw new Error('Could not encode accepted record identities.');
+    edits.push({start,end,before:source.slice(start,end),text,citationIndex:index,...selection});
+    outcomes.push({citationIndex:index,state:'accepted',...selection});
   }
   for (let index=0;index<review.matches.length;index++) if (!seen.has(index)) outcomes.push({citationIndex:index,state:'pending'});
   edits.sort((a,b)=>a.start-b.start);
