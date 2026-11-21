@@ -1,0 +1,23 @@
+{
+  "purpose": "Known DOI answers for the real-reference import example; not loaded by the demo or matcher. Development examples, not a fresh holdout or search-accuracy measurement.",
+  "checked": "2026-11-21",
+  "records": [
+    {
+      "recordId": "ioannidis-2005",
+      "doi": "10.1371/journal.pmed.0020124",
+      "source": "https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0020124",
+      "note": "Original 2005 article; do not substitute the 2022 correction."
+    },
+    {
+      "recordId": "ioannidis-2022-correction",
+      "doi": "10.1371/journal.pmed.1004085",
+      "source": "https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.1004085",
+      "note": "Separate 2022 correction; not the original article DOI."
+    },
+    {
+      "recordId": "feinberg-willer-2019",
+      "doi": "10.1111/spc3.12501",
+      "source": "https://compass.onlinelibrary.wiley.com/doi/10.1111/spc3.12501"
+    }
+  ]
+}

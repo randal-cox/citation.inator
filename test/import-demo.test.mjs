@@ -49,3 +49,13 @@ test('demo previews manual identifiers and preserves explicitly rejected citatio
  const result=importDemoRequest({...input,action:'preview',review,reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{identifier:'9780140328721'}]},{citationIndex:1,action:'reject'}]});
  assert.match(result.source,/isbn:9780140328721/);assert.ok(result.source.endsWith('Keep (Avery, 2021).'));assert.equal(result.cache.records.length,records.length);assert.equal(result.outcomes[1].state,'reject');
 });
+
+test('real lookup example withholds identifiers while preserving article metadata and correction identity',async()=>{
+ const {realReferenceExample:input}=await import('../demos/import/real-reference-example.mjs');
+ const {readFile}=await import('node:fs/promises');const key=JSON.parse(await readFile(new URL('../demos/import/real-reference-answer-key.json',import.meta.url),'utf8'));
+ assert.ok(input.records.every(record=>record.identifiers.length===0));assert.ok(!input.referenceText.includes('10.'));
+ const {review,referenceRecords}=importDemoRequest(input);assert.equal(review.matches.length,3);assert.ok(review.matches.every(match=>match.items[0].state==='unique'));
+ assert.equal(referenceRecords[0].containerTitle,'PLOS Medicine');assert.equal(referenceRecords[0].pages,'e124');assert.equal(referenceRecords[1].pages,'e1004085');
+ assert.deepEqual(review.matches.map(match=>match.items[0].candidates[0].recordId),input.records.map(record=>record.id));
+ assert.equal(new Set(key.records.map(record=>record.doi)).size,3);assert.ok(key.records.every(answer=>input.records.some(record=>record.id===answer.recordId)));
+});

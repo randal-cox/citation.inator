@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Make Left/Right navigate red citations even from radio choices; keep Up/Down for selecting a radio and preserve text-field caret keys. Add a real-publication import example with withheld DOIs and a separate publisher-checked answer key.
+
 - Apply import radio decisions immediately, make Don’t fix a radio choice, and add Previous/Next red-citation arrows with keyboard navigation that preserves native control keys. Strengthen unresolved red highlighting.
 
 - Use subdued green for selected import targets, muted red for citations needing review and gray for Don’t fix. Automatically select unique candidates; incomplete evidence and uncertain spans remain for review.

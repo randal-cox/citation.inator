@@ -1,7 +1,9 @@
 import {initializeCitationInspector} from '../../dist/citation-inspector.mjs';
+import {realReferenceExample} from './real-reference-example.mjs';
 const $=id=>document.getElementById(id);
 const work=(id,family,year,title,extra={})=>({id,type:'book',state:year?'resolved':'partial',title,authors:[{family,given:({Avery:'Jordan',Bennett:'Sam',Duval:'Camille'})[family] || ''}],issued:year?[year]:null,publisher:'Example Press',publisherPlace:'Example City',...extra});
 const examples={
+ real:realReferenceExample,
  apa:{style:'apa',source:'Two books by Jordan Avery came out in 2021. This citation could refer to either book (Avery, 2021). So could this one (Avery, 2021).\n\nThis citation includes a page number (Bennett, 2019, p. 4). This one has no matching bibliography entry (Unknown, 2001).',records:[work('avery-gardens','Avery',2021,'How children learn together'),work('avery-fields','Avery',2021,'Learning through play'),work('bennett','Bennett',2019,'Teaching in small groups')],referenceText:'Avery, J. (2021). How children learn together. Example Press.\nAvery, J. (2021). Learning through play. Example Press.\nBennett, S. (2019). Teaching in small groups. Example Press.'},
  chicago:{style:'chicago-author-date',source:'We compare Avery (2021, 12) with an earlier edition (Duval [1898] 2004, 61).\n\nAvery, Bennett, and Chan (2020) offer another perspective. This last byline needs explicit span review.',records:[work('avery','Avery',2021,'How children learn together'),work('duval','Duval',2004,'An earlier edition',{originalIssued:[1898]}),work('three','Avery',2020,'Three perspectives',{authors:[{family:'Avery'},{family:'Bennett'},{family:'Chan'}]})],referenceText:'Avery, Jordan. 2021. How children learn together. Example Press.\nDuval, Camille. 2004. An earlier edition. Example Press.'},
  numeric:{style:'vancouver',source:'The first comparison uses one source [2]. Another uses a different numbered entry [7]. Together they appear as a group [2, 7].\n\nA missing number remains in the text [99]. The supplied record order does not determine these numbers.',records:[work('seven','Bennett',2019,'Seventh numbered entry',{referenceNumber:7}),work('two','Avery',2021,'Second numbered entry',{referenceNumber:2})],referenceText:'2. Avery J. Second numbered entry. Example Press. 2021.\n7. Bennett S. Seventh numbered entry. Example Press. 2019.'},
@@ -17,7 +19,7 @@ function loadExample() {
  const sample=examples[$('example').value];invalidate('Loading example…');
  $('source').value=sample.source;$('style').value=sample.style;$('records').value=JSON.stringify(sample.records,null,2);$('reference-text').value=sample.referenceText;
  referenceRecords=sample.records;renderDocument();renderBibliography();
- $('groups').replaceChildren();$('evidence').hidden=true;$('review-intro').textContent='Green: selected · Red: needs review · Gray: left unchanged. Hover or click to check. These books are fictional examples.';
+ $('groups').replaceChildren();$('evidence').hidden=true;$('review-intro').textContent='Green: selected · Red: needs review · Gray: left unchanged. Hover or click to check. '+($('example').value==='real'?'Real publications; DOIs are omitted for lookup testing.':'These books are fictional examples.');
  void analyzeSource();
 }
 async function request(action,extra={}) {
@@ -29,7 +31,7 @@ async function request(action,extra={}) {
 function referenceText(record) {
  const names=(record.authors || []).map(author=>author.literal || [author.given,author.family].filter(Boolean).join(' ')).join('; ');
  const date=record.issued?.[0] ? String(record.issued[0]) : record.undated ? 'explicitly undated' : 'date not recorded';
- return [names || 'Author not supplied', record.originalIssued ? `${record.originalIssued[0]} / ${date}` : date, record.title || 'Title not supplied', [record.publisher,record.publisherPlace].filter(Boolean).join(', ')].filter(Boolean).join('. ')+'.';
+ return [names || 'Author not supplied', record.originalIssued ? `${record.originalIssued[0]} / ${date}` : date, record.title || 'Title not supplied', record.containerTitle ? [record.containerTitle,record.volume && record.volume+(record.issue?'('+record.issue+')':''),record.pages || record.articleNumber].filter(Boolean).join(', ') : [record.publisher,record.publisherPlace].filter(Boolean).join(', ')].filter(Boolean).join('. ')+'.';
 }
 function renderBibliography() {
  $('reference-summary').replaceChildren(...referenceRecords.map(record=>{
@@ -100,7 +102,7 @@ function renderGroups() {
   const caption=el('blockquote',match.citation.raw);caption.id=`group-label-${index}`;group.setAttribute('role','dialog');group.setAttribute('aria-labelledby',caption.id);
   const header=el('div');header.className='review-header';const navigation=el('nav');navigation.className='review-navigation';navigation.setAttribute('aria-label','Unresolved citations');
   for(const [direction,icon,name,key] of [[-1,'←','Previous','ArrowLeft'],[1,'→','Next','ArrowRight']]) {
-   const button=el('button',icon);button.type='button';button.dataset.direction=String(direction);button.setAttribute('aria-label',name+' red citation');button.title=name+' red citation ('+(direction>0?'Right':'Left')+' arrow outside fields)';button.setAttribute('aria-keyshortcuts',key);button.addEventListener('click',()=>moveReview(index,direction));navigation.append(button);
+   const button=el('button',icon);button.type='button';button.dataset.direction=String(direction);button.setAttribute('aria-label',name+' red citation');button.title=name+' red citation ('+(direction>0?'Right':'Left')+' arrow; Up/Down changes radio choice)';button.setAttribute('aria-keyshortcuts',key);button.addEventListener('click',()=>moveReview(index,direction));navigation.append(button);
   }
   header.append(caption,navigation);group.append(header);
   match.items.forEach((proposal,itemIndex)=>{
@@ -111,7 +113,7 @@ function renderGroups() {
     const radio=el('input');radio.type='radio';radio.name=`target-${index}-${itemIndex}`;radio.value=candidate.recordId;radio.checked=proposal.state==='unique' && proposal.candidates.length===1 && !proposal.item.boundaryUncertain;radio.id=`target-${index}-${itemIndex}-${candidateIndex}`;
     const text=el('span');text.append(el('strong',record?.title || candidate.title || candidate.recordId));
     const byline=(record?.authors || []).map(author=>author.literal || [author.given,author.family].filter(Boolean).join(' ')).join('; ');
-    text.append(el('small',[byline,record?.issued?.[0] || (record?.undated?'n.d.':''),record?.publisher].filter(Boolean).join(' · ')));
+    text.append(el('small',[byline,record?.issued?.[0] || (record?.undated?'n.d.':''),record?.containerTitle || record?.publisher].filter(Boolean).join(' · ')));
     label.append(radio,text);fieldset.append(label);
    }
    const manualLabel=el('label');manualLabel.className='target-choice';const manual=el('input');manual.type='radio';manual.name=`target-${index}-${itemIndex}`;manual.dataset.manual='';manual.id=`manual-${index}-${itemIndex}`;
@@ -169,7 +171,7 @@ $('preview').addEventListener('click',async()=>{
 for(const id of ['source','records','reference-text','style'])$(id).addEventListener('input',()=>{invalidate();renderDocument();if(id==='records'){$('reference-summary').replaceChildren();$('bibliography-explanation').textContent='Supplied record data changed. Analyze to refresh the checked bibliography.';}});
 document.addEventListener('keydown',event=>{
  const navigationIndex=activeGroup?.contains(event.target)?activeGroup.dataset.group:event.target.closest('[data-review-group]')?.dataset.reviewGroup;
- if(navigationIndex!==undefined && ['ArrowLeft','ArrowRight'].includes(event.key) && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.target.closest('input,textarea,select,[contenteditable]')){event.preventDefault();moveReview(Number(navigationIndex),event.key==='ArrowRight'?1:-1);return;}
+ if(navigationIndex!==undefined && ['ArrowLeft','ArrowRight'].includes(event.key) && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.target.closest('input:not([type="radio"]),textarea,select,[contenteditable]')){event.preventDefault();moveReview(Number(navigationIndex),event.key==='ArrowRight'?1:-1);return;}
  if(event.key==='Escape'&&activeGroup){const restore=activeGroup.contains(document.activeElement),anchor=document.querySelector(`[data-review-group="${activeGroup.dataset.group}"]`);closeReview();if(restore)anchor?.focus({preventScroll:true});}});
 document.addEventListener('pointerdown',event=>{if(activeGroup&&!activeGroup.contains(event.target)&&!event.target.closest('[data-review-group]'))closeReview();});
 window.addEventListener('resize',closeReview);
