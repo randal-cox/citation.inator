@@ -37,3 +37,9 @@ test('partial numeric conversion does not show mixed old/new numbers as a readin
  const result=importDemoRequest({...input,action:'preview',review,reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',recordIds:['avery']}]});
  assert.equal(result.html,'');assert.match(result.previewNotice,/original reference numbers/);assert.ok(result.source.includes('[7]'));
 });
+
+test('demo exposes the actual supplied matching records; parsed raw lines do not invent candidates',()=>{
+ const result=importDemoRequest({source:'(Avery, 2021) (Other, 2022)',records,referenceText:'Other, J. (2022). A raw entry. Press.'});
+ assert.equal(result.referenceRecords.length,1);assert.equal(result.referenceRecords[0].id,'avery');assert.equal(result.referenceRecords[0].title,'Synthetic');
+ assert.equal(result.review.matches[1].items[0].state,'unmatched');assert.equal(result.parsedReferences.entries[0].fields.authors[0].family,'Other');
+});

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Prototype document-first import review: visible supplied bibliography, highlighted in-text citations and hover/click/keyboard candidate comparisons with human matching reasons.
+- Prioritize a dedicated developer-learning milestone before external bibliography connections; retain proposed labels pending maintainer agreement.
+
 - Add markerKind to tools and both browser bundles so editors classify complete markers with the compiler grammar, including legacy/custom forms and directive-like record IDs.
 - Add opt-in work-context annotation notes matching standalone work descriptions; preserve default article notes and reader year letters.
 - Add a runnable local plaintext import-review demo with synthetic examples, explicit decisions, stale-context checks, bounded workloads, safe previews and downloadable reviewed text. Native files and browser-native import remain unfinished.

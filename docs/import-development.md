@@ -1,6 +1,6 @@
-# F4 import development for milestone 0.3.0
+# F4 import development for milestone 0.4.0
 
-**In progress.** The current release remains 0.2.0. The initial prototype is source-only and is not exposed by the package exports, browser bundle or CLI. No 0.3.0 package or release is claimed.
+**In progress.** The current release remains 0.2.0. The initial prototype is source-only and is not exposed by the package exports, browser bundle or CLI. No 0.4.0 package or release is claimed.
 
 ## First implementation
 
@@ -129,7 +129,7 @@ The original authoring document should remain intact. A future adapter should us
 
 ## Milestone boundary
 
-All five import tracks are authorized for 0.3.0: recognition/matching, measured reference rules, extraction, review/edit decisions and quality evaluation. Smaller reader fixes, host hooks, citation-style documentation and native accessibility/device checks are included too. See the [milestone scope](milestones/0.3.0.md#agreed-scope-and-active-tracks). Preserving existing embedded Zotero metadata belongs here; external bibliography-file ingestion/connectors and source maintenance are planned for [0.4.0](milestones/0.4.0.md).
+All five import tracks are authorized for 0.4.0: recognition/matching, measured reference rules, extraction, review/edit decisions and quality evaluation. Stable editor/reader fixes are separated into 0.3.0; comprehensive learning follows in 0.5.0. See the [milestone scope](milestones/0.4.0.md#agreed-scope-and-active-tracks). Preserving existing embedded Zotero metadata belongs here; external bibliography-file ingestion/connectors and source maintenance are planned for [0.6.0](milestones/0.6.0.md).
 
 ## Next slices
 
@@ -144,7 +144,7 @@ Crossref search and local matching remain separate operations. Any later AI adap
 
 ## Evidence and scope
 
-The current source-only test run passes 138 unit tests on Node 22.23.3, including recognition, extraction, search, reference-rule, review/edit and evaluator regressions. Independent review challenged narrative boundaries, incomplete bylines, control boundaries, native visibility and link-role handling; regression tests now constrain those cases. The extraction/search reviewer returned PASS after independently running all 107 tests and rechecking Markdown offsets, entities, protected notation and persisted search-cache validation. This is approval to continue experimenting, not acceptance of a public 0.3.0 API. The rebuilt browser suite verifies reader-help/host-hook behavior and the local plaintext import demo. It does not verify native file adapters or a browser-native import API; reusable import modules still have no installed exports.
+The current source-only test run passes 138 unit tests on Node 22.23.3, including recognition, extraction, search, reference-rule, review/edit and evaluator regressions. Independent review challenged narrative boundaries, incomplete bylines, control boundaries, native visibility and link-role handling; regression tests now constrain those cases. The extraction/search reviewer returned PASS after independently running all 107 tests and rechecking Markdown offsets, entities, protected notation and persisted search-cache validation. This is approval to continue experimenting, not acceptance of a public 0.4.0 API. The rebuilt browser suite verifies reader-help/host-hook behavior and the local plaintext import demo. It does not verify native file adapters or a browser-native import API; reusable import modules still have no installed exports.
 
 Two bounded live searches used only the supplied public article: bibliographic title search returned its expected DOI first with exact title/year/DOI comparisons; using the DOI alone as bibliographic query text returned unrelated candidates, all marked with DOI conflicts. These checks establish request/response behavior for that sample, not general retrieval accuracy. No private manuscript data was sent.
 

@@ -1,4 +1,4 @@
-// Experimental 0.3.0 source API. Recognition and matching propose review items only.
+// Experimental 0.4.0 source API. Recognition and matching propose review items only.
 import { normalizeRecord } from './records.mjs';
 import { scanCitationMarkers } from './compiler.mjs';
 

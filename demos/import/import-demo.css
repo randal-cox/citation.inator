@@ -40,3 +40,27 @@
 @media (prefers-color-scheme:dark) { .import-demo #reading-preview { --citation-inline-color:#91c3ff; --citation-accent:#91c3ff; --citation-paper:#22364d; --citation-ink:#e7effa; --citation-line:#8da6bf; --citation-wash:#172536; --citation-inline-active:#374d68; } .import-demo #reading-preview [data-citation-part~="cite"] { color:#91c3ff; } }
 
 @media (prefers-color-scheme:dark) { .import-demo :is(button,select,textarea,a,summary):focus-visible { outline-color:#89d9cf; } }
+.import-demo .document-sheet { background:white; padding:26px; border:1px solid #bccbdc; margin:20px 0; }
+.import-demo #document-preview { white-space:pre-wrap; overflow-wrap:anywhere; font:19px/1.85 Georgia,serif; }
+.import-demo .supplied-bibliography { background:#edf3f8; border-top:1px solid #bccbdc; padding:20px; margin-top:30px; color:#435c78; }
+.import-demo .supplied-bibliography h3 { color:#142b46; }
+.import-demo #reference-summary p { margin:12px 0; }
+.import-demo .review-citation { display:inline; font:inherit; padding:1px 3px; border:0; border-bottom:2px dashed #806100; background:#fff1bf; color:#453900; border-radius:3px; }
+.import-demo .review-citation[data-match-state="unmatched"] { background:#ffe0d4; border-bottom-color:#a33316; color:#76240f; }
+.import-demo .review-citation[data-match-state="candidate"] { background:#e0edff; border-bottom-color:#1558b0; color:#153768; }
+.import-demo .review-citation[aria-expanded="true"] { outline:2px solid #0c716f; outline-offset:2px; }
+.import-demo .citation-group { position:fixed; z-index:100; max-height:calc(100dvh - 24px); overflow:auto; overscroll-behavior:contain; background:white; color:#142b46; border:2px solid #547391; border-radius:7px; padding:20px; box-shadow:0 9px 30px #142b4633; }
+.import-demo .citation-group:first-child { padding:20px; border-top:2px solid #547391; }
+.import-demo .citation-group[hidden] { display:none; }
+.import-demo .citation-group select { width:100%; }
+.import-demo .citation-context { font-size:14px; color:#435c78; }
+.import-demo .candidate-reference { border-left:3px solid #8da6bf; padding:2px 12px; margin:14px 0; }
+.import-demo .candidate-reference h4 { font-size:17px; margin:3px 0 7px; }
+.import-demo .candidate-reference p { margin:6px 0; }
+.import-demo .candidate-reference small { color:#435c78; }
+@media(prefers-color-scheme:dark) { .import-demo .document-sheet,.import-demo .citation-group { background:#22364d; color:#e7effa; } .import-demo .supplied-bibliography { background:#192c40; color:#c1d2e5; } .import-demo .supplied-bibliography h3 { color:#e7effa; } .import-demo .citation-context,.import-demo .candidate-reference small { color:#c1d2e5; } }
+@media(max-width:760px) { .import-demo .document-sheet { padding:18px; } .import-demo .supplied-bibliography { padding:14px; } }
+.import-demo .citation-group,.import-demo .candidate-reference { min-width:0; overflow-wrap:anywhere; }
+
+.import-demo .citation-group:focus-visible { outline:3px solid #0c716f; outline-offset:2px; }
+@media(prefers-color-scheme:dark) { .import-demo .citation-group:focus-visible { outline-color:#89d9cf; } }

@@ -37,7 +37,7 @@ Version 0.2.0 adds source-only `note:"Cox 1995"` metadata, `describeCitation` an
 
 Compiler results expose actual citation occurrences, including listing-only `nocite` entries. `createSiteOccurrenceIndex` joins those anchors to published page routes; pass the resulting `siteOccurrences` into a bibliography to get static **Cited in** / **Listed in** return links and corresponding inspector sections. Records can carry `tags`, with a `tagCatalogue`, per-list usage overrides, build-time filters and optional keyboard-operated browser filters. `listFilters: { minItems: 6, minTags: 2 }` limits controls to longer multi-topic lists. `inlineTags: "marker"` displays the tags contributed at a particular mention.
 
-Run `npm start` and try [the shared bibliography](http://127.0.0.1:4187/demos/static/bibliography.html) and [editor tools](http://127.0.0.1:4187/demos/static/editor-tools.html). Both examples are also in the standalone folder. See [the complete API, CLI and configuration guide](docs/article-tools.md). Formatted-document import is in [source-only 0.3.0 development](docs/import-development.md); the experimental matcher, text/HTML/Markdown extraction and Crossref bibliographic search are not installed 0.2.0 APIs.
+Run `npm start` and try [the shared bibliography](http://127.0.0.1:4187/demos/static/bibliography.html) and [editor tools](http://127.0.0.1:4187/demos/static/editor-tools.html). Both examples are also in the standalone folder. See [the complete API, CLI and configuration guide](docs/article-tools.md). Formatted-document import is in [source-only 0.4.0 development](docs/import-development.md); the experimental matcher, text/HTML/Markdown extraction and Crossref bibliographic search are not installed 0.2.0 APIs.
 
 ## Reader access and media
 

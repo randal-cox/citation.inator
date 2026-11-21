@@ -8,7 +8,7 @@ The [data contract](https://github.com/randal-cox/draft.inator/blob/main/docs/da
 
 ## Shared classification and work notes
 
-The 0.3.0 development bundles now export `markerKind(raw, { citationKeyword })` for work/directive classification, including legacy forms and identifiers such as `list-2001`. The Cite block can use this instead of copying compiler grammar.
+The 0.3.0 integration candidate exports `markerKind(raw, { citationKeyword })` for work/directive classification, including legacy forms and identifiers such as `list-2001`. The Cite block can use this instead of copying compiler grammar.
 
 Use `annotateMarkers(source, cache, { noteContext: "work", ...styleOptions })` for both build refresh and stale-note checks when the editor's picker uses standalone `describeCitation`. This prevents article-local year letters in notes from fighting with context-free picker descriptions. It does not change reader-facing citation letters. These features are in the development checkout, not released 0.2.0 archives. See [the compatibility API guide](article-tools.md#unreleased-draftinator-compatibility-additions).
 
@@ -25,4 +25,18 @@ Use `annotateMarkers(source, cache, { noteContext: "work", ...styleOptions })` f
 
 ## Milestone placement
 
-0.3.0 supplies the reusable parsing/matching/review foundations and records compatibility constraints. 0.4.0 adds the worked draft.inator integration, annotated developer tutorials and live demonstration. The next useful coordination point is the editor's revision/transaction contract, not a request to change its current Cite block blindly.
+0.4.0 supplies the reusable parsing/matching/review foundations and records compatibility constraints. The 0.5.0 developer-learning milestone adds the worked draft.inator integration, annotated tutorials and live demonstration before bibliography-manager connections. The next useful coordination point is the editor's revision/transaction contract, not a request to change its current Cite block blindly.
+
+## Document-first review direction
+
+The maintainer requested reading the whole document with its bibliography and opening choices on unresolved/ambiguous citation highlights. The local 0.4.0 demo now prototypes hover/click/keyboard review rather than a permanent side panel. The editor should own decorations, positioning and transactions; citation.inator should provide candidate references, supplied/provider provenance, match reasons, missing/conflicting fields and exact source-range uncertainty.
+
+Questions for draft.inator:
+
+- Which editor extension points provide inline decorations, current selection/anchor coordinates and stable passage identity? How are UTF-16 extraction ranges mapped to editor positions?
+- What revision token invalidates choices after document/reference/style changes, and what transaction applies accepted changes with undo/cancel?
+- Can candidate work data include a full readable reference, identifiers and where the candidate came from, rather than only a title/ID?
+- How should ambiguous, unmatched, accepted-but-needing-span and unavailable-provider states appear without relying on color? Hover should inform; click, keyboard and touch must offer equivalent controls and explicit acceptance.
+- How do multiple cited works and uncertain author spans get reviewed without silently accepting a text boundary with a record identity?
+
+An explicit cross-project coordination proposal and issue draft are in [the coordination note](draft-coordination.md). No GitHub issue/comment has been sent by this work.
