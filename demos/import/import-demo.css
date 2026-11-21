@@ -178,3 +178,26 @@
 .import-demo .review-resize::after { content:''; position:absolute; right:4px; bottom:4px; width:10px; height:10px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; opacity:.65; }
 
 .import-demo .review-header { touch-action:none; }
+
+.import-demo .work-count { margin:0 0 10px; font-size:14px; font-weight:650; }
+.import-demo .work-review { margin:12px 0; }
+.import-demo .work-review>summary { display:flex; align-items:center; gap:8px; }
+.import-demo .work-review>summary::before { content:'▸'; flex:none; }
+.import-demo .work-review[open]>summary::before { content:'▾'; }
+.import-demo .work-review .work-status { margin-left:auto; font-size:12px; font-weight:400; text-align:right; }
+.import-demo .work-review-body { padding:12px; }
+.import-demo .work-review fieldset { margin:0; }
+.import-demo .completion-current { display:grid; gap:5px; margin:10px 0; }
+.import-demo .completion-current small { font-size:13px; }
+.import-demo .completion-current strong { font-size:16px; }
+.import-demo .completion-current span { font-size:14px; overflow-wrap:anywhere; }
+.import-demo .resolve-section>details>summary { min-height:74px; padding-right:340px; }
+.import-demo .resolve-section>.lookup-progress { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:14px; top:14px; align-items:start; }
+.import-demo .lookup-progress>span { display:flex; flex-direction:column; align-items:center; gap:3px; font-size:13px; line-height:18px; }
+.import-demo .lookup-progress :is(#lookup-ready,#lookup-count,#lookup-activity) { font-size:13px; }
+.import-demo #lookup-ready { color:#376749; }
+@media(prefers-color-scheme:dark) { .import-demo #lookup-ready { color:#bbd7c5; } }
+@media(max-width:700px) { .import-demo .resolve-section>details>summary { min-height:112px; padding-right:16px; padding-bottom:72px; } .import-demo .resolve-section>.lookup-progress { top:52px; left:12px; right:12px; gap:8px; } }
+
+.import-demo .citation-group>.review-header { position:relative; top:auto; flex:none; margin:0; padding:16px 20px 12px; background:inherit; }
+.import-demo .citation-group>.review-content { padding-top:0; }

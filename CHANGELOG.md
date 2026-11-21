@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Separate the popup header from its scrolling body. Name each work in combined citations, keep its review disclosure open initially, show retrieved reference details for identifier conflicts and label distant hits Less likely results.
+- Add complete-citation readiness totals/percentages alongside lookup tasks and review decisions. Preserve disclosure choices during live updates.
+- Include Crossref subtitles/readable formatting in title comparison, fixing false identity conflicts; retry empty Open Library subtitle searches once with the main title while keeping edition choices manual.
+
 - Promote reviewed import into a shared Node/browser API and JSON CLI, with configurable notation/preview namespace and revision/context validation. The demo becomes an example browser host.
 - Add bounded native PDF/DOCX/ODT extraction to a text working copy, retaining original files, opaque citation fields, links and excluded-text evidence.
 - Rank identity evidence ahead of title resemblance, clean edition qualifiers for search, keep book editions manual and require explicit acceptance of conflicting retrieved metadata. Withhold identifiers contested by distinct imported records instead of arbitrarily merging them.

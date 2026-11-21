@@ -151,7 +151,10 @@ export function createBrowserEnrichment({fetch:request=globalThis.fetch,now=Date
   }
   if(!source.title || !source.authors?.length)throw Error('Add a title and author in Raw Document, or paste an ISBN.');
   const author=source.authors[0].family || source.authors[0].literal;
-  const url='https://openlibrary.org/search.json?'+new URLSearchParams({title:importSearchTitle(source),author,limit:'3',fields:'key,title,author_name'}),raw=await get(url);
+  const searchTitle=importSearchTitle(source),searchURL=title=>'https://openlibrary.org/search.json?'+new URLSearchParams({title,author,limit:'3',fields:'key,title,author_name'});
+  let raw=await get(searchURL(searchTitle));
+  const mainTitle=searchTitle.split(':')[0].trim();
+  if(Array.isArray(raw?.docs)&&raw.docs.length===0&&mainTitle.length>=8&&mainTitle!==searchTitle)raw=await get(searchURL(mainTitle));
   if(!Array.isArray(raw?.docs))throw Error('Invalid Open Library results.');
   const candidates=[],seen=new Set();
   for(const work of raw.docs.slice(0,3)){

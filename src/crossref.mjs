@@ -1,3 +1,4 @@
+import { parseFragment } from "parse5";
 import { createIdentifierResolver } from "./identifier-resolver.mjs";
 import { cleanText, dateParts, identifierKey, localRecordId, normalizeIdentifier, normalizeRecord } from "./records.mjs";
 
@@ -8,6 +9,12 @@ const crossrefType = type => ({
   "journal-article": "article-journal", book: "book", "book-chapter": "chapter",
   dissertation: "thesis", "posted-content": "article", dataset: "dataset", report: "report"
 })[type] || "document";
+const titleText = value => {
+  // Formatting-only tags are not title characters; retain mathematical markup.
+  const valueText=cleanText(value).replace(/<\/?(?:i|em|b|strong|span|scp)\b[^>]*>/giu,'');
+  const node=parseFragment('<textarea>'+valueText.replaceAll('<','&lt;')+'</textarea>').childNodes[0];
+  return (node?.childNodes || []).map(child=>child.value || '').join('').trim();
+};
 const date = item => dateParts(item?.["date-parts"]?.[0]);
 
 export function crossrefRecord(raw, identifier, retrievedAt, url) {
@@ -17,7 +24,10 @@ export function crossrefRecord(raw, identifier, retrievedAt, url) {
   const authors = Array.isArray(message.author) ? message.author.map(author => ({
     family: cleanText(author?.family), given: cleanText(author?.given), literal: cleanText(author?.name)
   })).filter(author => author.family || author.literal) : [];
-  const title = Array.isArray(message.title) ? cleanText(message.title[0]) : "";
+  const mainTitle = Array.isArray(message.title) ? titleText(message.title[0]) : "";
+  const subtitle = Array.isArray(message.subtitle) ? titleText(message.subtitle[0]) : "";
+  const folded = value => value.normalize('NFKC').toLocaleLowerCase('en').replace(/[\s:;,.!?]+/gu,' ').trim();
+  const title = mainTitle && subtitle && !folded(mainTitle).endsWith(folded(subtitle)) ? mainTitle + ': ' + subtitle : mainTitle;
   const online = date(message["published-online"]);
   const print = date(message["published-print"]);
   const issued = print || date(message.issued) || online;

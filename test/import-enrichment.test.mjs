@@ -48,3 +48,7 @@ test('a DOI already in the bibliography converts canonically without a provider 
  const result=importDemoRequest({...base,action:'preview',review:analysis.review,reviewId:analysis.review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{recordId:id}]}]});
  assert.ok(result.source.includes('{cite doi:'+article.DOI+'}'));assert.ok(result.cache.records[0].identifiers.some(value=>value.value===article.DOI));
 });
+test('book discovery retries a main title once when a subtitle query returns no works',async()=>{
+ const calls=[],client=createBrowserEnrichment({minInterval:0,fetch:async url=>{calls.push(url);const parsed=new URL(url);return response(parsed.pathname==='/search.json'?(parsed.searchParams.get('title').includes(':')?{docs:[]}:{docs:[{key:'/works/OL1W',author_name:['Nadia Bello']}] }):{entries:[{key:'/books/OL1M',works:[{key:'/works/OL1W'}],title:'Research methods',publish_date:'2020',isbn_13:['9780306406157']}]});}});
+ const result=await client.lookup({type:'book',title:'Research methods: A practical guide',authors:[{family:'Bello',given:'N.'}],issued:[2020]},{kind:'isbn'});assert.equal(result.candidates.length,1);assert.equal(result.automatic,null);assert.equal(new URL(calls[0]).searchParams.get('title'),'Research methods: A practical guide');assert.equal(new URL(calls[1]).searchParams.get('title'),'Research methods');assert.equal(result.evidence.length,3);
+});

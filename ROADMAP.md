@@ -9,13 +9,13 @@ On 21 November 2026 the maintainer separated stable editor integration from the 
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | [0.3.0](docs/milestones/0.3.0.md) | Shared marker classification, stable work notes, reference-prefix hook, once-per-list help and usage docs/tests | Released 21 November 2026; tagged-artifact adoption reported by draft in issue 8 |
-| [0.4.0](docs/milestones/0.4.0.md) | Reviewed import: PDF/paste/text/Markdown/native document adapters, recognition, reference parsing, review UI, revision-bound edits and measurement | Shared API/native extraction and review fixes implemented; candidate verification and draft host agreement pending |
+| [0.4.0](docs/milestones/0.4.0.md) | Reviewed import: PDF/paste/text/Markdown/native document adapters, recognition, reference parsing, review UI, revision-bound edits and measurement | Shared API/native extraction and review fixes implemented; headless host boundary agreed, site-cache reuse and host IDs pending |
 | [0.5.0](docs/milestones/0.5.0.md) | Comprehensive developer documentation, annotated/live demos, worked draft.inator integration and translation/i18n | Planned; current-feature usage docs remain part of every release |
 | [0.6.0](docs/milestones/0.6.0.md) | Zotero/other managers, interchange formats and source maintenance | Planned after learning milestone |
 
 The current public release is 0.3.0. No import API or demo is promised in the stable 0.3.0 package. The import branch keeps the work already built; its document-first review prototype is a 0.4.0 experiment. Version changes and publication follow the check-in/review procedure.
 
-Current 0.4.0 candidate: shared Node/browser import API and JSON CLI, bounded native PDF/DOCX/ODT working-copy extraction, metadata preservation, identity-aware suggestion ranking and explicit conflict review are implemented. The demo uses that API as an example host. Complete clean-consumer/minimum-runtime/browser checks and independent reviews, then agree host appearance/interaction with draft before final release. Public 0.3.0 artifacts remain unchanged. See the [current milestone gates](docs/milestones/0.4.0.md#release-gates-still-open).
+Current 0.4.0 candidate: shared Node/browser import API and JSON CLI, bounded native PDF/DOCX/ODT working-copy extraction, metadata preservation, identity-aware suggestion ranking and explicit conflict review are implemented. The demo uses that API as an example host. Complete clean-consumer/minimum-runtime/browser checks and independent reviews, then complete draft’s requested site-cache reuse and host-assigned IDs before final release. Draft agrees that it owns the UI through the headless API. Public 0.3.0 artifacts remain unchanged. See the [current milestone gates](docs/milestones/0.4.0.md#release-gates-still-open).
 
 ## Completed milestone 0.2.0 — Article tooling
 

@@ -11,6 +11,7 @@ import { compileHTML } from "../src/markup.mjs";
 import { makeCache } from "../src/records.mjs";
 import { checkStructuredBrowser } from "./structured-browser.mjs";
 import { checkInspectIcons } from "./inspect-browser.mjs";
+import {checkImportReviewUI} from './import-review-ui-browser.mjs';
 import {checkImportFiles} from './import-files-browser.mjs';
 import {checkImportAPI} from './import-api-browser.mjs';
 import {checkImportIdentityState} from './import-identity-state-browser.mjs';
@@ -562,6 +563,7 @@ try {
   await checkEnrichment(browser, origin);
   await checkReviewNavigation(browser, origin);
   await checkImportWindows(browser, origin);
+  await checkImportReviewUI(browser, origin);
   await checkImportAPI(browser, origin);
   await checkImportFiles(browser, origin);
   await checkImportIdentityState(browser, origin);

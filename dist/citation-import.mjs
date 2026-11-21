@@ -1,4 +1,4 @@
-/*! citation-inator import v0.4.0-preview.0 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! citation-inator import v0.4.0-preview.1 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/import-display.mjs
 var readableImportSource = (source) => source.replace(/data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/giu, "[embedded image]");
@@ -700,7 +700,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.4.0-preview.0",
+  version: "0.4.0-preview.1",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -11824,6 +11824,11 @@ var crossrefType = (type) => ({
   dataset: "dataset",
   report: "report"
 })[type] || "document";
+var titleText = (value) => {
+  const valueText = cleanText(value).replace(/<\/?(?:i|em|b|strong|span|scp)\b[^>]*>/giu, "");
+  const node = parseFragment("<textarea>" + valueText.replaceAll("<", "&lt;") + "</textarea>").childNodes[0];
+  return (node?.childNodes || []).map((child) => child.value || "").join("").trim();
+};
 var date = (item) => dateParts(item?.["date-parts"]?.[0]);
 function crossrefRecord(raw, identifier, retrievedAt, url) {
   const message = raw?.message;
@@ -11834,7 +11839,10 @@ function crossrefRecord(raw, identifier, retrievedAt, url) {
     given: cleanText(author?.given),
     literal: cleanText(author?.name)
   })).filter((author) => author.family || author.literal) : [];
-  const title = Array.isArray(message.title) ? cleanText(message.title[0]) : "";
+  const mainTitle = Array.isArray(message.title) ? titleText(message.title[0]) : "";
+  const subtitle = Array.isArray(message.subtitle) ? titleText(message.subtitle[0]) : "";
+  const folded2 = (value) => value.normalize("NFKC").toLocaleLowerCase("en").replace(/[\s:;,.!?]+/gu, " ").trim();
+  const title = mainTitle && subtitle && !folded2(mainTitle).endsWith(folded2(subtitle)) ? mainTitle + ": " + subtitle : mainTitle;
   const online = date(message["published-online"]);
   const print = date(message["published-print"]);
   const issued = print || date(message.issued) || online;
@@ -12062,23 +12070,23 @@ function createBrowserEnrichment({ fetch: request = globalThis.fetch, now = Date
       return { candidates: candidates2, automatic: null, evidence: [...good.flatMap((result) => result.evidence), ...errors.map((error) => ({ error }))], policy: ENRICHMENT_POLICY, limited: true, partial: Boolean(errors.length) };
     }
     const at = new Date(now()).toISOString(), evidence = [];
-    const get = async (url2) => {
-      const raw2 = await json(url2, token);
-      evidence.push({ provider: kind === "doi" ? "Crossref" : "Open Library", url: url2, retrievedAt: at, raw: raw2 });
+    const get = async (url) => {
+      const raw2 = await json(url, token);
+      evidence.push({ provider: kind === "doi" ? "Crossref" : "Open Library", url, retrievedAt: at, raw: raw2 });
       return raw2;
     };
     if (kind === "doi") {
       if (!source.title || !source.authors?.length) throw Error("Add a title and author in Raw Document, or paste an identifier.");
       const byline = source.authors.map((a) => a.literal || [a.family, a.given].filter(Boolean).join(" ")).join("; ");
       const params = new URLSearchParams({ "query.bibliographic": [source.title, byline, source.issued?.[0], source.containerTitle].filter(Boolean).join(". "), rows: "5" });
-      const url2 = "https://api.crossref.org/works?" + params, raw2 = await get(url2);
+      const url = "https://api.crossref.org/works?" + params, raw2 = await get(url);
       if (!Array.isArray(raw2?.message?.items)) throw Error("Invalid Crossref results.");
       const candidates2 = [], seen2 = /* @__PURE__ */ new Set();
       for (const item of raw2.message.items.slice(0, 5)) {
         const id = normalizeIdentifier("doi:" + item.DOI);
         if (!id || seen2.has(canonicalIdentifierKey(id))) continue;
         seen2.add(canonicalIdentifierKey(id));
-        const record = { ...crossrefRecord({ message: item }, id, at, url2), noticeRelations: noticeRelations(item) };
+        const record = { ...crossrefRecord({ message: item }, id, at, url), noticeRelations: noticeRelations(item) };
         if (usableRecord(record)) candidates2.push(record);
       }
       if (raw2.message.items.length && !candidates2.length) throw Error("No usable Crossref metadata returned.");
@@ -12094,7 +12102,10 @@ function createBrowserEnrichment({ fetch: request = globalThis.fetch, now = Date
     }
     if (!source.title || !source.authors?.length) throw Error("Add a title and author in Raw Document, or paste an ISBN.");
     const author = source.authors[0].family || source.authors[0].literal;
-    const url = "https://openlibrary.org/search.json?" + new URLSearchParams({ title: importSearchTitle(source), author, limit: "3", fields: "key,title,author_name" }), raw = await get(url);
+    const searchTitle = importSearchTitle(source), searchURL = (title) => "https://openlibrary.org/search.json?" + new URLSearchParams({ title, author, limit: "3", fields: "key,title,author_name" });
+    let raw = await get(searchURL(searchTitle));
+    const mainTitle = searchTitle.split(":")[0].trim();
+    if (Array.isArray(raw?.docs) && raw.docs.length === 0 && mainTitle.length >= 8 && mainTitle !== searchTitle) raw = await get(searchURL(mainTitle));
     if (!Array.isArray(raw?.docs)) throw Error("Invalid Open Library results.");
     const candidates = [], seen = /* @__PURE__ */ new Set();
     for (const work of raw.docs.slice(0, 3)) {

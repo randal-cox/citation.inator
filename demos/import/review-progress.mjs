@@ -18,3 +18,14 @@ export function reviewProgress(groups){
  }
  return {lookingUp:lookups.size,needsReview:decisions.size,reviewGroups,lookupGroups};
 }
+
+// Readiness uses the fixed set of highlighted citation groups, not lookup jobs.
+export function reviewReadiness(groups,{blocked=false}={}){
+ const readyGroups=[];let matched=0,skipped=0;
+ for(const group of groups){
+  if(group.skipped){skipped++;continue;}
+  if(group.items.length&&group.items.every(item=>item.bibliographyMatched))matched++;
+  if(!blocked&&!group.sourceReview&&group.items.length&&group.items.every(item=>item.selected&&!item.invalid&&!identityNeedsReview(item.metadata)&&Boolean(item.known||item.metadata?.accepted||item.metadata?.kept)))readyGroups.push(group.index);
+ }
+ return {total:groups.length,ready:readyGroups.length,readyPercent:groups.length?Math.round(readyGroups.length/groups.length*100):0,matched,skipped,readyGroups};
+}
