@@ -1,12 +1,12 @@
 # Full-document import flow
 
-Status: text/Markdown source loop implemented in the 0.4.0 development checkout, 21 November 2026. Native files and automatic identifier enrichment remain planned; no import release or installed API is claimed.
+Status: text/Markdown source loop implemented in the 0.4.0 development checkout, 21 November 2026. Native files remain planned; opt-in browser identifier enrichment is implemented separately. No import release or installed API is claimed.
 
 ## Implemented text flow
 
 The default demo derives every reference from the bibliography in one Raw Document. Examples, paste, chosen files and dropped UTF-8 TXT/Markdown files use the same path. Source edits recompute boundaries, fields and matches and clear earlier choices conservatively. Download Markdown plus Download references produces a portable pair; original file bytes remain downloadable. See the [demo guide](import-demo.md) for controls and limits.
 
-The sections below retain the design requirements for this flow and its later adapters. Stable source-content entry IDs survive reordering, but this first interface deliberately resets decisions after edits rather than attempting occurrence remapping. Partial rules preserve unsupported entries without inventing fields. Steps 1–4 of the recommended sequence below are implemented and regression-tested; steps 5–6 remain future work.
+The sections below retain the design requirements for this flow and its later adapters. Stable source-content entry IDs survive reordering, but this first interface deliberately resets decisions after edits rather than attempting occurrence remapping. Partial rules preserve unsupported entries without inventing fields. Steps 1–4 of the recommended sequence below are implemented and regression-tested; step 5 has its first browser implementation with manual ISBN editions; step 6 remains future work.
 
 ## One input path
 

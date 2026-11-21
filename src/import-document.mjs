@@ -71,6 +71,13 @@ function entryFields(raw,style) {
  const parsed=parseReference(raw,{style}),fields={...parsed.fields};
  if(style==='chicago-author-date'&&!fields.authors&&fields.authorText){const people=chicagoAuthors(fields.authorText);if(people){fields.authors=people;fields.authorsComplete=true;}}
  if(style==='apa'&&!fields.issued){const date=/^(.+?)\s+\(n\.d\.(?:-?([a-z]))?\)\.\s+(.+)$/iu.exec(raw);if(date){const people=parseAPAAuthorList(date[1]);if(people){fields.authors=people;fields.authorsComplete=true;fields.undated=true;fields.title=date[3].split(/\.\s/u)[0].replace(/\.$/u,'');if(date[2])fields.sourceSuffix=date[2].toLowerCase();}}}
+ // Only structured journal tails supply publication-type evidence for automatic DOI matching.
+ if(fields.title&&style==='apa'){
+  const titleEnd=parsed.evidence.find(item=>item.field==='title')?.end;
+  const tail=titleEnd===undefined?'':raw.slice(titleEnd).replace(/^\.\s*/, '');
+  const journal=/^([^,]+),\s*(\d+)(?:\(([^)]+)\))?,\s*(e?\d+(?:[-–]\d+)?)\.?$/u.exec(tail.trim());
+  if(journal){fields.type='article-journal';fields.containerTitle=journal[1];fields.volume=journal[2];if(journal[3])fields.issue=journal[3];if(journal[4].startsWith('e'))fields.articleNumber=journal[4];else fields.pages=journal[4];}
+ }
  const original=/\b(?:original(?:ly)?(?: work)?|first)\s+published\s+(1[5-9]\d{2}|20\d{2})\b/iu.exec(raw);if(original)fields.originalIssued=[Number(original[1])];
  const diagnostics=parsed.diagnostics.filter(item=>!(fields.authors&&item.code==='import-reference-byline-unparsed')&&!(fields.undated&&item.code==='import-reference-unparsed'));
  return {...parsed,fields,state:Object.keys(fields).length?'partial':'unparsed',diagnostics};

@@ -42,6 +42,12 @@ Avery, J. Date not recorded.
 
 Bennett, S. (n.d.). Explicitly undated.
 `,
+ books:`Choose a particular edition of a book (Dahl, 2024).
+
+## References
+
+Dahl, R. (2024). Fantastic Mr Fox.
+`,
  real:`Try a single-author citation (Ioannidis, 2005). The later correction is a separate publication (Ioannidis, 2022).
 
 This citation names two authors (Feinberg & Willer, 2019).

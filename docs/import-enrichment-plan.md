@@ -1,6 +1,6 @@
 # Browser identifier and metadata completion
 
-Status: proposed 0.4.0 implementation, 21 November 2026. This document describes the next step; the demo currently uses green for a selected bibliography target and does not perform background provider lookups. The [development milestone](milestones/0.4.0.md) records delivered behavior separately.
+Status: first browser implementation delivered in the 0.4.0 development checkout, 21 November 2026; no release claimed. Selection-driven automatic lookup, a live progress count, DOI/ISBN suggestions, automatic direct browser transport, strict DOI automatic matching, edition radios and manual/offline completion are implemented. ISBN automatic acceptance, browser-native review/apply and static HTTPS deployment remain unfinished. The sections below retain design requirements; the implementation/evidence section distinguishes current scope.
 
 ## Reader-facing model
 
@@ -25,7 +25,7 @@ Previous/Next should visit unresolved gray/red and orange items requiring an edi
 
 1. Local analysis finds bibliography candidates without a network request.
 2. A unique unambiguous local match, or an editor's radio choice, identifies a work. Its citation becomes orange if completion is needed.
-3. With online lookup enabled for this import, queue a request for that work. Search once per complete query/identity fingerprint and share the result across compatible mentions. Include edition, language and format constraints; a common title, author or local ID alone is not a safe coalescing key. Do not search ambiguous work identities speculatively.
+3. Automatically queue a request for that work. Search once per complete query/identity fingerprint and share the result across compatible mentions. Include edition, language and format constraints; a common title, author or local ID alone is not a safe coalescing key. Do not search ambiguous work identities speculatively.
 4. One sufficiently supported identifier can be accepted automatically; otherwise show identifier or edition radios. A manually pasted identifier enters the same validation/enrichment path.
 5. Merge accepted metadata into an import-session record and show green when ready. Source files, the article, persistent records and publication remain unchanged until the existing explicit preview/apply or host transaction.
 
@@ -43,7 +43,7 @@ Resolve a proposed DOI and verify the returned identifier before accepting its m
 
 For books, first find a work, then candidate editions. ISBNs belong to editions; a single work result or the provider's first edition does not establish the cited edition. Require edition-level title/author, year, publisher, edition/language information where supplied, and a valid ISBN. Different formats can legitimately have different ISBNs. Unknown edition or competing eligible editions requires a choice. Existing Open Library search code returns curator proposals and must be audited for edition coverage before powering automatic acceptance.
 
-A valid pasted DOI/ISBN can still identify a different work. Validate syntax and ISBN check digits locally; fetch metadata only when online lookup is enabled. Conflicts remain visible for the editor. A generic HTTPS URL must never trigger arbitrary fetching by the library; only recognized identifiers go to allowlisted metadata providers.
+A valid pasted DOI/ISBN can still identify a different work. Validate syntax and ISBN check digits locally; retrieve recognized identifier metadata automatically. Conflicts remain visible for the editor. A generic HTTPS URL must never trigger arbitrary fetching by the library; only recognized identifiers go to allowlisted metadata providers.
 
 ## Metadata scope
 
@@ -63,7 +63,7 @@ A real browser probe must validate headers actually sent, redirects, response re
 
 ## Privacy and reliability
 
-Offer one clearly described online-lookup switch per import, or a host-controlled equivalent: “Send reference titles, authors and publication details to Crossref/Open Library to find identifiers.” Local matching and manual DOI/ISBN entry remain usable with it off. Send only selected bibliographic fields; do not send the manuscript, nearby prose, filenames, editor notes, credentials or private documents. References themselves may be sensitive, and the providers can log queries. Browser-only processing does not make an external search private.
+The maintainer chose always-on lookup for the demo, superseding the earlier switch proposal. Selected bibliographic metadata goes to Crossref/Open Library automatically; the [demo guide](import-demo.md#automatic-identifier-lookup) documents this behavior. Send only selected bibliographic fields, never manuscript text, nearby prose, filenames, editor notes or credentials. The reusable transport remains cancellable for source changes/host lifecycle. Offline or failed requests must leave local matching, manual identifiers and completion without an identifier usable.
 
 Queue separately by provider, initially one request in flight and at most one request per second per provider. Honor stricter response limits and Retry-After when exposed; otherwise use conservative bounded backoff with jitter. Do not assume browser JavaScript can read every rate-limit header. Open Library [documents](https://openlibrary.org/developers/api) a default limit of one request per second; Crossref [recommends](https://www.crossref.org/documentation/retrieve-metadata/rest-api/tips-for-using-the-crossref-rest-api/) caching and backing off on 429 responses.
 
@@ -75,15 +75,25 @@ On offline, timeout, rate limit, blocked CORS/CSP or malformed provider data, ke
 
 ## Prerequisite: source-derived references
 
-The [full-document text/bibliography edit loop](import-document-flow.md) is implemented for text and Markdown, including UTF-8 file selection/drop. Future provider automation must bind to the selected source-derived reference revision. Native-file adapters remain separate work.
+The [full-document text/bibliography edit loop](import-document-flow.md) is implemented for text and Markdown, including UTF-8 file selection/drop. Provider automation binds to the selected source-derived reference revision. Native-file adapters remain separate work.
 
-## First implementation and acceptance
+## Implemented scope and evidence
 
-1. Implement the state/status model and revised actionable-item navigation with injected/mock providers first. Cover two bibliography matches, no match, queued search, ambiguous identifiers, outage, skip, manual correction, source-span review and an identifier-free completed reference.
-2. Add browser-native Crossref search and DOI resolution. Use the [real reference example](../demos/import/real-reference-example.mjs) without loading its [answer key](../demos/import/real-reference-answer-key.json) in the application; include the original/correction pair and independently authored near-match negatives. Verify actual CORS/CSP behavior on a static host.
-3. Add edition-aware Open Library suggestions with public book fixtures whose exact edition/ISBNs were checked. Exercise same-title editions, translations, reprints, missing dates and ISBN aliases, including simultaneous mentions with different edition/language/format constraints; do not pick the first edition automatically.
-4. Add deterministic race, pause/disable in-flight invalidation, cancellation, edition-safe deduplication, queue/backoff and privacy tests. Capture requests to prove no manuscript/context/notes are transmitted, cookies are omitted, no arbitrary URLs are fetched and the answer key is never loaded.
-5. Run accessibility and independent scholarly/identity review before claiming automatic matching quality. Record live-provider observations separately from deterministic tests and fresh evaluation. Keep the manual path fully usable with all providers disabled or failing.
+`src/import-enrichment.mjs` supplies experimental, browser-safe transport and the versioned `exact-identity-v1` policy. `npm run build` generates the demo-only `demos/import/enrichment-browser.mjs`; this is not a new stable package export. The [demo guide](import-demo.md#automatic-identifier-lookup) describes current triggers, state meanings, rate limits, manual resolution, preserved curator fields and evidence/export boundaries.
+
+Structured APA journal tails can supply explicit container/volume/issue/page evidence. Unknown types search both providers and never auto-match; title-only or missing-byline inputs require source edits or manual identifiers. Only complete strict DOI agreement can auto-accept, and the DOI is re-resolved. ISBN candidates are always curator choices: at most three works/five editions per work are inspected, so no complete edition-coverage claim is made. Selected candidate IDs resolve before their metadata is accepted. Generic URLs are never fetched.
+
+Independent synthetic challenge data includes 23 DOI cases and 11 ISBN cases, with adversarial regressions for title symbols, notice relations, partial metadata, DOI/ISBN aliases, edition preservation, duplicate cache ownership, privacy, cancellation, request sharing, rate limits and payload bounds. These constrain known failures rather than measuring general matching accuracy.
+
+Live Chrome 158.0.8127.36 on 21 November 2026 read Crossref suggestions for Ioannidis’s original article and Open Library suggestions for Fantastic Mr Fox under the local demo CSP. The book search returned four candidate ISBNs, including recent/related editions, with no automatic selection. Another public book query returned zero candidates. Requests omitted referrers/cookies. No private manuscript data was queried. See the [bounded probe record](evidence/import-enrichment-browser-probe-2026-11-21.json). This is local-origin CORS/CSP evidence, not uptime, coverage, static-public-HTTPS or release acceptance.
+
+## Remaining acceptance and expansion
+
+
+1. Verify the transport from a deployed static HTTPS host; deliver browser-native review/apply and host/editor transactions separately from the browser metadata adapter.
+2. Expand edition coverage, measure work-to-edition author accuracy and preserve stronger edition/language/format evidence before considering any automatic ISBN acceptance. Curator radios remain the default.
+3. Add independently checked public book editions and fresh held-out DOI/ISBN cases. Measure retrieval, identity precision and completion separately; a synthetic green suite is not a provider accuracy benchmark.
+4. Complete Safari, VoiceOver and physical-phone checks, public API/packaging reviews and adopter acceptance before a milestone release. Keep no-provider/manual flows usable throughout.
 
 ## Plan review
 

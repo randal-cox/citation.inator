@@ -49,6 +49,7 @@ await build({
   outfile: "dist/citation-inspector.mjs",
   banner: { js: `/*! citation-inator v${version} | MIT | See LICENSE */` }
 });
+await build({entryPoints:["src/import-enrichment.mjs"],bundle:true,format:"esm",target:"es2022",outfile:"demos/import/enrichment-browser.mjs"});
 const toolsNotices = (await Promise.all([
   ['parse5', 'LICENSE'], ['marked', 'LICENSE.md'], ['entities', 'LICENSE']
 ].map(async ([name, license]) => {

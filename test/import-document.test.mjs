@@ -6,7 +6,7 @@ import {documentExamples} from '../demos/import/document-examples.mjs';
 const analyze=(source,extra={})=>importDemoRequest({mode:'document',source,style:'auto',...extra});
 const preview=(source,result,decisions,extra={})=>importDemoRequest({mode:'document',source,style:'auto',action:'preview',review:result.review,reviewId:result.review.reviewId,decisions,...extra});
 test('the default examples derive matching records only from the full source bibliography',()=>{
- const expected={apa:[3,4],chicago:[3,3],numeric:[2,4],undated:[2,2],real:[3,3]};
+ const expected={apa:[3,4],chicago:[3,3],numeric:[2,4],undated:[2,2],real:[3,3],books:[1,1]};
  for(const [key,source] of Object.entries(documentExamples)){const result=analyze(source);assert.equal(result.referenceEntries.length,expected[key][0]);assert.equal(result.review.matches.length,expected[key][1]);assert.ok(result.referenceEntries.every(entry=>source.slice(entry.start,entry.start+entry.raw.length)===entry.raw));}
  assert.throws(()=>analyze(documentExamples.apa,{records:[]}),/derives references/);
  assert.throws(()=>analyze(documentExamples.apa,{referenceText:'hidden'}),/derives references/);

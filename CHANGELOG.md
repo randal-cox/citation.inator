@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Start DOI/ISBN lookups automatically for selected/unambiguous references; add live remaining/progress/choice counts and batch retry. Known or pasted identifiers bypass discovery and have no search UI in their hover.
+- Add automatic direct browser DOI/ISBN lookup to import review, conservative resolved-DOI automatic acceptance, edition radios, metadata/provenance in portable caches, manual/no-identifier fallback and privacy/race/rate-limit guards. Unknown reference types search both providers; ISBN choices remain manual within bounded edition coverage.
+- Style demo disclosures as accordion bars; make Import Document and Resolve Citations open-by-default disclosures, with Lookups left aligned beside Resolve.
+- Make Reading Preview a parallel disclosure matching Converted Document, refresh either live, remove the redundant Document heading and tighten bibliography spacing. Map completion evidence to reader labels and preserve focused lookup controls as results arrive.
+
 - Replace default detached import fixtures with one full document and source-derived bibliography records. Add adjustable bibliography boundaries, live edits, UTF-8 TXT/Markdown selection/drop, preserved original downloads and portable Markdown/cache exports. Retain unsupported references as raw partial records without invented titles.
 - Group source inputs under Import Document and review under Resolve Citations, separated by a rule. Show Dropped file or Chosen file in the example selector after importing, infer citation format from the source, and close review at either navigation endpoint. Label manual targets DOI, ISBN or URL.
 

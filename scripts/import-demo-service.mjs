@@ -5,7 +5,8 @@ import {createImportReview,planImportEdits,applyImportEdits} from '../src/import
 import {compileCitations,markerKind,scanCitationMarkers} from '../src/compiler.mjs';
 import {detectCitationFormat} from '../src/import-format.mjs';
 import {analyzeImportDocument} from '../src/import-document.mjs';
-import {makeCache} from '../src/records.mjs';
+import {makeCache,normalizeRecord,normalizeIdentifier,canonicalIdentifierKey} from '../src/records.mjs';
+import {mergeCompletion} from '../src/import-enrichment.mjs';
 
 // Local demo only: no files, records, credentials or provider services are written.
 export function importDemoRequest(input) {
@@ -35,7 +36,7 @@ export function importDemoRequest(input) {
       if(entries.length>200)throw new TypeError('Use at most 200 explicitly separated entries.');
       parsedReferences=parseReferences(entries,{style});
     }
-    return {review,document:model?.document,referenceEntries:model?.entries,formatDetection,formatChoiceRequired,effectiveStyle:style,diagnostics:matched.diagnostics,parsedReferences,referenceRecords:cache.records.map(record=>({id:record.id,title:record.title,authors:record.authors,issued:record.issued,originalIssued:record.originalIssued,publisher:record.publisher,publisherPlace:record.publisherPlace,containerTitle:record.containerTitle,volume:record.volume,issue:record.issue,pages:record.pages,articleNumber:record.articleNumber,identifiers:record.identifiers,referenceNumber:records.find(input=>input.id===record.id)?.referenceNumber,undated:records.find(input=>input.id===record.id)?.undated === true}))};
+    return {review,document:model?.document,referenceEntries:model?.entries,formatDetection,formatChoiceRequired,effectiveStyle:style,diagnostics:matched.diagnostics,parsedReferences,referenceRecords:cache.records.map(record=>({id:record.id,type:record.type,authorsComplete:record.authorsComplete,title:record.title,authors:record.authors,issued:record.issued,originalIssued:record.originalIssued,publisher:record.publisher,publisherPlace:record.publisherPlace,containerTitle:record.containerTitle,volume:record.volume,issue:record.issue,pages:record.pages,articleNumber:record.articleNumber,identifiers:record.identifiers,referenceNumber:records.find(input=>input.id===record.id)?.referenceNumber,undated:records.find(input=>input.id===record.id)?.undated === true}))};
   }
   if (action!=='preview') throw new TypeError('Choose analyze or preview.');
   if(model?.document.boundaryRequired)throw new TypeError('Choose the bibliography boundary.');
@@ -43,12 +44,46 @@ export function importDemoRequest(input) {
   // Candidate review is tied to the current records/style as well as the source.
   const current=createImportReview(source,match());
   if(current.reviewId!==input.review?.reviewId || contextHash!==input.review?.contextHash)throw new Error('Source, reference records or style changed. Analyze again.');
-  const plan=planImportEdits(source,input.review,{reviewId:input.reviewId,decisions:input.decisions,citationKeyword:'cite'});
+  // Session completions are editor-accepted proposals. They cannot alter source-derived matching context.
+  const completions=input.completions ?? [];
+  if(!Array.isArray(completions)||completions.length>100||JSON.stringify(completions).length>300000)throw new TypeError('Use bounded reference completions.');
+  const enriched=new Map(),extra=[],completionIds=new Set();
+  for(const original of records){const identifier=original.identifiers?.find(id=>['doi','isbn'].includes(id.scheme));if(identifier&&input.decisions?.some(decision=>decision.action==='accept'&&decision.targets?.some(target=>target.recordId===original.id)))enriched.set(original.id,{record:normalizeRecord(original),identifier});}
+  for(const completion of completions){
+    if(!completion||JSON.stringify(completion).length>20000)throw new TypeError('Use bounded completion metadata.');
+    const record=normalizeRecord(completion.record),id=record.identifiers[0];
+    if(!id||!['doi','isbn'].includes(id.scheme))throw new TypeError('Choose DOI or ISBN completion metadata.');
+    if(completion.recordId){
+      const original=records.find(record=>record.id===completion.recordId);
+      if(!original||completionIds.has(original.id))throw new TypeError('Choose one completion per source reference.');
+      const selected=input.decisions?.some(decision=>decision.action==='accept'&&decision.targets?.some(target=>target.recordId===original.id));
+      if(!selected)continue;completionIds.add(original.id);
+      enriched.set(original.id,{record:mergeCompletion(original,record).record,identifier:id});
+    }else{
+      const selected=input.decisions?.some(decision=>decision.action==='accept'&&decision.targets?.some(target=>{const value=typeof target.identifier==='string'&&normalizeIdentifier(/^[\dXx\s-]{10,30}$/.test(target.identifier)?'isbn:'+target.identifier:target.identifier);return value&&canonicalIdentifierKey(value)===canonicalIdentifierKey(id);}));
+      if(selected)extra.push(record);
+    }
+  }
+  // Validate the original local choices before replacing them with their accepted canonical identifiers.
+  planImportEdits(source,input.review,{reviewId:input.reviewId,decisions:input.decisions,citationKeyword:'cite'});
+  const decisions=input.decisions.map(decision=>({...decision,...(decision.targets&&{targets:decision.targets.map(target=>enriched.has(target.recordId)?{identifier:enriched.get(target.recordId).identifier.scheme+':'+enriched.get(target.recordId).identifier.value}:target)})}));
+  const plan=planImportEdits(source,input.review,{reviewId:input.reviewId,decisions,citationKeyword:'cite'});
+  const portable=[],owners=new Map(),ids=new Set();
+  for(const rawRecord of [...records.map(record=>enriched.get(record.id)?.record || record),...extra]){
+    const record=normalizeRecord(rawRecord);
+    const identifiers=record.identifiers.filter(identifier=>!owners.has(canonicalIdentifierKey(identifier)));
+    if(ids.has(record.id))continue;
+    if(!identifiers.length&&!records.some(source=>source.id===record.id))continue;
+    const aliases=record.identifiers.filter(identifier=>owners.has(canonicalIdentifierKey(identifier)));
+    const next=normalizeRecord({...record,identifiers,provenance:[...record.provenance,...aliases.map(identifier=>({provider:'Import review',note:'Accepted identifier '+canonicalIdentifierKey(identifier)+' is shared with '+owners.get(canonicalIdentifierKey(identifier))+'. Source record retained separately.'}))]});
+    portable.push(next);ids.add(record.id);for(const identifier of identifiers)owners.set(canonicalIdentifierKey(identifier),record.id);
+  }
+  const completedCache=makeCache(portable);
   const output=applyImportEdits(source,plan);
   const hasEndnotes=scanCitationMarkers(output.source).some(marker=>markerKind(marker.raw)==='endnote');
   const partialNumeric=style==='vancouver' && current.matches.some((match,index)=>!plan.edits.some(edit=>edit.citationIndex===index));
   const previewNotice=partialNumeric ? 'Some original reference numbers remain. The reading preview is withheld until every numeric group is converted; the reviewed source remains available.' : '';
   const readingSource=model?model.document.bodyRanges.map(range=>{let part=source.slice(range.start,range.end);for(const edit of [...plan.edits].reverse())if(edit.start>=range.start&&edit.end<=range.end)part=part.slice(0,edit.start-range.start)+edit.text+part.slice(edit.end-range.start);return part;}).join('\n\n'):output.source;
-  const reader=compileCitations(readingSource+(hasEndnotes?'':'\n\n{citation endnote}'),cache,{citationStyle:style,namespace:'import-preview'});
-  return {source:output.source,changed:output.changed,outcomes:plan.outcomes,edits:plan.edits,html:partialNumeric?'':reader.html,previewNotice,cache,diagnostics:reader.diagnostics};
+  const reader=compileCitations(readingSource+(hasEndnotes?'':'\n\n{citation endnote}'),completedCache,{citationStyle:style,namespace:'import-preview'});
+  return {source:output.source,changed:output.changed,outcomes:plan.outcomes,edits:plan.edits,html:partialNumeric?'':reader.html,previewNotice,cache:completedCache,diagnostics:reader.diagnostics};
 }

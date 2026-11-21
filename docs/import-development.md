@@ -12,6 +12,12 @@ Explicit `state: "partial"` records with nonempty valid authored `citationParts`
 
 The [demo guide](import-demo.md) documents file budgets, canonical newline preservation, manual boundaries and paired Markdown/cache export. The [flow design](import-document-flow.md) distinguishes this delivered text path from future native adapters and provider enrichment.
 
+## Browser completion adapter
+
+`src/import-enrichment.mjs` is experimental source-only code, bundled into a demo asset by the build. `createBrowserEnrichment` accepts injected fetch/clock/sleep for deterministic tests and exposes `lookup`, `cancel` and `reset`. `compareIdentity`, `automaticCandidate` and `ENRICHMENT_POLICY` implement deterministic strict DOI acceptance; ISBN proposals stay manual. `mergeCompletion` adds identifiers/provenance and missing fields while retaining conflicting curator fields. The local demo validates source/context before applying accepted completion IDs and normalizes the portable cache. Full raw responses remain session evidence rather than cache fields.
+
+The demo CSP permits only Crossref and Open Library in addition to its own origin. Other demos retain their original connect-src restriction. No proxy, secret or provider credential is required. See the [completion guide](import-demo.md#automatic-identifier-lookup) and [design/evidence](import-enrichment-plan.md) for current coverage and limits. This browser transport does not make the Node review/apply protocol a browser-native installed API.
+
 ## First implementation
 
 `src/import-matcher.mjs` contains experimental `parseInTextCitations(text, options)` and `matchCitations(detection, references)` functions. They accept already-extracted visible plain text and supplied bibliographic records. They make no network requests, modify no records and produce no article edits.
@@ -163,7 +169,7 @@ All five import tracks are authorized for 0.4.0: recognition/matching, measured 
 
 - Expand developer-checked citation matches into independently checked and held-out cases; separate extraction failures from recognition and matching failures.
 - Broaden Markdown quote/list/table/raw-HTML coverage and improve decoded HTML entity maps without losing protected regions or source fidelity.
-- Integrate the experimental Crossref search into a review UI/installed API and measure candidate retrieval across more public reference types. Preserve explicit lookup consent and avoid automatic cache mutation.
+- Measure automatic browser completion across more public reference types and deliver installed APIs separately. The demo now starts selected-reference lookups automatically; keep the documented bibliographic-only query boundary and avoid persistent cache mutation.
 - Expand the initial partial reference rules through measured fields and error cases; explicit entry boundaries remain required.
 - Add DOCX/ODT adapters, numeric/reference-number mapping, and PDF extraction/reading-order tests as independent components. OCR is a later, separately measured path.
 - Expand the initial local plaintext review demo with a browser-native protocol and rich-text/editor adapters around the revision-bound edit plan. No unsupported text or bibliography entry is silently discarded.
@@ -196,4 +202,6 @@ Before a preview is shared, run the [milestone checks and independent reviews](c
 - [Zotero document troubleshooting](https://www.zotero.org/support/kb/existing_citations_not_detected): active citation data can be lost by document transformations.
 - [Crossref reference-matching guidance](https://github.com/CrossRef/rest-api-doc/blob/master/api_tips.md): recommends bibliographic queries and comparison of returned candidates.
 
-Current full-source follow-up: 163 unit tests, build and full Chrome browser suite passed with Node 26.13.1; see the [0.4.0 milestone evidence](milestones/0.4.0.md). This supersedes earlier test-count snapshots without changing their historical scope.
+Earlier full-source follow-up: 163 unit tests, build and full Chrome browser suite passed with Node 26.13.1; see the [0.4.0 milestone evidence](milestones/0.4.0.md). This supersedes earlier test-count snapshots without changing their historical scope.
+
+Current identifier-completion follow-up: **184 unit tests**, build and the full Chrome 158.0.8127.36 browser suite passed on Node 26.13.1. Independent identity/API/testing and UX/reader-copy/docs reviews returned scoped PASS. See the [milestone evidence](milestones/0.4.0.md) for scope and remaining platform/release checks.

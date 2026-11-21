@@ -1,0 +1,131 @@
+{
+  "date": "2026-11-21",
+  "browser": "158.0.8127.36",
+  "origin": "http://127.0.0.1:4187",
+  "method": "Chrome direct fetch under import-demo CSP; bibliographic queries only, no manuscript, notes or filenames",
+  "scope": "Bounded local-origin interoperability probe, not provider accuracy or static HTTPS acceptance",
+  "results": [
+    {
+      "kind": "doi",
+      "count": 5,
+      "automatic": false,
+      "identifiers": [
+        [
+          {
+            "scheme": "doi",
+            "value": "10.1371/journal.pmed.0020124"
+          }
+        ],
+        [
+          {
+            "scheme": "doi",
+            "value": "10.1080/09332480.2005.10722754"
+          }
+        ],
+        [
+          {
+            "scheme": "doi",
+            "value": "10.1080/09332480.2019.1579573"
+          }
+        ],
+        [
+          {
+            "scheme": "doi",
+            "value": "10.1371/journal.pmed.1004085"
+          }
+        ],
+        [
+          {
+            "scheme": "doi",
+            "value": "10.1371/journal.pmed.0040215"
+          }
+        ]
+      ],
+      "titles": [
+        "Why Most Published Research Findings Are False",
+        "Why Most Published Research Findings Are False",
+        "Why Most Published Research Findings Are False",
+        "Correction: Why Most Published Research Findings Are False",
+        "Why Most Published Research Findings Are False: Author's Reply to Goodman and Greenland"
+      ]
+    },
+    {
+      "kind": "isbn",
+      "count": 0,
+      "automatic": false,
+      "identifiers": [],
+      "titles": []
+    },
+    {
+      "kind": "isbn",
+      "query": "Fantastic Mr Fox / Roald Dahl",
+      "count": 4,
+      "automatic": false,
+      "candidates": [
+        {
+          "title": "Fantastic Mr Fox",
+          "issued": [
+            2024
+          ],
+          "edition": "",
+          "identifiers": [
+            {
+              "scheme": "isbn",
+              "value": "9780241677377"
+            }
+          ]
+        },
+        {
+          "title": "Penguin Readers Level 2: Roald Dahl Fantastic Mr Fox",
+          "issued": [
+            2024
+          ],
+          "edition": "",
+          "identifiers": [
+            {
+              "scheme": "isbn",
+              "value": "9780241610923"
+            }
+          ]
+        },
+        {
+          "title": "Fantastic Mr. Fox",
+          "issued": null,
+          "edition": "",
+          "identifiers": [
+            {
+              "scheme": "isbn",
+              "value": "9780758755995"
+            }
+          ]
+        },
+        {
+          "title": "Fantastic Mr. Fox and Other Animal Stories: Includes Esio Trot, The Enormous Crocodile & The Giraffe and the Pelly and Me",
+          "issued": [
+            2013
+          ],
+          "edition": "",
+          "identifiers": [
+            {
+              "scheme": "isbn",
+              "value": "9781611761832"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "requestPrivacy": {
+    "credentials": "omit",
+    "referrerPolicy": "no-referrer",
+    "cookieObserved": false,
+    "refererObserved": true
+  },
+  "urls": [
+    "https://api.crossref.org/works?query.bibliographic=Why+Most+Published+Research+Findings+Are+False.+Ioannidis+J.+P.+A..+2005&rows=5",
+    "https://openlibrary.org/search.json?title=Fantastic+Mr+Fox&author=Dahl&limit=3&fields=key%2Ctitle%2Cauthor_name",
+    "https://openlibrary.org/works/OL45804W/editions.json?limit=5",
+    "https://openlibrary.org/works/OL20097961W/editions.json?limit=5",
+    "https://openlibrary.org/works/OL20922814W/editions.json?limit=5"
+  ]
+}

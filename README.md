@@ -84,7 +84,7 @@ See the [integration guide](docs/integration.md) for HTML and Markdown examples,
 
 On `codex/citation-import`, run `npm ci`, `npm run build` and `npm start`, then open [Import review](http://127.0.0.1:4187/demos/import/). Choose an example, paste a complete document, or choose/drop a UTF-8 TXT/Markdown file. Raw Document includes its bibliography; edits rebuild references and matches. Format is detected from the source with a manual override. Radio choices update Converted Document live. Download both Markdown and the reference cache for local-ID citations; the original bibliography is preserved.
 
-This development demo requires a local server, makes no provider calls and saves no documents. Native PDF/Word files and automatic identifier lookup remain unfinished. It is not a service in the static ZIP. See [the demo guide](docs/import-demo.md) for boundaries, keyboard controls and limits. Published 0.3.0 artifacts are unchanged.
+This development demo requires a local server and saves no documents. Selected references automatically receive Crossref DOI and Open Library ISBN suggestions; known identifiers fetch metadata directly. The compact Lookups left count tracks progress beside Resolve Citations. Strict DOI matches can complete automatically; ISBNs need an edition choice. Manual identifiers and completion without an identifier work offline. Native PDF/Word files and browser-native review/apply remain unfinished. It is not a service in the static ZIP. See [the demo guide](docs/import-demo.md) for boundaries, keyboard controls and limits. Published 0.3.0 artifacts are unchanged.
 
 ## Work on the source checkout
 
