@@ -8,7 +8,7 @@ On 21 November 2026 the maintainer separated stable editor integration from the 
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
-| [0.3.0](docs/milestones/0.3.0.md) | Shared marker classification, stable work notes, reference-prefix hook, once-per-list help and usage docs/tests | Verified isolated release for draft.inator |
+| [0.3.0](docs/milestones/0.3.0.md) | Shared marker classification, stable work notes, reference-prefix hook, once-per-list help and usage docs/tests | Released 21 November 2026; final artifact adoption pending |
 | [0.4.0](docs/milestones/0.4.0.md) | Reviewed import: PDF/paste/text/Markdown/native document adapters, recognition, reference parsing, review UI, revision-bound edits and measurement | Existing prototype preserved; in development |
 | [0.5.0](docs/milestones/0.5.0.md) | Comprehensive developer documentation, annotated examples, live learning site and worked draft.inator integration | Planned; current-feature usage docs remain part of every release |
 | [0.6.0](docs/milestones/0.6.0.md) | Zotero/other managers, interchange formats and source maintenance | Planned after learning milestone |
