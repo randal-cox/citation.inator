@@ -32,7 +32,7 @@ export function importDemoRequest(input) {
   // Candidate review is tied to the current records/style as well as the source.
   const current=createImportReview(source,match());
   if(current.reviewId!==input.review?.reviewId || contextHash!==input.review?.contextHash)throw new Error('Source, reference records or style changed. Analyze again.');
-  const plan=planImportEdits(source,input.review,{reviewId:input.reviewId,decisions:input.decisions});
+  const plan=planImportEdits(source,input.review,{reviewId:input.reviewId,decisions:input.decisions,citationKeyword:'cite'});
   const output=applyImportEdits(source,plan);
   const hasEndnotes=scanCitationMarkers(output.source).some(marker=>markerKind(marker.raw)==='endnote');
   const partialNumeric=style==='vancouver' && current.matches.some((match,index)=>!plan.edits.some(edit=>edit.citationIndex===index));

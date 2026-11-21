@@ -4,7 +4,7 @@ test('local demo explicitly reviews and previews edits without changing source o
  const source='Before (Avery, 2021). Unknown (Missing, 2000).';const before=JSON.stringify(records);
  const {review}=importDemoRequest({source,records});
  const result=importDemoRequest({action:'preview',source,records,review,reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',recordIds:['avery']},{citationIndex:1,action:'defer'}]});
- assert.equal(result.source,'Before {citation local:avery}. Unknown (Missing, 2000).');assert.ok(result.html.includes('data-ci-record="avery"'));assert.equal(JSON.stringify(records),before);
+ assert.equal(result.source,'Before {cite local:avery}. Unknown (Missing, 2000).');assert.ok(result.html.includes('data-ci-record="avery"'));assert.equal(JSON.stringify(records),before);
  assert.throws(()=>importDemoRequest({action:'preview',source:source+' edited',records,review,reviewId:review.reviewId,decisions:[]}),/changed/);
  assert.throws(()=>importDemoRequest({action:'preview',source,records:[{...records[0],title:'Changed'}],review,reviewId:review.reviewId,decisions:[]}),/changed/);
 });

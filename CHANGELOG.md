@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Make raw Markdown with `{cite …}` markers the primary import result; export `.md` and place the rendered reading preview under a disclosure.
+
 - Plan browser-only identifier/metadata completion, including proposed gray/red/orange/green statuses, conservative automatic matching, edition-aware ISBN selection and manual/offline fallback. Record bounded provider HTTP/CORS observations; runtime enrichment remains unimplemented.
 
 - Make Left/Right navigate red citations even from radio choices; keep Up/Down for selecting a radio and preserve text-field caret keys. Add a real-publication import example with withheld DOIs and a separate publisher-checked answer key.

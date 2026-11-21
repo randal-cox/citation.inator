@@ -158,7 +158,7 @@ $('preview').addEventListener('click',async()=>{
  try {
   const result=await request('preview',{review,reviewId:review.reviewId,decisions});if(ticket!==version)return;
   for(const outcome of result.outcomes){if(outcome.state==='accepted-needs-span'||outcome.state==='accepted-needs-adapter'){const group=$('groups').children[outcome.citationIndex];group.dataset.action='defer';updateReviewAppearance(group);}}
-  output=result;$('output').value=result.source;$('outcomes').textContent=JSON.stringify(result.outcomes,null,2);
+  output=result;$('reading-details').open=false;$('output').value=result.source;$('outcomes').textContent=JSON.stringify(result.outcomes,null,2);
   $('preview-notice').textContent=result.previewNotice || '';
   const reader=$('reading-preview');reader.innerHTML=result.html;initializeCitationInspector(reader,{cache:result.cache});
   const explanations=result.outcomes.filter(outcome=>outcome.state==='accepted-needs-span'||outcome.state==='accepted-needs-adapter').map(outcome=>`Group ${outcome.citationIndex+1}: accepted work identity, but ${outcome.state==='accepted-needs-span'?'the author-text boundary needs review':'the source needs a formatting adapter'}. Kept unchanged.`);
@@ -177,5 +177,5 @@ document.addEventListener('pointerdown',event=>{if(activeGroup&&!activeGroup.con
 window.addEventListener('resize',closeReview);
 $('load-example').addEventListener('click',loadExample);
 $('use-output').addEventListener('click',()=>{if(!output)return;const text=output.source;invalidate('Reviewed source loaded. Analyze again before making further changes.');$('source').value=text;$('groups').replaceChildren();renderDocument();});
-$('download').addEventListener('click',()=>{if(!output)return;const url=URL.createObjectURL(new Blob([output.source],{type:'text/plain;charset=utf-8'}));const link=el('a');link.href=url;link.download='reviewed-citations.txt';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+$('download').addEventListener('click',()=>{if(!output)return;const url=URL.createObjectURL(new Blob([output.source],{type:'text/markdown;charset=utf-8'}));const link=el('a');link.href=url;link.download='reviewed-citations.md';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
 loadExample();
