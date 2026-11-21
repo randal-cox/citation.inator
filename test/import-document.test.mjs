@@ -79,3 +79,8 @@ test('plain reference headings need no blank line after them and retain the firs
 test('unparsed numeric references export usable raw citations without invented title or date fields',()=>{
  const source='Two sources [2, 7].\n\nReferences\n\n7. Bennett S. Raw seventh entry. 2019.\n\n2. Avery J. Raw second entry. 2021.';const result=analyze(source),ids=result.review.matches[0].items.map(item=>item.candidates[0].recordId);const output=preview(source,result,[{citationIndex:0,action:'accept',recordIds:ids}]);assert.ok(output.cache.records.every(record=>record.title===''&&record.issued===null&&record.state==='partial'));const clean=compileCitations(output.source+'\n{citation endnote}',JSON.parse(JSON.stringify(output.cache)),{citationStyle:'vancouver'});assert.ok(clean.html.includes('Raw seventh entry'));assert.ok(clean.html.includes('Raw second entry'));assert.ok(!clean.diagnostics.some(item=>item.code==='citation-unresolved'));
 });
+
+test('explicit Anonymous byline and original year match without inventing a person',()=>{
+ const result=analyze('A tool (Anonymous, 2025/2025).\n\nReferences\nAnonymous. (2025). A tool [Computer software]. https://example.org (Original work published 2025)');
+ assert.deepEqual(result.referenceRecords[0].authors,[{literal:'Anonymous'}]);assert.equal(result.review.matches[0].items[0].state,'unique');
+});

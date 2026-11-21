@@ -37,7 +37,7 @@ export function parseReference(text,{style='apa'}={}) {
       propose('authorText',authorText,0,date.index,'author-before-date');
       propose('issued',[Number(date[1])],date.index,date.index+date[0].length,'explicit-style-date');
       if (date[2]) fields.sourceSuffix=date[2];
-      const authors=style==='apa' && parseAPAAuthorList(authorText);
+      const authors=style==='apa' && (parseAPAAuthorList(authorText) || (/^Anonymous\.$/u.test(authorText)?[{literal:'Anonymous'}]:null));
       if (authors) { fields.authors=authors;fields.authorsComplete=true; }
       else diagnostics.push({code:'import-reference-byline-unparsed',message:'Retain and review the original author text.'});
       const after=date.index+date[0].length, tail=text.slice(after);

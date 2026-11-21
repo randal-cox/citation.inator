@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Make import-review popups draggable and resizable, with retained geometry, keyboard controls and scrollable narrow-screen content. Recognize the explicit Anonymous author byline, including original/edition year matching.
+
 - Centralize configurable import budgets through JavaScript/JSON, raise defaults for larger documents and bound concurrent reference jobs. Fix formatted/wrapped bibliography segmentation, DOI-only bibliography links and stale document display after failed analysis; exercise all six private BEST text representations without publishing them.
 
 - Separate queued/running lookup counts from human review decisions; stack equal-size colored counters with jump actions, and make arrow navigation use that same review set.

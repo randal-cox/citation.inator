@@ -15,6 +15,8 @@ On 21 November 2026 the maintainer separated stable editor integration from the 
 
 The current public release is 0.3.0. No import API or demo is promised in the stable 0.3.0 package. The import branch keeps the work already built; its document-first review prototype is a 0.4.0 experiment. Version changes and publication follow the check-in/review procedure.
 
+Next import identity work: separate edition/reprint qualifiers from search titles, rank author/work-type evidence ahead of title resemblance, distinguish reviews/chapters from books, and retain authored edition years separately from provider dates. Preserve manual correction and never silently substitute a review DOI for a book.
+
 Current 0.4.0 development: configurable JavaScript/JSON import budgets, private six-format extracted-text BEST checks and a three-times-BEST synthetic bibliography are implemented. Safe linked-citation rewriting and native PDF/Word intake remain follow-up work; successful loading does not establish parsing accuracy or general large-document performance.
 
 ## Completed milestone 0.2.0 — Article tooling

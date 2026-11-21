@@ -1,3 +1,4 @@
+import {movableReviewWindow} from './review-window.mjs';
 import {reviewProgress} from './review-progress.mjs';
 import {createBrowserEnrichment,compareIdentity,enrichmentIdentifier,normalizeImportIdentifier,normalizeImportLimits,readableImportSource} from './enrichment-browser.mjs';
 import {initializeCitationInspector} from '../../dist/citation-inspector.mjs';
@@ -9,6 +10,7 @@ let activeExampleSelection='apa';
 let workingSource='',review=null,version=0,output=null,referenceRecords=[],referenceEntries=[],documentModel=null,originalFile=null,fileVersion=0,activeGroup=null,closeTimer,convertingVersion=null,conversionTimer,analysisTimer,formatChoiceRequired=false;
 const setSource=text=>{workingSource=text;$('source').value=text;};
 const el=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
+const reviewWindows=new WeakMap();
 const completionStates=new Map(),lookup=createBrowserEnrichment();let lookupEpoch=0,manualLookupTimer;
 const referenceIdentifier=source=>source?.identifiers?.find(id=>['doi','isbn'].includes(id.scheme));
 const searchKind=source=>source.type==='book'?'isbn':source.type==='document'?'both':'doi';
@@ -150,13 +152,15 @@ function renderBibliography() {
 }
 function closeReview() {
  clearTimeout(closeTimer);
- if(activeGroup) { activeGroup.hidden=true;const anchor=document.querySelector(`[data-review-group="${activeGroup.dataset.group}"]`);anchor?.setAttribute('aria-expanded','false'); }
+ if(activeGroup) { reviewWindows.get(activeGroup)?.cancel();activeGroup.hidden=true;const anchor=document.querySelector(`[data-review-group="${activeGroup.dataset.group}"]`);anchor?.setAttribute('aria-expanded','false'); }
  activeGroup=null;
 }
-function scheduleClose() {clearTimeout(closeTimer);closeTimer=setTimeout(()=>{if(!activeGroup?.contains(document.activeElement))closeReview();},300);}
+function scheduleClose() {clearTimeout(closeTimer);closeTimer=setTimeout(()=>{if(activeGroup?.dataset.pinned!=='true'&&!activeGroup?.contains(document.activeElement))closeReview();},300);}
 function openReview(index,focus=false) {
  const group=$('groups').children[index],anchor=document.querySelector(`[data-review-group="${index}"]`);if(!group||!anchor)return;
+ if(activeGroup===group){clearTimeout(closeTimer);if(focus)group.focus({preventScroll:true});return;}
  closeReview();activeGroup=group;group.hidden=false;anchor.setAttribute('aria-expanded','true');
+ if(reviewWindows.get(group)?.placed){reviewWindows.get(group).fit();if(focus)group.focus({preventScroll:true});return;}
  const rect=anchor.getBoundingClientRect(),width=Math.min(570,window.innerWidth-24);group.style.width=width+'px';
  group.style.left=Math.min(Math.max(12,rect.left),window.innerWidth-width-12)+'px';
  const below=window.innerHeight-rect.bottom-20,above=rect.top-20;
@@ -256,7 +260,7 @@ function renderGroups() {
   group.addEventListener('input',changed);group.addEventListener('change',changed);
   group.addEventListener('keydown',event=>{if(event.key==='Enter'&&event.target.matches('input[type="text"]'))event.preventDefault();});
   group.append(state);
-  const details=el('details');details.append(el('summary','Matching evidence'),el('pre',JSON.stringify(match.items,null,2)));group.append(details);$('groups').append(group);updateReviewAppearance(group);
+  const details=el('details');details.append(el('summary','Matching evidence'),el('pre',JSON.stringify(match.items,null,2)));group.append(details);const content=el('div');content.className='review-content';content.append(...group.childNodes);group.append(content);reviewWindows.set(group,movableReviewWindow(group,{onInteract:()=>clearTimeout(closeTimer)}));$('groups').append(group);updateReviewAppearance(group);
  });
 }
 async function analyzeSource() {
@@ -299,7 +303,7 @@ document.addEventListener('keydown',event=>{
  if(navigationIndex!==undefined && ['ArrowLeft','ArrowRight'].includes(event.key) && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.target.closest('input:not([type="radio"]),textarea,select,[contenteditable]')){event.preventDefault();moveReview(Number(navigationIndex),event.key==='ArrowRight'?1:-1);return;}
  if(event.key==='Escape'&&activeGroup){const restore=activeGroup.contains(document.activeElement),anchor=document.querySelector(`[data-review-group="${activeGroup.dataset.group}"]`);closeReview();if(restore)anchor?.focus({preventScroll:true});}});
 document.addEventListener('pointerdown',event=>{if(activeGroup&&!activeGroup.contains(event.target)&&!event.target.closest('[data-review-group]'))closeReview();});
-window.addEventListener('resize',closeReview);
+window.addEventListener('resize',()=>{if(activeGroup)reviewWindows.get(activeGroup)?.fit();});
 $('resolve-citations').addEventListener('toggle',()=>{if(!$('resolve-citations').open)closeReview();});
 $('example').addEventListener('change',loadExample);
 $('style').addEventListener('change',()=>void analyzeSource());
