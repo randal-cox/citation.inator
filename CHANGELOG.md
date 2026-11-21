@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Plan browser-only identifier/metadata completion, including proposed gray/red/orange/green statuses, conservative automatic matching, edition-aware ISBN selection and manual/offline fallback. Record bounded provider HTTP/CORS observations; runtime enrichment remains unimplemented.
+
 - Make Left/Right navigate red citations even from radio choices; keep Up/Down for selecting a radio and preserve text-field caret keys. Add a real-publication import example with withheld DOIs and a separate publisher-checked answer key.
 
 - Apply import radio decisions immediately, make Don’t fix a radio choice, and add Previous/Next red-citation arrows with keyboard navigation that preserves native control keys. Strengthen unresolved red highlighting.

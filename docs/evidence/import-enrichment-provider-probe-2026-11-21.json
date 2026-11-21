@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-21",
+  "method": "Python urllib HTTPS GET with Origin header; not an actual browser fetch",
+  "origin": "http://127.0.0.1:4187",
+  "scope": "One public bibliographic query per provider. No manuscript or private input. Responses were inspected, not adopted as reference records.",
+  "observations": [
+    {
+      "provider": "Crossref",
+      "url": "https://api.crossref.org/works?query.bibliographic=Ioannidis+2005+Why+Most+Published+Research+Findings+Are+False&rows=3&select=DOI%2Ctitle%2Cauthor%2Cissued%2Ctype",
+      "status": 200,
+      "accessControlAllowOrigin": "*",
+      "candidateCount": 3,
+      "retryAfter": null
+    },
+    {
+      "provider": "Open Library",
+      "url": "https://openlibrary.org/search.json?title=Fantastic+Mr+Fox&author=Roald+Dahl&limit=3&fields=key%2Ctitle%2Cauthor_name%2Cfirst_publish_year%2Cedition_key",
+      "status": 200,
+      "accessControlAllowOrigin": "*",
+      "candidateCount": 3,
+      "retryAfter": null
+    }
+  ],
+  "limitations": "These observations do not establish browser/CSP behavior, future availability, edition identity, match correctness or discovery accuracy."
+}

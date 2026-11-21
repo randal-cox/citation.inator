@@ -70,7 +70,7 @@ Acceptance: tags survive normalization/refresh, icon and text names render, miss
 
 ## F4: reviewed import, delivered in smaller stages
 
-Work has begun toward 0.3.0. The [development protocol](import-development.md) and [milestone record](milestones/0.3.0.md) distinguish the experimental source-only matcher from unimplemented file adapters, provider search and reviewed edits. The 0.2.0 public API remains unchanged.
+Import now targets 0.4.0. The [development protocol](import-development.md) and [milestone record](milestones/0.4.0.md) distinguish implemented prototypes from unfinished adapters and browser-native integration. The stable 0.3.0 public API does not include import. The [browser enrichment plan](import-enrichment-plan.md) specifies the next identifier-search and completion flow; it is a plan, not delivered behavior.
 
 The reusable pipeline is extraction, reference parsing, in-text recognition, local matching, optional identifier search, review, and an explicit edit plan. Each stage retains original text, source ranges, diagnostics and provenance. Unrecognized references stay available as raw local records; provider failure must not lose the document. No network call is required for local parsing and matching.
 
