@@ -1,4 +1,4 @@
-/*! citation-inator native import v0.4.0-preview.1 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! citation-inator native import v0.4.0-preview.2 | MIT | See THIRD_PARTY_LICENSES.txt */
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -40588,7 +40588,7 @@ async function pdfText(bytes, { limits, signal, pdfWorkerSrc }) {
   abort(signal);
   if (pdfWorkerSrc) pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
   else if (typeof window !== "undefined") pdfjs.GlobalWorkerOptions.workerSrc = new URL("./citation-pdf.worker.mjs", import.meta.url).href;
-  const task = pdfjs.getDocument({ data: bytes.slice(), isEvalSupported: false, useSystemFonts: false, disableFontFace: true, stopAtErrors: true, verbosity: 0 });
+  const task = pdfjs.getDocument({ data: new Uint8Array(bytes), isEvalSupported: false, useSystemFonts: false, disableFontFace: true, stopAtErrors: true, verbosity: 0 });
   const cancel = () => void task.destroy();
   signal?.addEventListener("abort", cancel, { once: true });
   let document2;
@@ -40651,14 +40651,24 @@ async function pdfText(bytes, { limits, signal, pdfWorkerSrc }) {
         repeated.set(key, entry);
       }
     }
+    const fractions = /* @__PURE__ */ new Map();
+    for (const page of pages) for (const line of page.edgeLines) {
+      const match = /^(.*\S)\s+(\d{1,4})\s*\/\s*(\d{1,4})$/u.exec(line);
+      if (!match || Number(match[2]) !== page.number || Number(match[3]) !== pages.length) continue;
+      const key = match[1], entry = fractions.get(key) || { count: 0, lines: /* @__PURE__ */ new Set() };
+      entry.count++;
+      entry.lines.add(line);
+      fractions.set(key, entry);
+    }
+    const fractionFurniture = new Set([...fractions.values()].filter((entry) => entry.count >= 3 && entry.count >= pages.length * 0.5).flatMap((entry) => [...entry.lines]));
     const furniture = new Set([...repeated.values()].filter((entry) => entry.count >= 3 && entry.count >= pages.length * 0.5 && entry.lines.size >= 3).flatMap((entry) => [...entry.lines]));
     const source = pages.map((page) => page.text.split("\n").filter((line, index, lines) => {
-      const removed = (index === 0 || index === lines.length - 1) && page.edgeLines.has(line) && furniture.has(line);
+      const removed = page.edgeLines.has(line) && (fractionFurniture.has(line) || (index === 0 || index === lines.length - 1) && furniture.has(line));
       if (removed) metadata.excludedText.push({ page: page.number, text: line, reason: "page-number-furniture" });
       return !removed;
     }).join("\n")).join("\n\n");
     if (!source.trim()) throw Error("This PDF has no extractable text. Paste text from an OCR tool.");
-    if (furniture.size) diagnostics.push({ code: "import-pdf-repeated-page-furniture-excluded", patterns: furniture.size });
+    if (furniture.size || fractionFurniture.size) diagnostics.push({ code: "import-pdf-repeated-page-furniture-excluded", patterns: furniture.size + fractionFurniture.size });
     return { text: source, metadata, diagnostics: [{ code: "import-native-working-copy", format: "pdf" }, ...diagnostics, { code: "import-pdf-reading-order-review-required" }] };
   } finally {
     signal?.removeEventListener("abort", cancel);

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Show existing identifiers beside import candidates and expose unmatched-work controls directly. Separate popup header/work/evidence surfaces with neutral light/dark colors.
+- Fix Node Buffer PDF intake, repeated page/total URL footers and wrapped-year phantom references. Withhold observed punctuation-ended wrapped DOI fragments instead of marking their partial identifiers Ready; retain a diagnostic and original text.
+
 - Separate the popup header from its scrolling body. Name each work in combined citations, keep its review disclosure open initially, show retrieved reference details for identifier conflicts and label distant hits Less likely results.
 - Add complete-citation readiness totals/percentages alongside lookup tasks and review decisions. Preserve disclosure choices during live updates.
 - Include Crossref subtitles/readable formatting in title comparison, fixing false identity conflicts; retry empty Open Library subtitle searches once with the main title while keeping edition choices manual.

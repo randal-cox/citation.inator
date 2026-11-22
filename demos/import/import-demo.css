@@ -182,8 +182,8 @@
 .import-demo .work-count { margin:0 0 10px; font-size:14px; font-weight:650; }
 .import-demo .work-review { margin:12px 0; }
 .import-demo .work-review>summary { display:flex; align-items:center; gap:8px; }
-.import-demo .work-review>summary::before { content:'▸'; flex:none; }
-.import-demo .work-review[open]>summary::before { content:'▾'; }
+.import-demo .work-review>summary::before { content:''; flex:none; }
+.import-demo .work-review[open]>summary::before { content:''; }
 .import-demo .work-review .work-status { margin-left:auto; font-size:12px; font-weight:400; text-align:right; }
 .import-demo .work-review-body { padding:12px; }
 .import-demo .work-review fieldset { margin:0; }
@@ -201,3 +201,30 @@
 
 .import-demo .citation-group>.review-header { position:relative; top:auto; flex:none; margin:0; padding:16px 20px 12px; background:inherit; }
 .import-demo .citation-group>.review-content { padding-top:0; }
+
+/* Review hierarchy: citation header, work sections, then inset identifier evidence. */
+.import-demo .citation-group { --review-base:#f5f6f3; --review-header:#e5e9e5; --review-work:#fff; --review-bar:#e9ece8; --review-inset:#eef1ed; --review-rule:#748176; --review-muted:#4c5c53; background:var(--review-base); color:#1f3027; border-color:#718779; }
+.import-demo .citation-group>.review-header { background:var(--review-header); border-bottom:1px solid var(--review-rule); padding-bottom:14px; }
+.import-demo .citation-group>.review-content { padding-top:16px; }
+.import-demo .citation-group .work-review { background:var(--review-work); border-color:var(--review-rule); }
+.import-demo .citation-group .work-review>summary { background:var(--review-bar); }
+.import-demo .citation-group .work-review>summary::marker { content:''; }
+.import-demo .citation-group .work-review-body { background:var(--review-work); }
+.import-demo .citation-group .work-status { color:var(--review-muted); }
+.import-demo .citation-group .identifier-completion:not([hidden]) { background:var(--review-inset); border-top:1px solid var(--review-rule); padding:12px; margin-top:12px; }
+.import-demo .citation-group .identifier-completion>p:first-child { margin-top:0; }
+.import-demo .citation-group details:not(.work-review) { background:var(--review-inset); border-color:var(--review-rule); }
+.import-demo .citation-group details:not(.work-review)>summary { background:var(--review-bar); }
+.import-demo .citation-group .target-choice small { color:var(--review-muted); }
+.import-demo .citation-group input[type="text"] { background:var(--review-work); border-color:var(--review-rule); }
+.import-demo .citation-group button:not(.review-resize) { background:var(--review-work); color:inherit; border-color:var(--review-rule); }
+.import-demo .citation-group .completion-current { border-left:3px solid #9a7138; padding-left:10px; }
+.import-demo .citation-group .reference-identifiers { margin-top:4px; overflow-wrap:anywhere; }
+@media(prefers-color-scheme:dark) {
+ .import-demo .citation-group { --review-base:#25292d; --review-header:#171c1f; --review-work:#2b3034; --review-bar:#393f43; --review-inset:#1c2125; --review-rule:#74827d; --review-muted:#c1cbc5; background:var(--review-base); color:#eef2ed; border-color:#8eaaa0; }
+ .import-demo .citation-group .completion-current { border-left-color:#d5b77e; }
+}
+@media(forced-colors:active) { .import-demo .citation-group { border-color:CanvasText; } .import-demo .citation-group :is(.review-header,.work-review,.identifier-completion) { border-color:CanvasText; } }
+.import-demo .citation-group input[type="text"]::placeholder { color:var(--review-muted); opacity:1; }
+.import-demo .citation-group .review-content>fieldset { background:var(--review-work); border:1px solid var(--review-rule); border-radius:6px; padding:12px; }
+.import-demo .citation-group pre { background:var(--review-inset); color:inherit; }

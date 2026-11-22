@@ -1,0 +1,50 @@
+{
+  "article": {
+    "title": "A qualitative study examining the health system\u2019s response to COVID-19 in Sierra Leone",
+    "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0294391",
+    "doi": "10.1371/journal.pone.0294391",
+    "license": "CC BY",
+    "pages": 20,
+    "pdfSHA256": "f16851dce9987c3caa48151cddb0d5da3367c4b5280142eb7af1908d97579c25"
+  },
+  "method": "Native Node PDF extraction; independent publisher XML reference and ordered body-citation inventory. Browser native intake separately observed; provider coverage is not inferred from matching counts.",
+  "results": {
+    "publisherReferences": 52,
+    "importedReferences": 52,
+    "citationGroups": 53,
+    "publisherCitedItems": 62,
+    "importedCitedItems": 62,
+    "orderedCitationSequenceEqual": true,
+    "unmatchedCitedItems": 0,
+    "reviewedBatchPreviewEdits": 53,
+    "outputMarkers": 53,
+    "originalPDFUnchanged": true,
+    "excludedPageTotalFooters": 20
+  },
+  "identifierCoverage": {
+    "publisherDOIs": 27,
+    "correctExtractedDOIs": 15,
+    "missedWrappedDOIs": 9,
+    "withheldPunctuationEndedFragments": 3,
+    "withheldReferenceNumbers": [
+      6,
+      8,
+      17
+    ],
+    "diagnostic": "import-wrapped-identifier-review-required"
+  },
+  "fixedDefects": [
+    "DOI-bearing page/total footers polluted references",
+    "Standalone wrapped year became a phantom reference",
+    "Node Buffer was rejected by PDF.js",
+    "Three truncated DOI fragments could be treated as known identifiers"
+  ],
+  "limits": [
+    "Manual Vancouver choice required because front-matter author-date citation makes detection mixed.",
+    "Numeric reference fields remain raw except labels/explicit identifiers; automatic bibliographic discovery cannot work from unparsed bylines/titles.",
+    "No general wrapped DOI reconstruction; 12 of 27 publisher DOI records still require recovery or manual entry.",
+    "PLOS running headers remain in the text working copy.",
+    "IAB showed stalled progress after its automation timed out while selecting Vancouver; independent real Chrome mocked-provider queue advanced. Cause unresolved.",
+    "Matching a reference does not verify the claim made by the citing passage."
+  ]
+}

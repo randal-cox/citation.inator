@@ -42,7 +42,7 @@ async function pdfText(bytes,{limits,signal,pdfWorkerSrc}){
  // Copied browser distributions keep the worker next to this optional bundle.
  if(pdfWorkerSrc)pdfjs.GlobalWorkerOptions.workerSrc=pdfWorkerSrc;
  else if(typeof window!=='undefined')pdfjs.GlobalWorkerOptions.workerSrc=new URL('./citation-pdf.worker.mjs',import.meta.url).href;
- const task=pdfjs.getDocument({data:bytes.slice(),isEvalSupported:false,useSystemFonts:false,disableFontFace:true,stopAtErrors:true,verbosity:0});
+ const task=pdfjs.getDocument({data:new Uint8Array(bytes),isEvalSupported:false,useSystemFonts:false,disableFontFace:true,stopAtErrors:true,verbosity:0});
  const cancel=()=>void task.destroy();signal?.addEventListener('abort',cancel,{once:true});
  let document;
  try{
@@ -63,10 +63,13 @@ async function pdfText(bytes,{limits,signal,pdfWorkerSrc}){
   }
   // Repeated page furniture otherwise becomes prose or corrupts the bibliography.
   const repeated=new Map();for(const page of pages){const lines=page.text.split('\n').filter(Boolean);for(const line of new Set([lines[0],lines.at(-1)].filter(Boolean))){const match=/^([\p{L} .–—-]{0,70}?)\s*(\d{1,4})$/u.exec(line);if(!match||!page.edgeLines.has(line))continue;const key=match[1]+'#offset'+(Number(match[2])-page.number);const entry=repeated.get(key)||{count:0,lines:new Set()};entry.count++;entry.lines.add(line);repeated.set(key,entry);}}
+  // A repeated edge footer with this page/total is furniture even when it contains a URL/date.
+  const fractions=new Map();for(const page of pages)for(const line of page.edgeLines){const match=/^(.*\S)\s+(\d{1,4})\s*\/\s*(\d{1,4})$/u.exec(line);if(!match||Number(match[2])!==page.number||Number(match[3])!==pages.length)continue;const key=match[1],entry=fractions.get(key)||{count:0,lines:new Set()};entry.count++;entry.lines.add(line);fractions.set(key,entry);}
+  const fractionFurniture=new Set([...fractions.values()].filter(entry=>entry.count>=3&&entry.count>=pages.length*.5).flatMap(entry=>[...entry.lines]));
   const furniture=new Set([...repeated.values()].filter(entry=>entry.count>=3&&entry.count>=pages.length*.5&&entry.lines.size>=3).flatMap(entry=>[...entry.lines]));
-  const source=pages.map(page=>page.text.split('\n').filter((line,index,lines)=>{const removed=(index===0||index===lines.length-1)&&page.edgeLines.has(line)&&furniture.has(line);if(removed)metadata.excludedText.push({page:page.number,text:line,reason:'page-number-furniture'});return !removed;}).join('\n')).join('\n\n');
+  const source=pages.map(page=>page.text.split('\n').filter((line,index,lines)=>{const removed=page.edgeLines.has(line)&&(fractionFurniture.has(line)||(index===0||index===lines.length-1)&&furniture.has(line));if(removed)metadata.excludedText.push({page:page.number,text:line,reason:'page-number-furniture'});return !removed;}).join('\n')).join('\n\n');
   if(!source.trim())throw Error('This PDF has no extractable text. Paste text from an OCR tool.');
-  if(furniture.size)diagnostics.push({code:'import-pdf-repeated-page-furniture-excluded',patterns:furniture.size});
+  if(furniture.size||fractionFurniture.size)diagnostics.push({code:'import-pdf-repeated-page-furniture-excluded',patterns:furniture.size+fractionFurniture.size});
   return {text:source,metadata,diagnostics:[{code:'import-native-working-copy',format:'pdf'},...diagnostics,{code:'import-pdf-reading-order-review-required'}]};
  }finally{signal?.removeEventListener('abort',cancel);await task.destroy();}
 }

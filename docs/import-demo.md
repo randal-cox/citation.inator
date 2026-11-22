@@ -114,3 +114,5 @@ A synthetic single bibliography with 51 distinct works and 57 citation groups ex
 Combined citations show the number of references and a separate, initially open disclosure named for each cited work. Each work has its own status and choices. Leaving a combined citation unchanged applies to the entire group. The popup title and navigation sit above the scrolling body, so long results cannot overlap them. Conflicting identifiers show the retrieved title, authors, year and publication details before the explicit override action.
 
 The metrics have different units: Ready counts citation groups, Looking up counts shared background reference tasks, and Needs review counts decisions. They are not additive. A known identifier can be usable while optional metadata is still loading.
+
+Known bibliography identifiers are shown beside their reference candidate, even while discovery controls stay hidden. Missing works in a combined citation expose their identifier and leave-unchanged controls directly, rather than an empty choice disclosure. Review popups use neutral header, work and inset evidence surfaces in light/dark modes; citation-state colors remain separate.

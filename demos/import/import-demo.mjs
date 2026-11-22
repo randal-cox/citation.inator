@@ -238,10 +238,10 @@ function renderGroups() {
   for(const [direction,icon,name,key] of [[-1,'←','Previous','ArrowLeft'],[1,'→','Next','ArrowRight']]) {
    const button=el('button',icon);button.type='button';button.dataset.direction=String(direction);button.setAttribute('aria-label',name+' red citation');button.title=name+' red citation ('+(direction>0?'Right':'Left')+' arrow; Up/Down changes radio choice)';button.setAttribute('aria-keyshortcuts',key);button.addEventListener('click',()=>moveReview(index,direction));navigation.append(button);
   }
-  header.append(caption,navigation);group.append(header);if(match.items.length>1){const count=el('p',match.items.length+' references');count.className='work-count';group.append(count);}
+  header.append(caption,navigation);group.append(header);if(match.items.length>1){const count=el('p',match.items.length+' cited works');count.className='work-count';group.append(count);}
   match.items.forEach((proposal,itemIndex)=>{
    const fieldset=el('fieldset');fieldset.dataset.item=String(itemIndex);const workLabel=citedWorkLabel(proposal.item);fieldset.setAttribute('aria-label','Bibliography match for '+workLabel);
-   fieldset.append(el('legend',`${proposal.candidates.length} suggested target${proposal.candidates.length===1?'':'s'}`));
+   fieldset.append(el('legend',`${match.items.length>1&&!proposal.candidates.length?workLabel+' · ':''}${proposal.candidates.length?proposal.candidates.length+' suggested target'+(proposal.candidates.length===1?'':'s'):'No bibliography match'}`));
    if(!proposal.candidates.length){const name=proposal.item.authors?.[0]?.normalize('NFKC').toLocaleLowerCase('en'),related=referenceRecords.some(record=>record.authors?.some(author=>(author.family || author.literal || '').normalize('NFKC').toLocaleLowerCase('en')===name)),unparsed=referenceRecords.some(record=>!record.authors?.length);fieldset.append(el('p',related?'Author found; check year and edition':unparsed?'No match; check the unparsed bibliography entries':'No matching bibliography entry'));}
    for(const [candidateIndex,candidate] of proposal.candidates.entries()) {
     const record=referenceRecords.find(record=>record.id===candidate.recordId),label=el('label');label.className='target-choice';
@@ -249,13 +249,13 @@ function renderGroups() {
     const text=el('span');text.append(el('strong',record?.title || referenceEntries.find(entry=>entry.id===candidate.recordId)?.raw || candidate.title || candidate.recordId));
     const byline=(record?.authors || []).map(author=>author.literal || [author.given,author.family].filter(Boolean).join(' ')).join('; ');
     text.append(el('small',[byline,record?.issued?.[0] || (record?.undated?'n.d.':''),record?.containerTitle || record?.publisher].filter(Boolean).join(' · ')));
-    label.append(radio,text);fieldset.append(label);
+    const identifiers=(record?.identifiers || []).map(id=>id.scheme.toUpperCase()+': '+id.value);if(identifiers.length){const ids=el('small',identifiers.join(' · '));ids.className='reference-identifiers';text.append(ids);}label.append(radio,text);fieldset.append(label);
    }
    const manualLabel=el('label');manualLabel.className='target-choice';const manual=el('input');manual.type='radio';manual.name=`target-${index}-${itemIndex}`;manual.dataset.manual='';manual.id=`manual-${index}-${itemIndex}`;
    manualLabel.append(manual,el('span','Use an identifier'));fieldset.append(manualLabel);
    const input=el('input');input.type='text';input.id=`identifier-${index}-${itemIndex}`;input.maxLength=2048;input.placeholder='Paste DOI, ISBN or URL';input.setAttribute('aria-label',`Identifier for ${workLabel}`);
    input.addEventListener('input',()=>{manual.checked=true;});fieldset.append(input);
-   const skipLabel=el('label');skipLabel.className='target-choice';const skip=el('input');skip.type='radio';skip.name=`target-${index}-${itemIndex}`;skip.dataset.skip='';skip.id=`skip-${index}-${itemIndex}`;skipLabel.append(skip,el('span',match.items.length>1?'Leave entire citation unchanged':"Don't fix"));fieldset.append(skipLabel);if(match.items.length>1){const work=el('details');work.className='work-review';work.open=true;const summary=el('summary');summary.append(el('span',workLabel));const state=el('small');state.className='work-status';state.dataset.itemState=String(itemIndex);summary.append(state);const body=el('div');body.className='work-review-body';body.append(fieldset);work.append(summary,body);group.append(work);}else group.append(fieldset);
+   const skipLabel=el('label');skipLabel.className='target-choice';const skip=el('input');skip.type='radio';skip.name=`target-${index}-${itemIndex}`;skip.dataset.skip='';skip.id=`skip-${index}-${itemIndex}`;skipLabel.append(skip,el('span',match.items.length>1?'Leave entire citation unchanged':"Don't fix"));fieldset.append(skipLabel);if(match.items.length>1&&proposal.candidates.length){const work=el('details');work.className='work-review';work.open=true;const summary=el('summary');summary.append(el('span',workLabel));const state=el('small');state.className='work-status';state.dataset.itemState=String(itemIndex);summary.append(state);const body=el('div');body.className='work-review-body';body.append(fieldset);work.append(summary,body);group.append(work);}else group.append(fieldset);
   });
   const state=el('p','');state.className='item-state';state.setAttribute('aria-live','polite');
   const activeReview=review;

@@ -2,7 +2,7 @@
 
 A small citation library. Write citations in plain text, compile them into linked references and endnotes, and add an optional browser inspector. [Try programmatic citations](#try-programmatic-citations).
 
-**Stable release: 0.3.0 — Editor integration and reader polish.** [Release and downloads](https://github.com/randal-cox/citation.inator/releases/tag/v0.3.0). This branch contains the unpublished **0.4.0-preview.1** import candidate; published 0.3.0 artifacts remain unchanged.
+**Stable release: 0.3.0 — Editor integration and reader polish.** [Release and downloads](https://github.com/randal-cox/citation.inator/releases/tag/v0.3.0). This branch contains the unpublished **0.4.0-preview.2** import candidate; published 0.3.0 artifacts remain unchanged.
 
 **0.2.0 — Article tooling.** Editor notes, a site-wide bibliography and tag filters are included in this milestone. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/citation.inator/releases).
 
@@ -12,7 +12,7 @@ To serve the demos from the checkout, run `npm start` from the repository root.
 
 **Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
-**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.4.0-preview.1.tgz` there for this candidate (use `citation-inator-0.3.0.tgz` for the published stable release). The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
+**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.4.0-preview.2.tgz` there for this candidate (use `citation-inator-0.3.0.tgz` for the published stable release). The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">

@@ -97,16 +97,18 @@ function bibliographyEntries(source,document,style,limits) {
  if(!document.bibliography)return [];
  const {entriesStart,end}=document.bibliography;
  const entries=[];
+ // A bare wrapped year continues the preceding numbered entry before applying record caps.
+ const appendEntry=entry=>{const previous=entries.at(-1);if(style==='vancouver'&&previous&&/^(?:1[5-9]\d{2}|20\d{2})\.$/u.test(source.slice(entry.start,entry.end).trim())&&/^\s*[1-9]\d{0,3}\.\s+\S/u.test(source.slice(previous.start,previous.end))&&!source.slice(previous.end,entry.start).trim())previous.end=entry.end;else entries.push(entry);};
  for(const block of document.blocks.filter(block=>block.end>entriesStart&&block.start<end)){
-  if(block.type==='list'){for(const item of block.items)if(item.start>=entriesStart&&item.start<end)entries.push({start:item.start,end:Math.min(item.end,end)});}
+  if(block.type==='list'){for(const item of block.items)if(item.start>=entriesStart&&item.start<end)appendEntry({start:item.start,end:Math.min(item.end,end)});}
   else if(block.type==='paragraph'&&block.eligible){
    const lines=document.lines.filter(line=>line.start>=Math.max(block.start,entriesStart)&&line.start<Math.min(block.end,end)&&line.text.trim());
    const starts=text=>style==='vancouver'?/^\s*[1-9]\d{0,3}\.\s+/u.test(text):style==='apa'?/^(?:[^,\n]+,.*|[\p{L}\p{M} .&’'-]{1,150})\s*\((?:1[5-9]\d{2}|20\d{2}|n\.d\.)[a-z]?\)\.\s+/iu.test(text):/^[^,\n]+,.*\.\s+(?:1[5-9]\d{2}|20\d{2})/u.test(text);
    const boundaries=lines.filter(line=>starts(referenceExtraction(line.text,style).text.trim()));
    if(boundaries.length>1){
-    const beginning=Math.max(block.start,entriesStart);if(boundaries[0].start>beginning&&source.slice(beginning,boundaries[0].start).trim())entries.push({start:beginning,end:boundaries[0].start});
-    for(const [index,line] of boundaries.entries())entries.push({start:line.start,end:boundaries[index+1]?.start ?? Math.min(block.end,end)});
-   }else entries.push({start:Math.max(block.start,entriesStart),end:Math.min(block.end,end)});
+    const beginning=Math.max(block.start,entriesStart);if(boundaries[0].start>beginning&&source.slice(beginning,boundaries[0].start).trim())appendEntry({start:beginning,end:boundaries[0].start});
+    for(const [index,line] of boundaries.entries())appendEntry({start:line.start,end:boundaries[index+1]?.start ?? Math.min(block.end,end)});
+   }else appendEntry({start:Math.max(block.start,entriesStart),end:Math.min(block.end,end)});
   }
   if(entries.length>limits.references)throw new RangeError('Use at most '+limits.references+' reference entries.');
  }
@@ -116,6 +118,9 @@ function bibliographyEntries(source,document,style,limits) {
   const bullet=style!=='vancouver'?/^ {0,3}[-+*]\s+/u.exec(raw):null;
   const offset=bullet?.[0].length || 0,body=raw.slice(offset),visible=referenceExtraction(body,style),extraction=visible.extraction,map=[];let flat='';for(let index=0;index<visible.text.length;index++){map.push(index);flat+=visible.text[index]==='\r'||visible.text[index]==='\n'?' ':visible.text[index];if(visible.text[index]==='\r'&&visible.text[index+1]==='\n')index++;}map.push(visible.text.length);
   const parsed=flat.trim()&&flat.length<=20000?entryFields(flat,style):{schema:'citation-inator.import-reference.v1',fields:{},evidence:[],diagnostics:[{code:'import-reference-unparsed'}],requiresReview:true,state:'unparsed'};
+  // Never promote an identifier fragment ending at a line wrap into a known DOI.
+  const wrapped=new Set([...visible.text.matchAll(/(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:[ \t]*)(10\.\d{4,9}\/[^\s<>]*[.\/-])[ \t]*\r?\n[ \t]*(?!PMID\b|doi:|https?:)(?=\S)/giu)].map(match=>match[1].replace(/[.,;]+$/u,'').toLowerCase()));
+  if(wrapped.size){parsed.fields.identifiers=(parsed.fields.identifiers || []).filter(id=>id.scheme!=='doi'||!wrapped.has(id.value.toLowerCase()));parsed.diagnostics.push({code:'import-wrapped-identifier-review-required',scheme:'doi'});}
   const evidence=parsed.evidence.flatMap(item=>{if(!visible.mapped)return [{...item,start:0,end:raw.length,raw,exact:false,rule:'formatted-reference-text-proposal'}];const fragments=mapImportRange(extraction,{start:map[item.start],end:map[item.end]});if(!fragments.length)return [];const start=fragments[0].sourceStart+offset,end=fragments.at(-1).sourceEnd+offset;return [{...item,start,end,raw:raw.slice(start,end),exact:fragments.every(fragment=>fragment.exact)}];});
   for(const link of extraction.links){
    if(!link.href || link.href.length>20000)continue;
@@ -125,6 +130,7 @@ function bibliographyEntries(source,document,style,limits) {
    for(const identifier of identifiers)if(!parsed.fields.identifiers.some(existing=>existing.scheme===identifier.scheme&&existing.value===identifier.value))parsed.fields.identifiers.push(identifier);
    evidence.push({field:'identifiers',start:link.sourceStart+offset,end:link.sourceEnd+offset,raw:raw.slice(link.sourceStart+offset,link.sourceEnd+offset),exact:false,rule:'bibliography-link-identifier'});
   }
+  if(wrapped.size)parsed.fields.identifiers=(parsed.fields.identifiers || []).filter(id=>id.scheme!=='doi'||!wrapped.has(id.value.toLowerCase()));
   return {...parsed,...entry,line,raw,id:'ref-'+digest(raw).slice(0,20),evidence};
  });
 }

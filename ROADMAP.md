@@ -68,3 +68,5 @@ The local import-review demo is runnable now; see [its guide](docs/import-demo.m
 - **More ways to find and access sources.** Use recurring ISBN misses and gaps in full-text or library access to prioritize additional providers. Preserve edition identity and provider provenance when comparing candidates.
 
 The [verification history](docs/launch-verification.md) preserves the earlier assays and links to the released milestone. The [product brief](https://github.com/randal-cox/citation.inator/blob/main/docs/prd-citation-inspector.md#milestones) describes the longer-term feature sequence.
+
+The fresh [20-page public PDF check](docs/evidence/import-plos-0294391-2026-11-21.json) agrees with the publisher’s 52 references and ordered 62 cited items after extraction fixes. Remaining import work includes wrapped DOI recovery, structured numeric reference fields and investigating sidebar lookup progress observed in this run; these are not source-author errors. Host site-cache reuse and host-assigned IDs remain separate integration requirements.

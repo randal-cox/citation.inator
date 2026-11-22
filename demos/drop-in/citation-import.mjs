@@ -1,4 +1,4 @@
-/*! citation-inator import v0.4.0-preview.1 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! citation-inator import v0.4.0-preview.2 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/import-display.mjs
 var readableImportSource = (source) => source.replace(/data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/giu, "[embedded image]");
@@ -700,7 +700,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.4.0-preview.1",
+  version: "0.4.0-preview.2",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -11697,18 +11697,23 @@ function bibliographyEntries(source, document, style, limits) {
   if (!document.bibliography) return [];
   const { entriesStart, end } = document.bibliography;
   const entries = [];
+  const appendEntry = (entry) => {
+    const previous = entries.at(-1);
+    if (style === "vancouver" && previous && /^(?:1[5-9]\d{2}|20\d{2})\.$/u.test(source.slice(entry.start, entry.end).trim()) && /^\s*[1-9]\d{0,3}\.\s+\S/u.test(source.slice(previous.start, previous.end)) && !source.slice(previous.end, entry.start).trim()) previous.end = entry.end;
+    else entries.push(entry);
+  };
   for (const block of document.blocks.filter((block2) => block2.end > entriesStart && block2.start < end)) {
     if (block.type === "list") {
-      for (const item of block.items) if (item.start >= entriesStart && item.start < end) entries.push({ start: item.start, end: Math.min(item.end, end) });
+      for (const item of block.items) if (item.start >= entriesStart && item.start < end) appendEntry({ start: item.start, end: Math.min(item.end, end) });
     } else if (block.type === "paragraph" && block.eligible) {
       const lines = document.lines.filter((line) => line.start >= Math.max(block.start, entriesStart) && line.start < Math.min(block.end, end) && line.text.trim());
       const starts = (text) => style === "vancouver" ? /^\s*[1-9]\d{0,3}\.\s+/u.test(text) : style === "apa" ? /^(?:[^,\n]+,.*|[\p{L}\p{M} .&’'-]{1,150})\s*\((?:1[5-9]\d{2}|20\d{2}|n\.d\.)[a-z]?\)\.\s+/iu.test(text) : /^[^,\n]+,.*\.\s+(?:1[5-9]\d{2}|20\d{2})/u.test(text);
       const boundaries = lines.filter((line) => starts(referenceExtraction(line.text, style).text.trim()));
       if (boundaries.length > 1) {
         const beginning = Math.max(block.start, entriesStart);
-        if (boundaries[0].start > beginning && source.slice(beginning, boundaries[0].start).trim()) entries.push({ start: beginning, end: boundaries[0].start });
-        for (const [index, line] of boundaries.entries()) entries.push({ start: line.start, end: boundaries[index + 1]?.start ?? Math.min(block.end, end) });
-      } else entries.push({ start: Math.max(block.start, entriesStart), end: Math.min(block.end, end) });
+        if (boundaries[0].start > beginning && source.slice(beginning, boundaries[0].start).trim()) appendEntry({ start: beginning, end: boundaries[0].start });
+        for (const [index, line] of boundaries.entries()) appendEntry({ start: line.start, end: boundaries[index + 1]?.start ?? Math.min(block.end, end) });
+      } else appendEntry({ start: Math.max(block.start, entriesStart), end: Math.min(block.end, end) });
     }
     if (entries.length > limits.references) throw new RangeError("Use at most " + limits.references + " reference entries.");
   }
@@ -11725,6 +11730,11 @@ function bibliographyEntries(source, document, style, limits) {
     }
     map.push(visible.text.length);
     const parsed = flat.trim() && flat.length <= 2e4 ? entryFields(flat, style) : { schema: "citation-inator.import-reference.v1", fields: {}, evidence: [], diagnostics: [{ code: "import-reference-unparsed" }], requiresReview: true, state: "unparsed" };
+    const wrapped = new Set([...visible.text.matchAll(/(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:[ \t]*)(10\.\d{4,9}\/[^\s<>]*[.\/-])[ \t]*\r?\n[ \t]*(?!PMID\b|doi:|https?:)(?=\S)/giu)].map((match) => match[1].replace(/[.,;]+$/u, "").toLowerCase()));
+    if (wrapped.size) {
+      parsed.fields.identifiers = (parsed.fields.identifiers || []).filter((id) => id.scheme !== "doi" || !wrapped.has(id.value.toLowerCase()));
+      parsed.diagnostics.push({ code: "import-wrapped-identifier-review-required", scheme: "doi" });
+    }
     const evidence = parsed.evidence.flatMap((item) => {
       if (!visible.mapped) return [{ ...item, start: 0, end: raw.length, raw, exact: false, rule: "formatted-reference-text-proposal" }];
       const fragments = mapImportRange(extraction, { start: map[item.start], end: map[item.end] });
@@ -11740,6 +11750,7 @@ function bibliographyEntries(source, document, style, limits) {
       for (const identifier of identifiers) if (!parsed.fields.identifiers.some((existing) => existing.scheme === identifier.scheme && existing.value === identifier.value)) parsed.fields.identifiers.push(identifier);
       evidence.push({ field: "identifiers", start: link.sourceStart + offset, end: link.sourceEnd + offset, raw: raw.slice(link.sourceStart + offset, link.sourceEnd + offset), exact: false, rule: "bibliography-link-identifier" });
     }
+    if (wrapped.size) parsed.fields.identifiers = (parsed.fields.identifiers || []).filter((id) => id.scheme !== "doi" || !wrapped.has(id.value.toLowerCase()));
     return { ...parsed, ...entry, line, raw, id: "ref-" + digest2(raw).slice(0, 20), evidence };
   });
 }
