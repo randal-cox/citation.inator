@@ -58,6 +58,10 @@ The local import-review demo is runnable now; see [its guide](docs/import-demo.m
 - Extend the reported host-site verification to additional integrations and retain regression checks for formatted references, year letters, service preferences and return links.
 - Test on a physical phone and with Safari and VoiceOver. Cover opening the inspector, moving it, dismissing it, and returning from an endnote.
 
+## Near-term research revisit
+
+- **Public bibliography auditor — revisit soon.** Do a hands-on comparison of Recite, Edifix and relevant manuscript checkers before deciding whether another product is worthwhile. Compare actual prices and free-tier limits, accuracy, review effort, privacy and export/source preservation on the same rights-cleared examples. Free access may itself justify an offering even with feature parity; measure the operating costs and constraints. Recommending an existing product is an acceptable outcome. The agreed direction, if pursued, is a useful algorithmic checker without an account or LLM requirement, with optional user-funded AI that stops when consent, funds or quota are unavailable. See the [research brief](docs/research/bibliography-auditor-2026-11-23.md). No milestone assignment or expansion of 0.4.0 is implied.
+
 ## Later wishlist
 
 - **Bibliography manager integration (0.6.0).** Start with importing BibTeX, RIS, and CSL-JSON exports from Zotero and other reference managers so authors can reuse curated records across pages. Then explore an opt-in, read-only Zotero connector for importing selected items or collections. Keep source identifiers where available, preview changes on reimport, and preserve local edits and edition distinctions. [Zotero export guide](https://www.zotero.org/support/kb/exporting) and [Zotero API documentation](https://www.zotero.org/support/dev/web_api/v3/basics).
@@ -73,4 +77,4 @@ The fresh [20-page public PDF check](docs/evidence/import-plos-0294391-2026-11-2
 
 Draft integration preview.3 implements the requests in issues 16, 22 and 14; draft acceptance remains pending. Optional shared match-state/action descriptions and structured pending-format preview responses remain follow-ups, alongside the 0.5.0 worked host integration.
 
-A separate [public bibliography-auditor product hypothesis](docs/research/bibliography-auditor-2026-11-23.md) records existing competitors and optional user-funded AI routes. It is research, with no milestone assignment or implementation commitment; it does not expand 0.4.0 release gates.
+A separate [public bibliography-auditor product hypothesis](docs/research/bibliography-auditor-2026-11-23.md) records existing competitors and optional user-funded AI routes. It is queued above for a near-term research revisit, with no milestone assignment or implementation commitment; it does not expand 0.4.0 release gates.

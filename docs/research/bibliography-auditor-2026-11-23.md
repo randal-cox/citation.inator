@@ -45,6 +45,17 @@ Recommended spending rule: optional inference requires an explicit user-funded r
 
 ## Next bounded investigation
 
+**Priority: revisit soon.** The maintainer confirmed on 23 November that building a competing product is optional. First determine whether existing products already meet the need. Free access is a potentially sufficient contribution, even without unique features, provided its usefulness and operating costs are understood.
+
+The next pass must be a hands-on deep dive, not another documentation-only survey:
+
+- Verify prices, free allowances, word/page/file caps, trial expiry, account requirements and export restrictions.
+- Compare both citation consistency and bibliographic identity/formatting checks, including supported styles and editions.
+- Measure missed errors, false alarms, time to review/correct, and preservation of intentional exceptions and source text.
+- Check manuscript handling/privacy and what works without paid AI or an account.
+- Decide whether to recommend an existing tool, offer a free focused checker, or build a broader application. Any of these is an acceptable result; no novelty claim is assumed.
+
+
 Compare the same small, rights-cleared synthetic challenge set across our checker, Recite and Edifix: missing references, real book editions, a review DOI that resembles a book, year letters, institutional authors, intentional reprints and malformed references. Inspect false positives, missed errors, recovery effort and report transparency. Use public/synthetic material or obtain explicit consent before any unpublished manuscript leaves the local application.
 
 Then choose the public product's support floor and one optional user-funded AI path. Keep this product decision separate from completion/adoption of the existing draft.inator integration. No implementation or new milestone assignment is implied by this note.
