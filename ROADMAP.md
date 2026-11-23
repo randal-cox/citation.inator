@@ -72,3 +72,5 @@ The [verification history](docs/launch-verification.md) preserves the earlier as
 The fresh [20-page public PDF check](docs/evidence/import-plos-0294391-2026-11-21.json) agrees with the publisher’s 52 references and ordered 62 cited items after extraction fixes. Remaining import work includes wrapped DOI recovery, structured numeric reference fields and investigating sidebar lookup progress observed in this run; these are not source-author errors. Host site-cache reuse and host-assigned IDs remain separate integration requirements.
 
 Draft integration preview.3 implements the requests in issues 16, 22 and 14; draft acceptance remains pending. Optional shared match-state/action descriptions and structured pending-format preview responses remain follow-ups, alongside the 0.5.0 worked host integration.
+
+A separate [public bibliography-auditor product hypothesis](docs/research/bibliography-auditor-2026-11-23.md) records existing competitors and optional user-funded AI routes. It is research, with no milestone assignment or implementation commitment; it does not expand 0.4.0 release gates.
