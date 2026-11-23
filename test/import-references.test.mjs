@@ -8,8 +8,8 @@ test('APA rules propose structured author initials, date, suffix and title with 
  for(const field of result.evidence) assert.equal(text.slice(field.start,field.end),field.raw);
  assert.equal(result.raw,text);assert.equal(result.requiresReview,true);assert.equal(result.state,'partial');
 });
-test('unsupported corporate, complex and undated entries stay raw rather than inventing names',()=>{
- for(const text of ['Organization. (2021). A report. Example.','Avery Jr., J. (2021). Title. Example.','Avery (n.d.). An undated text.']) {
+test('unsupported complex and undated entries stay raw rather than inventing names',()=>{
+ for(const text of ['Avery Jr., J. (2021). Title. Example.','Avery (n.d.). An undated text.']) {
   const result=parseReference(text);assert.equal(result.raw,text);assert.equal(result.fields.authors,undefined);assert.ok(result.diagnostics.length);
  }
 });
@@ -35,3 +35,5 @@ test('quoted Chicago titles stop at the closing quote even with punctuation insi
  const result=parseReference('Avery, Jordan. 2021. “A quoted article title.” Example Journal.',{style:'chicago-author-date'});
  assert.equal(result.fields.title,'A quoted article title');
 });
+
+test('explicit organisation bylines are literal authors without rewriting raw reference text',()=>{const text='Organization. (2021). A report. Example.',p=parseReference(text);assert.deepEqual(p.fields.authors,[{literal:'Organization'}]);assert.equal(p.raw,text);assert.ok(p.diagnostics.some(d=>d.code==='import-reference-partial-fields'));});

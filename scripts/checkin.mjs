@@ -34,12 +34,13 @@ try {
   for (const path of ["dist/citation-tools.mjs", "demos/drop-in/citation-tools.mjs"]) {
     if (!(await read(path)).startsWith("/*! citation-inator tools v" + pkg.version + " |")) fail(path + " has a stale tools version banner. Run npm run build.");
   }
+  for(const path of ['dist/citation-compiler.mjs','demos/drop-in/citation-compiler.mjs'])if(!(await read(path)).startsWith('/*! citation-inator compiler v'+pkg.version+' |'))fail(path+' has a stale compiler banner. Run npm run build.');
   for (const [source, copy] of [
     ["src/citation-inspector.css", "dist/citation-inspector.css"],
     ["dist/citation-inspector.css", "demos/drop-in/citation-inspector.css"],
     ["dist/citation-inspector.mjs", "demos/drop-in/citation-inspector.mjs"],
     ["dist/citation-tools.mjs", "demos/drop-in/citation-tools.mjs"],
-    ...["citation-import.mjs","citation-import-files.mjs","citation-pdf.worker.mjs"].map(name=>["dist/"+name,"demos/drop-in/"+name]),
+    ...["citation-compiler.mjs","citation-import.mjs","citation-import-files.mjs","citation-pdf.worker.mjs"].map(name=>["dist/"+name,"demos/drop-in/"+name]),
     ["dist/THIRD_PARTY_LICENSES.txt", "demos/drop-in/THIRD_PARTY_LICENSES.txt"],
     ["CITATION.cff", "demos/drop-in/CITATION.cff"],
     ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])

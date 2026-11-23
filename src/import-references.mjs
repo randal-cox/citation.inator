@@ -11,6 +11,12 @@ export function parseAPAAuthorList(text) {
   return authors.length ? authors : null;
 }
 
+export function parseOrganizationAuthor(text){
+ const name=text.trim().replace(/\.$/u,'');
+ if(!name||name.length>150||/[;,<>]/u.test(name))return null;
+ return /\b(?:organization|organisation|institute|university|ministry|department|association|society|committee|council|agency|office|government|foundation|corporation|company|centres?|centers?|laborator(?:y|ies)|labs?|bureau|bank|united nations)\b/iu.test(name)||/^[A-Z]{2,12}$/u.test(name)?[{literal:name}]:null;
+}
+
 /** Parse one explicitly supplied entry; this never finds/deletes an article bibliography. */
 export function parseReference(text,{style='apa'}={}) {
   if (typeof text !== 'string' || !text.trim() || text.length>20000) throw new TypeError('Supply one reference entry, up to 20000 characters.');
@@ -37,7 +43,7 @@ export function parseReference(text,{style='apa'}={}) {
       propose('authorText',authorText,0,date.index,'author-before-date');
       propose('issued',[Number(date[1])],date.index,date.index+date[0].length,'explicit-style-date');
       if (date[2]) fields.sourceSuffix=date[2];
-      const authors=style==='apa' && (parseAPAAuthorList(authorText) || (/^Anonymous\.$/u.test(authorText)?[{literal:'Anonymous'}]:null));
+      const authors=(style==='apa'&&parseAPAAuthorList(authorText)) || parseOrganizationAuthor(authorText) || (/^Anonymous\.$/u.test(authorText)?[{literal:'Anonymous'}]:null);
       if (authors) { fields.authors=authors;fields.authorsComplete=true; }
       else diagnostics.push({code:'import-reference-byline-unparsed',message:'Retain and review the original author text.'});
       const after=date.index+date[0].length, tail=text.slice(after);

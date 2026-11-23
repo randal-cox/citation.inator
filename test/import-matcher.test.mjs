@@ -73,8 +73,8 @@ test('APA original/edition dates are retained, including same-year republication
  assert.equal(result.citations[0].items[1].originalYear,2020);
  const references=[{...record('edition',['Avery'],2005),originalIssued:[1990]}];
  assert.equal(matchCitations(result,references).matches[0].items[0].state,'unique');
- const unsupported=parseInTextCitations('(Avery 2000, 2004)','chicago-author-date');
- assert.equal(unsupported.citations.length,0);assert.equal(unsupported.diagnostics[0].code,'import-unparsed-author-date');
+ const multiple=parseInTextCitations('(Avery 2000, 2004)','chicago-author-date');
+ assert.deepEqual(multiple.citations[0].items.map(item=>item.year),[2000,2004]);
 });
 
 test('narrative boundaries stay within paragraphs and uncertain name spans require review',()=>{

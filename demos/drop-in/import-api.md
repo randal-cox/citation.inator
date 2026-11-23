@@ -134,3 +134,50 @@ Crossref titles include supplied subtitles, decode text entities and remove form
 Native PDF extraction accepts Node Buffers as byte arrays without changing caller bytes. Repeated edge footers containing a consistent page/total fraction can be excluded after matching the actual page number, document total and repeated prefix on at least three and half the pages; excluded text remains in metadata. A bare wrapped year continues a numeric bibliography entry before record-limit enforcement.
 
 The observed DOI fragments ending in punctuation at a line break are withheld with `import-wrapped-identifier-review-required`, including when Markdown autolinks are extracted. This is a conservative guard, not general DOI reconstruction. Numeric reference rules still retain bylines/titles/dates as raw text, so DOI-free numeric references require manual identifiers or intentional completion without one. The [public PDF sample](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/evidence/import-plos-0294391-2026-11-21.json) records both matching success and remaining identifier gaps.
+
+## Reuse site records and choose new IDs (0.4.0 preview)
+
+Pass `siteCache`, a normal citation.inator cache, to analysis and preview. Source bibliography matches remain separate from site identity proposals. Analysis returns `siteMatches`: one `{ recordId, candidates }` entry per imported reference. Each candidate has the site record ID, title, evidence and `requiresReview: true`. Look up full metadata in the cache you supplied. Shared canonical identifiers or compatible bibliographic evidence produce proposals; neither automatically reuses a work.
+
+```js
+const context = { mode: 'document', source, style: 'apa', siteCache };
+const analysis = processImportRequest(context);
+const sourceId = analysis.referenceRecords[0].id;
+const proposedSiteId = analysis.siteMatches[0].candidates[0].recordId;
+// After the reader accepts that proposed site identity:
+const result = processImportRequest({
+  ...context, action: 'preview',
+  review: analysis.review, reviewId: analysis.review.reviewId,
+  decisions: [{ citationIndex: 0, action: 'accept', targets: [{ recordId: sourceId }] }],
+  recordDecisions: [{ recordId: sourceId, siteRecordId: proposedSiteId }]
+});
+```
+
+A source identity decision applies consistently to all accepted mentions of that imported reference. It cannot name an arbitrary unproposed site record. The returned cache preserves existing site metadata and includes the full supplied site cache, plus new source records. The original bibliography stays in the source; reusing a work does not overwrite site fields from a partial imported reference. Declining reuse leaves the source as a separate work. Existing site records retain canonical identifier ownership if a new work shares an identifier; the new record retains a provenance note rather than creating an invalid duplicate-identifier cache.
+
+For new records, pass a JavaScript `recordId(record, { taken })` allocator to preview. It receives a copy of the normalized record and a read-only array of existing site/previously allocated IDs. Return a valid local record ID; duplicate, invalid, asynchronous and non-string results fail before edits are returned. Allocators may be called for uncited source bibliography records too, since the portable cache retains that bibliography. Callbacks are ordinary host code: keep them pure; external side effects are outside the library's transaction.
+
+```js
+const result = processImportRequest({
+  ...previewRequest,
+  recordId(record, { taken }) {
+    const base = slugForYourSite(record); // Your own naming convention.
+    let id = base, n = 2;
+    while (taken.includes(id)) id = `${base}-${n++}`;
+    return id;
+  }
+});
+```
+
+For JSON/CLI callers, use `recordIds: { [sourceRecordId]: 'your-new-id' }` instead. Omitted new IDs keep their source IDs if available; keys for unknown or reused records fail. Choose either `recordId` or `recordIds`. Explicit site reuse bypasses new-ID allocation. Source and manual-completion IDs must be distinct before allocation. Manual completion records also pass through the allocator; their explicit DOI/ISBN targets remain canonical notation. Record-ID targets use the allocated/reused local ID even when metadata has a DOI. The API handles notation escaping; hosts should not rewrite markers afterward.
+
+Preview adds `recordMap` (source/completion ID to output ID), `newRecordIds` and `reusedRecordIds`. Filter with `newRecordIds` when persisting new works. Naming options are preview-time choices; identity review stays bound to the source, original proposals and the entire supplied site cache. Changing any site metadata invalidates the review. Hosts must still check the live editor revision and apply text/records together. Site cache size uses `limits.references`; returned identity proposals use `limits.candidateChoices`.
+
+## Additional author-date import forms
+
+- `(Bell, 1992, 1997)` and `Bell (1992, 1997)` produce one group with one item per year. Year letters such as `(Cox, 1995a, 1995b)` stay attached to their items. Original/edition slash years retain their separate meaning.
+- Recognizable institutional bylines are literal authors in APA/Chicago references. Organization words and common connectors support forms such as World Health Organization and Department of Health. This is heuristic coverage, not recognition of every institution. Inferred acronyms such as WHO yield reviewable candidates, never a unique automatic selection.
+- `(Turner, 1969, as cited in Bell, 1992)` proposes Bell as the work actually read, retains Turner and the secondary relationship in the prefix/`secondarySource`, and reports `import-secondary-source-review-required`. A single candidate still needs a deliberate choice. This preserves the relationship; it does not establish that the secondary source supports the claim.
+- Balanced citation-like parentheses containing an unrecognized year form produce `import-unparsed-author-date` with source offsets. Markdown/HTML excluded regions and existing configured-keyword markers remain excluded. This is a cue for review, not an exhaustive detector: unclosed parentheses and every possible house style are outside this pass.
+
+The optional shared match-to-actions helper and structured pending-format preview response remain follow-ups. Preview still throws when citation format or bibliography boundary needs a choice; use the analysis flags before requesting it.

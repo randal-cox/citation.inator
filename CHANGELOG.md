@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add reviewable site-cache record reuse, stale-site checks, host-assigned record IDs and new/reused record mappings to the shared import API. Preserve existing site metadata and reject allocation collisions.
+- Recognize same-author multiple-year groups and institutional authors; keep inferred acronyms and secondary-source relationships reviewable. Report unrecognized balanced year-like citation spans with source ranges.
+- Add a self-contained browser article compiler (`citation-compiler.mjs`, `citation-inator/compiler-browser`) with Node parity, CSP coverage and bundled dependency notices.
+
 - Show existing identifiers beside import candidates and expose unmatched-work controls directly. Separate popup header/work/evidence surfaces with neutral light/dark colors.
 - Fix Node Buffer PDF intake, repeated page/total URL footers and wrapped-year phantom references. Withhold observed punctuation-ended wrapped DOI fragments instead of marking their partial identifiers Ready; retain a diagnostic and original text.
 

@@ -1,4 +1,4 @@
-/*! citation-inator tools v0.4.0-preview.2 | MIT | See LICENSE */
+/*! citation-inator tools v0.4.0-preview.3 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -9110,7 +9110,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.4.0-preview.2",
+  version: "0.4.0-preview.3",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9141,7 +9141,8 @@ var package_default = {
     "./import": "./src/import-api.mjs",
     "./import-browser": "./dist/citation-import.mjs",
     "./import-files": "./src/import-files.mjs",
-    "./import-files-browser": "./dist/citation-import-files.mjs"
+    "./import-files-browser": "./dist/citation-import-files.mjs",
+    "./compiler-browser": "./dist/citation-compiler.mjs"
   },
   bin: {
     "citation-inator": "./scripts/compile.mjs"
@@ -9162,7 +9163,8 @@ var package_default = {
     "dist/citation-import.mjs",
     "dist/citation-import-files.mjs",
     "dist/citation-pdf.worker.mjs",
-    "scripts/import.mjs"
+    "scripts/import.mjs",
+    "dist/citation-compiler.mjs"
   ],
   scripts: {
     build: "node scripts/build.mjs",

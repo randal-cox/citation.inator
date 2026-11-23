@@ -44,3 +44,36 @@ An explicit cross-project coordination proposal and issue draft are in [the coor
 ## 0.4.0 host discussion
 
 The labelled discussion is [draft.inator#16](https://github.com/randal-cox/draft.inator/issues/16), opened with candidate `0.4.0-preview.0` at `dbdb4d502c4f4bc00d5d406aac0e0564112826a4`. It supplies exact copied-browser assets, the shared request protocol and five questions covering host UI ownership, styling/name hooks, source revisions/undo, input parity and the future language seam. “Localization” in this discussion means host appearance/interaction; translation/i18n is planned for 0.5.0. In [draft’s response](https://github.com/randal-cox/draft.inator/issues/16#issuecomment-7070494435), draft accepts the headless boundary: it owns canvas/popovers, styling, revision checks and undo; a reusable styled view can wait for 0.5.0. Its synthetic checks exercised the shared tools bundle, not a deployed editor import. Two integration requests remain before acceptance: reviewable reuse of existing site-cache records and host-assigned IDs for new records. A state-description helper and structured pending-format response are optional suggestions. Final 0.4.0 remains held for the API exchange and adopter recheck.
+
+
+## 23 November preview handoff
+
+The next 0.4.0 preview implements the library portions of [issue 16](https://github.com/randal-cox/draft.inator/issues/16), [issue 22](https://github.com/randal-cox/draft.inator/issues/22) and [issue 14](https://github.com/randal-cox/draft.inator/issues/14). This is library implementation, not draft adoption or a final release.
+
+For site reuse, supply the same `siteCache` at analysis/preview, show `analysis.siteMatches` separately from in-document matching, and send explicit `recordDecisions`. Use `recordId` or JSON `recordIds` to name new records. Preserve `result.cache`, use `newRecordIds` to identify additions and apply text/cache together after the host revision check. The [API guide](import-api.md#reuse-site-records-and-choose-new-ids-040-preview) defines full-cache preservation, collision rejection and preview-time naming. Hosts do not need to rewrite notation.
+
+```js
+import { processImportRequest } from './citation-import.mjs';
+const siteCache = { schema: 'citation-inator.cache.v1', records: [{
+  id: 'bell-1992-ritual', type: 'book', state: 'resolved',
+  title: 'Ritual theory, ritual practice',
+  authors: [{ family: 'Bell', given: 'Catherine' }], issued: [1992]
+}] };
+const context = {
+  mode: 'document', style: 'apa', citationKeyword: 'citation', namespace: 'draft-import', siteCache,
+  source: 'A claim (Bell, 1992).\n\nReferences\nBell, C. (1992). Ritual theory, ritual practice. Oxford University Press.'
+};
+const analysis = processImportRequest(context);
+const sourceId = analysis.referenceRecords[0].id;
+// This synthetic example represents a reader accepting the proposed site identity.
+const result = processImportRequest({ ...context, action: 'preview',
+  review: analysis.review, reviewId: analysis.review.reviewId,
+  decisions: [{ citationIndex: 0, action: 'accept', targets: [{ recordId: sourceId }] }],
+  recordDecisions: [{ recordId: sourceId, siteRecordId: 'bell-1992-ritual' }]
+});
+// result.source uses local:bell-1992-ritual; result.newRecordIds is empty.
+```
+
+Multiple-year, organizational-author/acronym and secondary-source cases now have documented handling. Possible unrecognized balanced citation spans carry source-ranged diagnostics; secondary relationships and inferred acronyms require review. See the [edge-form contract](import-api.md#additional-author-date-import-forms). Optional `describeMatch` and structured pending-format responses remain separate follow-ups; current flags/errors are documented.
+
+For the static article preview, copy `citation-compiler.mjs` and its notices from the same candidate. Import `compileMarkdown`, `compileHTML` or `compileCitations`; initialize the reader inspector separately. The [compiler recipe](article-tools.md#compile-an-article-in-a-browser-040-preview) covers CSP and untrusted HTML. Draft still owns canvas/popover rendering, transactions, revision invalidation and publication. Adopter verification/issue closure remains with draft.

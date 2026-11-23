@@ -1,5 +1,6 @@
 // Experimental 0.4.0 source API. Recognition and matching propose review items only.
 import { normalizeRecord } from './records.mjs';
+import {parseOrganizationAuthor} from './import-references.mjs';
 import { scanCitationMarkers } from './compiler.mjs';
 
 const styles = new Set(['apa', 'chicago-author-date', 'vancouver']);
@@ -13,7 +14,7 @@ function authors(text) {
   const raw = text.replace(/\s+et\s+al\.?$/i, '').replace(/,\s*$/, '').trim();
   const names = raw.split(/\s*(?:,\s*(?:(?:and|&)\s*)?|\s+and\s+|&)\s*/u);
   if (!names.length || names.some(name => !name || name.split(/\s+/).some(word =>
-    nonNames.has(folded(word)) || !particles.has(folded(word)) && !/^\p{Lu}[\p{L}\p{M}'’.\-]*$/u.test(word)))) return null;
+    nonNames.has(folded(word)) || !particles.has(folded(word)) && !/^\p{Lu}[\p{L}\p{M}'’.\-]*$/u.test(word)))) return parseOrganizationAuthor(raw)?{names:[raw],etAl}:null;
   return { names, etAl };
 }
 
@@ -45,15 +46,23 @@ function dated(text) {
   return { year: printedYear, sourceSuffix, ...(originalYear !== undefined && { originalYear }), ...(locator && { locator }) };
 }
 
+function datedList(text) {
+ const one=dated(text);if(one)return [one];
+ const parts=text.trim().split(/\s*,\s*/u);
+ return parts.length>1&&parts.every(part=>new RegExp(`^${year}[a-z]?$`,'u').test(part))?parts.map(part=>dated(part)):null;
+}
+
 function parentheticalItem(text) {
+  const secondary=/^(.*?)\s+as cited in\s+(.+)$/iu.exec(text.trim());
+  if(secondary){const original=parentheticalItem(secondary[1].replace(/,\s*$/u,'')),cited=parentheticalItem(secondary[2]);if(!original||original.length!==1||!cited)return null;return cited.map(item=>({...item,prefix:secondary[1].trim().replace(/,\s*$/u,'')+', as cited in'+(item.prefix?' '+item.prefix:''),secondarySource:{raw:secondary[1].trim().replace(/,\s*$/u,''),authors:original[0].authors,year:original[0].year},requiresRelationshipReview:true}));}
   const prefix = /^(see also|see|cf\.|e\.g\.,?)\s+/i.exec(text.trim());
   const body = text.trim().slice(prefix?.[0].length || 0);
   const dateAt = new RegExp(`(?:(?:\\[${year}\\]\\s*)?${year}[a-z]?|n\\.d\\.(?:-?[a-z])?)`, 'iu').exec(body);
   if (!dateAt) return null;
   const byline = authors(body.slice(0, dateAt.index).replace(/,\s*$/, '').trim());
-  const date = dated(body.slice(dateAt.index));
-  if (!byline || !date) return null;
-  return { authors: byline.names, etAl: byline.etAl, ...date, ...(prefix && { prefix: prefix[1] }) };
+  const dates = datedList(body.slice(dateAt.index));
+  if (!byline || !dates) return null;
+  return dates.map(date=>({ authors: byline.names, etAl: byline.etAl, ...date, ...(prefix && { prefix: prefix[1] }) }));
 }
 
 /** Initial plain-text author-date detector. All matches retain original UTF-16 spans. */
@@ -76,11 +85,12 @@ export function parseInTextCitations(text, options = {}) {
     if (protectedRanges.some(item => start < item.end && end > item.start)) continue;
     if (/\n\s*\n/.test(match[1])) continue;
     const parts = match[1].split(';');
-    let items = parts.map(parentheticalItem);
+    const grouped=parts.map(parentheticalItem);
+    let items = grouped.every(Boolean)?grouped.flat():[null];
     let form = 'parenthetical';
     if (items.some(item => !item)) {
-      const date = parts.length === 1 && dated(match[1]);
-      if (date) {
+      const dates = parts.length === 1 && datedList(match[1]);
+      if (dates) {
         let beforeStart = Math.max(range.start, start - 180);
         let before = text.slice(beforeStart, start);
         const paragraph = [...before.matchAll(/\r?\n[ \t]*\r?\n/gu)].at(-1);
@@ -94,18 +104,19 @@ export function parseInTextCitations(text, options = {}) {
           const parsed = authors(raw);
           if (parsed) alternatives.push({ authors: parsed.names, etAl: parsed.etAl, start: beforeStart + words[index].index });
         }
-        if (!alternatives.length) continue;
+        if (!alternatives.length) {diagnostics.push({code:'import-unparsed-author-date',start,end,raw:match[0]});continue;}
         const byline = alternatives.at(-1);
         start = byline.start;
-        items = [{ authors: byline.authors, etAl: byline.etAl, ...date,
-          ...(alternatives.length > 1 && { authorAlternatives: alternatives, boundaryUncertain: true }) }];
+        items = dates.map(date=>({ authors: byline.authors, etAl: byline.etAl, ...date,
+          ...(alternatives.length > 1 && { authorAlternatives: alternatives, boundaryUncertain: true }) }));
         if (alternatives.length > 1) diagnostics.push({ code: 'import-uncertain-narrative-boundary', start: alternatives[0].start, end });
         form = 'narrative';
       } else {
-        if (new RegExp(`\\p{L}[^()]*${year}`, 'u').test(match[1]) || /n\.d\./iu.test(match[1])) diagnostics.push({ code: 'import-unparsed-author-date', start, end, raw: match[0] });
+        if (new RegExp(year, 'u').test(match[1]) || /n\.d\./iu.test(match[1])) diagnostics.push({ code: 'import-unparsed-author-date', start, end, raw: match[0] });
         continue;
       }
     }
+    if(items.some(item=>item.requiresRelationshipReview))diagnostics.push({code:'import-secondary-source-review-required',start,end,raw:text.slice(start,end)});
     itemCount+=items.length;
     if(citations.length>=maxCitations || itemCount>maxItems)throw new RangeError('Citation review budget exceeded. Use a shorter source or smaller groups.');
     citations.push({ start, end, raw: text.slice(start, end), form, items, requiresReview: true });
@@ -161,11 +172,13 @@ function detectNumeric(source,offset,protectedRanges,style,limits) {
   return {schema:'citation-inator.import-detection.v1',style,citations,diagnostics};
 }
 
+function organizationAlias(name,author){return Boolean(author.literal&&/^[A-Z]{2,12}$/u.test(name)&&![author.literal,author.short].filter(Boolean).some(label=>folded(label)===folded(name))&&author.literal.split(/[^\p{L}\p{N}]+/u).filter(word=>word&&!['of','the','and','for','in'].includes(folded(word))).map(word=>[...word][0]).join('').toUpperCase()===name);}
+
 function authorMatches(name, author) {
   const initials = /^(?:(?:\p{Lu}\.\s*)+)(.+)$/u.exec(name);
   const family = initials ? initials[1] : name;
   const labels = [author.family, author.literal, author.short].filter(Boolean);
-  if (!labels.some(label => folded(label) === folded(family))) return false;
+  if (!labels.some(label => folded(label) === folded(family))) return organizationAlias(name,author);
   if (!initials) return true;
   const required = (name.slice(0, name.length - family.length).match(/\p{Lu}/gu) || []).join('');
   const actual = ((author.given || '').match(/\p{L}[\p{L}\p{M}]*/gu) || []).map(word => [...word][0]).join('');
@@ -195,7 +208,7 @@ export function matchCitations(detection, references) {
         }));
         return {item,state:!candidates.length ? 'unmatched' : candidates.length === 1 ? 'unique' : 'ambiguous',candidates,requiresReview:true};
       }
-      let uncertain = Boolean(item.boundaryUncertain);
+      let uncertain = Boolean(item.boundaryUncertain||item.requiresRelationshipReview);
       const candidates = records.flatMap(({ record, sourceSuffix, undated }) => {
         if (record.state === 'unresolved' || !item.undated && !record.issued || item.undated && record.issued) return [];
         const bylines = (item.authorAlternatives || [item]).filter(byline =>
@@ -206,10 +219,10 @@ export function matchCitations(detection, references) {
         const yearField = item.undated ? (undated ? 'explicitly-undated' : 'date-not-recorded') : record.issued[0] === item.year ? 'issued' : record.originalIssued?.[0] === item.year ? 'originalIssued' : '';
         if (!yearField || item.originalYear && (record.originalIssued?.[0] !== item.originalYear || record.issued[0] !== item.year)) return [];
         if (item.sourceSuffix && sourceSuffix && item.sourceSuffix !== sourceSuffix) return [];
-        const missingSuffix = Boolean(item.sourceSuffix && !sourceSuffix);
-        uncertain ||= missingSuffix || record.authorsComplete === false || item.undated && !undated;
+        const missingSuffix = Boolean(item.sourceSuffix && !sourceSuffix),abbreviated=bylines.some(byline=>byline.authors.some((name,index)=>organizationAlias(name,record.authors[index])));
+        uncertain ||= abbreviated || missingSuffix || record.authorsComplete === false || item.undated && !undated;
         return [{ recordId: record.id, title: record.title, ...(item.authorAlternatives && { authorStarts: bylines.map(byline => byline.start) }), evidence: {
-          authors: record.authorsComplete === false ? 'incomplete-byline' : item.boundaryUncertain ? 'uncertain-narrative-span' : 'exact-normalized', year: yearField,
+          authors: abbreviated?'possible-organization-abbreviation':record.authorsComplete === false ? 'incomplete-byline' : item.boundaryUncertain ? 'uncertain-narrative-span' : 'exact-normalized', year: yearField,
           suffix: missingSuffix ? 'unknown-source-suffix' : item.sourceSuffix ? 'exact-source-suffix' : 'not-specified' } }];
       });
       return { item, state: !candidates.length ? 'unmatched' : candidates.length === 1 && !uncertain ? 'unique' : 'ambiguous', candidates, requiresReview: true };

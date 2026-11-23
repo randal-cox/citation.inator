@@ -5,9 +5,25 @@ These features are available in 0.2.0 and later. They are absent from 0.1.4; see
 <a id="unreleased-draftinator-compatibility-additions"></a>
 <a id="030-draftinator-compatibility-additions"></a>
 
+## Compile an article in a browser (0.4.0 preview)
+
+For a static editor preview, copy `dist/citation-compiler.mjs` and `dist/THIRD_PARTY_LICENSES.txt` into your site. This self-contained ES module exports `compileMarkdown`, `compileHTML` and `compileCitations`; it needs no npm installation or compiler server in the browser. Serve it over HTTP(S), including a local server, rather than a `file:` page. With npm use `citation-inator/compiler-browser`.
+
+```js
+import { compileMarkdown } from './citation-compiler.mjs';
+const result = compileMarkdown(
+  'Practice comes first {citation bell-1992-ritual | locator:12}.\n\n{citation endnote}',
+  cache,
+  { citationStyle: 'chicago-author-date', namespace: 'editor-preview' }
+);
+// Render result.html in your preview; initialize the inspector separately.
+```
+
+Supply a normal citation.inator cache containing the marker's IDs. The three entry points have the same results/options as their Node counterparts, including custom keyword, namespace and class configuration. The compiler performs no provider lookup, persistence or publication. It runs under `script-src 'self'` without eval or `new Function`; your host controls other preview assets and sanitization. Markdown/HTML compilation preserves author-supplied HTML according to the normal markup contract: sanitize untrusted document HTML before inserting it into a live page. Use `citation-inspector.mjs` separately for interactive reader panels and its styles. Published 0.3.0 archives do not contain this new compiler bundle.
+
 ## Marker classification and work-context notes (0.3.0)
 
-The 0.3.0 release candidate adds `markerKind` to `citation-inator/tools`, the self-contained `citation-tools.mjs` and the main `citation-inspector.mjs` browser bundle. These additions are not in the published 0.2.0 artifacts.
+The 0.3.0 release adds `markerKind` to `citation-inator/tools`, the self-contained `citation-tools.mjs` and the main `citation-inspector.mjs` browser bundle. These additions are not in the published 0.2.0 artifacts.
 
 ```js
 import { markerKind } from './citation-tools.mjs'; // also citation-inspector.mjs

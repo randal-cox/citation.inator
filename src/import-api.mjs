@@ -1,3 +1,4 @@
+import {importSiteContext,allocateImportRecords} from './import-sites.mjs';
 import {readableImportSource} from './import-display.mjs';
 import {normalizeImportLimits} from './import-limits.mjs';
 import {importHash} from './import-hash.mjs';
@@ -25,9 +26,11 @@ export function processImportRequest(input) {
   if(input.referenceText !== undefined && (typeof input.referenceText!=='string'||input.referenceText.length>limits.sourceCharacters)) throw new TypeError('Supply bounded reference text.');
   const formatDetection=model?.formatDetection ?? detectCitationFormat(source,{limits}),formatChoiceRequired=model?.formatChoiceRequired ?? (requestedStyle==='auto'&&!formatDetection.style);
   const style=model?.effectiveStyle ?? (requestedStyle==='auto'?(formatDetection.style || 'apa'):requestedStyle);
-  const contextHash=importHash(JSON.stringify({limits,mode:fullDocument?'document':'fixture',bibliography:input.bibliography ?? {},records,style:requestedStyle,citationKeyword,namespace,referenceText:input.referenceText || ''}));
   const cache=makeCache(records);
   if(cache.records.some(record=>record.title.length>limits.titleCharacters || record.authors.length>limits.authorsPerRecord) || records.some(record=>JSON.stringify(record).length>limits.recordCharacters))throw new TypeError('Use shorter reference records.');
+  const site=importSiteContext(cache.records,input.siteCache,limits);
+  const hostRecords=input.recordDecisions!==undefined||input.siteCache!==undefined||input.recordId!==undefined||input.recordIds!==undefined;
+  const contextHash=importHash(JSON.stringify({siteCache:input.siteCache ?? null,limits,mode:fullDocument?'document':'fixture',bibliography:input.bibliography ?? {},records,style:requestedStyle,citationKeyword,namespace,referenceText:input.referenceText || ''}));
   const detect=()=>{if(model)return model.detection;const result=parseInTextCitations(source,{style,maxCitations:limits.citationGroups,maxItems:limits.citedItems});if(style==='vancouver')result.citations=result.citations.filter(item=>!formatDetection.ignoredNumericRanges.some(range=>item.start<range.end&&item.end>range.start));return result;};
   const match=()=>{const result=matchCitations(detect(),records);if(result.matches.reduce((n,m)=>n+m.items.reduce((n,i)=>n+i.candidates.length,0),0)>limits.candidateChoices)throw new RangeError('Too many candidate choices. Use a smaller reference set.');return result;};
   if (action==='analyze') {
@@ -40,7 +43,7 @@ export function processImportRequest(input) {
       if(entries.length>limits.references)throw new TypeError('Use at most '+limits.references+' explicitly separated entries.');
       parsedReferences=parseReferences(entries,{style});
     }
-    return {review,document:model?.document,referenceEntries:model?.entries,formatDetection,formatChoiceRequired,effectiveStyle:style,diagnostics:matched.diagnostics,parsedReferences,referenceRecords:cache.records.map(record=>({id:record.id,type:record.type,authorsComplete:record.authorsComplete,title:record.title,authors:record.authors,issued:record.issued,originalIssued:record.originalIssued,publisher:record.publisher,publisherPlace:record.publisherPlace,containerTitle:record.containerTitle,volume:record.volume,issue:record.issue,pages:record.pages,articleNumber:record.articleNumber,identifiers:record.identifiers,referenceNumber:records.find(input=>input.id===record.id)?.referenceNumber,undated:records.find(input=>input.id===record.id)?.undated === true}))};
+    return {siteMatches:site.matches,review,document:model?.document,referenceEntries:model?.entries,formatDetection,formatChoiceRequired,effectiveStyle:style,diagnostics:matched.diagnostics,parsedReferences,referenceRecords:cache.records.map(record=>({id:record.id,type:record.type,authorsComplete:record.authorsComplete,title:record.title,authors:record.authors,issued:record.issued,originalIssued:record.originalIssued,publisher:record.publisher,publisherPlace:record.publisherPlace,containerTitle:record.containerTitle,volume:record.volume,issue:record.issue,pages:record.pages,articleNumber:record.articleNumber,identifiers:record.identifiers,referenceNumber:records.find(input=>input.id===record.id)?.referenceNumber,undated:records.find(input=>input.id===record.id)?.undated === true}))};
   }
   if (action!=='preview') throw new TypeError('Choose analyze or preview.');
   if(model?.document.boundaryRequired)throw new TypeError('Choose the bibliography boundary.');
@@ -52,7 +55,7 @@ export function processImportRequest(input) {
   const completions=input.completions ?? [];
   if(!Array.isArray(completions)||completions.length>limits.references||JSON.stringify(completions).length>limits.recordCharacters*10)throw new TypeError('Use bounded reference completions.');
   const enriched=new Map(),extra=[],completionIds=new Set();
-  for(const original of records){const identifier=original.identifiers?.find(id=>['doi','isbn'].includes(id.scheme));if(identifier&&input.decisions?.some(decision=>decision.action==='accept'&&decision.targets?.some(target=>target.recordId===original.id)))enriched.set(original.id,{record:normalizeRecord(original),identifier});}
+  for(const original of records){const identifier=original.identifiers?.find(id=>['doi','isbn'].includes(id.scheme));if(identifier&&input.decisions?.some(decision=>decision.action==='accept'&&(decision.targets || decision.recordIds?.map(recordId=>({recordId})))?.some(target=>target.recordId===original.id)))enriched.set(original.id,{record:normalizeRecord(original),identifier});}
   for(const completion of completions){
     if(!completion||JSON.stringify(completion).length>20000)throw new TypeError('Use bounded completion metadata.');
     const record=normalizeRecord(completion.record),id=record.identifiers[0];
@@ -60,24 +63,26 @@ export function processImportRequest(input) {
     if(completion.recordId){
       const original=records.find(record=>record.id===completion.recordId);
       if(!original||completionIds.has(original.id))throw new TypeError('Choose one completion per source reference.');
-      const selected=input.decisions?.some(decision=>decision.action==='accept'&&decision.targets?.some(target=>target.recordId===original.id));
+      const selected=input.decisions?.some(decision=>decision.action==='accept'&&(decision.targets || decision.recordIds?.map(recordId=>({recordId})))?.some(target=>target.recordId===original.id));
       if(!selected)continue;completionIds.add(original.id);
       enriched.set(original.id,{record:mergeCompletion(original,record).record,identifier:id});
     }else{
-      const selected=input.decisions?.some(decision=>decision.action==='accept'&&decision.targets?.some(target=>{const value=typeof target.identifier==='string'&&normalizeIdentifier(/^[\dXx\s-]{10,30}$/.test(target.identifier)?'isbn:'+target.identifier:target.identifier);return value&&canonicalIdentifierKey(value)===canonicalIdentifierKey(id);}));
+      const selected=input.decisions?.some(decision=>decision.action==='accept'&&(decision.targets || decision.recordIds?.map(recordId=>({recordId})))?.some(target=>{const value=typeof target.identifier==='string'&&normalizeIdentifier(/^[\dXx\s-]{10,30}$/.test(target.identifier)?'isbn:'+target.identifier:target.identifier);return value&&canonicalIdentifierKey(value)===canonicalIdentifierKey(id);}));
       if(selected)extra.push(record);
     }
   }
   // Validate the original local choices before replacing them with their accepted canonical identifiers.
   planImportEdits(source,input.review,{reviewId:input.reviewId,decisions:input.decisions,citationKeyword});
-  const decisions=input.decisions.map(decision=>({...decision,...(decision.targets&&{targets:decision.targets.map(target=>enriched.has(target.recordId)?{identifier:enriched.get(target.recordId).identifier.scheme+':'+enriched.get(target.recordId).identifier.value}:target)})}));
-  const plan=planImportEdits(source,input.review,{reviewId:input.reviewId,decisions,citationKeyword});
+  const allocation=hostRecords?allocateImportRecords([...records.map(record=>enriched.get(record.id)?.record || normalizeRecord(record)),...extra],site,input):null;
+  const decisions=input.decisions.map(decision=>({...decision,...((decision.targets||decision.recordIds)&&{targets:(decision.targets || decision.recordIds.map(recordId=>({recordId}))).map(target=>allocation?.mapping.has(target.recordId)?{recordId:allocation.mapping.get(target.recordId)}:enriched.has(target.recordId)?{identifier:enriched.get(target.recordId).identifier.scheme+':'+enriched.get(target.recordId).identifier.value}:target)})}));
+  const outputReview=allocation?createImportReview(source,{schema:'citation-inator.import-matches.v1',matches:input.review.matches.map(match=>({...match,items:match.items.map(item=>({...item,candidates:item.candidates.map(candidate=>({...candidate,recordId:allocation.mapping.get(candidate.recordId) || candidate.recordId}))}))}))}):input.review;
+  const plan=planImportEdits(source,outputReview,{reviewId:outputReview.reviewId,decisions,citationKeyword});
   const portable=[],owners=new Map(),ids=new Set();
-  for(const rawRecord of [...records.map(record=>enriched.get(record.id)?.record || record),...extra]){
+  for(const rawRecord of (allocation?.records || [...records.map(record=>enriched.get(record.id)?.record || record),...extra])){
     const record=normalizeRecord(rawRecord);
     const identifiers=record.identifiers.filter(identifier=>!owners.has(canonicalIdentifierKey(identifier)));
     if(ids.has(record.id))continue;
-    if(!identifiers.length&&!records.some(source=>source.id===record.id))continue;
+    if(!identifiers.length&&!(allocation?.records || records).some(source=>source.id===record.id))continue;
     const aliases=record.identifiers.filter(identifier=>owners.has(canonicalIdentifierKey(identifier)));
     const next=normalizeRecord({...record,identifiers,provenance:[...record.provenance,...aliases.map(identifier=>({provider:'Import review',note:'Accepted identifier '+canonicalIdentifierKey(identifier)+' is shared with '+owners.get(canonicalIdentifierKey(identifier))+'. Source record retained separately.'}))]});
     portable.push(next);ids.add(record.id);for(const identifier of identifiers)owners.set(canonicalIdentifierKey(identifier),record.id);
@@ -89,7 +94,7 @@ export function processImportRequest(input) {
   const previewNotice=partialNumeric ? 'Some original reference numbers remain. The reading preview is withheld until every numeric group is converted; the reviewed source remains available.' : '';
   const readingSource=model?model.document.bodyRanges.map(range=>{let part=source.slice(range.start,range.end);for(const edit of [...plan.edits].reverse())if(edit.start>=range.start&&edit.end<=range.end)part=part.slice(0,edit.start-range.start)+edit.text+part.slice(edit.end-range.start);return part;}).join('\n\n'):output.source;
   const reader=compileCitations(readableImportSource(readingSource)+(hasEndnotes?'':`\n\n{${citationKeyword} endnote}`),completedCache,{citationStyle:style,namespace,citationKeyword});
-  return {source:output.source,changed:output.changed,outcomes:plan.outcomes,edits:plan.edits,html:partialNumeric?'':reader.html,previewNotice,cache:completedCache,diagnostics:reader.diagnostics};
+  return {...(allocation&&{recordMap:Object.fromEntries(allocation.mapping),newRecordIds:allocation.newRecordIds,reusedRecordIds:allocation.reusedRecordIds}),source:output.source,changed:output.changed,outcomes:plan.outcomes,edits:plan.edits,html:partialNumeric?'':reader.html,previewNotice,cache:completedCache,diagnostics:reader.diagnostics};
 }
 
 // Composable primitives for hosts that own their review presentation.

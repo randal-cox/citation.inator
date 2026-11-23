@@ -1,3 +1,4 @@
+import {checkCompilerBundle} from './compiler-bundle-browser.mjs';
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
@@ -565,6 +566,7 @@ try {
   await checkImportWindows(browser, origin);
   await checkImportReviewUI(browser, origin);
   await checkImportAPI(browser, origin);
+  await checkCompilerBundle(browser, origin);
   await checkImportFiles(browser, origin);
   await checkImportIdentityState(browser, origin);
   await checkStructuredBrowser({ page, directory: temporary, origin: copied });
