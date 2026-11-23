@@ -42,7 +42,7 @@ const result = processImportRequest({
   ...context, action: 'preview',
   review: analysis.review, reviewId: analysis.review.reviewId, decisions
 });
-console.log(result.source); // Markdown with a {cite local:...} marker
+console.log(result.source); // Markdown with a {cite ref-...} marker
 console.log(result.cache);  // Supply this cache when compiling local-ID markers.
 ```
 
@@ -127,7 +127,7 @@ citation-inator import --json < preview-request.json > preview.json
 
 ## Host appearance and language
 
-Hosts can render their own document decorations and review controls from the headless result. No citation-owned full-page CSS or DOM structure is imposed. The example host uses scoped classes; it is not yet a generic mountable editor component. Draft.inator agrees that the headless API is the 0.4.0 integration boundary; reusable styled views remain separate. Existing-site record reuse and host-assigned new record IDs remain integration requests before release. Comprehensive teaching demos and translation/i18n configuration are planned for 0.5.0; do not treat the current English diagnostic messages as a localization API. Stable diagnostic codes are the integration hook.
+Hosts can render their own document decorations and review controls from the headless result. No citation-owned full-page CSS or DOM structure is imposed. The example host uses scoped classes; it is not yet a generic mountable editor component. Draft.inator agrees that the headless API is the 0.4.0 integration boundary; reusable styled views remain separate. Existing-site record reuse and host-assigned new record IDs are implemented; adopter integration remains a release gate. Comprehensive teaching demos and translation/i18n configuration are planned for 0.5.0; do not treat the current English diagnostic messages as a localization API. Stable diagnostic codes are the integration hook.
 
 Crossref titles include supplied subtitles, decode text entities and remove formatting-only wrappers before identity comparison. Meaningful mathematical markup remains distinct; raw provider evidence is retained. Open Library discovery retries once with the main title when a subtitle query returns no works, retaining the author constraint and the same three-work/five-edition bounds. This widens suggestions without automatically accepting a book edition or changing the source title/year.
 
@@ -137,7 +137,7 @@ The observed DOI fragments ending in punctuation at a line break are withheld wi
 
 ## Reuse site records and choose new IDs (0.4.0 preview)
 
-Pass `siteCache`, a normal citation.inator cache, to analysis and preview. Source bibliography matches remain separate from site identity proposals. Analysis returns `siteMatches`: one `{ recordId, candidates }` entry per imported reference. Each candidate has the site record ID, title, evidence and `requiresReview: true`. Look up full metadata in the cache you supplied. Shared canonical identifiers or compatible bibliographic evidence produce proposals; neither automatically reuses a work.
+Pass `siteCache`, a normal citation.inator cache, to analysis and preview. Source bibliography matches remain separate from site identity proposals. Analysis returns `siteMatches`: one `{ recordId, candidates }` entry per imported reference. Each candidate has the site record ID, title, evidence and `requiresReview: true`. Look up full metadata in the cache you supplied. Shared canonical identifiers or compatible bibliographic evidence produce proposals; neither automatically reuses a work. Matching main titles may propose a site work whose subtitle, type or given-name spelling differs, provided author and year evidence remains compatible. `evidence.mainTitleMatch` reports title agreement and `evidence.differences` lists differing fields (`title`, `authors`, `type`). Read their full values from `referenceRecords` and the supplied site cache; the full candidate assessment remains unchanged. This broader site proposal rule does not relax provider identifier verification.
 
 ```js
 const context = { mode: 'document', source, style: 'apa', siteCache };
@@ -181,3 +181,11 @@ Preview adds `recordMap` (source/completion ID to output ID), `newRecordIds` and
 - Balanced citation-like parentheses containing an unrecognized year form produce `import-unparsed-author-date` with source offsets. Markdown/HTML excluded regions and existing configured-keyword markers remain excluded. This is a cue for review, not an exhaustive detector: unclosed parentheses and every possible house style are outside this pass.
 
 The optional shared match-to-actions helper and structured pending-format preview response remain follow-ups. Preview still throws when citation format or bibliography boundary needs a choice; use the analysis flags before requesting it.
+
+## Identifier spelling and narrative groups
+
+New local identifiers use the shortest safe form by default: `{citation bell-1992-ritual}`. Set `identifierForm: 'explicit'` on `processImportRequest` or `planImportEdits` to write `{citation local:bell-1992-ritual}` instead. Reserved directive names stay explicit in either mode. Other identifier schemes keep their prefix. Existing source markers are left alone.
+
+`formatRecordId(id, { citationKeyword, identifierForm })` is exported from both import entries (Node and browser) and the tools entries. Use it when creating or retargeting local markers; pass a cache record ID, not an already prefixed identifier. See [the shared writing rule](article-tools.md#write-local-record-ids-040-preview) for validation and grammar compatibility.
+
+Narrative groups can contain multiple narrative items, such as `{citation bell-1992 | form:narrative; bell-1997 | form:narrative}`. Each item retains its own identity, affixes and narrative form. The compiler renders them as separate narrative references joined by a semicolon, without an outer pair of parentheses. Mixed narrative/parenthetical groups remain malformed. Import preview re-scans the encoded group before returning any edit.

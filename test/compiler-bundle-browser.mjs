@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {compileMarkdown,compileHTML} from '../src/markup.mjs';import {compileCitations} from '../src/compiler.mjs';import {makeCache} from '../src/records.mjs';
 export async function checkCompilerBundle(browser,origin){
- const cache=makeCache([{id:'bell-1992-ritual',type:'book',state:'resolved',title:'Ritual Theory, Ritual Practice',authors:[{family:'Bell',given:'Catherine'}],issued:[1992]}]),options={citationStyle:'chicago-author-date',namespace:'editor-preview'},source='Practice comes first {citation bell-1992-ritual | note:"Bell 1992" | locator:12}.\n\n{citation endnote}';
+ const cache=makeCache([{id:'bell-1992-ritual',type:'book',state:'resolved',title:'Ritual Theory, Ritual Practice',authors:[{family:'Bell',given:'Catherine'}],issued:[1992]},{id:'bell-1997',type:'book',state:'resolved',title:'Ritual: Perspectives and dimensions',authors:[{family:'Bell',given:'Catherine'}],issued:[1997]}]),options={citationStyle:'chicago-author-date',namespace:'editor-preview'},source='Practice comes first {citation bell-1992-ritual | note:"Bell 1992" | locator:12}. Also {citation bell-1992-ritual | form:narrative; bell-1997 | form:narrative}.\n\n{citation endnote}';
  const fixtures={cache,options,source,html:'<p><em>A title</em> '+source.replaceAll('\n','')+'</p>'};
  const expected=[compileCitations(source,cache,options),compileMarkdown(source,cache,options),compileHTML(fixtures.html,cache,options)];
  const context=await browser.newContext(),page=await context.newPage(),requests=[];page.on('request',r=>requests.push(r.url()));

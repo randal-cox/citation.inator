@@ -1,7 +1,7 @@
 // Revision-bound review/edit protocol shared by Node and browser hosts. Acceptance is supplied explicitly by the host.
 import {importHash} from './import-hash.mjs';
 import { normalizeIdentifier } from './records.mjs';
-import { scanCitationMarkers } from './compiler.mjs';
+import { scanCitationMarkers, formatRecordId } from './compiler.mjs';
 const hash=importHash;
 const quote = value => '"'+String(value).replace(/[\\"{};|]/g,character=>'\\'+character)+'"';
 const digest = (sourceHash,matches) => hash(sourceHash+'\n'+JSON.stringify(matches));
@@ -15,10 +15,11 @@ export function createImportReview(source, matched) {
 }
 
 /** Plan whole-group edits. Rejected, deferred, absent and unsafe decisions preserve source. */
-export function planImportEdits(source,review,{reviewId,decisions=[],citationKeyword='citation'}={}) {
+export function planImportEdits(source,review,{reviewId,decisions=[],citationKeyword='citation',identifierForm='minimal'}={}) {
   if (typeof source !== 'string' || review?.schema !== 'citation-inator.import-review.v1' || review.sourceHash !== hash(source) || review.sourceLength !== source.length) throw new Error('The source revision has changed; review again.');
   if (reviewId !== review.reviewId || review.reviewId !== digest(review.sourceHash,review.matches)) throw new Error('Review decisions belong to a different or changed snapshot.');
   scanCitationMarkers('',{citationKeyword});
+  if (!['minimal','explicit'].includes(identifierForm)) throw new TypeError('Use minimal or explicit identifierForm.');
   if (!Array.isArray(decisions)) throw new TypeError('Supply review decisions.');
   const edits=[], outcomes=[], seen=new Set();
   for (const decision of decisions) {
@@ -45,7 +46,7 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
     const items=match.items.map((proposal,itemIndex)=>{
       const identifier=identities[itemIndex], item=proposal.item;
       // Escape identifiers so punctuation cannot become notation options or extra items.
-      return (identifier.scheme==='local'?'local:'+identifier.value:(identifier.scheme+':'+identifier.value).replace(/[\\"{};|]/g,character=>'\\'+character)) + (item.prefix ? ' | prefix:'+quote(item.prefix) : '') + (item.locator ? ' | locator:'+quote(item.locator) : '') +
+      return (identifier.scheme==='local'?formatRecordId(identifier.value,{citationKeyword,identifierForm}):(identifier.scheme+':'+identifier.value).replace(/[\\"{};|]/g,character=>'\\'+character)) + (item.prefix ? ' | prefix:'+quote(item.prefix) : '') + (item.locator ? ' | locator:'+quote(item.locator) : '') +
         (citation.form === 'narrative' ? ' | form:narrative' : '');
     });
     if (match.items.some(proposal=>proposal.item.boundaryUncertain)) {

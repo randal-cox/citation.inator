@@ -1,4 +1,4 @@
-/*! citation-inator import v0.4.0-preview.3 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! citation-inator import v0.4.0-preview.4 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -8149,7 +8149,7 @@ function parseFragment(fragmentContext, html, options) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.4.0-preview.3",
+  version: "0.4.0-preview.4",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -8259,10 +8259,10 @@ function crossrefRecord(raw, identifier, retrievedAt, url) {
     given: cleanText(author?.given),
     literal: cleanText(author?.name)
   })).filter((author) => author.family || author.literal) : [];
-  const mainTitle = Array.isArray(message.title) ? titleText(message.title[0]) : "";
+  const mainTitle2 = Array.isArray(message.title) ? titleText(message.title[0]) : "";
   const subtitle = Array.isArray(message.subtitle) ? titleText(message.subtitle[0]) : "";
   const folded2 = (value) => value.normalize("NFKC").toLocaleLowerCase("en").replace(/[\s:;,.!?]+/gu, " ").trim();
-  const title = mainTitle && subtitle && !folded2(mainTitle).endsWith(folded2(subtitle)) ? mainTitle + ": " + subtitle : mainTitle;
+  const title = mainTitle2 && subtitle && !folded2(mainTitle2).endsWith(folded2(subtitle)) ? mainTitle2 + ": " + subtitle : mainTitle2;
   const online = date(message["published-online"]);
   const print = date(message["published-print"]);
   const issued = print || date(message.issued) || online;
@@ -8524,8 +8524,8 @@ function createBrowserEnrichment({ fetch: request = globalThis.fetch, now = Date
     const author = source.authors[0].family || source.authors[0].literal;
     const searchTitle = importSearchTitle(source), searchURL = (title) => "https://openlibrary.org/search.json?" + new URLSearchParams({ title, author, limit: "3", fields: "key,title,author_name" });
     let raw = await get(searchURL(searchTitle));
-    const mainTitle = searchTitle.split(":")[0].trim();
-    if (Array.isArray(raw?.docs) && raw.docs.length === 0 && mainTitle.length >= 8 && mainTitle !== searchTitle) raw = await get(searchURL(mainTitle));
+    const mainTitle2 = searchTitle.split(":")[0].trim();
+    if (Array.isArray(raw?.docs) && raw.docs.length === 0 && mainTitle2.length >= 8 && mainTitle2 !== searchTitle) raw = await get(searchURL(mainTitle2));
     if (!Array.isArray(raw?.docs)) throw Error("Invalid Open Library results.");
     const candidates = [], seen = /* @__PURE__ */ new Set();
     for (const work of raw.docs.slice(0, 3)) {
@@ -8589,6 +8589,8 @@ function createBrowserEnrichment({ fetch: request = globalThis.fetch, now = Date
 }
 
 // src/import-sites.mjs
+var titleKey = (value) => String(value || "").normalize("NFKC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+var mainTitle = (value) => titleKey(String(value || "").split(/[:：]/, 1)[0]);
 function importSiteContext(records, siteCache, limits) {
   if (siteCache === void 0) return { records: [], matches: [] };
   if (siteCache?.schema !== "citation-inator.cache.v1" || !Array.isArray(siteCache.records) || siteCache.records.length > limits.references) throw TypeError("Supply a bounded site citation cache.");
@@ -8599,9 +8601,13 @@ function importSiteContext(records, siteCache, limits) {
   const matches = records.map((source) => ({ recordId: source.id, candidates: site.flatMap((record) => {
     const assessment = assessImportCandidate(source, record), keys = new Set((source.identifiers || []).map(canonicalIdentifierKey));
     const identifiers = record.identifiers.filter((id) => keys.has(canonicalIdentifierKey(id))).map(canonicalIdentifierKey);
-    if (!identifiers.length && !assessment.primary) return [];
+    const sourceMain = mainTitle(source.title), siteMain = mainTitle(record.title);
+    const mainTitleMatch = Boolean(sourceMain && sourceMain === siteMain);
+    const bibliographic = mainTitleMatch && !assessment.conflicts.includes("authors") && !assessment.missing.includes("authors") && assessment.yearDistance !== null && assessment.yearDistance <= 2;
+    if (!identifiers.length && !assessment.primary && !bibliographic) return [];
+    const differences = ["title", "authors", "type"].filter((key) => JSON.stringify(source[key]) !== JSON.stringify(record[key]));
     if (++count > limits.candidateChoices) throw RangeError("Too many site identity choices. Use a smaller site cache.");
-    return [{ recordId: record.id, title: record.title, requiresReview: true, evidence: { code: identifiers.length ? "import-site-shared-identifier" : "import-site-bibliographic-candidate", sharedIdentifierCount: identifiers.length, assessment } }];
+    return [{ recordId: record.id, title: record.title, requiresReview: true, evidence: { code: identifiers.length ? "import-site-shared-identifier" : "import-site-bibliographic-candidate", sharedIdentifierCount: identifiers.length, mainTitleMatch, differences, assessment } }];
   }) }));
   return { records: site, matches };
 }
@@ -9319,6 +9325,17 @@ function markerKind(raw, options = {}) {
   const token = markers[0].token;
   return token?.type === "endnotes" ? "endnote" : ["citation", "list", "nocite", "annotation"].includes(token?.type) ? token.type : "malformed";
 }
+function formatRecordId(id, { citationKeyword = "citation", identifierForm = "minimal" } = {}) {
+  validateKeyword(citationKeyword);
+  if (!["minimal", "explicit"].includes(identifierForm)) throw new TypeError("Use minimal or explicit identifierForm.");
+  const identifier = typeof id === "string" && normalizeIdentifier("local:" + id);
+  if (identifier?.scheme !== "local" || identifier.value !== id) throw new TypeError("Supply a valid local record ID.");
+  const escaped = id.replace(/[\\"{};|]/g, (character) => "\\" + character);
+  const token = scanCitationMarkers(`{${citationKeyword} ${escaped}}`, { citationKeyword })[0]?.token;
+  const unambiguous = token?.type === "citation" && token.items.length === 1 && token.items[0].identifier.scheme === "local" && token.items[0].identifier.value === id;
+  const reserved = ["endnote", "list", "nocite", ...Object.keys(annotationNames)].includes(id);
+  return identifierForm === "minimal" && unambiguous && !reserved ? escaped : "local:" + escaped;
+}
 function parseDirectives(source, { citationKeyword = "citation" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];
@@ -9361,7 +9378,7 @@ function parseDirectives(source, { citationKeyword = "citation" } = {}) {
       tokens.push({ type: "annotation", name: match[2].trim(), raw });
     } else {
       const items = split(match[2], ";").map(parseItem);
-      if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)))) {
+      if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)) || items.every((item) => item.form === "narrative"))) {
         tokens.push({ type: "citation", items, raw });
       } else tokens.push({ type: "text", text: raw, malformed: true });
     }
@@ -10142,7 +10159,7 @@ function compileBlocks(blocks2, cache, {
         return separator + trigger(item, label2);
       }).join("");
       const { label, form } = token.items[0];
-      const parenthetical = token.items.length > 1 || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
+      const parenthetical = token.items.length > 1 && form !== "narrative" || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
       return parenthetical ? `<span ${part("cluster")}>(${citations})</span>` : citations;
     }).join("");
     return markup || !content.trim() ? content : `<p>${content}</p>`;
@@ -10252,7 +10269,7 @@ function parseInTextCitations(text, options = {}) {
     if (items.some((item) => !item)) {
       const dates = parts.length === 1 && datedList(match[1]);
       if (dates) {
-        let beforeStart = Math.max(range.start, start - 180);
+        let beforeStart = Math.max(range.start, start - 180, citations.at(-1)?.end ?? range.start);
         let before = text.slice(beforeStart, start);
         const paragraph = [...before.matchAll(/\r?\n[ \t]*\r?\n/gu)].at(-1);
         if (paragraph) {
@@ -10262,7 +10279,7 @@ function parseInTextCitations(text, options = {}) {
         const words = [...before.matchAll(/\S+/gu)];
         const alternatives = [];
         for (let index = Math.max(0, words.length - 8); index < words.length; index++) {
-          if (index && /^(?:and|&)$/i.test(words[index - 1][0])) continue;
+          if (index > 1 && /^(?:and|&)$/i.test(words[index - 1][0])) continue;
           if (index && (/^(?:\p{Lu}\.)+$/u.test(words[index - 1][0]) || particles.has(folded(words[index - 1][0])))) continue;
           const raw = before.slice(words[index].index).trim();
           const parsed = authors(raw);
@@ -10428,10 +10445,11 @@ function createImportReview(source, matched) {
     matches
   };
 }
-function planImportEdits(source, review, { reviewId, decisions = [], citationKeyword = "citation" } = {}) {
+function planImportEdits(source, review, { reviewId, decisions = [], citationKeyword = "citation", identifierForm = "minimal" } = {}) {
   if (typeof source !== "string" || review?.schema !== "citation-inator.import-review.v1" || review.sourceHash !== hash(source) || review.sourceLength !== source.length) throw new Error("The source revision has changed; review again.");
   if (reviewId !== review.reviewId || review.reviewId !== digest(review.sourceHash, review.matches)) throw new Error("Review decisions belong to a different or changed snapshot.");
   scanCitationMarkers("", { citationKeyword });
+  if (!["minimal", "explicit"].includes(identifierForm)) throw new TypeError("Use minimal or explicit identifierForm.");
   if (!Array.isArray(decisions)) throw new TypeError("Supply review decisions.");
   const edits = [], outcomes = [], seen = /* @__PURE__ */ new Set();
   for (const decision of decisions) {
@@ -10460,7 +10478,7 @@ function planImportEdits(source, review, { reviewId, decisions = [], citationKey
     const selection = decision.targets ? { targets: identities.map((id) => id.scheme === "local" ? { recordId: id.value } : { identifier: id.scheme + ":" + id.value }) } : { recordIds: [...decision.recordIds] };
     const items = match.items.map((proposal, itemIndex) => {
       const identifier = identities[itemIndex], item = proposal.item;
-      return (identifier.scheme === "local" ? "local:" + identifier.value : (identifier.scheme + ":" + identifier.value).replace(/[\\"{};|]/g, (character) => "\\" + character)) + (item.prefix ? " | prefix:" + quote(item.prefix) : "") + (item.locator ? " | locator:" + quote(item.locator) : "") + (citation.form === "narrative" ? " | form:narrative" : "");
+      return (identifier.scheme === "local" ? formatRecordId(identifier.value, { citationKeyword, identifierForm }) : (identifier.scheme + ":" + identifier.value).replace(/[\\"{};|]/g, (character) => "\\" + character)) + (item.prefix ? " | prefix:" + quote(item.prefix) : "") + (item.locator ? " | locator:" + quote(item.locator) : "") + (citation.form === "narrative" ? " | form:narrative" : "");
     });
     if (match.items.some((proposal) => proposal.item.boundaryUncertain)) {
       outcomes.push({ citationIndex: index, state: "accepted-needs-span", ...selection, code: "import-author-span-review-required" });
@@ -12254,7 +12272,8 @@ function createDocumentImporter(options = {}) {
 function processImportRequest(input) {
   const limits = normalizeImportLimits(input?.limits);
   if (!input || typeof input !== "object" || typeof input.source !== "string" || input.source.length > limits.sourceCharacters) throw new TypeError("Use a document of at most " + limits.sourceCharacters.toLocaleString("en") + " characters.");
-  const { source, style: requestedStyle = "apa", action = "analyze", citationKeyword = "cite", namespace = "import-preview" } = input;
+  const { source, style: requestedStyle = "apa", action = "analyze", citationKeyword = "cite", namespace = "import-preview", identifierForm = "minimal" } = input;
+  formatRecordId("import-validation", { citationKeyword, identifierForm });
   scanCitationMarkers("", { citationKeyword });
   if (typeof namespace !== "string" || !/^[-A-Za-z0-9_]{1,80}$/u.test(namespace)) throw new TypeError("Use a namespace of up to 80 letters, digits, hyphens or underscores.");
   if (!["auto", "apa", "chicago-author-date", "vancouver"].includes(requestedStyle)) throw new TypeError("Choose APA, Chicago author\u2013date or Vancouver.");
@@ -12325,11 +12344,11 @@ function processImportRequest(input) {
       if (selected) extra.push(record);
     }
   }
-  planImportEdits(source, input.review, { reviewId: input.reviewId, decisions: input.decisions, citationKeyword });
+  planImportEdits(source, input.review, { reviewId: input.reviewId, decisions: input.decisions, citationKeyword, identifierForm });
   const allocation = hostRecords ? allocateImportRecords([...records.map((record) => enriched.get(record.id)?.record || normalizeRecord(record)), ...extra], site, input) : null;
   const decisions = input.decisions.map((decision) => ({ ...decision, ...(decision.targets || decision.recordIds) && { targets: (decision.targets || decision.recordIds.map((recordId) => ({ recordId }))).map((target) => allocation?.mapping.has(target.recordId) ? { recordId: allocation.mapping.get(target.recordId) } : enriched.has(target.recordId) ? { identifier: enriched.get(target.recordId).identifier.scheme + ":" + enriched.get(target.recordId).identifier.value } : target) } }));
   const outputReview = allocation ? createImportReview(source, { schema: "citation-inator.import-matches.v1", matches: input.review.matches.map((match2) => ({ ...match2, items: match2.items.map((item) => ({ ...item, candidates: item.candidates.map((candidate) => ({ ...candidate, recordId: allocation.mapping.get(candidate.recordId) || candidate.recordId })) })) })) }) : input.review;
-  const plan = planImportEdits(source, outputReview, { reviewId: outputReview.reviewId, decisions, citationKeyword });
+  const plan = planImportEdits(source, outputReview, { reviewId: outputReview.reviewId, decisions, citationKeyword, identifierForm });
   const portable = [], owners = /* @__PURE__ */ new Map(), ids = /* @__PURE__ */ new Set();
   for (const rawRecord of allocation?.records || [...records.map((record) => enriched.get(record.id)?.record || record), ...extra]) {
     const record = normalizeRecord(rawRecord);
@@ -12371,6 +12390,7 @@ export {
   detectExtractedCitations,
   enrichmentIdentifier,
   extractImportText,
+  formatRecordId,
   importSearchTitle,
   mapImportRange,
   matchCitations,

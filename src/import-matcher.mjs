@@ -91,14 +91,14 @@ export function parseInTextCitations(text, options = {}) {
     if (items.some(item => !item)) {
       const dates = parts.length === 1 && datedList(match[1]);
       if (dates) {
-        let beforeStart = Math.max(range.start, start - 180);
+        let beforeStart = Math.max(range.start, start - 180, citations.at(-1)?.end ?? range.start);
         let before = text.slice(beforeStart, start);
         const paragraph = [...before.matchAll(/\r?\n[ \t]*\r?\n/gu)].at(-1);
         if (paragraph) { beforeStart += paragraph.index + paragraph[0].length; before = text.slice(beforeStart, start); }
         const words = [...before.matchAll(/\S+/gu)];
         const alternatives = [];
         for (let index = Math.max(0, words.length - 8); index < words.length; index++) {
-          if (index && /^(?:and|&)$/i.test(words[index - 1][0])) continue;
+          if (index>1 && /^(?:and|&)$/i.test(words[index - 1][0])) continue;
           if (index && (/^(?:\p{Lu}\.)+$/u.test(words[index - 1][0]) || particles.has(folded(words[index - 1][0])))) continue;
           const raw = before.slice(words[index].index).trim();
           const parsed = authors(raw);

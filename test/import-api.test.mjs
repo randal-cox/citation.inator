@@ -38,5 +38,5 @@ test('browser-target bundle exchanges revision-bound analyses and previews with 
 
 test('host keyword and namespace configure output and bind the review context',()=>{
  const source='A claim (Rivera, 2020).\n\nReferences\nRivera, R. (2020). A paper.',base={mode:'document',source,style:'auto',citationKeyword:'ref',namespace:'host-import'},analysis=processImportRequest(base),decisions=[{citationIndex:0,action:'accept',targets:[{recordId:analysis.referenceRecords[0].id}]}],request={...base,action:'preview',review:analysis.review,reviewId:analysis.review.reviewId,decisions};
- const result=processImportRequest(request);assert.match(result.source,/\{ref local:/);assert.ok(result.html.includes('host-import'));assert.throws(()=>processImportRequest({...request,namespace:'other'}),/changed/);assert.throws(()=>processImportRequest({...request,citationKeyword:'cite'}),/changed/);
+ const result=processImportRequest(request);assert.match(result.source,/\{ref /);assert.ok(result.html.includes('host-import'));assert.throws(()=>processImportRequest({...request,namespace:'other'}),/changed/);assert.throws(()=>processImportRequest({...request,citationKeyword:'cite'}),/changed/);
 });

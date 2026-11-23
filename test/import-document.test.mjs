@@ -23,7 +23,7 @@ test('reordering references keeps content identity and cannot reuse stale source
  const a='Avery, J. (2021). How children learn together. Example Press.',b='Avery, J. (2021). Learning through play. Example Press.';
  const moved=source.replace(a,'TEMP').replace(b,a).replace('TEMP',b),next=analyze(moved);assert.equal(next.referenceRecords.find(record=>record.title===fields.title).id,fields.id);
  assert.throws(()=>preview(moved,base,[{citationIndex:0,action:'accept',recordIds:[fields.id]}]),/changed/);
- const output=preview(moved,next,[{citationIndex:0,action:'accept',recordIds:[fields.id]}]);assert.ok(output.source.includes('{cite local:'+fields.id+'}'));assert.ok(output.source.endsWith(moved.slice(moved.indexOf('## References'))));
+ const output=preview(moved,next,[{citationIndex:0,action:'accept',recordIds:[fields.id]}]);assert.ok(output.source.includes('{cite '+fields.id+'}'));assert.ok(output.source.endsWith(moved.slice(moved.indexOf('## References'))));
 });
 test('numeric labels are source-derived, out of order and renumbering never uses array position',()=>{
  const result=analyze(documentExamples.numeric);const record=result.referenceRecords.find(record=>record.referenceNumber===2);
@@ -32,7 +32,7 @@ test('numeric labels are source-derived, out of order and renumbering never uses
 });
 test('accepted body edits preserve full CRLF bibliography and produce an offline usable cache',()=>{
  const source='😀 A claim (Avery, 2021, p. 4).\r\n\r\n## References\r\n\r\nAvery, J. (2021). A book. Press.\r\n';const result=analyze(source),id=result.referenceRecords[0].id;
- const output=preview(source,result,[{citationIndex:0,action:'accept',recordIds:[id]}]);assert.equal(output.source,'😀 A claim {cite local:'+id+' | locator:"p. 4"}.\r\n\r\n## References\r\n\r\nAvery, J. (2021). A book. Press.\r\n');
+ const output=preview(source,result,[{citationIndex:0,action:'accept',recordIds:[id]}]);assert.equal(output.source,'😀 A claim {cite '+id+' | locator:"p. 4"}.\r\n\r\n## References\r\n\r\nAvery, J. (2021). A book. Press.\r\n');
  const cache=JSON.parse(JSON.stringify(output.cache));readCache(cache);const clean=compileCitations(output.source+'\n{citation endnote}',cache);assert.ok(clean.html.includes('A book'));assert.ok(!clean.diagnostics.some(item=>item.code==='citation-unresolved'));
 });
 test('headings in Markdown code, HTML and quotes cannot become bibliography boundaries',()=>{

@@ -16,7 +16,7 @@ Use `annotateMarkers(source, cache, { noteContext: "work", ...styleOptions })` f
 
 - citation.inator proposes extracted text, fields, matches, diagnostics and revision-bound decisions. draft.inator owns editor selection, transaction/undo, user authorization, persistence, authentication and publishing.
 - The 0.4.0 candidate exports the same revision/context-bound protocol in Node and a self-contained browser bundle. The editor must also validate its current document revision before applying proposals. See the [candidate API](import-api.md).
-- Generated import markers use `local:<record-id>` to avoid reserved-command collisions. The current Cite block looks up the whole marker identifier directly in its works table. The host adapter must normalize local identifiers to record IDs for lookup/picker selection while preserving a valid marker on write. Test both bare and explicit local identifiers, reserved names, DOI aliases and missing works.
+- Generated import markers use bare record IDs when unambiguous and `local:<record-id>` for reserved names; `identifierForm: 'explicit'` keeps all local IDs explicit. Use the shared `formatRecordId` helper rather than maintaining a directive-name list. The current Cite block looks up the whole marker identifier directly in its works table. The host adapter must normalize local identifiers to record IDs for lookup/picker selection while preserving a valid marker on write. Test both bare and explicit local identifiers, reserved names, DOI aliases and missing works.
 - Reuse `describeCitation`/`annotateMarkers` for notes. Import decisions must not manufacture a competing description or author/year identity system.
 - A matched reference may not yet exist in `DRAFT_WORKS`. Review and add curated records explicitly, then refresh host choices; do not make raw provider results selectable publication records automatically.
 - Preserve source style, locators, prefixes, narrative forms, topics and unfamiliar options. Exact marker text is less useful than a tested semantic round-trip where intentional note refresh is the only change.
@@ -71,7 +71,7 @@ const result = processImportRequest({ ...context, action: 'preview',
   decisions: [{ citationIndex: 0, action: 'accept', targets: [{ recordId: sourceId }] }],
   recordDecisions: [{ recordId: sourceId, siteRecordId: 'bell-1992-ritual' }]
 });
-// result.source uses local:bell-1992-ritual; result.newRecordIds is empty.
+// result.source uses bell-1992-ritual; result.newRecordIds is empty.
 ```
 
 Multiple-year, organizational-author/acronym and secondary-source cases now have documented handling. Possible unrecognized balanced citation spans carry source-ranged diagnostics; secondary relationships and inferred acronyms require review. See the [edge-form contract](import-api.md#additional-author-date-import-forms). Optional `describeMatch` and structured pending-format responses remain separate follow-ups; current flags/errors are documented.

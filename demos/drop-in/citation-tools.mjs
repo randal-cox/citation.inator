@@ -1,4 +1,4 @@
-/*! citation-inator tools v0.4.0-preview.3 | MIT | See LICENSE */
+/*! citation-inator tools v0.4.0-preview.4 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -9110,7 +9110,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.4.0-preview.3",
+  version: "0.4.0-preview.4",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9688,6 +9688,17 @@ function markerKind(raw, options = {}) {
   const token = markers[0].token;
   return token?.type === "endnotes" ? "endnote" : ["citation", "list", "nocite", "annotation"].includes(token?.type) ? token.type : "malformed";
 }
+function formatRecordId(id, { citationKeyword = "citation", identifierForm = "minimal" } = {}) {
+  validateKeyword(citationKeyword);
+  if (!["minimal", "explicit"].includes(identifierForm)) throw new TypeError("Use minimal or explicit identifierForm.");
+  const identifier = typeof id === "string" && normalizeIdentifier("local:" + id);
+  if (identifier?.scheme !== "local" || identifier.value !== id) throw new TypeError("Supply a valid local record ID.");
+  const escaped2 = id.replace(/[\\"{};|]/g, (character) => "\\" + character);
+  const token = scanCitationMarkers(`{${citationKeyword} ${escaped2}}`, { citationKeyword })[0]?.token;
+  const unambiguous = token?.type === "citation" && token.items.length === 1 && token.items[0].identifier.scheme === "local" && token.items[0].identifier.value === id;
+  const reserved = ["endnote", "list", "nocite", ...Object.keys(annotationNames)].includes(id);
+  return identifierForm === "minimal" && unambiguous && !reserved ? escaped2 : "local:" + escaped2;
+}
 function parseDirectives(source, { citationKeyword = "citation" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];
@@ -9730,7 +9741,7 @@ function parseDirectives(source, { citationKeyword = "citation" } = {}) {
       tokens.push({ type: "annotation", name: match[2].trim(), raw });
     } else {
       const items = split(match[2], ";").map(parseItem);
-      if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)))) {
+      if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)) || items.every((item) => item.form === "narrative"))) {
         tokens.push({ type: "citation", items, raw });
       } else tokens.push({ type: "text", text: raw, malformed: true });
     }
@@ -10504,7 +10515,7 @@ function compileBlocks(blocks, cache, {
         return separator + trigger(item, label2);
       }).join("");
       const { label, form } = token.items[0];
-      const parenthetical = token.items.length > 1 || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
+      const parenthetical = token.items.length > 1 && form !== "narrative" || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
       return parenthetical ? `<span ${part("cluster")}>(${citations})</span>` : citations;
     }).join("");
     return markup || !content.trim() ? content : `<p>${content}</p>`;
@@ -10712,6 +10723,7 @@ function describeCitation(identifierOrMarker, cache, options = {}) {
 function annotateMarkers(source, cache, options = {}) {
   const { noteContext = "article" } = options;
   if (!["article", "work"].includes(noteContext)) throw new TypeError("Use article or work noteContext.");
+  formatRecordId("annotation-validation", options);
   const { markers, descriptions, diagnostics } = analyze(source, cache, options);
   const workDescriptions = /* @__PURE__ */ new Map();
   const edits = [];
@@ -10727,7 +10739,7 @@ function annotateMarkers(source, cache, options = {}) {
       let noteText = description.items[i].text;
       if (noteContext === "work") {
         const recordId = description.items[i].recordId;
-        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId, describeCitation(`{${options.citationKeyword || "citation"} local:${recordId}}`, cache, { ...options, suffixScope: "fragment" }).text);
+        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId, describeCitation(`{${options.citationKeyword || "citation"} ${formatRecordId(recordId, options)}}`, cache, { ...options, suffixScope: "fragment" }).text);
         noteText = workDescriptions.get(recordId);
       }
       noteText = escaped(noteText);
@@ -10781,5 +10793,6 @@ export {
   collectMarkerTags,
   createSiteOccurrenceIndex,
   describeCitation,
+  formatRecordId,
   markerKind
 };

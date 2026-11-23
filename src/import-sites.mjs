@@ -1,6 +1,9 @@
 import {makeCache,normalizeIdentifier,canonicalIdentifierKey} from './records.mjs';
 import {assessImportCandidate} from './import-enrichment.mjs';
 
+const titleKey=value=>String(value || '').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+const mainTitle=value=>titleKey(String(value || '').split(/[:：]/,1)[0]);
+
 // Site identities are proposals. Reusing one always requires a source-record decision.
 export function importSiteContext(records,siteCache,limits){
  if(siteCache===undefined)return {records:[],matches:[]};
@@ -12,9 +15,14 @@ export function importSiteContext(records,siteCache,limits){
  const matches=records.map(source=>({recordId:source.id,candidates:site.flatMap(record=>{
   const assessment=assessImportCandidate(source,record),keys=new Set((source.identifiers || []).map(canonicalIdentifierKey));
   const identifiers=record.identifiers.filter(id=>keys.has(canonicalIdentifierKey(id))).map(canonicalIdentifierKey);
-  if(!identifiers.length&&!assessment.primary)return [];
+  const sourceMain=mainTitle(source.title),siteMain=mainTitle(record.title);
+  // Broader site proposals never weaken provider verification or merge automatically.
+  const mainTitleMatch=Boolean(sourceMain&&sourceMain===siteMain);
+  const bibliographic=mainTitleMatch&&!assessment.conflicts.includes('authors')&&!assessment.missing.includes('authors')&&assessment.yearDistance!==null&&assessment.yearDistance<=2;
+  if(!identifiers.length&&!assessment.primary&&!bibliographic)return [];
+  const differences=['title','authors','type'].filter(key=>JSON.stringify(source[key])!==JSON.stringify(record[key]));
   if(++count>limits.candidateChoices)throw RangeError('Too many site identity choices. Use a smaller site cache.');
-  return [{recordId:record.id,title:record.title,requiresReview:true,evidence:{code:identifiers.length?'import-site-shared-identifier':'import-site-bibliographic-candidate',sharedIdentifierCount:identifiers.length,assessment}}];
+  return [{recordId:record.id,title:record.title,requiresReview:true,evidence:{code:identifiers.length?'import-site-shared-identifier':'import-site-bibliographic-candidate',sharedIdentifierCount:identifiers.length,mainTitleMatch,differences,assessment}}];
  })}));
  return {records:site,matches};
 }

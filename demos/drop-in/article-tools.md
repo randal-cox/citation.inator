@@ -46,6 +46,26 @@ const result = annotateMarkers(source, cache, {
 
 `noteContext: 'article'` is the unchanged default, using the full source's disambiguation. `work` describes each work independently with fragment scope, so two same-author/year works both get `note:"Cox 1995"`, matching standalone descriptions. It overrides cache-wide suffix scope for note text, not reader formatting. Use the same style/reprint options for the picker and annotation. Reader-facing suffixes still come from normal compilation. Partial records, escaping, protected regions and unresolved-group behavior retain their existing contracts. JSON CLI annotation and stale-note checks accept `options.noteContext` too; use the same value for writing and checking notes.
 
+## Write local record IDs (0.4.0 preview)
+
+`formatRecordId` is shared by the compiler, `citation-inator/tools`, `citation-inator/import` and their self-contained browser tools/import bundles. Give it a bare local record ID, not a DOI or another persistent identifier:
+
+```js
+import { formatRecordId } from './citation-tools.mjs';
+formatRecordId('bell-1992-ritual'); // 'bell-1992-ritual'
+formatRecordId('list-2001');        // 'list-2001'
+formatRecordId('endnote');          // 'local:endnote'
+formatRecordId('bell-1992-ritual', { identifierForm: 'explicit' });
+// 'local:bell-1992-ritual'
+const marker = `{ref ${formatRecordId('bell-1992-ritual', { citationKeyword: 'ref' })}}`;
+```
+
+The default `identifierForm: 'minimal'` writes the shortest spelling that re-scans to the same local identity, with the directive names `endnote`, `list`, `nocite`, `evidence` and `credit` always explicit. `identifierForm: 'explicit'` writes every local ID with `local:`. The import API accepts the same option. Existing markers are preserved: `annotateMarkers` refreshes notes without changing an identifier's bare or explicit spelling, regardless of this option. Both spellings resolve to the same record. Invalid local IDs, unsupported writer modes and invalid citation keywords throw.
+
+The cache's local-ID syntax is lowercase letters, digits, periods and hyphens, starting with a letter or digit, at most 160 characters. IDs containing scheme prefixes, slashes or notation punctuation are invalid local IDs; use the corresponding persistent-identifier notation for DOI/ISBN/URL values. The helper does not convert persistent identifiers into local record IDs.
+
+The directive names and their interpretation are part of the notation's compatibility contract. Introducing a new directive that changes the meaning of an existing valid bare marker requires a breaking grammar change and a migration path. Sites may choose explicit IDs to avoid future collisions; readers accept both spellings.
+
 ## Load the tools
 
 For a Node build, editor service or command-line adapter:

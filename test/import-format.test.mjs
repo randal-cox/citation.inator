@@ -27,5 +27,5 @@ test('mixed unsupported reprints and real numeric citations never restore year i
  const input={source:'(Duval [1898] 2004, ch. 2). Also [2].',style:'auto',records:[{id:'unrelated',type:'book',state:'partial',title:'Unrelated',authors:[{family:'Other'}],issued:[2000],referenceNumber:1898},{id:'two',type:'book',state:'partial',title:'Second',authors:[{family:'Two'}],issued:[2001],referenceNumber:2}]};
  const auto=importDemoRequest(input);assert.equal(auto.formatChoiceRequired,true);assert.equal(auto.formatDetection.state,'mixed');
  const manual=importDemoRequest({...input,style:'vancouver'});assert.deepEqual(manual.review.matches.map(match=>match.citation.raw),['[2]']);
- const result=importDemoRequest({...input,style:'vancouver',action:'preview',review:manual.review,reviewId:manual.review.reviewId,decisions:[{citationIndex:0,action:'accept',recordIds:['two']}]});assert.ok(result.source.startsWith('(Duval [1898] 2004, ch. 2).'));assert.ok(result.source.includes('{cite local:two}'));
+ const result=importDemoRequest({...input,style:'vancouver',action:'preview',review:manual.review,reviewId:manual.review.reviewId,decisions:[{citationIndex:0,action:'accept',recordIds:['two']}]});assert.ok(result.source.startsWith('(Duval [1898] 2004, ch. 2).'));assert.ok(result.source.includes('{cite two}'));
 });

@@ -9,7 +9,7 @@ test('accepted text edits preserve prefixes, locators and unrelated source exact
  const source='😀 Before (see also Avery, 2021, p. 4).\r\n\r\nReferences\r\nKeep this bibliography.';
  const review=reviewFor(source);const plan=planImportEdits(source,review,{reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',recordIds:['avery']}]});
  assert.equal(plan.edits.length,1);const result=applyImportEdits(source,plan);
- assert.equal(result.source,'😀 Before {citation local:avery | prefix:"see also" | locator:"p. 4"}.\r\n\r\nReferences\r\nKeep this bibliography.');
+ assert.equal(result.source,'😀 Before {citation avery | prefix:"see also" | locator:"p. 4"}.\r\n\r\nReferences\r\nKeep this bibliography.');
  assert.equal(result.changed,true);
 });
 test('pending, deferred and rejected groups produce no edits or record mutation',()=>{
@@ -35,7 +35,7 @@ test('numeric groups require all item decisions and use configured notation',()=
  const source='Before [1–2].';const records=[{...refs[0],referenceNumber:1},{...refs[0],id:'second',referenceNumber:2}];
  const review=createImportReview(source,matchCitations(parseInTextCitations(source,'vancouver'),records));
  const plan=planImportEdits(source,review,{reviewId:review.reviewId,citationKeyword:'ref',decisions:[{citationIndex:0,action:'accept',recordIds:['avery','second']}]});
- assert.equal(applyImportEdits(source,plan).source,'Before {ref local:avery; local:second}.');
+ assert.equal(applyImportEdits(source,plan).source,'Before {ref avery; second}.');
  assert.throws(()=>planImportEdits(source,review,{reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',recordIds:['avery']}]}),/every item/);
 });
 
@@ -80,7 +80,7 @@ test('explicit identifier targets retain locators, normalize pasted IDs and cann
 test('mixed candidate and identifier targets require every item and preserve span guards',()=>{
  const source='(Avery, 2021; Missing, 2000)';const review=reviewFor(source);
  const options={reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{recordId:'avery'},{identifier:'doi:10.1234/example'}]}]};
- const result=applyImportEdits(source,planImportEdits(source,review,options));assert.match(result.source,/local:avery;/);assert.equal(scanCitationMarkers(result.source)[0].token.items.length,2);
+ const result=applyImportEdits(source,planImportEdits(source,review,options));assert.match(result.source,/avery;/);assert.equal(scanCitationMarkers(result.source)[0].token.items.length,2);
  assert.throws(()=>planImportEdits(source,review,{...options,decisions:[{citationIndex:0,action:'accept',targets:[{recordId:'avery'}]}]}),/every item/);
  const rich='<p>(<i>Avery</i>, 2021)</p>';const richReview=createImportReview(rich,matchCitations(detectExtractedCitations(extractImportText(rich,{format:'html'})),refs));
  const plan=planImportEdits(rich,richReview,{reviewId:richReview.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{identifier:'doi:10.1234/example'}]}]});assert.equal(plan.outcomes[0].state,'accepted-needs-adapter');assert.equal(applyImportEdits(rich,plan).source,rich);

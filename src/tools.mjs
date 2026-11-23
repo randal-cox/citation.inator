@@ -1,9 +1,9 @@
 import { parse } from 'parse5';
 import { Lexer } from 'marked';
-import { compileCitationBlocks, parseDirectives, scanCitationMarkers } from './compiler.mjs';
+import { compileCitationBlocks, formatRecordId, parseDirectives, scanCitationMarkers } from './compiler.mjs';
 import { isCitationTextExcluded } from './markup.mjs';
 import { canonicalIdentifierKey, readCache } from './records.mjs';
-export { markerKind } from './compiler.mjs';
+export { markerKind, formatRecordId } from './compiler.mjs';
 export { createSiteOccurrenceIndex } from './reference-features.mjs';
 
 const escaped = value => value.replace(/[\\"{};|]/g, character => '\\' + character);
@@ -130,6 +130,8 @@ export function describeCitation(identifierOrMarker, cache, options = {}) {
 export function annotateMarkers(source, cache, options = {}) {
   const { noteContext = 'article' } = options;
   if (!['article','work'].includes(noteContext)) throw new TypeError('Use article or work noteContext.');
+  // Annotation changes notes only; validate the writer option without changing existing IDs.
+  formatRecordId('annotation-validation', options);
   const { markers, descriptions, diagnostics } = analyze(source, cache, options);
   const workDescriptions = new Map();
   const edits = [];
@@ -145,7 +147,7 @@ export function annotateMarkers(source, cache, options = {}) {
       let noteText=description.items[i].text;
       if (noteContext === 'work') {
         const recordId=description.items[i].recordId;
-        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId,describeCitation(`{${options.citationKeyword || 'citation'} local:${recordId}}`,cache,{...options,suffixScope:'fragment'}).text);
+        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId,describeCitation(`{${options.citationKeyword || 'citation'} ${formatRecordId(recordId, options)}}`,cache,{...options,suffixScope:'fragment'}).text);
         noteText=workDescriptions.get(recordId);
       }
       noteText=escaped(noteText);

@@ -5,7 +5,7 @@ import {importHash} from './import-hash.mjs';
 import {parseInTextCitations,matchCitations} from './import-matcher.mjs';
 import {parseReferences} from './import-references.mjs';
 import {createImportReview,planImportEdits,applyImportEdits} from './import-review.mjs';
-import {compileCitations,markerKind,scanCitationMarkers} from './compiler.mjs';
+import {compileCitations,formatRecordId,markerKind,scanCitationMarkers} from './compiler.mjs';
 import {detectCitationFormat} from './import-format.mjs';
 import {analyzeImportDocument} from './import-document.mjs';
 import {makeCache,normalizeRecord,normalizeIdentifier,canonicalIdentifierKey} from './records.mjs';
@@ -15,7 +15,8 @@ import {mergeCompletion} from './import-enrichment.mjs';
 export function processImportRequest(input) {
   const limits=normalizeImportLimits(input?.limits);
   if (!input || typeof input !== 'object' || typeof input.source !== 'string' || input.source.length>limits.sourceCharacters) throw new TypeError('Use a document of at most '+limits.sourceCharacters.toLocaleString('en')+' characters.');
-  const {source,style:requestedStyle='apa',action='analyze',citationKeyword='cite',namespace='import-preview'}=input;
+  const {source,style:requestedStyle='apa',action='analyze',citationKeyword='cite',namespace='import-preview',identifierForm='minimal'}=input;
+  formatRecordId('import-validation',{citationKeyword,identifierForm});
   scanCitationMarkers('',{citationKeyword});if(typeof namespace!=='string'||!/^[-A-Za-z0-9_]{1,80}$/u.test(namespace))throw new TypeError('Use a namespace of up to 80 letters, digits, hyphens or underscores.');
   if (!['auto','apa','chicago-author-date','vancouver'].includes(requestedStyle)) throw new TypeError('Choose APA, Chicago author–date or Vancouver.');
   const fullDocument=input.mode==='document';
@@ -72,11 +73,11 @@ export function processImportRequest(input) {
     }
   }
   // Validate the original local choices before replacing them with their accepted canonical identifiers.
-  planImportEdits(source,input.review,{reviewId:input.reviewId,decisions:input.decisions,citationKeyword});
+  planImportEdits(source,input.review,{reviewId:input.reviewId,decisions:input.decisions,citationKeyword,identifierForm});
   const allocation=hostRecords?allocateImportRecords([...records.map(record=>enriched.get(record.id)?.record || normalizeRecord(record)),...extra],site,input):null;
   const decisions=input.decisions.map(decision=>({...decision,...((decision.targets||decision.recordIds)&&{targets:(decision.targets || decision.recordIds.map(recordId=>({recordId}))).map(target=>allocation?.mapping.has(target.recordId)?{recordId:allocation.mapping.get(target.recordId)}:enriched.has(target.recordId)?{identifier:enriched.get(target.recordId).identifier.scheme+':'+enriched.get(target.recordId).identifier.value}:target)})}));
   const outputReview=allocation?createImportReview(source,{schema:'citation-inator.import-matches.v1',matches:input.review.matches.map(match=>({...match,items:match.items.map(item=>({...item,candidates:item.candidates.map(candidate=>({...candidate,recordId:allocation.mapping.get(candidate.recordId) || candidate.recordId}))}))}))}):input.review;
-  const plan=planImportEdits(source,outputReview,{reviewId:outputReview.reviewId,decisions,citationKeyword});
+  const plan=planImportEdits(source,outputReview,{reviewId:outputReview.reviewId,decisions,citationKeyword,identifierForm});
   const portable=[],owners=new Map(),ids=new Set();
   for(const rawRecord of (allocation?.records || [...records.map(record=>enriched.get(record.id)?.record || record),...extra])){
     const record=normalizeRecord(rawRecord);
@@ -98,6 +99,7 @@ export function processImportRequest(input) {
 }
 
 // Composable primitives for hosts that own their review presentation.
+export {formatRecordId} from './compiler.mjs';
 export {analyzeImportDocument,createDocumentImporter,partitionImportDocument} from './import-document.mjs';
 export {createImportReview,planImportEdits,applyImportEdits} from './import-review.mjs';
 export {extractImportText,detectExtractedCitations,mapImportRange} from './import-extraction.mjs';

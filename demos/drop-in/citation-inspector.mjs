@@ -1,4 +1,4 @@
-/*! citation-inator v0.4.0-preview.3 | MIT | See LICENSE */
+/*! citation-inator v0.4.0-preview.4 | MIT | See LICENSE */
 
 // src/class-names.mjs
 var defaultClassPrefix = "citation";
@@ -518,7 +518,7 @@ function parseDirectives(source, { citationKeyword = "citation" } = {}) {
       tokens.push({ type: "annotation", name: match[2].trim(), raw });
     } else {
       const items = split(match[2], ";").map(parseItem);
-      if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)))) {
+      if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)) || items.every((item) => item.form === "narrative"))) {
         tokens.push({ type: "citation", items, raw });
       } else tokens.push({ type: "text", text: raw, malformed: true });
     }

@@ -113,6 +113,21 @@ export function markerKind(raw, options = {}) {
   return token?.type === 'endnotes' ? 'endnote' : ['citation','list','nocite','annotation'].includes(token?.type) ? token.type : 'malformed';
 }
 
+/** Encode a local record ID for a new marker; existing marker spelling is not rewritten. */
+export function formatRecordId(id, { citationKeyword = 'citation', identifierForm = 'minimal' } = {}) {
+  validateKeyword(citationKeyword);
+  if (!['minimal', 'explicit'].includes(identifierForm)) throw new TypeError('Use minimal or explicit identifierForm.');
+  const identifier = typeof id === 'string' && normalizeIdentifier('local:' + id);
+  if (identifier?.scheme !== 'local' || identifier.value !== id) throw new TypeError('Supply a valid local record ID.');
+  const escaped = id.replace(/[\\"{};|]/g, character => '\\' + character);
+  const token = scanCitationMarkers(`{${citationKeyword} ${escaped}}`, { citationKeyword })[0]?.token;
+  const unambiguous = token?.type === 'citation' && token.items.length === 1 &&
+    token.items[0].identifier.scheme === 'local' && token.items[0].identifier.value === id;
+  // Reserve directive names for new writers, including the two directives needing arguments.
+  const reserved = ['endnote', 'list', 'nocite', ...Object.keys(annotationNames)].includes(id);
+  return identifierForm === 'minimal' && unambiguous && !reserved ? escaped : 'local:' + escaped;
+}
+
 export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];
@@ -149,7 +164,7 @@ export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
       tokens.push({ type: "annotation", name: match[2].trim(), raw });
     } else {
       const items = split(match[2], ";").map(parseItem);
-      if (items.every(Boolean) && (items.length === 1 || items.every(item => parentheticalForms.has(item.form)))) {
+      if (items.every(Boolean) && (items.length === 1 || items.every(item => parentheticalForms.has(item.form)) || items.every(item => item.form === "narrative"))) {
         tokens.push({ type: "citation", items, raw });
       } else tokens.push({ type: "text", text: raw, malformed: true });
     }
@@ -994,7 +1009,7 @@ function compileBlocks(blocks, cache, {
         return separator + trigger(item, label);
       }).join("");
       const { label, form } = token.items[0];
-      const parenthetical = token.items.length > 1 || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
+      const parenthetical = token.items.length > 1 && form !== "narrative" || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
       return parenthetical ? `<span ${part("cluster")}>(${citations})</span>` : citations;
     }).join("");
     return markup || !content.trim() ? content : `<p>${content}</p>`;

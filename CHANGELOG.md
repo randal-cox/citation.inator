@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add shared `formatRecordId` in tools/import entries, minimal safe local-ID spelling by default and an explicit mode; note refresh preserves existing spelling. Document directive-name compatibility.
+- Keep site identity proposals when main titles agree but subtitles, work types or given-name spelling differ, retaining the differences as evidence and requiring approval.
+- Fix narrative multi-year preview encoding and detect the second narrative citation in the same sentence; re-scan generated multi-work markers before returning edits.
+
 - Add reviewable site-cache record reuse, stale-site checks, host-assigned record IDs and new/reused record mappings to the shared import API. Preserve existing site metadata and reject allocation collisions.
 - Recognize same-author multiple-year groups and institutional authors; keep inferred acronyms and secondary-source relationships reviewable. Report unrecognized balanced year-like citation spans with source ranges.
 - Add a self-contained browser article compiler (`citation-compiler.mjs`, `citation-inator/compiler-browser`) with Node parity, CSP coverage and bundled dependency notices.

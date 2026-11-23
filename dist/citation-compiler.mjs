@@ -1,4 +1,4 @@
-/*! citation-inator compiler v0.4.0-preview.3 | MIT | See LICENSE */
+/*! citation-inator compiler v0.4.0-preview.4 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -99,7 +99,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.4.0-preview.3",
+  version: "0.4.0-preview.4",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -679,7 +679,7 @@ function parseDirectives(source, { citationKeyword = "citation" } = {}) {
       tokens.push({ type: "annotation", name: match[2].trim(), raw });
     } else {
       const items = split(match[2], ";").map(parseItem);
-      if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)))) {
+      if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)) || items.every((item) => item.form === "narrative"))) {
         tokens.push({ type: "citation", items, raw });
       } else tokens.push({ type: "text", text: raw, malformed: true });
     }
@@ -1460,7 +1460,7 @@ function compileBlocks(blocks, cache, {
         return separator + trigger(item, label2);
       }).join("");
       const { label, form } = token.items[0];
-      const parenthetical = token.items.length > 1 || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
+      const parenthetical = token.items.length > 1 && form !== "narrative" || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
       return parenthetical ? `<span ${part("cluster")}>(${citations})</span>` : citations;
     }).join("");
     return markup || !content.trim() ? content : `<p>${content}</p>`;
