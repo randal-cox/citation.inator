@@ -15,7 +15,7 @@ On 21 November 2026 the maintainer separated stable editor integration from the 
 
 The current public release is 0.3.0. No import API or demo is promised in the stable 0.3.0 package. The import branch keeps the work already built; its document-first review prototype is a 0.4.0 experiment. Version changes and publication follow the check-in/review procedure.
 
-Current 0.4.0 candidate: shared Node/browser import API and JSON CLI, bounded native PDF/DOCX/ODT working-copy extraction, metadata preservation, identity-aware suggestion ranking and explicit conflict review are implemented. The demo uses that API as an example host. Complete clean-consumer/minimum-runtime/browser checks and independent reviews, then obtain draft’s recheck of the implemented site-cache reuse and host-assigned IDs before final release. Draft agrees that it owns the UI through the headless API. Public 0.3.0 artifacts remain unchanged. See the [current milestone gates](docs/milestones/0.4.0.md#release-gates-still-open).
+Current 0.4.0 candidate: shared Node/browser import API and JSON CLI, bounded native PDF/DOCX/ODT working-copy extraction, metadata preservation, identity-aware suggestion ranking and explicit conflict review are implemented. The demo uses that API as an example host. Complete clean-consumer/minimum-runtime/browser checks and independent reviews, then obtain draft’s recheck of the implemented site-cache reuse and host-assigned IDs before final release. Draft agrees that it owns the UI through the headless API. Public 0.3.0 artifacts remain unchanged. See the [concrete remaining-work checklist](docs/milestones/0.4.0.md#what-is-left--actionable-checklist).
 
 ## Completed milestone 0.2.0 — Article tooling
 
@@ -73,7 +73,7 @@ The local import-review demo is runnable now; see [its guide](docs/import-demo.m
 
 The [verification history](docs/launch-verification.md) preserves the earlier assays and links to the released milestone. The [product brief](https://github.com/randal-cox/citation.inator/blob/main/docs/prd-citation-inspector.md#milestones) describes the longer-term feature sequence.
 
-The fresh [20-page public PDF check](docs/evidence/import-plos-0294391-2026-11-21.json) agrees with the publisher’s 52 references and ordered 62 cited items after extraction fixes. Remaining import work includes wrapped DOI recovery, structured numeric reference fields and investigating sidebar lookup progress observed in this run; these are not source-author errors. Host site-cache reuse and host-assigned IDs remain separate integration requirements.
+The fresh [20-page public PDF check](docs/evidence/import-plos-0294391-2026-11-21.json) agrees with the publisher’s 52 references and ordered 62 cited items after extraction fixes. The recommended remaining 0.4.0 improvements are safe wrapped-DOI recovery and common numbered-reference field parsing. A sidebar progress investigation is also open; no product queue defect has been established. Site-cache reuse and host-assigned IDs are implemented and await draft verification. Completion checks and release steps are in the milestone’s actionable checklist.
 
 Draft integration preview.3 implements the requests in issues 16, 22 and 14; draft acceptance remains pending. Optional shared match-state/action descriptions and structured pending-format preview responses remain follow-ups, alongside the 0.5.0 worked host integration.
 
