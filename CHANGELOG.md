@@ -2,6 +2,7 @@
 
 ## 0.5.0-preview.2 — In development
 
+- Verify completion of the GitHub, physical-folder and Codex project/attachment rename to cite.inator; retain existing browser/data compatibility contracts.
 - Prepare the cite.inator repository/project/folder name and cite-inator package; preserve browser/data contracts and the old CLI alias.
 - Keep gallery cards alongside their editable details, align the Playground heading, add leading endnote icons and pill-shaped topic/filter labels, and remove the Endnotes title rule.
 - Remove remaining dark-theme rules from the learning import host. Keep direct reading/download actions visibly labelled and outside optional-source disclosures, with a contextual settings label.

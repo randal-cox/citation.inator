@@ -62,7 +62,7 @@ The local import-review demo is runnable now; see [its guide](docs/import-demo.m
 
 ## Naming migration in 0.5.0
 
-The maintainer brought the **cite.inator** rename into this milestone. Repository, physical folder and Codex project/attachment are separate activation checks. The prepared package name is `cite-inator`; browser/data compatibility and legacy installs are documented in [the migration guide](docs/naming-migration.md). GitHub and physical-folder renames are verified; Codex's manual project/attachment edit remains tracked in the [milestone](docs/milestones/0.5.0.md).
+The maintainer brought the **cite.inator** rename into this milestone. Repository, physical folder and Codex project/attachment are separate activation checks. The prepared package name is `cite-inator`; browser/data compatibility and legacy installs are documented in [the migration guide](docs/naming-migration.md). GitHub, physical-folder and Codex project/attachment renames are all verified in the [milestone](docs/milestones/0.5.0.md).
 
 ## Near-term research revisit
 

@@ -1,6 +1,6 @@
 # Moving to cite.inator in 0.5.0
 
-The public project, GitHub repository and physical project folder are renamed from **citation.inator** to **cite.inator**. The Codex project label and folder attachment still require the maintainer’s manual edit in this session because computer use denied access to the app and no project-edit connector is available. Activation and verification are recorded in the [milestone](https://github.com/randal-cox/cite.inator/blob/codex/citation-0.5-learning/docs/milestones/0.5.0.md). The migration does not rewrite released tags or archives.
+The public project, GitHub repository and physical project folder are renamed from **citation.inator** to **cite.inator**. The Codex project name and folder attachment are also verified as `cite.inator`. Activation and verification are recorded in the [milestone](https://github.com/randal-cox/cite.inator/blob/codex/citation-0.5-learning/docs/milestones/0.5.0.md). The migration does not rewrite released tags or archives.
 
 ## Current names
 
@@ -9,7 +9,7 @@ The public project, GitHub repository and physical project folder are renamed fr
 - Package: `cite-inator`, beginning with 0.5.0 previews.
 - CLI: `cite-inator`; `citation-inator` remains an executable alias.
 - Physical project folder: `cite.inator`.
-- Codex project/attachment target: `cite.inator`; manual edit pending.
+- Codex project/attachment: `cite.inator`, verified at the renamed physical folder.
 
 GitHub redirects the old repository's web and Git URLs. GitHub Pages project URLs do not receive that redirect: update old `/citation.inator/` demo links to `/cite.inator/`. Do not create another repository at the old name, because that would remove the repository redirect. See [GitHub's rename behavior](https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository).
 
