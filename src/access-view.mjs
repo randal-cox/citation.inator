@@ -4,30 +4,8 @@ import { iconMarkup } from "./icons.mjs";
 import { httpsURL } from "./records.mjs";
 import { defaultClassPrefix, partClassNames } from "./class-names.mjs";
 
-const defaults = {
-  "access.links": "Source links",
-  "access.action.pdf": "Download PDF", "access.action.publisher": "Open publisher page",
-  "access.action.repository": "Open repository", "access.action.preprint": "Open preprint",
-  "access.action.library": "Find at {service}", "access.action.full-text": "Read full text at {service}",
-  "access.version": "{label} ({version})",
-  "access.free": "Read free", "access.selected": "Through your services",
-  "access.other": "Other places to look", "access.more": { one: "{count} more", other: "{count} more" },
-  "access.help.unknown": "Can’t open these? Tell us where you can read.",
-  "access.help.none": "None of these is on your list. Add a service, or try your library.",
-  "access.help.match": "Change where you read", "access.settings": "Where you can read",
-  "access.services": "Services you can use", "access.preferred": "Open titles in",
-  "access.noPreference": "No preference", "access.library": "Through my library",
-  "access.library.kind": "Library access type", "access.library.none": "No library configured",
-  "access.library.proxy": "Proxy prefix", "access.library.openurl": "OpenURL resolver",
-  "access.library.address": "Library address", "access.library.help": "Use the HTTPS address supplied by your library. It is used only when you open a library link.",
-  "access.privacy": "Saved in this browser for this site. Services may have the work. Availability varies by title.",
-  "access.save": "Save", "access.clear": "Clear settings", "access.cancel": "Cancel",
-  "access.at": "at {service}", "access.checked": "Checked {date}", "access.stale": "May have moved",
-  "access.destination": "Open at {service}", "access.invalid": "Check your library address and preferred service.",
-  "access.kind.free": "Open copies", "access.kind.publisher": "Publishers", "access.kind.subscription": "Subscriptions",
-  "access.kind.library": "Libraries", "access.kind.lending": "Lending", "access.kind.accessibility": "Accessible editions",
-  "access.kind.discovery": "Discovery"
-};
+import { createCitationMessages } from "./i18n.mjs";
+
 
 function node(doc, tag, text, part) {
   const value = doc.createElement(tag);
@@ -46,16 +24,23 @@ function containerIsPanel(container) {
 export class AccessView {
   #owner;
   #options = {};
+  #messages = createCitationMessages();
   #unsubscribe;
   #rows = new Map();
   #titles = new Map();
   #listHelps = new Map();
   #sheet;
+  #sheetMessages = [];
   #returnFocus;
   #returnContainer;
   constructor(owner) { this.#owner = owner; }
   configure(options) {
-    this.#options = { ...this.#options, ...options };
+    const next = { ...this.#options, ...options };
+    const messages = createCitationMessages(next);
+    this.#options = next;
+    this.#messages = messages;
+    for (const {node,key,prefix} of this.#sheetMessages) node.textContent = prefix + this.text(key);
+    if (this.#sheet) { this.#sheet.lang = messages.locale; this.#sheet.setAttribute("aria-label", this.text("access.settings")); }
     accessCatalog(this.#options.accessCatalog);
     if (this.#options.accessLayout && !["flat", "grouped"].includes(this.#options.accessLayout)) throw new TypeError("Use grouped or flat access.");
     if (this.#options.accessSettings && !["builtin", "host", "off"].includes(this.#options.accessSettings)) throw new TypeError("Use builtin, host or off access settings.");
@@ -70,14 +55,8 @@ export class AccessView {
   get profile() { return getAccessProfile(this.storageOptions); }
   get settings() { return this.#owner.getAttribute("access-settings") || this.#options.accessSettings || "builtin"; }
   get layout() { return this.#owner.getAttribute("access-layout") || this.#options.accessLayout || "grouped"; }
-  text(key, values = {}) {
-    let template = this.#options.strings?.[key] ?? defaults[key] ?? key;
-    if (typeof template === "object") {
-      const rule = new Intl.PluralRules(this.#options.locale).select(values.count ?? 0);
-      template = template[rule] ?? template.other ?? defaults[key]?.other ?? key;
-    }
-    return String(template).replace(/\{(\w+)\}/g, (_, key) => values[key] ?? "");
-  }
+  text(key, values = {}) { return this.#messages.text(key, values); }
+
   connect() {
     this.#unsubscribe?.();
     if (!this.#owner.isConnected) return;
@@ -219,19 +198,27 @@ export class AccessView {
     }
     this.#sheet?.remove();
     const doc = this.#owner.ownerDocument;
+    this.#sheetMessages = [];
+    const message = (tag,key) => {
+      const value = node(doc,tag);
+      const text = doc.createTextNode(this.text(key));
+      value.append(text); this.#sheetMessages.push({node:text,key,prefix:""});
+      return value;
+    };
     const sheet = this.#sheet = node(doc, "dialog", "", "access-settings");
+    sheet.lang = this.#messages.locale;
     sheet.setAttribute("aria-label", this.text("access.settings"));
     const form = node(doc, "form");
-    const title = node(doc, "h2", this.text("access.settings"));
-    form.append(title, node(doc, "p", this.text("access.privacy")));
+    const title = message("h2", "access.settings");
+    form.append(title, message("p", "access.privacy"));
     const columns = node(doc, "div", "", "access-settings-columns");
     const services = node(doc, "fieldset");
-    services.append(node(doc, "legend", this.text("access.services")));
+    services.append(message("legend", "access.services"));
     const profile = this.profile;
     const catalog = this.catalog;
     for (const kind of [...new Set(catalog.map(item => item.kind))]) {
       const group = node(doc, "fieldset");
-      group.append(node(doc, "legend", this.text("access.kind." + kind)));
+      group.append(message("legend", "access.kind." + kind));
       for (const item of catalog.filter(item => item.kind === kind)) {
         const label = node(doc, "label");
         const input = node(doc, "input");
@@ -242,36 +229,40 @@ export class AccessView {
       services.append(group);
     }
     const preferences = node(doc, "fieldset");
-    preferences.append(node(doc, "legend", this.text("access.preferred")));
+    preferences.append(message("legend", "access.preferred"));
     for (const item of [{ id: "", label: this.text("access.noPreference") }, ...catalog]) {
       const label = node(doc, "label");
       const input = node(doc, "input");
       input.type = "radio"; input.name = "preferred"; input.value = item.id;
       input.checked = (profile?.preferred || "") === item.id;
-      label.append(input, " " + item.label); preferences.append(label);
+      if (item.id === "") {
+        const text = doc.createTextNode(" " + this.text("access.noPreference"));
+        this.#sheetMessages.push({node:text,key:"access.noPreference",prefix:" "}); label.append(input,text);
+      } else label.append(input, " " + item.label);
+      preferences.append(label);
     }
     columns.append(services, preferences); form.append(columns);
     const library = node(doc, "fieldset");
-    library.append(node(doc, "legend", this.text("access.library")));
-    const kindLabel = node(doc, "label", this.text("access.library.kind"));
+    library.append(message("legend", "access.library"));
+    const kindLabel = message("label", "access.library.kind");
     const kind = node(doc, "select"); kind.name = "libraryKind";
     for (const key of ["none", "proxy", "openurl"]) {
-      const option = node(doc, "option", this.text("access.library." + key)); option.value = key;
+      const option = message("option", "access.library." + key); option.value = key;
       kind.append(option);
     }
     kind.value = profile?.library?.kind || "none"; kindLabel.append(kind);
-    const addressLabel = node(doc, "label", this.text("access.library.address"));
+    const addressLabel = message("label", "access.library.address");
     const address = node(doc, "input"); address.name = "libraryAddress"; address.type = "url";
     address.value = profile?.library?.base || ""; addressLabel.append(address);
     address.disabled = kind.value === "none";
     kind.addEventListener("change", () => { address.disabled = kind.value === "none"; });
-    library.append(kindLabel, addressLabel, node(doc, "p", this.text("access.library.help")));
+    library.append(kindLabel, addressLabel, message("p", "access.library.help"));
     form.append(library);
     const error = node(doc, "p"); error.setAttribute("role", "alert"); form.append(error);
-    const save = node(doc, "button", this.text("access.save")); save.type = "submit";
-    const clear = node(doc, "button", this.text("access.clear")); clear.type = "button";
+    const save = message("button", "access.save"); save.type = "submit";
+    const clear = message("button", "access.clear"); clear.type = "button";
     clear.addEventListener("click", () => { setAccessProfile(null, this.storageOptions); close(); });
-    const cancel = node(doc, "button", this.text("access.cancel")); cancel.type = "button";
+    const cancel = message("button", "access.cancel"); cancel.type = "button";
     cancel.addEventListener("click", () => sheet.close());
     form.append(save, clear, cancel);
     form.addEventListener("submit", event => {

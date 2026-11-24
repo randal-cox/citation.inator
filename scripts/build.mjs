@@ -271,7 +271,7 @@ await writeFile("demos/static/guide.html", document({
       <h2 id="guide-load">Load and initialize</h2>
       <p>Clone the <a href="https://github.com/randal-cox/citation.inator">repository</a> with <code>git clone https://github.com/randal-cox/citation.inator.git</code> and check out <code>v${version}</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; 0.4.0 includes the editor, bibliography, compiler and import tools.</p>
       <pre><code>${escapeHTML(demoServer)}</code></pre>
-      <p>Without npm, serve the prebuilt <code>demos/drop-in/</code> directory or extracted ZIP with any static server. The standalone <a href="../drop-in/README.md">README</a> includes a Python command.</p>
+      <p>Without npm, run <code>node server.mjs</code> in the standalone folder and open <code>http://127.0.0.1:4188/</code>. You can also use any static HTTP server. See the standalone <a href="../drop-in/README.md">README</a>.</p>
       <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/citation-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
       <pre><code>${escapeHTML(loadingExample)}</code></pre>
       <p>Set options on the element or in your site's browser module. The default classes start with <code>citation-</code>. Use <code>class-prefix</code> or <code>classPrefix</code> to give them your own prefix.</p>
@@ -279,6 +279,13 @@ await writeFile("demos/static/guide.html", document({
       <p>The matching HTML attributes are <code>panel-title</code>, <code>panel-icon</code>, <code>evidence-title</code>, <code>evidence-icon</code>, <code>credit-title</code>, <code>credit-icon</code>, <code>access-providers</code>, and <code>hidden-access-providers</code>. Icons use a same-origin URL, the built-in mark, or <code>none</code>. The <code>open</code> attribute is present on the host while any panel is visible.</p>
       <p>To compile plain text directly from the checkout with Node.js 22.13 or later, run this from the repository root. The CLI writes <code>article.html</code> and <code>article.html.json</code>.</p>
       <pre><code>${escapeHTML(checkoutCompile)}</code></pre>
+    </section>
+    <section aria-labelledby="guide-language">
+      <h2 id="guide-language">Language and configurable messages</h2>
+      <p>Pass <code>locale: 'es'</code> to both compiler and inspector for the Spanish UI example. Use <code>strings</code> to override labels and plural messages. English is the fallback; source metadata and citation-style conventions retain their language. See the <a href="../drop-in/i18n.md">complete language guide</a>.</p>
+      <pre><code>const options = {locale: 'es', strings: {'access.more': {one: '{countLabel} más', other: '{countLabel} más'}}};
+const result = compileMarkdown(source, cache, options);
+initializeCitationInspector(element, {...options, cache: result.cache});</code></pre>
     </section>
     <section aria-labelledby="guide-use">
       <h2 id="guide-use">Using the demo</h2>
@@ -351,7 +358,9 @@ await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
   cp("CITATION.cff", portable + "CITATION.cff"),
-  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md"].map(name => cp("docs/" + name, portable + name)),
+  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "i18n.md"].map(name => cp("docs/" + name, portable + name)),
+  cp("scripts/static-server.mjs", portable + "server.mjs"),
+  writeFile(portable + "package.json", json({name:"citation-inator-standalone",private:true,type:"module",version,scripts:{start:"node server.mjs"}})),
   writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),
   cp("demos/static/structured-preview.css", portable + "structured-preview.css"),
   writeFile(portable + "structured-preview.mjs", structuredModule("./citation-inspector.mjs", previewClient))

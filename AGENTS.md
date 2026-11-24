@@ -2,6 +2,8 @@
 
 Read [the check-in procedure](docs/checkin-procedure.md) before preparing a commit.
 
+Browser checks use a dedicated Playwright browser. Do not automatically launch the maintainer's everyday Chrome. Use a browser-capable execution context; if a sandbox launch aborts or returns EPERM, stop and change context instead of retrying it. Reviewers should reuse the parent browser evidence when source-only review is sufficient.
+
 Before every check-in, review the current milestone record, ROADMAP.md, CHANGELOG.md and documentation affected by the change. Update delivered scope, status, evidence, limitations and follow-up work where the change affects them. Preserve the distinction between planned work, implemented work, verified behavior and adopter-reported results.
 
 Run appropriate checks for the change and run `npm run checkin:check` after staging. Keep generated assets and standalone guides synchronized with their sources.

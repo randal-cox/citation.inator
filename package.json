@@ -1,6 +1,6 @@
 {
   "name": "citation-inator",
-  "version": "0.4.0",
+  "version": "0.5.0-preview.0",
   "description": "Portable citations, endnotes, and source inspection",
   "type": "module",
   "license": "MIT",
@@ -32,7 +32,8 @@
     "./import-browser": "./dist/citation-import.mjs",
     "./import-files": "./src/import-files.mjs",
     "./import-files-browser": "./dist/citation-import-files.mjs",
-    "./compiler-browser": "./dist/citation-compiler.mjs"
+    "./compiler-browser": "./dist/citation-compiler.mjs",
+    "./i18n": "./src/i18n.mjs"
   },
   "bin": {
     "citation-inator": "./scripts/compile.mjs"
@@ -64,10 +65,13 @@
     "prepack": "npm run build",
     "checkin:check": "node scripts/checkin.mjs --staged",
     "milestone:check": "npm test && npm run build && npm run test:browser && node scripts/checkin.mjs",
-    "hooks:install": "git config --local core.hooksPath .githooks"
+    "hooks:install": "git config --local core.hooksPath .githooks",
+    "build:learn": "npm run build && node scripts/build-learning.mjs",
+    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs"
   },
   "devDependencies": {
     "axe-core": "4.14.0",
+    "dompurify": "3.5.0",
     "esbuild": "0.25.12",
     "playwright-core": "1.55.0"
   },

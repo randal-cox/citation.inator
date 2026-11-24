@@ -1,3 +1,5 @@
+import { createCitationMessages } from "./i18n.mjs";
+export { createCitationMessages, citationLocales } from "./i18n.mjs";
 export { markerKind } from "./compiler.mjs";
 import { AccessView } from "./access-view.mjs";
 export { getAccessProfile, setAccessProfile } from "./access-profile.mjs";
@@ -67,6 +69,11 @@ function destination(list, label, icon, url, { version, download = false } = {})
 class CitationInspector extends HTMLElement {
   static observedAttributes = ["access-layout", "access-settings", "activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "hidden-access-providers", "hidden-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
 
+  #messages = createCitationMessages();
+  #messageOptions = {};
+  #movePanel;
+  #placementText;
+  #placementCancel;
   #hovering = false;
   #hoverOpenTimer;
   #hoverCloseTimer;
@@ -134,12 +141,12 @@ class CitationInspector extends HTMLElement {
     });
     const brand = element("div", "", "brand");
     brand.append(this.#brandIcon, this.#defaultIcon, this.#heading);
-    this.#modalDismiss = element("button", "Dismiss", "modal-dismiss");
+    this.#modalDismiss = element("button", this.#messages.text('ui.dismiss'), "modal-dismiss");
     this.#modalDismiss.type = "button";
     this.#modalDismiss.hidden = true;
     this.#modalDismiss.addEventListener("click", () => this.#dismiss(true));
-    this.#panelMenuTrigger = iconControl(element("summary"), "more", "Panel options");
-    const movePanel = element("button", "Move panel", "panel-command");
+    this.#panelMenuTrigger = iconControl(element("summary"), "more", this.#messages.text('ui.panelOptions'));
+    const movePanel = this.#movePanel = element("button", this.#messages.text('ui.move'), "panel-command");
     movePanel.type = "button";
     movePanel.addEventListener("click", () => this.#beginPlacement());
     this.#panelMenu = element("details", "", "panel-menu");
@@ -158,12 +165,13 @@ class CitationInspector extends HTMLElement {
     this.#dialog.append(top, this.#content, this.#status);
 
     this.#placement = element("dialog", "", "panel-placement");
-    this.#placement.setAttribute("aria-label", "Move citation panel");
+    this.#placement.setAttribute("aria-label", this.#messages.text('ui.moveLabel'));
     this.#placement.setAttribute("aria-describedby", "placement-instructions");
     const instructions = element("div", "", "placement-instructions");
     instructions.id = "placement-instructions";
-    instructions.textContent = "Click or tap where the panel’s top-left corner should go.";
-    const cancel = element("button", "Cancel move", "panel-command");
+    this.#placementText = document.createTextNode(this.#messages.text('ui.moveInstructions'));
+    instructions.append(this.#placementText);
+    const cancel = this.#placementCancel = element("button", this.#messages.text('ui.cancelMove'), "panel-command");
     cancel.type = "button";
     cancel.autofocus = true;
     cancel.addEventListener("click", () => this.#cancelPlacement());
@@ -183,7 +191,20 @@ class CitationInspector extends HTMLElement {
   }
 
   configureAccess(options) {
+    const next = {...this.#messageOptions, ...options};
+    const messages = createCitationMessages(next);
     this.#access.configure(options);
+    this.#messageOptions = next;
+    this.#messages = messages;
+    for (const trigger of this.#enhanced.keys()) this.#labelTrigger(trigger);
+    this.#modalDismiss.textContent = messages.text('ui.dismiss');
+    iconControl(this.#panelMenuTrigger, 'more', messages.text('ui.panelOptions'));
+    this.#movePanel.textContent = messages.text('ui.move');
+    this.#placement.setAttribute('aria-label', messages.text('ui.moveLabel'));
+    this.#placementText.textContent = messages.text('ui.moveInstructions');
+    this.#placementCancel.textContent = messages.text('ui.cancelMove');
+    this.#dialog.lang = messages.locale;
+    this.#placement.lang = messages.locale;
     this.refreshAccess();
   }
 
@@ -537,7 +558,7 @@ class CitationInspector extends HTMLElement {
     const original = this.#enhanced.get(trigger);
     if (original && !trigger.dataset.ciPanel && !original.get("aria-label")) {
       const label = this.#bindings.get(trigger)?.label || trigger.textContent.trim();
-      trigger.setAttribute("aria-label", trigger.dataset.ciInspectLabel || `Inspect citation: ${label}`);
+      trigger.setAttribute("aria-label", trigger.dataset.ciInspectLabel || this.#messages.text('ui.inspectCitation', {label}));
     }
   }
 
@@ -656,8 +677,7 @@ class CitationInspector extends HTMLElement {
         row.hidden = selected.length > 0 && !selected.some(tag => tags.includes(tag));
         if (!row.hidden) shown++;
       }
-      const category = new Intl.PluralRules('en').select(shown);
-      const count = `${shown} ${category === 'one' ? 'reference' : 'references'} shown out of ${rows.length}`;
+      const count = this.#messages.text('ui.shown', {count:shown,total:this.#messages.number(rows.length)});
       const status = filters.querySelector('[data-ci-list-count]');
       if (status.textContent !== count) status.textContent = count;
       list.querySelector('[data-ci-list-empty]').hidden = shown > 0;
@@ -902,10 +922,10 @@ class CitationInspector extends HTMLElement {
 
   #render(record, trigger) {
     const fragment = document.createDocumentFragment();
-    const title = record.title || record.original || "Unresolved citation";
+    const title = record.title || record.original || this.#messages.text('ui.unresolved');
     const binding = this.#bindings.get(trigger);
     const bibliography = binding?.bibliographyParts.map(part => part.text).join("") || trigger.dataset.ciBibliography || bibliographyText(record);
-    const badges = [record.integrity?.state, record.state === "unresolved" && "Unresolved"].filter(Boolean);
+    const badges = [record.integrity?.state, record.state === "unresolved" && this.#messages.text('ui.unresolvedBadge')].filter(Boolean);
     if (badges.length) fragment.append(element("p", badges.join(" · "), record.integrity ? "badge integrity" : "badge"));
     const titleNode = element("h3", title);
     titleNode.dir = "auto";
@@ -950,14 +970,14 @@ class CitationInspector extends HTMLElement {
       const groups = groupSiteOccurrences(acceptedUsage).filter(group => group.kind === kind);
       if (!groups.length) continue;
       const section = element('section', '', 'site-returns');
-      section.append(element('h4', kind === 'listed' ? 'Listed on this site' : 'Cited on this site'));
+      section.append(element('h4', kind === 'listed' ? this.#messages.text('ui.listedSite') : this.#messages.text('ui.citedSite')));
       const list = element('ul');
       for (const group of groups) {
         const row = element('li', group.label + ' (');
         group.entries.forEach((item, index) => {
           if (index) row.append(', ');
           const link = element('a', occurrenceLetter(index));
-          link.href = item.href; link.setAttribute('aria-label', siteReturnLabel(group, item, index));
+          link.href = item.href; link.setAttribute('aria-label', siteReturnLabel(group, item, index, this.#messages));
           link.title = item.context || group.label; row.append(link);
         });
         row.append(')'); list.append(row);
@@ -974,7 +994,7 @@ class CitationInspector extends HTMLElement {
     if (names.length) {
       const authors = element("p", names.join(", ") + (record.authorsComplete === false ? ", et al." : ""), "authors");
       authors.dir = "auto";
-      fragment.append(names.length > 8 ? disclosure(record.authorsComplete === false ? "Show listed authors" : `Show all ${names.length} authors`, authors) : authors);
+      fragment.append(names.length > 8 ? disclosure(record.authorsComplete === false ? this.#messages.text('ui.listedAuthors') : this.#messages.text('ui.authors',{count:names.length}), authors) : authors);
     }
     const mediaDetails = [record.creatorAttribution, record.displayDate, record.medium, record.dimensions, record.holdingInstitution, record.accession, record.platform].filter(Boolean);
     if (mediaDetails.length) fragment.append(element("p", mediaDetails.join(" · "), "details"));
@@ -984,7 +1004,7 @@ class CitationInspector extends HTMLElement {
         const line = element("p", "", "checksum");
         const label = [source.provider, checksum.role, checksum.algorithm].filter(Boolean).join(" · ");
         line.append(label + " " + checksum.value.slice(0, 12) + "…");
-        line.append(action("Copy " + label, "copy", () => this.#copy(checksum.value)));
+        line.append(action(this.#messages.text('ui.copy',{label}), "copy", () => this.#copy(checksum.value)));
         fragment.append(line);
       }
     }
@@ -1014,7 +1034,7 @@ class CitationInspector extends HTMLElement {
       if (node !== citation) citation.append(node);
     }
     citation.dir = "auto";
-    fragment.append(names.length > 8 ? disclosure("Show formatted citation", citation) : citation);
+    fragment.append(names.length > 8 ? disclosure(this.#messages.text('ui.formatted'), citation) : citation);
     for (const identifier of record.identifiers) {
       if (identifier.scheme !== "isbn" && (identifier !== doi || linkedDOI)) continue;
       const line = element("p", "", "identifier");
@@ -1030,7 +1050,7 @@ class CitationInspector extends HTMLElement {
     }
     fragment.append(usageContent);
     if (record.abstract) {
-      const heading = record.abstract.kind === "excerpt" ? "Abstract excerpt" : "Abstract";
+      const heading = record.abstract.kind === "excerpt" ? this.#messages.text('ui.abstractExcerpt') : this.#messages.text('ui.abstract');
       const abstract = element("p", record.abstract.text, "abstract");
       abstract.dir = "auto";
       const source = element("p", "", "muted");
@@ -1046,27 +1066,27 @@ class CitationInspector extends HTMLElement {
     const pdf = location("pdf") || (preprint && /\.pdf(?:[?#]|$)/i.test(preprint.url) ? preprint : null);
     const publisher = location("publisher");
     const list = element("ul", "", "destinations");
-    list.setAttribute("aria-label", "Source links");
-    destination(list, "Download PDF", "pdf", pdf?.url, { version: pdf?.version, download: true });
-    destination(list, "Open publisher page", "publisher", publisher?.url === doiURL ? "" : publisher?.url);
-    destination(list, "Open repository", "repository", location("repository")?.url);
-    destination(list, "Open PubMed", "article", id("pmid"));
-    destination(list, "Open PubMed Central", "repository", id("pmcid"));
+    list.setAttribute("aria-label", this.#messages.text('access.links'));
+    destination(list, this.#messages.text('access.action.pdf'), "pdf", pdf?.url, { version: pdf?.version, download: true });
+    destination(list, this.#messages.text('access.action.publisher'), "publisher", publisher?.url === doiURL ? "" : publisher?.url);
+    destination(list, this.#messages.text('access.action.repository'), "repository", location("repository")?.url);
+    destination(list, this.#messages.text('ui.pubmed'), "article", id("pmid"));
+    destination(list, this.#messages.text('ui.pmc'), "repository", id("pmcid"));
     const preprintURL = id("arxiv") || preprint?.url;
-    if (preprintURL !== pdf?.url) destination(list, "Open preprint", "external", preprintURL);
+    if (preprintURL !== pdf?.url) destination(list, this.#messages.text('access.action.preprint'), "external", preprintURL);
     const services = record.locations.filter(item => ["library", "full-text"].includes(item.kind) && !this.#providerHidden(item.provider))
       .sort((a, b) => this.#providerRank(a.provider) - this.#providerRank(b.provider));
     for (const service of services) {
       const fullText = service.kind === "full-text";
-      destination(list, `${fullText ? "Read full text at" : "Find at"} ${service.provider}`,
+      destination(list, this.#messages.text(fullText ? 'access.action.full-text' : 'access.action.library', {service:service.provider}),
         fullText ? "article" : "library", service.url);
     }
 
-    if (record.integrity) destination(list, "Open status record", "status", record.integrity.url || location("status")?.url);
+    if (record.integrity) destination(list, this.#messages.text('ui.status'), "status", record.integrity.url || location("status")?.url);
     const footer = element("footer", "", "panel-actions");
     const endnote = binding ? binding.endnote : trigger.id && trigger.hash && trigger.getRootNode().getElementById(trigger.hash.slice(1));
     if (endnote?.isConnected) {
-      footer.append(action("Go to endnote", "endnote", () => {
+      footer.append(action(this.#messages.text('ui.endnote'), "endnote", () => {
         if (!endnote.isConnected) return;
         this.#dismiss(false);
         if (binding) endnote.scrollIntoView({ block: "nearest" });
@@ -1074,11 +1094,11 @@ class CitationInspector extends HTMLElement {
         endnote.focus();
       }));
     }
-    footer.append(action("Copy citation", "copy", () => this.#copy(bibliography)));
+    footer.append(action(this.#messages.text('ui.copyCitation'), "copy", () => this.#copy(bibliography)));
     const persistent = doi || record.identifiers[0];
-    if (persistent) footer.append(action(`Copy ${persistent.scheme.toUpperCase()}`, "link", () => this.#copy(persistent.value)));
+    if (persistent) footer.append(action(this.#messages.text('ui.copy',{label:persistent.scheme.toUpperCase()}), "link", () => this.#copy(persistent.value)));
     if (typeof this.report === "function" || this.hasAttribute("data-report")) {
-      footer.append(action("Report metadata", "status", () => {
+      footer.append(action(this.#messages.text('ui.report'), "status", () => {
         const payload = {
           record: structuredClone(record),
           page: this.ownerDocument.location.href,
@@ -1116,9 +1136,9 @@ class CitationInspector extends HTMLElement {
     const owner = this.#owner;
     try {
       await navigator.clipboard.writeText(value);
-      if (this.#owner === owner) this.#showStatus("Copied.");
+      if (this.#owner === owner) this.#showStatus(this.#messages.text('ui.copied'));
     } catch {
-      if (this.#owner === owner) this.#showStatus("Clipboard unavailable. Select the citation text to copy it.");
+      if (this.#owner === owner) this.#showStatus(this.#messages.text('ui.clipboard'));
     }
   }
 }

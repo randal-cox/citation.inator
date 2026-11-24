@@ -8,6 +8,8 @@ A small citation library. Write citations in plain text, compile them into linke
 
 ## Load and initialize
 
+The active 0.5.0 preview adds an editable learning playground and shared [UI language configuration](docs/i18n.md). From this checkout, run `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). The published stable release above remains 0.4.0. The preview's [milestone checklist](docs/milestones/0.5.0.md) distinguishes delivered work from pending publication.
+
 To serve the demos from the checkout, run `npm start` from the repository root.
 
 **Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
@@ -104,7 +106,7 @@ npm run build
 npm test
 ```
 
-Run `npm start` to open the [reading room](http://127.0.0.1:4187/) and find the notation guide and Resolution bench. The reading room’s **CSS** and **Style** selectors preview appearance and citation formatting separately. The help buttons beside **Hover**, **CSS**, and **Style** show the corresponding configuration. `npm run test:browser` runs the browser checks with a local Chrome installation. Run the [adversarial review](https://github.com/randal-cox/citation.inator/blob/main/docs/adversarial-testing.md) at every milestone and when a change warrants it.
+Run `npm start` to open the [reading room](http://127.0.0.1:4187/) and find the notation guide and Resolution bench. The reading room’s **CSS** and **Style** selectors preview appearance and citation formatting separately. The help buttons beside **Hover**, **CSS**, and **Style** show the corresponding configuration. Install the dedicated browser with `npx playwright-core install chromium --only-shell`, then run `npm run test:browser`. Tests use Playwright’s isolated browser by default; `CITATION_CHROME` explicitly selects another test executable. Run the [adversarial review](https://github.com/randal-cox/citation.inator/blob/main/docs/adversarial-testing.md) at every milestone and when a change warrants it.
 
 Before a check-in, follow the [check-in procedure](docs/checkin-procedure.md) and review the milestone record and roadmap. Install the local staged-check hook with `npm run hooks:install`. Use `npm run checkin:check` for the fast checks and `npm run milestone:check` when closing a milestone.
 

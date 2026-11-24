@@ -1,0 +1,9 @@
+export const lessons = [
+  {id:'first',title:'First citation',text:'A marker links the sentence to its reference. Click the citation to inspect the work.',source:'A claim and its source {citation ioannidis-2005}.\n\n{citation endnote}',options:{}},
+  {id:'locators',title:'Prefixes and page numbers',text:'A locator points to the passage being cited; a prefix introduces the reference.',source:'Compare this account {citation durkheim-1995-fields | prefix:"see" | locator:"p. 34"}.\n\n{citation endnote}',options:{}},
+  {id:'group',title:'Several works',text:'Separate works with a semicolon inside one marker.',source:'Data and the software used to explore it {citation adelie-penguins-2020; palmerpenguins-2020-software}.\n\n{citation endnote}',options:{}},
+  {id:'editions',title:'Original and edition years',text:'The record stores the original publication and the edition cited separately.',source:'This translation appeared decades after the original {citation durkheim-1995-fields}.\n\n{citation endnote}',options:{}},
+  {id:'html',title:'Formatted Markdown',text:'Markdown and inline formatting remain part of the surrounding document.',source:'## A sourced paragraph\n\n**Evidence matters.** This article examines *published findings* {citation ioannidis-2005}.\n\n{citation endnote}',options:{}},
+  {id:'names',title:'Custom keyword and classes',text:'Configure the notation keyword and the component class prefix independently.',source:'Use a custom marker {reference ioannidis-2005}.\n\n{reference endnote}',options:{citationKeyword:'reference',classPrefix:'research'}},
+  {id:'evidence',title:'Evidence and credit',text:'Evidence opens the structured source record. Credit identifies the software.',source:'Inspect this source {citation ioannidis-2005}.\n\n{citation evidence} · {citation credit}\n\n{citation endnote}',options:{}}
+];

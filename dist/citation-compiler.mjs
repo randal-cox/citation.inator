@@ -1,4 +1,4 @@
-/*! citation-inator compiler v0.4.0 | MIT | See LICENSE */
+/*! citation-inator compiler v0.5.0-preview.0 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -84,6 +84,236 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
+// src/i18n.mjs
+var en = {
+  "access.links": "Source links",
+  "access.action.pdf": "Download PDF",
+  "access.action.publisher": "Open publisher page",
+  "access.action.repository": "Open repository",
+  "access.action.preprint": "Open preprint",
+  "access.action.library": "Find at {service}",
+  "access.action.full-text": "Read full text at {service}",
+  "access.version": "{label} ({version})",
+  "access.free": "Read free",
+  "access.selected": "Through your services",
+  "access.other": "Other places to look",
+  "access.more": { one: "{count} more", other: "{count} more" },
+  "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
+  "access.help.none": "None of these is on your list. Add a service, or try your library.",
+  "access.help.match": "Change where you read",
+  "access.settings": "Where you can read",
+  "access.services": "Services you can use",
+  "access.preferred": "Open titles in",
+  "access.noPreference": "No preference",
+  "access.library": "Through my library",
+  "access.library.kind": "Library access type",
+  "access.library.none": "No library configured",
+  "access.library.proxy": "Proxy prefix",
+  "access.library.openurl": "OpenURL resolver",
+  "access.library.address": "Library address",
+  "access.library.help": "Use the HTTPS address supplied by your library. It is used only when you open a library link.",
+  "access.privacy": "Saved in this browser for this site. Services may have the work. Availability varies by title.",
+  "access.save": "Save",
+  "access.clear": "Clear settings",
+  "access.cancel": "Cancel",
+  "access.at": "at {service}",
+  "access.checked": "Checked {date}",
+  "access.stale": "May have moved",
+  "access.destination": "Open at {service}",
+  "access.invalid": "Check your library address and preferred service.",
+  "access.kind.free": "Open copies",
+  "access.kind.publisher": "Publishers",
+  "access.kind.subscription": "Subscriptions",
+  "access.kind.library": "Libraries",
+  "access.kind.lending": "Lending",
+  "access.kind.accessibility": "Accessible editions",
+  "access.kind.discovery": "Discovery"
+};
+var es = {
+  "access.links": "Enlaces a fuentes",
+  "access.save": "Guardar",
+  "access.cancel": "Cancelar",
+  "access.clear": "Borrar preferencias",
+  "access.settings": "D\xF3nde puedes leer",
+  "access.free": "Leer gratis",
+  "access.selected": "A trav\xE9s de tus servicios",
+  "access.other": "Otros lugares donde buscar",
+  "access.more": { one: "{count} m\xE1s", other: "{count} m\xE1s" },
+  "access.services": "Servicios disponibles",
+  "access.preferred": "Abrir t\xEDtulos en",
+  "access.noPreference": "Sin preferencia",
+  "access.library": "A trav\xE9s de mi biblioteca",
+  "access.library.kind": "Tipo de acceso a la biblioteca",
+  "access.library.none": "Sin biblioteca configurada",
+  "access.library.proxy": "Prefijo del proxy",
+  "access.library.openurl": "Servidor OpenURL",
+  "access.library.address": "Direcci\xF3n de la biblioteca",
+  "access.library.help": "Usa la direcci\xF3n HTTPS de tu biblioteca. Solo se utiliza al abrir un enlace de biblioteca.",
+  "access.privacy": "Se guarda en este navegador para este sitio. La disponibilidad depende del t\xEDtulo.",
+  "access.help.unknown": "\xBFNo puedes abrirlos? Indica d\xF3nde puedes leer.",
+  "access.help.none": "Ninguno est\xE1 en tu lista. A\xF1ade un servicio o prueba tu biblioteca.",
+  "access.help.match": "Cambiar d\xF3nde lees",
+  "access.at": "en {service}",
+  "access.checked": "Comprobado el {date}",
+  "access.stale": "Puede haber cambiado de direcci\xF3n",
+  "access.destination": "Abrir en {service}",
+  "access.invalid": "Revisa la direcci\xF3n de tu biblioteca y el servicio preferido.",
+  "access.action.pdf": "Descargar PDF",
+  "access.action.publisher": "Abrir editorial",
+  "access.action.repository": "Abrir repositorio",
+  "access.action.preprint": "Abrir prepublicaci\xF3n",
+  "access.action.library": "Buscar en {service}",
+  "access.action.full-text": "Leer texto completo en {service}",
+  "access.kind.free": "Copias abiertas",
+  "access.kind.publisher": "Editoriales",
+  "access.kind.subscription": "Suscripciones",
+  "access.kind.library": "Bibliotecas",
+  "access.kind.lending": "Pr\xE9stamos",
+  "access.kind.accessibility": "Ediciones accesibles",
+  "access.kind.discovery": "Descubrimiento"
+};
+Object.assign(en, {
+  "ui.dismiss": "Dismiss",
+  "ui.panelOptions": "Panel options",
+  "ui.move": "Move panel",
+  "ui.moveLabel": "Move citation panel",
+  "ui.moveInstructions": "Click or tap where the panel\u2019s top-left corner should go.",
+  "ui.cancelMove": "Cancel move",
+  "ui.unresolved": "Unresolved citation",
+  "ui.unresolvedBadge": "Unresolved",
+  "ui.listedSite": "Listed on this site",
+  "ui.citedSite": "Cited on this site",
+  "ui.listedAuthors": "Show listed authors",
+  "ui.formatted": "Show formatted citation",
+  "ui.abstractExcerpt": "Abstract excerpt",
+  "ui.abstract": "Abstract",
+  "ui.pubmed": "Open PubMed",
+  "ui.pmc": "Open PubMed Central",
+  "ui.status": "Open status record",
+  "ui.endnote": "Go to endnote",
+  "ui.copyCitation": "Copy citation",
+  "ui.report": "Report metadata",
+  "ui.copied": "Copied.",
+  "ui.clipboard": "Clipboard unavailable. Select the citation text to copy it.",
+  "ui.inspect": "Inspect",
+  "ui.endnotes": "Endnotes",
+  "ui.readingList": "Reading list",
+  "ui.noTags": "No references match the selected tags.",
+  "ui.filterLegend": "Show references with any selected tag",
+  "ui.listedIn": "Listed in",
+  "ui.citedIn": "Cited in",
+  "ui.evidence": "Citation evidence",
+  "ui.credit": "Citation credit",
+  "ui.sourceMetadata": "Source metadata",
+  "ui.softwareLicense": "The software uses the MIT license. Cited material retains its own terms.",
+  "ui.citeSoftware": "How to cite this software",
+  "ui.repository": "GitHub repository",
+  "ui.software": "citation.inator \xB7 Portable Citation Inspector",
+  "ui.lookupISBN": "Look up ISBN",
+  "ui.openSource": "Open source",
+  "ui.inspectCitation": "Inspect citation: {label}",
+  "ui.inspectReference": "Inspect reference: {title}",
+  "ui.copy": "Copy {label}",
+  "ui.openIdentifier": "Open {scheme}",
+  "ui.return": "Return to \u201C{context}\u201D (occurrence {letter})",
+  "ui.authors": {
+    "one": "Show all {count} author",
+    "other": "Show all {count} authors"
+  },
+  "ui.shown": {
+    "one": "{count} reference shown out of {total}",
+    "other": "{count} references shown out of {total}"
+  }
+});
+Object.assign(es, {
+  "ui.dismiss": "Cerrar",
+  "ui.panelOptions": "Opciones del panel",
+  "ui.move": "Mover panel",
+  "ui.moveLabel": "Mover panel de cita",
+  "ui.moveInstructions": "Haz clic o toca donde deba ir la esquina superior izquierda del panel.",
+  "ui.cancelMove": "Cancelar movimiento",
+  "ui.unresolved": "Cita sin resolver",
+  "ui.unresolvedBadge": "Sin resolver",
+  "ui.listedSite": "Incluido en este sitio",
+  "ui.citedSite": "Citado en este sitio",
+  "ui.listedAuthors": "Mostrar autores indicados",
+  "ui.formatted": "Mostrar cita formateada",
+  "ui.abstractExcerpt": "Extracto del resumen",
+  "ui.abstract": "Resumen",
+  "ui.pubmed": "Abrir PubMed",
+  "ui.pmc": "Abrir PubMed Central",
+  "ui.status": "Abrir registro de estado",
+  "ui.endnote": "Ir a la nota",
+  "ui.copyCitation": "Copiar cita",
+  "ui.report": "Informar sobre metadatos",
+  "ui.copied": "Copiado.",
+  "ui.clipboard": "Portapapeles no disponible. Selecciona la cita para copiarla.",
+  "ui.inspect": "Consultar",
+  "ui.endnotes": "Notas finales",
+  "ui.readingList": "Lista de lecturas",
+  "ui.noTags": "Ninguna referencia coincide con las etiquetas seleccionadas.",
+  "ui.filterLegend": "Mostrar referencias con alguna etiqueta seleccionada",
+  "ui.listedIn": "Incluido en",
+  "ui.citedIn": "Citado en",
+  "ui.evidence": "Evidencia de la cita",
+  "ui.credit": "Cr\xE9ditos de la cita",
+  "ui.sourceMetadata": "Metadatos de la fuente",
+  "ui.softwareLicense": "El software usa la licencia MIT. El material citado conserva sus propias condiciones.",
+  "ui.citeSoftware": "C\xF3mo citar este software",
+  "ui.repository": "Repositorio de GitHub",
+  "ui.software": "citation.inator \xB7 Inspector port\xE1til de citas",
+  "ui.lookupISBN": "Buscar ISBN",
+  "ui.openSource": "Abrir fuente",
+  "ui.inspectCitation": "Consultar cita: {label}",
+  "ui.inspectReference": "Consultar referencia: {title}",
+  "ui.copy": "Copiar {label}",
+  "ui.openIdentifier": "Abrir {scheme}",
+  "ui.return": "Volver a \xAB{context}\xBB (menci\xF3n {letter})",
+  "ui.authors": {
+    "one": "Mostrar el autor",
+    "other": "Mostrar los {count} autores"
+  },
+  "ui.shown": {
+    "one": "{count} referencia mostrada de {total}",
+    "other": "{count} referencias mostradas de {total}"
+  }
+});
+Object.assign(en, { "ui.returnListing": "Return to listing in {label}{context} (entry {letter})", "ui.returnSite": "Return to {label}{context} (occurrence {letter})" });
+Object.assign(es, { "ui.returnListing": "Volver a la lista en {label}{context} (entrada {letter})", "ui.returnSite": "Volver a {label}{context} (menci\xF3n {letter})" });
+for (const catalogue of [en, es]) for (const key of ["access.more", "ui.authors", "ui.shown"]) for (const category of Object.keys(catalogue[key] || {})) catalogue[key][category] = catalogue[key][category].replaceAll("{count}", "{countLabel}");
+var freezeCatalog = (catalog) => Object.freeze(Object.fromEntries(Object.entries(catalog).map(([key, value]) => [key, typeof value === "object" ? Object.freeze({ ...value }) : value])));
+var citationLocales = Object.freeze({ en: freezeCatalog(en), es: freezeCatalog(es) });
+var own = (object, key) => Object.hasOwn(object, key) ? object[key] : void 0;
+function createCitationMessages({ locale = "en", strings = {} } = {}) {
+  if (typeof locale !== "string" || !locale) throw new TypeError("Supply a valid language tag.");
+  try {
+    locale = Intl.getCanonicalLocales(locale)[0];
+  } catch {
+    throw new TypeError("Supply a valid language tag.");
+  }
+  if (!strings || typeof strings !== "object" || Array.isArray(strings)) throw new TypeError("Supply message overrides as an object.");
+  const overrides = {};
+  for (const [key, value] of Object.entries(strings)) {
+    if (typeof value === "string") overrides[key] = value;
+    else if (value && typeof value === "object" && !Array.isArray(value) && Object.values(value).every((item) => typeof item === "string")) overrides[key] = { ...value };
+    else throw new TypeError("Messages must be strings or plural message objects.");
+  }
+  const catalogue = citationLocales[locale.split("-")[0]] || citationLocales.en;
+  const plural = new Intl.PluralRules(locale), numbers = new Intl.NumberFormat(locale);
+  return Object.freeze({
+    locale,
+    text(key, values = {}) {
+      const category = plural.select(values.count ?? 0);
+      values = { countLabel: numbers.format(values.count ?? 0), ...values };
+      const choose = (value) => typeof value === "string" ? value : value && (own(value, category) ?? own(value, "other"));
+      const template = choose(own(overrides, key)) ?? choose(own(catalogue, key)) ?? choose(own(citationLocales.en, key)) ?? key;
+      return template.replace(/\{(\w+)\}/g, (_2, name2) => Object.hasOwn(values, name2) ? String(values[name2] ?? "") : "");
+    },
+    number: (value) => numbers.format(value),
+    date: (value, options) => new Intl.DateTimeFormat(locale, options).format(value)
+  });
+}
+
 // src/class-names.mjs
 var defaultClassPrefix = "citation";
 function validClassPrefix(prefix) {
@@ -99,7 +329,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.4.0",
+  version: "0.5.0-preview.0",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -131,7 +361,8 @@ var package_default = {
     "./import-browser": "./dist/citation-import.mjs",
     "./import-files": "./src/import-files.mjs",
     "./import-files-browser": "./dist/citation-import-files.mjs",
-    "./compiler-browser": "./dist/citation-compiler.mjs"
+    "./compiler-browser": "./dist/citation-compiler.mjs",
+    "./i18n": "./src/i18n.mjs"
   },
   bin: {
     "citation-inator": "./scripts/compile.mjs"
@@ -163,10 +394,13 @@ var package_default = {
     prepack: "npm run build",
     "checkin:check": "node scripts/checkin.mjs --staged",
     "milestone:check": "npm test && npm run build && npm run test:browser && node scripts/checkin.mjs",
-    "hooks:install": "git config --local core.hooksPath .githooks"
+    "hooks:install": "git config --local core.hooksPath .githooks",
+    "build:learn": "npm run build && node scripts/build-learning.mjs",
+    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs"
   },
   devDependencies: {
     "axe-core": "4.14.0",
+    dompurify: "3.5.0",
     esbuild: "0.25.12",
     "playwright-core": "1.55.0"
   },
@@ -543,7 +777,7 @@ function groupSiteOccurrences(entries) {
   return [...groups.values()];
 }
 var occurrenceLetter = (index) => index < 26 ? String.fromCharCode(97 + index) : occurrenceLetter(Math.floor(index / 26) - 1) + occurrenceLetter(index % 26);
-var siteReturnLabel = (group, item, index) => `Return to ${group.kind === "listed" ? "listing in " : ""}${group.label}${item.context ? " \u2014 " + item.context : ""} (${group.kind === "listed" ? "entry" : "occurrence"} ${occurrenceLetter(index)})`;
+var siteReturnLabel = (group, item, index, messages = createCitationMessages()) => messages.text(group.kind === "listed" ? "ui.returnListing" : "ui.returnSite", { label: group.label, context: item.context ? " \u2014 " + item.context : "", letter: occurrenceLetter(index) });
 
 // src/compiler.mjs
 var forms = /* @__PURE__ */ new Set(["parenthetical", "narrative", "author-only", "suppress-author", "suppress-year"]);
@@ -756,7 +990,7 @@ function chicagoBibliography(record, suffix) {
     const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullAuthorName(author, index === 0));
     const head = names.slice(0, -1).join(", ");
     const byline = names.length === 1 ? names[0] : authors.length > 6 ? `${names.join(", ")}, et al` : `${head}${names.length > 2 ? "," : ""} and ${names.at(-1)}`;
-    add(`${byline}. ${citationYear(record, suffix, "chicago-author-date", true)}. `);
+    add(`${byline}${/[.?!]$/.test(byline) ? "" : "."} ${citationYear(record, suffix, "chicago-author-date", true)}. `);
   }
   const title = titleFor(record);
   const quoted = ["article-journal", "article", "chapter", "webpage", "thesis"].includes(type);
@@ -952,11 +1186,11 @@ function pageLocator(item, style) {
   }
   return location ? `, ${location}` : "";
 }
-function inlineText({ record, suffix, number, titleLabel, chicagoAuthor }, item, style, reprintYear) {
+function inlineText({ record, suffix, number, titleLabel, chicagoAuthor }, item, style, reprintYear, messages = createCitationMessages()) {
   if (item.label) return item.label;
   const qualify = (text) => `${item.prefix ? item.prefix + " " : ""}${text}`;
   if (style === "vancouver") return qualify(`${number}${pageLocator(item, style)}`);
-  if (record.state === "unresolved") return qualify(item.hint || "Unresolved citation");
+  if (record.state === "unresolved") return qualify(item.hint || messages.text("ui.unresolved"));
   const year = citationYear(record, suffix, style, false, reprintYear);
   let author = chicagoAuthor ?? styleAuthor(record, style, item.form !== "parenthetical");
   if (style === "mla") {
@@ -976,20 +1210,20 @@ function inlineText({ record, suffix, number, titleLabel, chicagoAuthor }, item,
 function iconLink(part, url, label, icon, title = label, attributes = "", text = "") {
   return `<a ${part("icon")} href="${escapeHTML(url)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(title)}"${attributes}>${icon ? iconMarkup(icon) : escapeHTML(text)}</a>`;
 }
-function destinationEntries(record) {
+function destinationEntries(record, messages = createCitationMessages()) {
   const links = /* @__PURE__ */ new Map();
   const services = /* @__PURE__ */ new Map();
   const identifierIcons = { isbn: "book", pmid: "article", pmcid: "repository", arxiv: "external" };
   for (const id of record.identifiers) {
-    const label = id.scheme === "isbn" ? "Look up ISBN" : id.scheme === "url" ? "Open source" : `Open ${id.scheme.toUpperCase()}`;
+    const label = id.scheme === "isbn" ? messages.text("ui.lookupISBN") : id.scheme === "url" ? messages.text("ui.openSource") : messages.text("ui.openIdentifier", { scheme: id.scheme.toUpperCase() });
     links.set(identifierURL(id), { label, icon: identifierIcons[id.scheme] || "link", ...id.scheme === "isbn" && { provider: "WorldCat" } });
   }
   const kinds2 = {
-    publisher: ["Open publisher page", "publisher"],
-    repository: ["Open repository", "repository"],
-    pdf: ["Download PDF", "pdf"],
-    preprint: ["Open preprint", "pdf"],
-    status: ["Open status record", "status"],
+    publisher: [messages.text("access.action.publisher"), "publisher"],
+    repository: [messages.text("access.action.repository"), "repository"],
+    pdf: [messages.text("access.action.pdf"), "pdf"],
+    preprint: [messages.text("access.action.preprint"), "pdf"],
+    status: [messages.text("ui.status"), "status"],
     "full-text": ["Read full text at", "article"],
     library: ["Find at", "library"]
   };
@@ -999,7 +1233,7 @@ function destinationEntries(record) {
       if (links.get(location.url)?.provider?.toLowerCase() === location.provider.toLowerCase()) links.delete(location.url);
       services.set(JSON.stringify([location.url, location.provider.toLowerCase()]), [
         location.url,
-        { label: `${action} ${location.provider}`, icon, provider: location.provider }
+        { label: messages.text(location.kind === "library" ? "access.action.library" : "access.action.full-text", { service: location.provider }), icon, provider: location.provider }
       ]);
       continue;
     }
@@ -1009,30 +1243,31 @@ function destinationEntries(record) {
   }
   return [...links, ...services.values()].filter(([url]) => url).map(([href, details]) => ({ href, ...details }));
 }
-function destinations(record, part) {
-  return destinationEntries(record).map(
+function destinations(record, part, messages) {
+  return destinationEntries(record, messages).map(
     ({ href: url, label, icon, download, provider }) => iconLink(part, url, label, icon, `${label}
 ${url}`, ` target="_blank" rel="noopener noreferrer"${download ? ' download=""' : ""}${provider ? ` data-ci-access-provider="${escapeHTML(provider)}"` : ""}`)
   ).join("");
 }
-function occurrenceContext(block, index, item, record) {
+function occurrenceContext(block, index, item, record, messages) {
   const nearby = (offset) => block[index + offset]?.type === "text" ? block[index + offset].text : "";
   const { leadingContext = "", trailingContext = "" } = block[index];
   const compact = (text) => text.replace(/\s+/g, " ").trim();
   const before = compact(leadingContext + nearby(-1));
   const after = compact(nearby(1) + trailingContext);
-  const citation = item.label || (record.state === "unresolved" ? "Unresolved citation" : authorLabel(record));
+  const citation = item.label || (record.state === "unresolved" ? messages.text("ui.unresolved") : authorLabel(record));
   const lead = before.length > 72 ? `\u2026${before.slice(-72).replace(/^\S+\s+/, "")}` : before;
   const tail = after.length > 36 ? `${after.slice(0, 36).replace(/\s+\S*$/, "")}\u2026` : after;
   return [lead, `[${citation}]`, tail].filter(Boolean).join(" ").replace(/\s+([.,;:!?])/g, "$1");
 }
-function annotationContent(name2, namespace, records, part) {
+function annotationContent(name2, namespace, records, part, messages) {
+  const annotationTitle = messages.text("ui." + name2);
   let content;
   if (name2 === "credit") {
     const repository = httpsURL(package_default.repository.url.replace(/^git\+/, "").replace(/\.git$/, ""));
     const author = package_default.author;
     const citation = `Cox, R. (2026). citation.inator (Version ${package_default.version}) [Computer software]. ${repository}`;
-    content = `<p>citation.inator \xB7 Portable Citation Inspector</p><p>The software uses the MIT license. Cited material retains its own terms.</p><h3>How to cite this software</h3><p>${escapeHTML(citation)}</p><p><a href="${escapeHTML(httpsURL(author.url))}">${escapeHTML(author.name)} (ORCID)</a> \xB7 <a href="${escapeHTML(repository)}">GitHub repository</a></p>`;
+    content = `<p>${escapeHTML(messages.text("ui.software"))}</p><p>${escapeHTML(messages.text("ui.softwareLicense"))}</p><h3>${escapeHTML(messages.text("ui.citeSoftware"))}</h3><p>${escapeHTML(citation)}</p><p><a href="${escapeHTML(httpsURL(author.url))}">${escapeHTML(author.name)} (ORCID)</a> \xB7 <a href="${escapeHTML(repository)}">${escapeHTML(messages.text("ui.repository"))}</a></p>`;
   } else {
     const sources = records.map((record) => ({
       title: titleFor(record),
@@ -1045,9 +1280,9 @@ function annotationContent(name2, namespace, records, part) {
       provenance: record.provenance,
       ...record.note && { note: record.note }
     }));
-    content = `<pre data-ci-evidence-details tabindex="0" aria-label="Source metadata">${escapeHTML(JSON.stringify(sources, null, 2))}</pre>`;
+    content = `<pre data-ci-evidence-details tabindex="0" aria-label="${escapeHTML(messages.text("ui.sourceMetadata"))}">${escapeHTML(JSON.stringify(sources, null, 2))}</pre>`;
   }
-  return `<section ${part("annotation-content")} id="${namespace}-${name2}" tabindex="-1" aria-label="${annotationNames[name2]}"><h2>${annotationNames[name2]}</h2><div data-ci-annotation-body>${content}</div></section>`;
+  return `<section ${part("annotation-content")} id="${namespace}-${name2}" tabindex="-1" aria-label="${escapeHTML(annotationTitle)}"><h2>${escapeHTML(annotationTitle)}</h2><div data-ci-annotation-body>${content}</div></section>`;
 }
 function compileCitations(source, cache, options = {}) {
   const { citationKeyword } = options;
@@ -1076,7 +1311,9 @@ function compileBlocks(blocks, cache, {
   namespace = "cit",
   classPrefix = defaultClassPrefix,
   citationStyle = "default",
-  endnotesHeading = "Endnotes",
+  endnotesHeading,
+  locale,
+  strings,
   markup = false,
   closingMarkup = "",
   references = "endnotes",
@@ -1096,6 +1333,8 @@ function compileBlocks(blocks, cache, {
   inlineTags = false,
   referenceItemPrefix
 } = {}, structured = false) {
+  const messages = createCitationMessages({ locale, strings });
+  endnotesHeading ??= messages.text("ui.endnotes");
   if (!/^[a-z][a-z0-9-]{0,39}$/.test(namespace)) throw new TypeError("Use a stable lowercase document namespace.");
   if (referenceItemPrefix !== void 0 && typeof referenceItemPrefix !== "function") throw new TypeError("referenceItemPrefix must be a function.");
   validateClassPrefix(classPrefix);
@@ -1184,7 +1423,7 @@ function compileBlocks(blocks, cache, {
         if (local && !entry.number) entry.number = nextReferenceNumber++;
         if (token.type === "citation") {
           const occurrence = structured ? `${structuredPrefix}-occurrence-${item.occurrenceId}` : local ? `${namespace}-cite-${record.id}-${entry.occurrences.length + 1}` : null;
-          const context = item.context || occurrenceContext(block, indexInBlock, item, record);
+          const context = item.context || occurrenceContext(block, indexInBlock, item, record, messages);
           const detail = { id: occurrence, context, label: item.label };
           if (occurrence) entry.occurrences.push(detail);
           occurrences2?.push(detail);
@@ -1292,7 +1531,7 @@ function compileBlocks(blocks, cache, {
     if (!groups2.length) return "";
     return `<div ${part("site-returns")}>${["cited", "listed"].map((kind) => {
       const selected = groups2.filter((group) => group.kind === kind);
-      return selected.length ? `<div><span>${kind === "listed" ? "Listed in" : "Cited in"}: </span>${selected.map((group) => `<span>${escapeHTML(group.label)} (${group.entries.map((item, index2) => `<a href="${escapeHTML(item.href)}" aria-label="${escapeHTML(siteReturnLabel(group, item, index2))}" title="${escapeHTML(item.context || group.label)}">${occurrenceLetter(index2)}</a>`).join(", ")})</span>`).join(" \xB7 ")}</div>` : "";
+      return selected.length ? `<div><span>${escapeHTML(messages.text(kind === "listed" ? "ui.listedIn" : "ui.citedIn"))}: </span>${selected.map((group) => `<span>${escapeHTML(group.label)} (${group.entries.map((item, index2) => `<a href="${escapeHTML(item.href)}" aria-label="${escapeHTML(siteReturnLabel(group, item, index2, messages))}" title="${escapeHTML(item.context || group.label)}">${occurrenceLetter(index2)}</a>`).join(", ")})</span>`).join(" \xB7 ")}</div>` : "";
     }).join("")}</div>`;
   };
   const citationDescriptions = blocks.flatMap((block) => block.filter((token) => token.type === "citation").map((token) => ({
@@ -1300,14 +1539,14 @@ function compileBlocks(blocks, cache, {
       recordId: item.entry.record.id,
       identifier: canonicalIdentifierKey(item.identifier),
       state: item.entry.record.state,
-      text: inlineText(item.entry, { form: "parenthetical" }, citationStyle, reprintYear).replace(/\s+/g, " ").trim(),
+      text: inlineText(item.entry, { form: "parenthetical" }, citationStyle, reprintYear, messages).replace(/\s+/g, " ").trim(),
       anchorId: item.occurrence,
       context: item.entry.occurrences.find((value) => value.id === item.occurrence)?.context || ""
     }))
   })));
   if (structured) {
     const occurrences2 = blocks.map(([{ items: [item] }]) => {
-      const label = inlineText(item.entry, item, citationStyle, reprintYear);
+      const label = inlineText(item.entry, item, citationStyle, reprintYear, messages);
       const parenthetical = !item.label && (citationStyle === "vancouver" || parentheticalForms.has(item.form));
       return {
         occurrenceId: item.occurrenceId,
@@ -1366,7 +1605,7 @@ function compileBlocks(blocks, cache, {
   let nextInspectMask = 0;
   function referencesHTML(items, scope2, list = false, marker = {}) {
     const local = localEntries.get(scope2);
-    if (!items.length) return list ? `<section ${part("reading-list")} aria-label="Reading list"><p>No references match the selected tags.</p></section>` : "";
+    if (!items.length) return list ? `<section ${part("reading-list")} aria-label="${escapeHTML(messages.text("ui.readingList"))}"><p>${escapeHTML(messages.text("ui.noTags"))}</p></section>` : "";
     const heading = `${scopeName(scope2)}-endnotes`;
     const rows = items.map((item) => {
       const { record } = item.entry;
@@ -1374,14 +1613,14 @@ function compileBlocks(blocks, cache, {
       const text = formatted.map((value) => renderBibliographyPart(value, record)).join("");
       const title2 = titleOffset(formatted, record, item.entry.suffix);
       const titleAttributes = title2 ? ` data-ci-title-start="${title2.start}" data-ci-title-length="${title2.length}"` : "";
-      const status = [record.state === "unresolved" ? "Unresolved" : "", record.integrity?.state].filter(Boolean).join(" \xB7 ");
-      const links = destinations(record, part);
+      const status = [record.state === "unresolved" ? messages.text("ui.unresolvedBadge") : "", record.integrity?.state].filter(Boolean).join(" \xB7 ");
+      const links = destinations(record, part, messages);
       const backlinks = (local?.get(record.id) || []).map(({ id, context }, index2) => {
         const letter = suffixAt(index2);
-        const label2 = `Return to \u201C${context}\u201D (occurrence ${letter})`;
+        const label2 = messages.text("ui.return", { context, letter });
         return iconLink(part, `#${id}`, label2, "", label2, "", letter);
       }).join("");
-      let inspect = list || inspectAppearance === "icon" || inspectPlacement === "before" ? trigger({ ...item, list }, "Inspect", "Inspect reference: " + titleFor(record)) : "";
+      let inspect = list || inspectAppearance === "icon" || inspectPlacement === "before" ? trigger({ ...item, list }, messages.text("ui.inspect"), messages.text("ui.inspectReference", { title: titleFor(record) })) : "";
       if (inspect && inspectAppearance === "icon") {
         let icon = iconMarkup("book");
         if (inspectIcon) {
@@ -1389,7 +1628,7 @@ function compileBlocks(blocks, cache, {
           const id = `${namespace}_inspect-mask-${++nextInspectMask}`;
           icon = inspectIconMode === "mask" ? `<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true" focusable="false"><defs><mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24" mask-type="alpha"><image href="${url}" width="24" height="24" preserveAspectRatio="xMidYMid meet"/></mask></defs><rect width="24" height="24" fill="currentColor" mask="url(#${id})"/></svg>` : `<img src="${url}" alt="" width="19" height="19">`;
         }
-        inspect = inspect.replace(">Inspect</a>", ` data-ci-inspect-icon>${icon}</a>`);
+        inspect = inspect.replace(">" + escapeHTML(messages.text("ui.inspect")) + "</a>", ` data-ci-inspect-icon>${icon}</a>`);
       }
       const leading = inspectPlacement === "before" ? inspect : "";
       const trailing = inspectPlacement === "after" ? inspect : "";
@@ -1405,11 +1644,11 @@ function compileBlocks(blocks, cache, {
     }).join("\n");
     if (list && !listFilters) return `<ol ${part("reference-list")}>${rows}</ol>`;
     const level = marker.level ?? 2;
-    const label = list ? 'aria-label="Reading list"' : marker.heading === null ? `aria-label="${escapeHTML(endnotesHeading)}"` : `aria-labelledby="${heading}"`;
+    const label = list ? `aria-label="${escapeHTML(messages.text("ui.readingList"))}"` : marker.heading === null ? `aria-label="${escapeHTML(endnotesHeading)}"` : `aria-labelledby="${heading}"`;
     const title = list || marker.heading === null ? "" : `<h${level} id="${heading}">${escapeHTML(marker.heading ?? endnotesHeading)}</h${level}>`;
     const filterTags = [...new Map(items.flatMap((item) => features.tags(item.entry.record, true)).map((tag) => [tag.id, tag])).values()];
-    const filters = list && listFilters && items.length >= filterThresholds.minItems && filterTags.length >= Math.max(1, filterThresholds.minTags) ? `<fieldset ${part("tag-filters")} data-ci-tag-filters hidden><legend>Show references with any selected tag</legend>${filterTags.map((tag) => `<label><input type="checkbox" value="${escapeHTML(tag.id)}" data-ci-tag-filter> ${escapeHTML(tag.label)}</label>`).join(" ")}<p data-ci-list-count role="status" aria-live="polite"></p></fieldset>` : "";
-    return `<section ${part(list ? "reading-list" : "endnotes")}${list ? " data-ci-reading-list" : ""} ${label}>${title}${filters}<ol${list ? " " + part("reference-list") : ""}>${rows}</ol>${filters ? "<p data-ci-list-empty hidden>No references match the selected tags.</p>" : ""}</section>`;
+    const filters = list && listFilters && items.length >= filterThresholds.minItems && filterTags.length >= Math.max(1, filterThresholds.minTags) ? `<fieldset ${part("tag-filters")} data-ci-tag-filters hidden><legend>${escapeHTML(messages.text("ui.filterLegend"))}</legend>${filterTags.map((tag) => `<label><input type="checkbox" value="${escapeHTML(tag.id)}" data-ci-tag-filter> ${escapeHTML(tag.label)}</label>`).join(" ")}<p data-ci-list-count role="status" aria-live="polite"></p></fieldset>` : "";
+    return `<section ${part(list ? "reading-list" : "endnotes")}${list ? " data-ci-reading-list" : ""} ${label}>${title}${filters}<ol${list ? " " + part("reference-list") : ""}>${rows}</ol>${filters ? `<p data-ci-list-empty hidden>${escapeHTML(messages.text("ui.noTags"))}</p>` : ""}</section>`;
   }
   const scopeItems = (scope2) => {
     const items = entries.filter((entry) => localEntries.get(scope2)?.has(entry.record.id));
@@ -1445,16 +1684,16 @@ function compileBlocks(blocks, cache, {
         return escapeHTML(token.raw);
       }
       if (token.type === "annotation") {
-        if (references === "isolated") return escapeHTML(annotationNames[token.name]);
+        if (references === "isolated") return escapeHTML(messages.text("ui." + token.name));
         annotations.add(token.name);
-        return `<a ${part("cite annotation")} href="#${namespace}-${token.name}" data-ci-panel="${token.name}">${annotationNames[token.name]}</a>`;
+        return `<a ${part("cite annotation")} href="#${namespace}-${token.name}" data-ci-panel="${token.name}">${escapeHTML(messages.text("ui." + token.name))}</a>`;
       }
       let previous;
       const citations = token.items.map((item) => {
         const collapsible = (current) => current.entry.record.state !== "unresolved" && !current.label && !current.prefix && !current.locator;
         const sameAuthor = previous && item.form === "parenthetical" && previous.form === "parenthetical" && item.entry.record.authors.length && JSON.stringify(item.entry.record.authors.map(identity)) === JSON.stringify(previous.entry.record.authors.map(identity)) && item.entry.chicagoAuthor === previous.entry.chicagoAuthor;
         const joined = citationStyle === "chicago-author-date" && previous && collapsible(item) && collapsible(previous) && (sameAuthor || item.form === "suppress-author" && previous.form === "suppress-author");
-        const label2 = inlineText(item.entry, joined ? { ...item, form: "suppress-author" } : item, citationStyle, reprintYear);
+        const label2 = inlineText(item.entry, joined ? { ...item, form: "suppress-author" } : item, citationStyle, reprintYear, messages);
         const separator = !previous ? "" : joined || citationStyle === "vancouver" ? ", " : "; ";
         previous = item;
         return separator + trigger(item, label2);
@@ -1466,7 +1705,7 @@ function compileBlocks(blocks, cache, {
     return markup || !content.trim() ? content : `<p>${content}</p>`;
   }).join(markup ? "" : "\n");
   const records = entries.map(({ record }) => record);
-  const supplementary = [...annotations].map((name2) => annotationContent(name2, namespace, records, part));
+  const supplementary = [...annotations].map((name2) => annotationContent(name2, namespace, records, part, messages));
   if ((scoped || !emittedNotes) && localEntries.get(scope)?.size) supplementary.unshift(referencesHTML(scopeItems(scope), scope));
   return {
     html: [html, ...supplementary].join("\n") + closingMarkup,
@@ -10653,7 +10892,9 @@ function compileMarkdown(source, cache, options = {}) {
   return compileHTML(markdown.parse(source), cache, options);
 }
 export {
+  citationLocales,
   compileCitations,
   compileHTML,
-  compileMarkdown
+  compileMarkdown,
+  createCitationMessages
 };

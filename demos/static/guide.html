@@ -23,10 +23,10 @@
     <article class="reading guide">
     <section aria-labelledby="guide-load">
       <h2 id="guide-load">Load and initialize</h2>
-      <p>Clone the <a href="https://github.com/randal-cox/citation.inator">repository</a> with <code>git clone https://github.com/randal-cox/citation.inator.git</code> and check out <code>v0.4.0</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; 0.4.0 includes the editor, bibliography, compiler and import tools.</p>
+      <p>Clone the <a href="https://github.com/randal-cox/citation.inator">repository</a> with <code>git clone https://github.com/randal-cox/citation.inator.git</code> and check out <code>v0.5.0-preview.0</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; 0.4.0 includes the editor, bibliography, compiler and import tools.</p>
       <pre><code>cd citation.inator
 npm start</code></pre>
-      <p>Without npm, serve the prebuilt <code>demos/drop-in/</code> directory or extracted ZIP with any static server. The standalone <a href="../drop-in/README.md">README</a> includes a Python command.</p>
+      <p>Without npm, run <code>node server.mjs</code> in the standalone folder and open <code>http://127.0.0.1:4188/</code>. You can also use any static HTTP server. See the standalone <a href="../drop-in/README.md">README</a>.</p>
       <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/citation-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
       <pre><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;./citation-inspector.css&quot;&gt;
 &lt;script type=&quot;module&quot; src=&quot;./citation-inspector.mjs&quot;&gt;&lt;/script&gt;
@@ -53,6 +53,13 @@ initializeCitationInspector(document.querySelector(&quot;citation-inspector&quot
       <p>To compile plain text directly from the checkout with Node.js 22.13 or later, run this from the repository root. The CLI writes <code>article.html</code> and <code>article.html.json</code>.</p>
       <pre><code>node scripts/compile.mjs --style chicago-author-date --endnotes-heading References \
   demos/drop-in/reading.txt demos/drop-in/citations.json article.html my-article</code></pre>
+    </section>
+    <section aria-labelledby="guide-language">
+      <h2 id="guide-language">Language and configurable messages</h2>
+      <p>Pass <code>locale: 'es'</code> to both compiler and inspector for the Spanish UI example. Use <code>strings</code> to override labels and plural messages. English is the fallback; source metadata and citation-style conventions retain their language. See the <a href="../drop-in/i18n.md">complete language guide</a>.</p>
+      <pre><code>const options = {locale: 'es', strings: {'access.more': {one: '{countLabel} más', other: '{countLabel} más'}}};
+const result = compileMarkdown(source, cache, options);
+initializeCitationInspector(element, {...options, cache: result.cache});</code></pre>
     </section>
     <section aria-labelledby="guide-use">
       <h2 id="guide-use">Using the demo</h2>
@@ -156,6 +163,6 @@ const anotherCopy = rebaseCitationFragment(result.html, &quot;essay&quot;, &quot
     </section>
   </article>
   </main>
-  <footer class="site">citation.inator · Portable Citation Inspector 0.4.0</footer>
+  <footer class="site">citation.inator · Portable Citation Inspector 0.5.0-preview.0</footer>
 </body>
 </html>

@@ -1,4 +1,234 @@
-/*! citation-inator v0.4.0 | MIT | See LICENSE */
+/*! citation-inator v0.5.0-preview.0 | MIT | See LICENSE */
+
+// src/i18n.mjs
+var en = {
+  "access.links": "Source links",
+  "access.action.pdf": "Download PDF",
+  "access.action.publisher": "Open publisher page",
+  "access.action.repository": "Open repository",
+  "access.action.preprint": "Open preprint",
+  "access.action.library": "Find at {service}",
+  "access.action.full-text": "Read full text at {service}",
+  "access.version": "{label} ({version})",
+  "access.free": "Read free",
+  "access.selected": "Through your services",
+  "access.other": "Other places to look",
+  "access.more": { one: "{count} more", other: "{count} more" },
+  "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
+  "access.help.none": "None of these is on your list. Add a service, or try your library.",
+  "access.help.match": "Change where you read",
+  "access.settings": "Where you can read",
+  "access.services": "Services you can use",
+  "access.preferred": "Open titles in",
+  "access.noPreference": "No preference",
+  "access.library": "Through my library",
+  "access.library.kind": "Library access type",
+  "access.library.none": "No library configured",
+  "access.library.proxy": "Proxy prefix",
+  "access.library.openurl": "OpenURL resolver",
+  "access.library.address": "Library address",
+  "access.library.help": "Use the HTTPS address supplied by your library. It is used only when you open a library link.",
+  "access.privacy": "Saved in this browser for this site. Services may have the work. Availability varies by title.",
+  "access.save": "Save",
+  "access.clear": "Clear settings",
+  "access.cancel": "Cancel",
+  "access.at": "at {service}",
+  "access.checked": "Checked {date}",
+  "access.stale": "May have moved",
+  "access.destination": "Open at {service}",
+  "access.invalid": "Check your library address and preferred service.",
+  "access.kind.free": "Open copies",
+  "access.kind.publisher": "Publishers",
+  "access.kind.subscription": "Subscriptions",
+  "access.kind.library": "Libraries",
+  "access.kind.lending": "Lending",
+  "access.kind.accessibility": "Accessible editions",
+  "access.kind.discovery": "Discovery"
+};
+var es = {
+  "access.links": "Enlaces a fuentes",
+  "access.save": "Guardar",
+  "access.cancel": "Cancelar",
+  "access.clear": "Borrar preferencias",
+  "access.settings": "D\xF3nde puedes leer",
+  "access.free": "Leer gratis",
+  "access.selected": "A trav\xE9s de tus servicios",
+  "access.other": "Otros lugares donde buscar",
+  "access.more": { one: "{count} m\xE1s", other: "{count} m\xE1s" },
+  "access.services": "Servicios disponibles",
+  "access.preferred": "Abrir t\xEDtulos en",
+  "access.noPreference": "Sin preferencia",
+  "access.library": "A trav\xE9s de mi biblioteca",
+  "access.library.kind": "Tipo de acceso a la biblioteca",
+  "access.library.none": "Sin biblioteca configurada",
+  "access.library.proxy": "Prefijo del proxy",
+  "access.library.openurl": "Servidor OpenURL",
+  "access.library.address": "Direcci\xF3n de la biblioteca",
+  "access.library.help": "Usa la direcci\xF3n HTTPS de tu biblioteca. Solo se utiliza al abrir un enlace de biblioteca.",
+  "access.privacy": "Se guarda en este navegador para este sitio. La disponibilidad depende del t\xEDtulo.",
+  "access.help.unknown": "\xBFNo puedes abrirlos? Indica d\xF3nde puedes leer.",
+  "access.help.none": "Ninguno est\xE1 en tu lista. A\xF1ade un servicio o prueba tu biblioteca.",
+  "access.help.match": "Cambiar d\xF3nde lees",
+  "access.at": "en {service}",
+  "access.checked": "Comprobado el {date}",
+  "access.stale": "Puede haber cambiado de direcci\xF3n",
+  "access.destination": "Abrir en {service}",
+  "access.invalid": "Revisa la direcci\xF3n de tu biblioteca y el servicio preferido.",
+  "access.action.pdf": "Descargar PDF",
+  "access.action.publisher": "Abrir editorial",
+  "access.action.repository": "Abrir repositorio",
+  "access.action.preprint": "Abrir prepublicaci\xF3n",
+  "access.action.library": "Buscar en {service}",
+  "access.action.full-text": "Leer texto completo en {service}",
+  "access.kind.free": "Copias abiertas",
+  "access.kind.publisher": "Editoriales",
+  "access.kind.subscription": "Suscripciones",
+  "access.kind.library": "Bibliotecas",
+  "access.kind.lending": "Pr\xE9stamos",
+  "access.kind.accessibility": "Ediciones accesibles",
+  "access.kind.discovery": "Descubrimiento"
+};
+Object.assign(en, {
+  "ui.dismiss": "Dismiss",
+  "ui.panelOptions": "Panel options",
+  "ui.move": "Move panel",
+  "ui.moveLabel": "Move citation panel",
+  "ui.moveInstructions": "Click or tap where the panel\u2019s top-left corner should go.",
+  "ui.cancelMove": "Cancel move",
+  "ui.unresolved": "Unresolved citation",
+  "ui.unresolvedBadge": "Unresolved",
+  "ui.listedSite": "Listed on this site",
+  "ui.citedSite": "Cited on this site",
+  "ui.listedAuthors": "Show listed authors",
+  "ui.formatted": "Show formatted citation",
+  "ui.abstractExcerpt": "Abstract excerpt",
+  "ui.abstract": "Abstract",
+  "ui.pubmed": "Open PubMed",
+  "ui.pmc": "Open PubMed Central",
+  "ui.status": "Open status record",
+  "ui.endnote": "Go to endnote",
+  "ui.copyCitation": "Copy citation",
+  "ui.report": "Report metadata",
+  "ui.copied": "Copied.",
+  "ui.clipboard": "Clipboard unavailable. Select the citation text to copy it.",
+  "ui.inspect": "Inspect",
+  "ui.endnotes": "Endnotes",
+  "ui.readingList": "Reading list",
+  "ui.noTags": "No references match the selected tags.",
+  "ui.filterLegend": "Show references with any selected tag",
+  "ui.listedIn": "Listed in",
+  "ui.citedIn": "Cited in",
+  "ui.evidence": "Citation evidence",
+  "ui.credit": "Citation credit",
+  "ui.sourceMetadata": "Source metadata",
+  "ui.softwareLicense": "The software uses the MIT license. Cited material retains its own terms.",
+  "ui.citeSoftware": "How to cite this software",
+  "ui.repository": "GitHub repository",
+  "ui.software": "citation.inator \xB7 Portable Citation Inspector",
+  "ui.lookupISBN": "Look up ISBN",
+  "ui.openSource": "Open source",
+  "ui.inspectCitation": "Inspect citation: {label}",
+  "ui.inspectReference": "Inspect reference: {title}",
+  "ui.copy": "Copy {label}",
+  "ui.openIdentifier": "Open {scheme}",
+  "ui.return": "Return to \u201C{context}\u201D (occurrence {letter})",
+  "ui.authors": {
+    "one": "Show all {count} author",
+    "other": "Show all {count} authors"
+  },
+  "ui.shown": {
+    "one": "{count} reference shown out of {total}",
+    "other": "{count} references shown out of {total}"
+  }
+});
+Object.assign(es, {
+  "ui.dismiss": "Cerrar",
+  "ui.panelOptions": "Opciones del panel",
+  "ui.move": "Mover panel",
+  "ui.moveLabel": "Mover panel de cita",
+  "ui.moveInstructions": "Haz clic o toca donde deba ir la esquina superior izquierda del panel.",
+  "ui.cancelMove": "Cancelar movimiento",
+  "ui.unresolved": "Cita sin resolver",
+  "ui.unresolvedBadge": "Sin resolver",
+  "ui.listedSite": "Incluido en este sitio",
+  "ui.citedSite": "Citado en este sitio",
+  "ui.listedAuthors": "Mostrar autores indicados",
+  "ui.formatted": "Mostrar cita formateada",
+  "ui.abstractExcerpt": "Extracto del resumen",
+  "ui.abstract": "Resumen",
+  "ui.pubmed": "Abrir PubMed",
+  "ui.pmc": "Abrir PubMed Central",
+  "ui.status": "Abrir registro de estado",
+  "ui.endnote": "Ir a la nota",
+  "ui.copyCitation": "Copiar cita",
+  "ui.report": "Informar sobre metadatos",
+  "ui.copied": "Copiado.",
+  "ui.clipboard": "Portapapeles no disponible. Selecciona la cita para copiarla.",
+  "ui.inspect": "Consultar",
+  "ui.endnotes": "Notas finales",
+  "ui.readingList": "Lista de lecturas",
+  "ui.noTags": "Ninguna referencia coincide con las etiquetas seleccionadas.",
+  "ui.filterLegend": "Mostrar referencias con alguna etiqueta seleccionada",
+  "ui.listedIn": "Incluido en",
+  "ui.citedIn": "Citado en",
+  "ui.evidence": "Evidencia de la cita",
+  "ui.credit": "Cr\xE9ditos de la cita",
+  "ui.sourceMetadata": "Metadatos de la fuente",
+  "ui.softwareLicense": "El software usa la licencia MIT. El material citado conserva sus propias condiciones.",
+  "ui.citeSoftware": "C\xF3mo citar este software",
+  "ui.repository": "Repositorio de GitHub",
+  "ui.software": "citation.inator \xB7 Inspector port\xE1til de citas",
+  "ui.lookupISBN": "Buscar ISBN",
+  "ui.openSource": "Abrir fuente",
+  "ui.inspectCitation": "Consultar cita: {label}",
+  "ui.inspectReference": "Consultar referencia: {title}",
+  "ui.copy": "Copiar {label}",
+  "ui.openIdentifier": "Abrir {scheme}",
+  "ui.return": "Volver a \xAB{context}\xBB (menci\xF3n {letter})",
+  "ui.authors": {
+    "one": "Mostrar el autor",
+    "other": "Mostrar los {count} autores"
+  },
+  "ui.shown": {
+    "one": "{count} referencia mostrada de {total}",
+    "other": "{count} referencias mostradas de {total}"
+  }
+});
+Object.assign(en, { "ui.returnListing": "Return to listing in {label}{context} (entry {letter})", "ui.returnSite": "Return to {label}{context} (occurrence {letter})" });
+Object.assign(es, { "ui.returnListing": "Volver a la lista en {label}{context} (entrada {letter})", "ui.returnSite": "Volver a {label}{context} (menci\xF3n {letter})" });
+for (const catalogue of [en, es]) for (const key of ["access.more", "ui.authors", "ui.shown"]) for (const category of Object.keys(catalogue[key] || {})) catalogue[key][category] = catalogue[key][category].replaceAll("{count}", "{countLabel}");
+var freezeCatalog = (catalog) => Object.freeze(Object.fromEntries(Object.entries(catalog).map(([key, value]) => [key, typeof value === "object" ? Object.freeze({ ...value }) : value])));
+var citationLocales = Object.freeze({ en: freezeCatalog(en), es: freezeCatalog(es) });
+var own = (object, key) => Object.hasOwn(object, key) ? object[key] : void 0;
+function createCitationMessages({ locale = "en", strings = {} } = {}) {
+  if (typeof locale !== "string" || !locale) throw new TypeError("Supply a valid language tag.");
+  try {
+    locale = Intl.getCanonicalLocales(locale)[0];
+  } catch {
+    throw new TypeError("Supply a valid language tag.");
+  }
+  if (!strings || typeof strings !== "object" || Array.isArray(strings)) throw new TypeError("Supply message overrides as an object.");
+  const overrides = {};
+  for (const [key, value] of Object.entries(strings)) {
+    if (typeof value === "string") overrides[key] = value;
+    else if (value && typeof value === "object" && !Array.isArray(value) && Object.values(value).every((item) => typeof item === "string")) overrides[key] = { ...value };
+    else throw new TypeError("Messages must be strings or plural message objects.");
+  }
+  const catalogue = citationLocales[locale.split("-")[0]] || citationLocales.en;
+  const plural = new Intl.PluralRules(locale), numbers = new Intl.NumberFormat(locale);
+  return Object.freeze({
+    locale,
+    text(key, values = {}) {
+      const category = plural.select(values.count ?? 0);
+      values = { countLabel: numbers.format(values.count ?? 0), ...values };
+      const choose = (value) => typeof value === "string" ? value : value && (own(value, category) ?? own(value, "other"));
+      const template = choose(own(overrides, key)) ?? choose(own(catalogue, key)) ?? choose(own(citationLocales.en, key)) ?? key;
+      return template.replace(/\{(\w+)\}/g, (_, name) => Object.hasOwn(values, name) ? String(values[name] ?? "") : "");
+    },
+    number: (value) => numbers.format(value),
+    date: (value, options) => new Intl.DateTimeFormat(locale, options).format(value)
+  });
+}
 
 // src/class-names.mjs
 var defaultClassPrefix = "citation";
@@ -372,7 +602,7 @@ function groupSiteOccurrences(entries) {
   return [...groups.values()];
 }
 var occurrenceLetter = (index) => index < 26 ? String.fromCharCode(97 + index) : occurrenceLetter(Math.floor(index / 26) - 1) + occurrenceLetter(index % 26);
-var siteReturnLabel = (group, item, index) => `Return to ${group.kind === "listed" ? "listing in " : ""}${group.label}${item.context ? " \u2014 " + item.context : ""} (${group.kind === "listed" ? "entry" : "occurrence"} ${occurrenceLetter(index)})`;
+var siteReturnLabel = (group, item, index, messages = createCitationMessages()) => messages.text(group.kind === "listed" ? "ui.returnListing" : "ui.returnSite", { label: group.label, context: item.context ? " \u2014 " + item.context : "", letter: occurrenceLetter(index) });
 
 // src/compiler.mjs
 var forms = /* @__PURE__ */ new Set(["parenthetical", "narrative", "author-only", "suppress-author", "suppress-year"]);
@@ -583,7 +813,7 @@ function chicagoBibliography(record, suffix) {
     const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullAuthorName(author, index === 0));
     const head = names.slice(0, -1).join(", ");
     const byline = names.length === 1 ? names[0] : authors.length > 6 ? `${names.join(", ")}, et al` : `${head}${names.length > 2 ? "," : ""} and ${names.at(-1)}`;
-    add(`${byline}. ${citationYear(record, suffix, "chicago-author-date", true)}. `);
+    add(`${byline}${/[.?!]$/.test(byline) ? "" : "."} ${citationYear(record, suffix, "chicago-author-date", true)}. `);
   }
   const title = titleFor(record);
   const quoted = ["article-journal", "article", "chapter", "webpage", "thesis"].includes(type);
@@ -905,50 +1135,6 @@ function subscribeAccessProfile(callback, options) {
 }
 
 // src/access-view.mjs
-var defaults = {
-  "access.links": "Source links",
-  "access.action.pdf": "Download PDF",
-  "access.action.publisher": "Open publisher page",
-  "access.action.repository": "Open repository",
-  "access.action.preprint": "Open preprint",
-  "access.action.library": "Find at {service}",
-  "access.action.full-text": "Read full text at {service}",
-  "access.version": "{label} ({version})",
-  "access.free": "Read free",
-  "access.selected": "Through your services",
-  "access.other": "Other places to look",
-  "access.more": { one: "{count} more", other: "{count} more" },
-  "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
-  "access.help.none": "None of these is on your list. Add a service, or try your library.",
-  "access.help.match": "Change where you read",
-  "access.settings": "Where you can read",
-  "access.services": "Services you can use",
-  "access.preferred": "Open titles in",
-  "access.noPreference": "No preference",
-  "access.library": "Through my library",
-  "access.library.kind": "Library access type",
-  "access.library.none": "No library configured",
-  "access.library.proxy": "Proxy prefix",
-  "access.library.openurl": "OpenURL resolver",
-  "access.library.address": "Library address",
-  "access.library.help": "Use the HTTPS address supplied by your library. It is used only when you open a library link.",
-  "access.privacy": "Saved in this browser for this site. Services may have the work. Availability varies by title.",
-  "access.save": "Save",
-  "access.clear": "Clear settings",
-  "access.cancel": "Cancel",
-  "access.at": "at {service}",
-  "access.checked": "Checked {date}",
-  "access.stale": "May have moved",
-  "access.destination": "Open at {service}",
-  "access.invalid": "Check your library address and preferred service.",
-  "access.kind.free": "Open copies",
-  "access.kind.publisher": "Publishers",
-  "access.kind.subscription": "Subscriptions",
-  "access.kind.library": "Libraries",
-  "access.kind.lending": "Lending",
-  "access.kind.accessibility": "Accessible editions",
-  "access.kind.discovery": "Discovery"
-};
 function node(doc, tag, text, part) {
   const value = doc.createElement(tag);
   if (text) value.textContent = text;
@@ -964,18 +1150,28 @@ function containerIsPanel(container) {
 var AccessView = class {
   #owner;
   #options = {};
+  #messages = createCitationMessages();
   #unsubscribe;
   #rows = /* @__PURE__ */ new Map();
   #titles = /* @__PURE__ */ new Map();
   #listHelps = /* @__PURE__ */ new Map();
   #sheet;
+  #sheetMessages = [];
   #returnFocus;
   #returnContainer;
   constructor(owner) {
     this.#owner = owner;
   }
   configure(options) {
-    this.#options = { ...this.#options, ...options };
+    const next = { ...this.#options, ...options };
+    const messages = createCitationMessages(next);
+    this.#options = next;
+    this.#messages = messages;
+    for (const { node: node2, key, prefix } of this.#sheetMessages) node2.textContent = prefix + this.text(key);
+    if (this.#sheet) {
+      this.#sheet.lang = messages.locale;
+      this.#sheet.setAttribute("aria-label", this.text("access.settings"));
+    }
     accessCatalog(this.#options.accessCatalog);
     if (this.#options.accessLayout && !["flat", "grouped"].includes(this.#options.accessLayout)) throw new TypeError("Use grouped or flat access.");
     if (this.#options.accessSettings && !["builtin", "host", "off"].includes(this.#options.accessSettings)) throw new TypeError("Use builtin, host or off access settings.");
@@ -1001,12 +1197,7 @@ var AccessView = class {
     return this.#owner.getAttribute("access-layout") || this.#options.accessLayout || "grouped";
   }
   text(key, values = {}) {
-    let template = this.#options.strings?.[key] ?? defaults[key] ?? key;
-    if (typeof template === "object") {
-      const rule = new Intl.PluralRules(this.#options.locale).select(values.count ?? 0);
-      template = template[rule] ?? template.other ?? defaults[key]?.other ?? key;
-    }
-    return String(template).replace(/\{(\w+)\}/g, (_, key2) => values[key2] ?? "");
+    return this.#messages.text(key, values);
   }
   connect() {
     this.#unsubscribe?.();
@@ -1170,19 +1361,28 @@ var AccessView = class {
     }
     this.#sheet?.remove();
     const doc = this.#owner.ownerDocument;
+    this.#sheetMessages = [];
+    const message = (tag, key) => {
+      const value = node(doc, tag);
+      const text = doc.createTextNode(this.text(key));
+      value.append(text);
+      this.#sheetMessages.push({ node: text, key, prefix: "" });
+      return value;
+    };
     const sheet = this.#sheet = node(doc, "dialog", "", "access-settings");
+    sheet.lang = this.#messages.locale;
     sheet.setAttribute("aria-label", this.text("access.settings"));
     const form = node(doc, "form");
-    const title = node(doc, "h2", this.text("access.settings"));
-    form.append(title, node(doc, "p", this.text("access.privacy")));
+    const title = message("h2", "access.settings");
+    form.append(title, message("p", "access.privacy"));
     const columns = node(doc, "div", "", "access-settings-columns");
     const services = node(doc, "fieldset");
-    services.append(node(doc, "legend", this.text("access.services")));
+    services.append(message("legend", "access.services"));
     const profile = this.profile;
     const catalog = this.catalog;
     for (const kind2 of [...new Set(catalog.map((item) => item.kind))]) {
       const group = node(doc, "fieldset");
-      group.append(node(doc, "legend", this.text("access.kind." + kind2)));
+      group.append(message("legend", "access.kind." + kind2));
       for (const item of catalog.filter((item2) => item2.kind === kind2)) {
         const label = node(doc, "label");
         const input = node(doc, "input");
@@ -1196,7 +1396,7 @@ var AccessView = class {
       services.append(group);
     }
     const preferences = node(doc, "fieldset");
-    preferences.append(node(doc, "legend", this.text("access.preferred")));
+    preferences.append(message("legend", "access.preferred"));
     for (const item of [{ id: "", label: this.text("access.noPreference") }, ...catalog]) {
       const label = node(doc, "label");
       const input = node(doc, "input");
@@ -1204,24 +1404,28 @@ var AccessView = class {
       input.name = "preferred";
       input.value = item.id;
       input.checked = (profile?.preferred || "") === item.id;
-      label.append(input, " " + item.label);
+      if (item.id === "") {
+        const text = doc.createTextNode(" " + this.text("access.noPreference"));
+        this.#sheetMessages.push({ node: text, key: "access.noPreference", prefix: " " });
+        label.append(input, text);
+      } else label.append(input, " " + item.label);
       preferences.append(label);
     }
     columns.append(services, preferences);
     form.append(columns);
     const library = node(doc, "fieldset");
-    library.append(node(doc, "legend", this.text("access.library")));
-    const kindLabel = node(doc, "label", this.text("access.library.kind"));
+    library.append(message("legend", "access.library"));
+    const kindLabel = message("label", "access.library.kind");
     const kind = node(doc, "select");
     kind.name = "libraryKind";
     for (const key of ["none", "proxy", "openurl"]) {
-      const option = node(doc, "option", this.text("access.library." + key));
+      const option = message("option", "access.library." + key);
       option.value = key;
       kind.append(option);
     }
     kind.value = profile?.library?.kind || "none";
     kindLabel.append(kind);
-    const addressLabel = node(doc, "label", this.text("access.library.address"));
+    const addressLabel = message("label", "access.library.address");
     const address = node(doc, "input");
     address.name = "libraryAddress";
     address.type = "url";
@@ -1231,20 +1435,20 @@ var AccessView = class {
     kind.addEventListener("change", () => {
       address.disabled = kind.value === "none";
     });
-    library.append(kindLabel, addressLabel, node(doc, "p", this.text("access.library.help")));
+    library.append(kindLabel, addressLabel, message("p", "access.library.help"));
     form.append(library);
     const error = node(doc, "p");
     error.setAttribute("role", "alert");
     form.append(error);
-    const save = node(doc, "button", this.text("access.save"));
+    const save = message("button", "access.save");
     save.type = "submit";
-    const clear = node(doc, "button", this.text("access.clear"));
+    const clear = message("button", "access.clear");
     clear.type = "button";
     clear.addEventListener("click", () => {
       setAccessProfile(null, this.storageOptions);
       close();
     });
-    const cancel = node(doc, "button", this.text("access.cancel"));
+    const cancel = message("button", "access.cancel");
     cancel.type = "button";
     cancel.addEventListener("click", () => sheet.close());
     form.append(save, clear, cancel);
@@ -1473,6 +1677,11 @@ ${url}`);
 }
 var CitationInspector = class extends HTMLElement {
   static observedAttributes = ["access-layout", "access-settings", "activation", "panel-title", "panel-icon", "class-prefix", "access-providers", "hidden-access-providers", "hidden-providers", "evidence-title", "evidence-icon", "credit-title", "credit-icon"];
+  #messages = createCitationMessages();
+  #messageOptions = {};
+  #movePanel;
+  #placementText;
+  #placementCancel;
   #hovering = false;
   #hoverOpenTimer;
   #hoverCloseTimer;
@@ -1537,12 +1746,12 @@ var CitationInspector = class extends HTMLElement {
     });
     const brand = element("div", "", "brand");
     brand.append(this.#brandIcon, this.#defaultIcon, this.#heading);
-    this.#modalDismiss = element("button", "Dismiss", "modal-dismiss");
+    this.#modalDismiss = element("button", this.#messages.text("ui.dismiss"), "modal-dismiss");
     this.#modalDismiss.type = "button";
     this.#modalDismiss.hidden = true;
     this.#modalDismiss.addEventListener("click", () => this.#dismiss(true));
-    this.#panelMenuTrigger = iconControl(element("summary"), "more", "Panel options");
-    const movePanel = element("button", "Move panel", "panel-command");
+    this.#panelMenuTrigger = iconControl(element("summary"), "more", this.#messages.text("ui.panelOptions"));
+    const movePanel = this.#movePanel = element("button", this.#messages.text("ui.move"), "panel-command");
     movePanel.type = "button";
     movePanel.addEventListener("click", () => this.#beginPlacement());
     this.#panelMenu = element("details", "", "panel-menu");
@@ -1560,12 +1769,13 @@ var CitationInspector = class extends HTMLElement {
     this.#status.setAttribute("role", "status");
     this.#dialog.append(top, this.#content, this.#status);
     this.#placement = element("dialog", "", "panel-placement");
-    this.#placement.setAttribute("aria-label", "Move citation panel");
+    this.#placement.setAttribute("aria-label", this.#messages.text("ui.moveLabel"));
     this.#placement.setAttribute("aria-describedby", "placement-instructions");
     const instructions = element("div", "", "placement-instructions");
     instructions.id = "placement-instructions";
-    instructions.textContent = "Click or tap where the panel\u2019s top-left corner should go.";
-    const cancel = element("button", "Cancel move", "panel-command");
+    this.#placementText = document.createTextNode(this.#messages.text("ui.moveInstructions"));
+    instructions.append(this.#placementText);
+    const cancel = this.#placementCancel = element("button", this.#messages.text("ui.cancelMove"), "panel-command");
     cancel.type = "button";
     cancel.autofocus = true;
     cancel.addEventListener("click", () => this.#cancelPlacement());
@@ -1584,7 +1794,20 @@ var CitationInspector = class extends HTMLElement {
     shadow.append(this.#style, element("slot"), this.#dialog, this.#placement);
   }
   configureAccess(options) {
+    const next = { ...this.#messageOptions, ...options };
+    const messages = createCitationMessages(next);
     this.#access.configure(options);
+    this.#messageOptions = next;
+    this.#messages = messages;
+    for (const trigger of this.#enhanced.keys()) this.#labelTrigger(trigger);
+    this.#modalDismiss.textContent = messages.text("ui.dismiss");
+    iconControl(this.#panelMenuTrigger, "more", messages.text("ui.panelOptions"));
+    this.#movePanel.textContent = messages.text("ui.move");
+    this.#placement.setAttribute("aria-label", messages.text("ui.moveLabel"));
+    this.#placementText.textContent = messages.text("ui.moveInstructions");
+    this.#placementCancel.textContent = messages.text("ui.cancelMove");
+    this.#dialog.lang = messages.locale;
+    this.#placement.lang = messages.locale;
     this.refreshAccess();
   }
   refreshAccess() {
@@ -1913,7 +2136,7 @@ var CitationInspector = class extends HTMLElement {
     const original = this.#enhanced.get(trigger);
     if (original && !trigger.dataset.ciPanel && !original.get("aria-label")) {
       const label = this.#bindings.get(trigger)?.label || trigger.textContent.trim();
-      trigger.setAttribute("aria-label", trigger.dataset.ciInspectLabel || `Inspect citation: ${label}`);
+      trigger.setAttribute("aria-label", trigger.dataset.ciInspectLabel || this.#messages.text("ui.inspectCitation", { label }));
     }
   }
   #refresh(record, trigger) {
@@ -2026,8 +2249,7 @@ var CitationInspector = class extends HTMLElement {
         row.hidden = selected.length > 0 && !selected.some((tag) => tags.includes(tag));
         if (!row.hidden) shown++;
       }
-      const category = new Intl.PluralRules("en").select(shown);
-      const count = `${shown} ${category === "one" ? "reference" : "references"} shown out of ${rows.length}`;
+      const count = this.#messages.text("ui.shown", { count: shown, total: this.#messages.number(rows.length) });
       const status = filters.querySelector("[data-ci-list-count]");
       if (status.textContent !== count) status.textContent = count;
       list.querySelector("[data-ci-list-empty]").hidden = shown > 0;
@@ -2247,10 +2469,10 @@ var CitationInspector = class extends HTMLElement {
   }
   #render(record, trigger) {
     const fragment = document.createDocumentFragment();
-    const title = record.title || record.original || "Unresolved citation";
+    const title = record.title || record.original || this.#messages.text("ui.unresolved");
     const binding = this.#bindings.get(trigger);
     const bibliography = binding?.bibliographyParts.map((part) => part.text).join("") || trigger.dataset.ciBibliography || bibliographyText(record);
-    const badges = [record.integrity?.state, record.state === "unresolved" && "Unresolved"].filter(Boolean);
+    const badges = [record.integrity?.state, record.state === "unresolved" && this.#messages.text("ui.unresolvedBadge")].filter(Boolean);
     if (badges.length) fragment.append(element("p", badges.join(" \xB7 "), record.integrity ? "badge integrity" : "badge"));
     const titleNode = element("h3", title);
     titleNode.dir = "auto";
@@ -2309,7 +2531,7 @@ var CitationInspector = class extends HTMLElement {
       const groups = groupSiteOccurrences(acceptedUsage).filter((group) => group.kind === kind);
       if (!groups.length) continue;
       const section = element("section", "", "site-returns");
-      section.append(element("h4", kind === "listed" ? "Listed on this site" : "Cited on this site"));
+      section.append(element("h4", kind === "listed" ? this.#messages.text("ui.listedSite") : this.#messages.text("ui.citedSite")));
       const list2 = element("ul");
       for (const group of groups) {
         const row = element("li", group.label + " (");
@@ -2317,7 +2539,7 @@ var CitationInspector = class extends HTMLElement {
           if (index) row.append(", ");
           const link = element("a", occurrenceLetter(index));
           link.href = item.href;
-          link.setAttribute("aria-label", siteReturnLabel(group, item, index));
+          link.setAttribute("aria-label", siteReturnLabel(group, item, index, this.#messages));
           link.title = item.context || group.label;
           row.append(link);
         });
@@ -2337,7 +2559,7 @@ var CitationInspector = class extends HTMLElement {
     if (names.length) {
       const authors = element("p", names.join(", ") + (record.authorsComplete === false ? ", et al." : ""), "authors");
       authors.dir = "auto";
-      fragment.append(names.length > 8 ? disclosure(record.authorsComplete === false ? "Show listed authors" : `Show all ${names.length} authors`, authors) : authors);
+      fragment.append(names.length > 8 ? disclosure(record.authorsComplete === false ? this.#messages.text("ui.listedAuthors") : this.#messages.text("ui.authors", { count: names.length }), authors) : authors);
     }
     const mediaDetails = [record.creatorAttribution, record.displayDate, record.medium, record.dimensions, record.holdingInstitution, record.accession, record.platform].filter(Boolean);
     if (mediaDetails.length) fragment.append(element("p", mediaDetails.join(" \xB7 "), "details"));
@@ -2347,7 +2569,7 @@ var CitationInspector = class extends HTMLElement {
         const line = element("p", "", "checksum");
         const label = [source.provider, checksum.role, checksum.algorithm].filter(Boolean).join(" \xB7 ");
         line.append(label + " " + checksum.value.slice(0, 12) + "\u2026");
-        line.append(action("Copy " + label, "copy", () => this.#copy(checksum.value)));
+        line.append(action(this.#messages.text("ui.copy", { label }), "copy", () => this.#copy(checksum.value)));
         fragment.append(line);
       }
     }
@@ -2379,7 +2601,7 @@ var CitationInspector = class extends HTMLElement {
       if (node2 !== citation) citation.append(node2);
     }
     citation.dir = "auto";
-    fragment.append(names.length > 8 ? disclosure("Show formatted citation", citation) : citation);
+    fragment.append(names.length > 8 ? disclosure(this.#messages.text("ui.formatted"), citation) : citation);
     for (const identifier of record.identifiers) {
       if (identifier.scheme !== "isbn" && (identifier !== doi2 || linkedDOI)) continue;
       const line = element("p", "", "identifier");
@@ -2394,7 +2616,7 @@ var CitationInspector = class extends HTMLElement {
     }
     fragment.append(usageContent);
     if (record.abstract) {
-      const heading = record.abstract.kind === "excerpt" ? "Abstract excerpt" : "Abstract";
+      const heading = record.abstract.kind === "excerpt" ? this.#messages.text("ui.abstractExcerpt") : this.#messages.text("ui.abstract");
       const abstract = element("p", record.abstract.text, "abstract");
       abstract.dir = "auto";
       const source = element("p", "", "muted");
@@ -2409,29 +2631,29 @@ var CitationInspector = class extends HTMLElement {
     const pdf = location("pdf") || (preprint && /\.pdf(?:[?#]|$)/i.test(preprint.url) ? preprint : null);
     const publisher = location("publisher");
     const list = element("ul", "", "destinations");
-    list.setAttribute("aria-label", "Source links");
-    destination(list, "Download PDF", "pdf", pdf?.url, { version: pdf?.version, download: true });
-    destination(list, "Open publisher page", "publisher", publisher?.url === doiURL ? "" : publisher?.url);
-    destination(list, "Open repository", "repository", location("repository")?.url);
-    destination(list, "Open PubMed", "article", id("pmid"));
-    destination(list, "Open PubMed Central", "repository", id("pmcid"));
+    list.setAttribute("aria-label", this.#messages.text("access.links"));
+    destination(list, this.#messages.text("access.action.pdf"), "pdf", pdf?.url, { version: pdf?.version, download: true });
+    destination(list, this.#messages.text("access.action.publisher"), "publisher", publisher?.url === doiURL ? "" : publisher?.url);
+    destination(list, this.#messages.text("access.action.repository"), "repository", location("repository")?.url);
+    destination(list, this.#messages.text("ui.pubmed"), "article", id("pmid"));
+    destination(list, this.#messages.text("ui.pmc"), "repository", id("pmcid"));
     const preprintURL = id("arxiv") || preprint?.url;
-    if (preprintURL !== pdf?.url) destination(list, "Open preprint", "external", preprintURL);
+    if (preprintURL !== pdf?.url) destination(list, this.#messages.text("access.action.preprint"), "external", preprintURL);
     const services = record.locations.filter((item) => ["library", "full-text"].includes(item.kind) && !this.#providerHidden(item.provider)).sort((a, b) => this.#providerRank(a.provider) - this.#providerRank(b.provider));
     for (const service of services) {
       const fullText = service.kind === "full-text";
       destination(
         list,
-        `${fullText ? "Read full text at" : "Find at"} ${service.provider}`,
+        this.#messages.text(fullText ? "access.action.full-text" : "access.action.library", { service: service.provider }),
         fullText ? "article" : "library",
         service.url
       );
     }
-    if (record.integrity) destination(list, "Open status record", "status", record.integrity.url || location("status")?.url);
+    if (record.integrity) destination(list, this.#messages.text("ui.status"), "status", record.integrity.url || location("status")?.url);
     const footer = element("footer", "", "panel-actions");
     const endnote = binding ? binding.endnote : trigger.id && trigger.hash && trigger.getRootNode().getElementById(trigger.hash.slice(1));
     if (endnote?.isConnected) {
-      footer.append(action("Go to endnote", "endnote", () => {
+      footer.append(action(this.#messages.text("ui.endnote"), "endnote", () => {
         if (!endnote.isConnected) return;
         this.#dismiss(false);
         if (binding) endnote.scrollIntoView({ block: "nearest" });
@@ -2439,11 +2661,11 @@ var CitationInspector = class extends HTMLElement {
         endnote.focus();
       }));
     }
-    footer.append(action("Copy citation", "copy", () => this.#copy(bibliography)));
+    footer.append(action(this.#messages.text("ui.copyCitation"), "copy", () => this.#copy(bibliography)));
     const persistent = doi2 || record.identifiers[0];
-    if (persistent) footer.append(action(`Copy ${persistent.scheme.toUpperCase()}`, "link", () => this.#copy(persistent.value)));
+    if (persistent) footer.append(action(this.#messages.text("ui.copy", { label: persistent.scheme.toUpperCase() }), "link", () => this.#copy(persistent.value)));
     if (typeof this.report === "function" || this.hasAttribute("data-report")) {
-      footer.append(action("Report metadata", "status", () => {
+      footer.append(action(this.#messages.text("ui.report"), "status", () => {
         const payload = {
           record: structuredClone(record),
           page: this.ownerDocument.location.href,
@@ -2482,9 +2704,9 @@ var CitationInspector = class extends HTMLElement {
     const owner = this.#owner;
     try {
       await navigator.clipboard.writeText(value);
-      if (this.#owner === owner) this.#showStatus("Copied.");
+      if (this.#owner === owner) this.#showStatus(this.#messages.text("ui.copied"));
     } catch {
-      if (this.#owner === owner) this.#showStatus("Clipboard unavailable. Select the citation text to copy it.");
+      if (this.#owner === owner) this.#showStatus(this.#messages.text("ui.clipboard"));
     }
   }
 };
@@ -2549,6 +2771,8 @@ function initializeCitationInspector(element2, {
 }
 export {
   bindCitationTrigger,
+  citationLocales,
+  createCitationMessages,
   getAccessProfile,
   initializeCitationInspector,
   markerKind,

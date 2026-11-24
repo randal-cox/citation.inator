@@ -1,3 +1,4 @@
+export {createCitationMessages, citationLocales} from "./i18n.mjs";
 import { parse } from 'parse5';
 import { Lexer } from 'marked';
 import { compileCitationBlocks, formatRecordId, parseDirectives, scanCitationMarkers } from './compiler.mjs';

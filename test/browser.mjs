@@ -27,7 +27,8 @@ import { checkWebpageBrowser } from "./webpage-browser.mjs";
 import { checkStructuredDemo } from "./structured-demo-browser.mjs";
 import { checkArticleTools } from "./article-tools-browser.mjs";
 
-const executablePath = process.env.CITATION_CHROME || "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+// Use Playwright's dedicated test browser by default. A system browser is opt-in.
+const executablePath = process.env.CITATION_CHROME;
 const evidence = process.env.CITATION_EVIDENCE;
 const temporary = await mkdtemp(join(tmpdir(), "citation-copied-"));
 const csp = "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self'; base-uri 'none'";

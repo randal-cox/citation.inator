@@ -39,7 +39,7 @@ A pending test or reviewer result stays pending until evidence arrives. Attribut
    npm run milestone:check
    ```
 
-   This runs unit/integration tests, rebuilds assets, runs the browser suite and checks working-tree consistency. The browser suite needs a supported local Chromium installation. Record its actual browser and Node versions. Stage any generated output and run the fast staged check again.
+   This runs unit/integration tests, rebuilds assets, runs the browser suite and checks working-tree consistency. Install the dedicated test browser once with `npx playwright-core install chromium --only-shell`. Browser checks use that Playwright-managed browser by default; `CITATION_CHROME=/path/to/test-browser` explicitly selects another executable. They must not silently fall back to the maintainer's everyday Chrome. In a restricted agent environment, use an approved browser-capable execution context; do not repeatedly retry sandbox-denied macOS application launches. Record the actual browser and Node versions. Stage any generated output and run the fast staged check again.
 3. Complete the [independent adversarial review](adversarial-testing.md). Related roles can be combined, but record each role's verdict. Fix blockers and return the fixes for review. Describe remaining platform checks and accepted nonblocking findings in the milestone record.
 4. Collect adopter acceptance when it is part of the agreed milestone. Record the tested candidate and what the adopter actually checked.
 5. Check the package in a clean consumer and the copied standalone distribution. Confirm public exports, installed guides, fallback links and the version shown in metadata and generated assets.

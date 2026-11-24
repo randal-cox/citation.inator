@@ -95,12 +95,12 @@ async function resolution(url) {
 
 const types = new Map([
   [".html", "text/html; charset=utf-8"], [".css", "text/css; charset=utf-8"], [".mjs", "text/javascript; charset=utf-8"],
-  [".json", "application/json; charset=utf-8"], [".md", "text/plain; charset=utf-8"], [".txt", "text/plain; charset=utf-8"], [".svg", "image/svg+xml"]
+  [".json", "application/json; charset=utf-8"], [".md", "text/plain; charset=utf-8"], [".txt", "text/plain; charset=utf-8"], [".svg", "image/svg+xml"], [".zip", "application/zip"]
 ]);
 const serverImportLimits=normalizeImportLimits(JSON.parse(process.env.CITATION_IMPORT_LIMITS || '{}'));
 const csp = "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
-const files = /^\/(?:dist|docs|demos\/(?:static|dynamic|drop-in|import))\/[\w.-]+\.(html|css|mjs|json|md|txt|svg)$/;
-const directories = /^\/demos\/(?:static|dynamic|drop-in|import)\/?$/;
+const files = /^\/(?:dist|docs|site(?:\/assets)?|demos\/(?:static|dynamic|drop-in|import))\/[\w.-]+\.(html|css|mjs|json|md|txt|svg|zip)$/;
+const directories = /^\/(?:site|demos\/(?:static|dynamic|drop-in|import))\/?$/;
 const server = createServer(async (request, response) => {
   const send = (status, type, content) => {
     response.writeHead(status, { "Content-Type": type, "Content-Security-Policy": request.url.startsWith("/demos/import/") ? csp.replace("connect-src 'self'", "connect-src 'self' https://api.crossref.org https://openlibrary.org; worker-src 'self'") : csp, "X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer", "Cache-Control": "no-store" });

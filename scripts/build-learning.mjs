@@ -1,0 +1,18 @@
+import {build} from 'esbuild';
+import {mkdir,readFile,writeFile,copyFile} from 'node:fs/promises';
+import {marked} from 'marked';
+import {learningStarter} from './learning-starter.mjs';
+import {lessons} from '../learn/lessons.mjs';
+import {brandIconMarkup} from '../src/icons.mjs';
+await mkdir('site/assets',{recursive:true});
+for(const file of ['index.html','learning.css'])await copyFile(`learn/${file}`,`site/${file}`);
+for(const file of ['citation-inspector.mjs','citation-inspector.css','citation-compiler.mjs','LICENSE','THIRD_PARTY_LICENSES.txt'])await copyFile(`dist/${file}`,`site/assets/${file}`);
+await copyFile('fixtures/notation-records.json','site/records.json');
+const {version}=JSON.parse(await readFile('package.json','utf8'));
+await writeFile('site/version.json',JSON.stringify({version}));
+await copyFile('node_modules/dompurify/LICENSE','site/assets/LEARNING_THIRD_PARTY.txt');
+const records=JSON.parse(await readFile('fixtures/notation-records.json','utf8'));
+await writeFile('site/citation-starter.zip',await learningStarter({version,source:lessons[0].source,records:{schema:'citation-inator.cache.v1',records},options:{namespace:'starter',citationStyle:'chicago-author-date',activation:'click'}}));
+const guide = marked.parse(await readFile('learn/guide.md','utf8'));
+await writeFile('site/guide.html',`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Guide · citation.inator</title><link rel="stylesheet" href="./learning.css"></head><body><header><a class="brand" href="./">${brandIconMarkup}citation.inator</a><nav aria-label="Learning"><a href="./">Playground</a><a href="https://github.com/randal-cox/citation.inator">GitHub</a></nav></header><main class="guide">${guide}</main></body></html>`);
+await build({entryPoints:['learn/learning.mjs'],outfile:'site/learning.mjs',bundle:true,format:'esm',platform:'browser',target:'es2022',external:['./assets/citation-inspector.mjs'],legalComments:'eof'});

@@ -1,3 +1,4 @@
+import {createCitationMessages} from "./i18n.mjs";
 import { cleanText, normalizeTags } from './records.mjs';
 
 const fallbackOrigin = 'https://citation.invalid';
@@ -68,7 +69,7 @@ export function groupSiteOccurrences(entries) {
   return [...groups.values()];
 }
 export const occurrenceLetter = index => index < 26 ? String.fromCharCode(97 + index) : occurrenceLetter(Math.floor(index / 26) - 1) + occurrenceLetter(index % 26);
-export const siteReturnLabel = (group, item, index) => `Return to ${group.kind === 'listed' ? 'listing in ' : ''}${group.label}${item.context ? ' — ' + item.context : ''} (${group.kind === 'listed' ? 'entry' : 'occurrence'} ${occurrenceLetter(index)})`;
+export const siteReturnLabel = (group, item, index, messages = createCitationMessages()) => messages.text(group.kind === 'listed' ? 'ui.returnListing' : 'ui.returnSite', {label:group.label,context:item.context ? ' — ' + item.context : '',letter:occurrenceLetter(index)});
 
 /** Join actual emitted anchors to routes; does not crawl pages or write files. */
 export function createSiteOccurrenceIndex(pages, { siteOrigin } = {}) {

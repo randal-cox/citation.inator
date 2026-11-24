@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0-preview.0 — In development
+
+- Add an editable static learning playground with source, reference JSON, configuration, five citation presets, component-only CSS examples, reset and Markdown/cache downloads. Sanitize editable previews with DOMPurify in the host.
+- Add progressive first-citation lessons, a load/init-first guide and a copied-file starter with a dependency-free Node server.
+- Add shared English/Spanish UI messages for compiler, inspector and access settings, with configurable labels, plural categories, locale formatting and English fallback. Authored metadata and citation-style conventions remain separate.
+- Avoid an extra Chicago period after a final author initial. Browser checks now default to a dedicated Playwright test browser; system Chrome requires an explicit path.
+- Public deployment, the full feature/tutorial inventory, npm starter acceptance and worked draft integration remain pending in the milestone checklist.
+
 ## 0.4.0 — 23 November 2026
 
 - Recover supported explicit DOI line wraps with source evidence; withhold ambiguous numeric/metadata/prose continuations and prevent autolinks from restoring partial IDs. Keep recovered proposals out of canonical identifiers/cache/Ready until accepted metadata. Public regression sample now accounts for all 27 publisher DOI values (15 exact, 12 recovered proposals) without extras.
