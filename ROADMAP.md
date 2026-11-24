@@ -17,7 +17,7 @@ The current release is [0.4.0](https://github.com/randal-cox/cite.inator/release
 
 Version 0.4.0 is released and its final files are verified by draft.inator with 91 passing tests. Its PR merge and remaining issue closure belong to draft. [The adopter receipt](docs/milestones/0.4.0.md#adopter-receipt) records exactly what was checked.
 
-The active track is [0.5.0 — Developer learning and live demos](docs/milestones/0.5.0.md). It covers progressive tutorials, editable live examples, npm/non-npm starter projects, comprehensive feature documentation, difficult/offline cases, host/draft integration and UI translation. The [feature/example matrix](docs/learning-coverage.md) identifies the existing baseline and the teaching work still needed. Development package version is 0.5.0-preview.2; the revised learning preview is deployed and verified. Stable 0.4.0 artifacts remain unchanged.
+The active track is [0.5.0 — Developer learning and live demos](docs/milestones/0.5.0.md). It covers progressive tutorials, editable live examples, npm/non-npm starter projects, comprehensive feature documentation, difficult/offline cases, host/draft integration and UI translation. The [feature/example matrix](docs/learning-coverage.md) identifies the existing baseline and the teaching work still needed. Development package version is 0.5.0-preview.2; the renamed learning preview is deployed and verified. Stable 0.4.0 artifacts remain unchanged.
 
 ## Completed milestone 0.2.0 — Article tooling
 
@@ -62,7 +62,7 @@ The local import-review demo is runnable now; see [its guide](docs/import-demo.m
 
 ## Naming migration in 0.5.0
 
-The maintainer brought the **cite.inator** rename into this milestone. Repository, physical folder and Codex project/attachment are separate activation checks. The prepared package name is `cite-inator`; browser/data compatibility and legacy installs are documented in [the migration guide](docs/naming-migration.md). GitHub/physical-folder activation and Codex's manual project edit remain tracked in the [milestone](docs/milestones/0.5.0.md).
+The maintainer brought the **cite.inator** rename into this milestone. Repository, physical folder and Codex project/attachment are separate activation checks. The prepared package name is `cite-inator`; browser/data compatibility and legacy installs are documented in [the migration guide](docs/naming-migration.md). GitHub and physical-folder renames are verified; Codex's manual project/attachment edit remains tracked in the [milestone](docs/milestones/0.5.0.md).
 
 ## Near-term research revisit
 
