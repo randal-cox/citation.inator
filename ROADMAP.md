@@ -17,7 +17,7 @@ The current release is [0.4.0](https://github.com/randal-cox/cite.inator/release
 
 Version 0.4.0 is released and its final files are verified by draft.inator with 91 passing tests. Its PR merge and remaining issue closure belong to draft. [The adopter receipt](docs/milestones/0.4.0.md#adopter-receipt) records exactly what was checked.
 
-The active track is [0.5.0 — Developer learning and live demos](docs/milestones/0.5.0.md). It covers progressive tutorials, editable live examples, npm/non-npm starter projects, comprehensive feature documentation, difficult/offline cases, host/draft integration and UI translation. The [feature/example matrix](docs/learning-coverage.md) identifies the existing baseline and the teaching work still needed. Development package version is 0.5.0-preview.3, with adopter-review corrections locally verified; the renamed preview.2 learning site is deployed and verified. Stable 0.4.0 artifacts remain unchanged.
+The active track is [0.5.0 — Developer learning and live demos](docs/milestones/0.5.0.md). It covers progressive tutorials, editable live examples, npm/non-npm starter projects, comprehensive feature documentation, difficult/offline cases, host/draft integration and UI translation. The [feature/example matrix](docs/learning-coverage.md) identifies the existing baseline and the teaching work still needed. Development package version is 0.5.0-preview.3; adopter-review corrections pass local and Linux checks, and the exact clean learning preview is deployed and verified. Follow-up adopter acceptance remains open. Stable 0.4.0 artifacts remain unchanged.
 
 ## Completed milestone 0.2.0 — Article tooling
 
