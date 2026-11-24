@@ -1,16 +1,18 @@
-# citation.inator
+# cite.inator
+
+Formerly **citation.inator**. This default branch retains the stable 0.4.0 code and original `citation-inator` package name. The [0.5.0 learning preview](https://randal-cox.github.io/cite.inator/) and [current milestone record](https://github.com/randal-cox/cite.inator/blob/codex/citation-0.5-learning/docs/milestones/0.5.0.md) use the new project name; the final 0.5.0 release is still under review.
 
 A small citation library. Write citations in plain text, compile them into linked references and endnotes, and add an optional browser inspector. [Try programmatic citations](#try-programmatic-citations).
 
-**Release 0.4.0 — Reviewed citation import.** [Release and downloads](https://github.com/randal-cox/citation.inator/releases/tag/v0.4.0). Includes the browser/Node import API, native extraction and browser compiler alongside the reader and editor tools.
+**Release 0.4.0 — Reviewed citation import.** [Release and downloads](https://github.com/randal-cox/cite.inator/releases/tag/v0.4.0). Includes the browser/Node import API, native extraction and browser compiler alongside the reader and editor tools.
 
-**0.2.0 — Article tooling.** Editor notes, a site-wide bibliography and tag filters are included in this milestone. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/citation.inator/releases).
+**0.2.0 — Article tooling.** Editor notes, a site-wide bibliography and tag filters are included in this milestone. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/cite.inator/releases).
 
 ## Load and initialize
 
 To serve the demos from the checkout, run `npm start` from the repository root.
 
-**Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
+**Without npm.** Start with [the standalone demo](https://github.com/randal-cox/cite.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
 **With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball into your project and run `npm install ./citation-inator-0.4.0.tgz` there. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
 
@@ -94,22 +96,22 @@ This example demo saves no documents and uses the shared import API in the brows
 
 ## Work on the source checkout
 
-Clone the [GitHub repository](https://github.com/randal-cox/citation.inator) and use Node.js 22.13 or later.
+Clone the [GitHub repository](https://github.com/randal-cox/cite.inator) and use Node.js 22.13 or later.
 
 ```sh
-git clone https://github.com/randal-cox/citation.inator.git
+git clone https://github.com/randal-cox/cite.inator.git
 cd citation.inator
 npm ci
 npm run build
 npm test
 ```
 
-Run `npm start` to open the [reading room](http://127.0.0.1:4187/) and find the notation guide and Resolution bench. The reading room’s **CSS** and **Style** selectors preview appearance and citation formatting separately. The help buttons beside **Hover**, **CSS**, and **Style** show the corresponding configuration. `npm run test:browser` runs the browser checks with a local Chrome installation. Run the [adversarial review](https://github.com/randal-cox/citation.inator/blob/main/docs/adversarial-testing.md) at every milestone and when a change warrants it.
+Run `npm start` to open the [reading room](http://127.0.0.1:4187/) and find the notation guide and Resolution bench. The reading room’s **CSS** and **Style** selectors preview appearance and citation formatting separately. The help buttons beside **Hover**, **CSS**, and **Style** show the corresponding configuration. `npm run test:browser` runs the browser checks with a local Chrome installation. Run the [adversarial review](https://github.com/randal-cox/cite.inator/blob/main/docs/adversarial-testing.md) at every milestone and when a change warrants it.
 
 Before a check-in, follow the [check-in procedure](docs/checkin-procedure.md) and review the milestone record and roadmap. Install the local staged-check hook with `npm run hooks:install`. Use `npm run checkin:check` for the fast checks and `npm run milestone:check` when closing a milestone.
 
 ## Credit and license
 
-Randal Cox maintains citation.inator. [ORCID](https://orcid.org/0009-0002-3427-7190) · [GitHub repository](https://github.com/randal-cox/citation.inator)
+Randal Cox maintains citation.inator. [ORCID](https://orcid.org/0009-0002-3427-7190) · [GitHub repository](https://github.com/randal-cox/cite.inator)
 
 The software uses the MIT license. The optional tools bundle includes parser dependencies with their own notices, retained in its header and [THIRD_PARTY_LICENSES.txt](dist/THIRD_PARTY_LICENSES.txt). Third-party source material retains its own terms. See [CITATION.cff](CITATION.cff) for the software citation and [CHANGELOG.md](CHANGELOG.md) for release changes. Source records carry their own attribution.

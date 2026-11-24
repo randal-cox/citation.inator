@@ -1,5 +1,9 @@
 # Changelog
 
+## Project metadata — 24 November 2026
+
+- Rename the GitHub project to cite.inator and link its 0.5.0 learning preview. This stable branch keeps the 0.4.0 code/package; published tags and archives are unchanged.
+
 ## 0.4.0 — 23 November 2026
 
 - Recover supported explicit DOI line wraps with source evidence; withhold ambiguous numeric/metadata/prose continuations and prevent autolinks from restoring partial IDs. Keep recovered proposals out of canonical identifiers/cache/Ready until accepted metadata. Public regression sample now accounts for all 27 publisher DOI values (15 exact, 12 recovered proposals) without extras.
