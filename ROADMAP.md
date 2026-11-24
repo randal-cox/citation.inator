@@ -9,13 +9,15 @@ On 21 November 2026 the maintainer separated stable editor integration from the 
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | [0.3.0](docs/milestones/0.3.0.md) | Shared marker classification, stable work notes, reference-prefix hook, once-per-list help and usage docs/tests | Released 21 November 2026; tagged-artifact adoption reported by draft in issue 8 |
-| [0.4.0](docs/milestones/0.4.0.md) | Reviewed import: PDF/paste/text/Markdown/native document adapters, recognition, reference parsing, review UI, revision-bound edits and measurement | Shared API/native extraction and review fixes implemented; headless host boundary agreed; Released 23 November 2026; candidate accepted by draft; final tagged-file adoption receipt pending |
-| [0.5.0](docs/milestones/0.5.0.md) | Comprehensive developer documentation, annotated/live demos, worked draft.inator integration and translation/i18n | Planned; current-feature usage docs remain part of every release |
+| [0.4.0](docs/milestones/0.4.0.md) | Reviewed import: PDF/paste/text/Markdown/native document adapters, recognition, reference parsing, review UI, revision-bound edits and measurement | Shared API/native extraction and review fixes implemented; headless host boundary agreed; Released 23 November 2026; final release files verified by draft (91 tests); technical sign-off complete |
+| [0.5.0](docs/milestones/0.5.0.md) | Comprehensive developer documentation, annotated/live demos, worked draft.inator integration and translation/i18n | Active; scope and acceptance checklist agreed; coverage inventory started |
 | [0.6.0](docs/milestones/0.6.0.md) | Zotero/other managers, interchange formats and source maintenance | Planned after learning milestone |
 
 The current release is [0.4.0](https://github.com/randal-cox/citation.inator/releases/tag/v0.4.0), published 23 November 2026. Older 0.3.0 packages do not include import. The import branch keeps the work already built; its document-first review prototype is a 0.4.0 experiment. Version changes and publication follow the check-in/review procedure.
 
-Current 0.4.0 candidate: shared Node/browser import API and JSON CLI, bounded native PDF/DOCX/ODT working-copy extraction, metadata preservation, identity-aware suggestion ranking and explicit conflict review are implemented. The demo uses that API as an example host. Clean-consumer/minimum-runtime/browser checks, independent reviews and publication are complete. Draft accepted and integrated preview.4 site reuse, host IDs, narrative fixes, identifier spelling and browser compiler with 91 passing tests; final-file re-vendoring remains its publication receipt. Preview.5 adds bounded DOI proposal recovery, numbered journal fields and faster review navigation. Draft agrees that it owns the UI through the headless API. Public 0.3.0 artifacts remain unchanged. See the [concrete remaining-work checklist](docs/milestones/0.4.0.md#what-is-left--actionable-checklist).
+Version 0.4.0 is released and its final files are verified by draft.inator with 91 passing tests. Its PR merge and remaining issue closure belong to draft. [The adopter receipt](docs/milestones/0.4.0.md#adopter-receipt) records exactly what was checked.
+
+The active track is [0.5.0 — Developer learning and live demos](docs/milestones/0.5.0.md). It covers progressive tutorials, editable live examples, npm/non-npm starter projects, comprehensive feature documentation, difficult/offline cases, host/draft integration and UI translation. The [feature/example matrix](docs/learning-coverage.md) identifies the existing baseline and the teaching work still needed. Runtime/package version remains 0.4.0 until a 0.5.0 preview is ready to share.
 
 ## Completed milestone 0.2.0 — Article tooling
 
@@ -51,7 +53,7 @@ Review the milestone record and roadmap before every check-in. The [repository p
 The local import-review demo is runnable now; see [its guide](docs/import-demo.md). The development tools/browser bundles also expose shared marker classification and work-context editor notes for draft.inator. Neither is an update to the released 0.2.0 archives.
 
 
-- Continue F4 with the in-text matcher and optional Crossref bibliographic search; measure rule-based reference parsing before expanding backends. The [article-tooling plan](docs/article-tooling-plan.md) retains its review and fallback requirements.
+- Measure reviewed import on additional public documents and extend partial reference rules from observed failures before expanding backends. The [article-tooling plan](docs/article-tooling-plan.md) retains its review and fallback requirements.
 - Verify the implemented once-per-list unknown-profile help across additional host integrations; each inspector retains settings access.
 - Extend the documented text-only referenceItemPrefix hook through host integration tests; richer content should use explicit APIs rather than generated-HTML string matching.
 - Maintain and extend the [style catalogue and support matrix](docs/citation-styles.md), including its link to the maintained broad style registry. Cover author–date, author–page, numeric, and notes and bibliography styles, including disciplinary and publisher variants. Record each style's edition or variant, link to its governing guide where available, and show what citation.inator can format today by source type and citation form. Use real migration examples to identify which gaps matter most and whether a broader style engine would help.
@@ -72,10 +74,6 @@ The local import-review demo is runnable now; see [its guide](docs/import-demo.m
 - **More ways to find and access sources.** Use recurring ISBN misses and gaps in full-text or library access to prioritize additional providers. Preserve edition identity and provider provenance when comparing candidates.
 
 The [verification history](docs/launch-verification.md) preserves the earlier assays and links to the released milestone. The [product brief](https://github.com/randal-cox/citation.inator/blob/main/docs/prd-citation-inspector.md#milestones) describes the longer-term feature sequence.
-
-The [updated 20-page public PDF check](docs/evidence/import-plos-0294391-2026-11-23.json) preserves the publisher’s 52 references and ordered 62 cited items. Bounded DOI recovery, common numbered journal fields and the large-review navigation/progress fix are implemented and independently reviewed. Draft has accepted the API/marker/compiler integration. Publication and downloaded-byte verification are complete; only draft’s final-file adoption receipt remains; see the milestone’s [authoritative checklist](docs/milestones/0.4.0.md#what-is-left--actionable-checklist).
-
-Draft accepted preview.3 host IDs and browser compiler. Preview.4 fixes its short-title site proposal and narrative-group preview findings and implements the shared identifier-writing agreement (#26); draft has now accepted and integrated that candidate; final release-file re-vendoring remains pending. Optional shared match-state/action descriptions and structured pending-format preview responses remain follow-ups, alongside the 0.5.0 worked host integration.
 
 A separate [public bibliography-auditor product hypothesis](docs/research/bibliography-auditor-2026-11-23.md) records existing competitors and optional user-funded AI routes. It is queued above for a near-term research revisit, with no milestone assignment or implementation commitment; it does not expand 0.4.0 release gates.
 

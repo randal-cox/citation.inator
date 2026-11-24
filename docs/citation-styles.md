@@ -4,7 +4,7 @@ This catalogue separates citation systems, named presets, source types and impor
 
 ## Current library support
 
-Formatting presets below exist in released 0.2.0. All import recognition/reference rules described here are experimental source-checkout APIs for 0.4.0; they are absent from this stable 0.3.0 package and the older 0.2.0 exports, CLI and browser bundle. Import work is available only on the separate import development branch.
+Formatting presets below exist in 0.2.0 and later. Import recognition/reference rules are included in 0.4.0 with the stated support limits; older 0.3.0 and 0.2.0 packages do not include import.
 
 | Preset | Reader citation form | Reference formatting | Import recognition / reference rules |
 | --- | --- | --- | --- |

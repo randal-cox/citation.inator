@@ -1,6 +1,6 @@
 # Article editor tools, site bibliographies and tags
 
-These features are available in 0.2.0 and later. They are absent from 0.1.4; see the [milestone record](https://github.com/randal-cox/citation.inator/blob/main/docs/milestones/0.2.0.md). Formatted-citation import remains [planned work](https://github.com/randal-cox/citation.inator/blob/main/docs/article-tooling-plan.md#f4-reviewed-import-delivered-in-smaller-stages).
+These features are available in 0.2.0 and later. They are absent from 0.1.4; see the [milestone record](https://github.com/randal-cox/citation.inator/blob/main/docs/milestones/0.2.0.md). Reviewed document import is included in 0.4.0; see the [import API guide](https://github.com/randal-cox/citation.inator/blob/main/docs/import-api.md).
 
 <a id="unreleased-draftinator-compatibility-additions"></a>
 <a id="030-draftinator-compatibility-additions"></a>
