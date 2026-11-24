@@ -89,7 +89,7 @@ Write `{citation doi:10.1017/S0003055419000534}` for an inline author–year ref
 | `{citation evidence}` | Show source metadata. An application can add the provider response and merge decisions for a lookup. |
 | `{citation credit}` | Show the software credit and suggested citation. |
 
-Keep each directive on one line. A pipe introduces an option, such as `{citation isbn:9780593656433 | form:narrative}`. Quoted labels can include pipes and semicolons. Write `\{` and `\}` for literal braces. Inside a directive, backslashes can escape braces, semicolons, pipes, quotes and backslashes. Legacy `{cite …}` and `{endnotes}` also work.
+Keep each directive on one line. A pipe introduces an option, such as `{citation isbn:9780593656433 | form:narrative}`. Quoted labels can include pipes and semicolons. Write `\{` and `\}` for literal braces. Inside a directive, backslashes can escape braces, semicolons, pipes, quotes and backslashes. Use `{cite …}` as the short work-citation form and `{endnotes}` as an alternate endnote directive.
 
 Set the keyword while compiling. The browser element stays `<citation-inspector>`. This Chicago example keeps the author in the sentence and adds a second work to the same group.
 

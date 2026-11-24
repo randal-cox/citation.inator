@@ -1,20 +1,19 @@
 # Complete notation
 
-These code blocks show literal source. The [working examples](./tutorials.html) show the corresponding rendered citations. Load the compiler and reference cache as shown in the [Guide](./guide.html#load-compile-initialize) before compiling.
+These code blocks show literal source. The [working examples](./guide.html#examples) show the corresponding rendered citations. Load the compiler and generated metadata as shown in the [Guide](./guide.html#load-compile-initialize) before compiling.
 
 ## A work or a group
 
 ```text
-{citation ioannidis-2005}
-{citation doi:10.1371/journal.pmed.0020124}
-{citation ioannidis-2005; durkheim-1995-fields}
+{cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}
+{cite isbn:9780029079379 | locator:"p. 34"}
+{cite doi:10.1371/journal.pmed.0020124; isbn:9780029079379}
 ```
 
-Each semicolon starts another work. Options after a pipe belong to that work, not the whole group. The reference cache supplies metadata. Compilation itself does not perform a provider lookup.
+Each semicolon starts another work. Options after a pipe belong to that work, not the whole group. The build/editor resolves identifiers and saves their bibliographic metadata. You do not need to write a JSON reference for each DOI. Compilation itself does not perform a provider lookup.
 
 | Identifier | Meaning |
 | --- | --- |
-| `ioannidis-2005` or `local:ioannidis-2005` | A local record ID |
 | `doi:10.1371/journal.pmed.0020124` | DOI; a bare DOI or its HTTPS doi.org URL also normalizes |
 | `isbn:9780029079379` | ISBN-13 or valid ISBN-10; hyphens/spaces normalize |
 | `pmid:16060722` | PubMed record |
@@ -23,6 +22,7 @@ Each semicolon starts another work. Options after a pipe belong to that work, no
 | `url:https://example.org/work` | A safe HTTPS source URL; HTTPS URLs can also be written bare |
 | `dataset:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f` | Dataset DOI or HTTPS URL alias |
 | `software:10.5281/zenodo.3960218` | Software DOI or HTTPS URL alias |
+| `interview-one` or `local:interview-one` | A curated source without a universal identifier |
 
 An identifier names what it actually identifies. An ISBN selects an edition, an ISSN identifies a serial and an ORCID identifies a person. They are not interchangeable article identifiers. ISSNs are accepted metadata identifiers but do not by themselves identify an article; author identity belongs in author metadata. New local IDs should use `formatRecordId`, especially for reserved directive names such as `local:endnote`.
 
@@ -73,7 +73,7 @@ Markdown code spans/fences and excluded HTML/interactive regions remain literal 
 {citation endnote | scope:since-last | heading:none}
 ```
 
-Place endnote directives on their own line or paragraph. `heading` overrides the configured `endnotesHeading`; `heading:none` keeps an accessible section without a visible heading. `level` accepts 1 through 6. `scope:since-last` closes the current local reference scope, useful for separate entries on one page. A trailing unclosed scope receives its final list. Running-prose placement is diagnosed rather than guessed.
+Place endnote directives on their own line or paragraph. In Markdown prose, the following text does not need a separating blank line. Inside a tight list item, give the directive its own paragraph; an inline directive remains literal with a diagnostic. `heading` overrides the configured `endnotesHeading`; `heading:none` keeps an accessible section without a visible heading. `level` accepts 1 through 6. `scope:since-last` closes the current local reference scope, useful for separate entries on one page. A trailing unclosed scope receives its final list. Running-prose placement is diagnosed rather than guessed.
 
 Repeated mentions share one work entry in their scope, with contextual lettered return links. Use separate document namespaces for separate compiled fragments. Year suffixes normally belong to the current reference list; `suffixScope:'cache'` suits one work split over pages sharing a bibliography, not independent articles.
 
@@ -100,6 +100,6 @@ Evidence shows source metadata and provenance; credit identifies the software an
 
 ## Custom keyword and compatibility
 
-Set `citationKeyword:'ref'` on the compiler, then write `{ref ioannidis-2005}`, `{ref endnote}`, `{ref list ...}`, `{ref evidence}` and `{ref credit}`. This changes notation, independently of `classPrefix` for CSS and `panelTitle` for reader branding.
+Set `citationKeyword:'ref'` on the compiler, then write `{ref doi:10.1371/journal.pmed.0020124}`, `{ref endnote}`, `{ref list ...}`, `{ref evidence}` and `{ref credit}`. This changes notation, independently of `classPrefix` for CSS and `panelTitle` for reader branding.
 
-`{cite id}` is the legacy short citation form; `{endnotes}` is a legacy endnote directive. Short-form citations do not imply that `{cite evidence}` is an annotation under the default keyword. Use the configured keyword for directives. `markerKind` is the authoritative classifier; editors should not copy a list of reserved words or infer kind from an ID's prefix. For example, `list-2001` is a work ID, not a list directive.
+`{cite doi:…}` is the short work-citation form; `{endnotes}` is an alternate endnote directive. Short-form citations do not imply that `{cite evidence}` is an annotation under the default keyword. Use the configured keyword for directives. `markerKind` is the authoritative classifier; editors should not copy a list of reserved words or infer kind from an ID's prefix. For example, `list-2001` is a work ID, not a list directive.

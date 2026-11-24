@@ -173,9 +173,14 @@ export class AccessView {
         if (entries.length > visible) {
           const more = node(doc, "details", "", "access-more");
           more.append(node(doc, "summary", this.text("access.more", { count: entries.length - visible })));
-          const label = node(doc, "span", this.text("access.other"), "access-group-label");
-          more.append(label);
-          for (const { link } of entries.slice(visible)) this.#appendLink(more, link);
+          const body = node(doc, "div", "", "access-more-body");
+          for (const { link } of entries.slice(visible)) {
+            const destination = node(doc, "span", "", "access-alternative");
+            const name = link.getAttribute("aria-label") || link.title || new URL(link.href).hostname;
+            link.append(node(doc, "span", name, "access-link-label"));
+            destination.append(link);body.append(destination);
+          }
+          more.append(body);
           container.append(more);
         }
       } else {

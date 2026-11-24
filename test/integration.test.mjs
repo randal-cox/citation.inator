@@ -442,3 +442,15 @@ test("reading list annotations stay with each record and are absent from endnote
   const notes = html.slice(html.indexOf('<section class="citation-endnotes"'));
   assert.doesNotMatch(notes, /summary|data-ci-list-record/);
 });
+
+test('Markdown endnote lines keep their position without a following blank line',()=>{
+  for(const marker of ['{citation endnote}','{endnotes}','{ref endnote}']){
+    const result=compileMarkdown('Before {cite ostrom}.\n'+marker+'\nAfter the references.',cache,marker.startsWith('{ref ')?{citationKeyword:'ref'}:{});
+    assert(!result.html.includes(marker));
+    assert(result.html.indexOf('data-citation-part="endnotes"')<result.html.indexOf('After the references.'));
+    assert(!result.diagnostics.some(item=>item.state==='misplaced-directive'));
+  }
+  const code=compileMarkdown('```text\n{cite endnote}\n```',cache);
+  assert(code.html.includes('{cite endnote}'));
+  assert.match(compileMarkdown('    {citation endnote}',cache).html,/<pre><code>\{citation endnote\}/);
+});

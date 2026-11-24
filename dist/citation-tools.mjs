@@ -1,4 +1,4 @@
-/*! citation-inator tools v0.5.0-preview.0 | MIT | See LICENSE */
+/*! citation-inator tools v0.5.0-preview.1 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -97,7 +97,7 @@ var en = {
   "access.free": "Read free",
   "access.selected": "Through your services",
   "access.other": "Other places to look",
-  "access.more": { one: "{count} more", other: "{count} more" },
+  "access.more": { one: "Other source ({count})", other: "Other sources ({count})" },
   "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
   "access.help.none": "None of these is on your list. Add a service, or try your library.",
   "access.help.match": "Change where you read",
@@ -138,7 +138,7 @@ var es = {
   "access.free": "Leer gratis",
   "access.selected": "A trav\xE9s de tus servicios",
   "access.other": "Otros lugares donde buscar",
-  "access.more": { one: "{count} m\xE1s", other: "{count} m\xE1s" },
+  "access.more": { one: "Otra fuente ({count})", other: "Otras fuentes ({count})" },
   "access.services": "Servicios disponibles",
   "access.preferred": "Abrir t\xEDtulos en",
   "access.noPreference": "Sin preferencia",
@@ -9340,7 +9340,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.5.0-preview.0",
+  version: "0.5.0-preview.1",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",

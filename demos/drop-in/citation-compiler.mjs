@@ -1,4 +1,4 @@
-/*! citation-inator compiler v0.5.0-preview.0 | MIT | See LICENSE */
+/*! citation-inator compiler v0.5.0-preview.1 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -97,7 +97,7 @@ var en = {
   "access.free": "Read free",
   "access.selected": "Through your services",
   "access.other": "Other places to look",
-  "access.more": { one: "{count} more", other: "{count} more" },
+  "access.more": { one: "Other source ({count})", other: "Other sources ({count})" },
   "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
   "access.help.none": "None of these is on your list. Add a service, or try your library.",
   "access.help.match": "Change where you read",
@@ -138,7 +138,7 @@ var es = {
   "access.free": "Leer gratis",
   "access.selected": "A trav\xE9s de tus servicios",
   "access.other": "Otros lugares donde buscar",
-  "access.more": { one: "{count} m\xE1s", other: "{count} m\xE1s" },
+  "access.more": { one: "Otra fuente ({count})", other: "Otras fuentes ({count})" },
   "access.services": "Servicios disponibles",
   "access.preferred": "Abrir t\xEDtulos en",
   "access.noPreference": "Sin preferencia",
@@ -329,7 +329,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.5.0-preview.0",
+  version: "0.5.0-preview.1",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -10872,6 +10872,23 @@ function compileMarkdown(source, cache, options = {}) {
   const starts = new RegExp(String.raw`\\[{}\\]|\{(?:endnotes\}|(?:cite|${keyword})[ \t])`);
   const markdown = new B({
     extensions: [{
+      name: "citationBlockDirective",
+      level: "block",
+      start(input) {
+        const match = new RegExp(String.raw`\n {0,3}\{(?:endnotes\}|(?:cite|${keyword})[ \t]+(?:endnotes?|list)(?=[ \t|}]))`).exec(input);
+        return match ? match.index + 1 : void 0;
+      },
+      tokenizer(input) {
+        const line = input.split("\n", 1)[0];
+        if (/^(?: {4}|\t)/.test(line)) return;
+        const tokens = parseDirectives(line, { citationKeyword: keyword });
+        if (!standalone(tokens)) return;
+        return { type: "citationBlockDirective", raw: line + (input[line.length] === "\n" ? "\n" : "") };
+      },
+      renderer(token) {
+        return escapeHTML(token.raw) + "\n";
+      }
+    }, {
       name: "citationDirective",
       level: "inline",
       start(input) {

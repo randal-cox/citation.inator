@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.5.0-preview.0 — In development
+## 0.5.0-preview.1 — In development
+
+- Lead authoring examples and the guide with DOI/ISBN markers and source-only notes; keep generated reference metadata in an advanced disclosure.
+- Replace the example selector with a preview gallery, enable Hover by default and group Hover/CSS/Style/Reset in one toolbar.
+- Share one navigation shell across all learning pages, merge tutorials into the Guide with a compatibility redirect, and match import styling and introductory guidance to the learning site.
+- Place Markdown endnotes at a directive on its own line even when the next paragraph has no separating blank line; keep code and escaped notation literal.
+- Give source alternatives named links in a contained disclosure and reserve a consistent dropdown-arrow gutter. Include the editor-tool data file in the public download.
+
+## 0.5.0-preview.0 — First learning preview
 
 - Add an editable static learning playground with source, reference JSON, configuration, five citation presets, component-only CSS examples, reset and Markdown/cache downloads. Sanitize editable previews with DOMPurify in the host.
 - Add 20 progressive lessons, a load/init-first guide, rendered API guides and copied-file/npm/offline-site downloads. The npm starter includes a pinned library tarball; copied-file projects use a dependency-free Node server.

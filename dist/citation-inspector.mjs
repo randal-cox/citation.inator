@@ -1,4 +1,4 @@
-/*! citation-inator v0.5.0-preview.0 | MIT | See LICENSE */
+/*! citation-inator v0.5.0-preview.1 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {
@@ -13,7 +13,7 @@ var en = {
   "access.free": "Read free",
   "access.selected": "Through your services",
   "access.other": "Other places to look",
-  "access.more": { one: "{count} more", other: "{count} more" },
+  "access.more": { one: "Other source ({count})", other: "Other sources ({count})" },
   "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
   "access.help.none": "None of these is on your list. Add a service, or try your library.",
   "access.help.match": "Change where you read",
@@ -54,7 +54,7 @@ var es = {
   "access.free": "Leer gratis",
   "access.selected": "A trav\xE9s de tus servicios",
   "access.other": "Otros lugares donde buscar",
-  "access.more": { one: "{count} m\xE1s", other: "{count} m\xE1s" },
+  "access.more": { one: "Otra fuente ({count})", other: "Otras fuentes ({count})" },
   "access.services": "Servicios disponibles",
   "access.preferred": "Abrir t\xEDtulos en",
   "access.noPreference": "Sin preferencia",
@@ -1333,9 +1333,15 @@ var AccessView = class {
         if (entries.length > visible) {
           const more = node(doc, "details", "", "access-more");
           more.append(node(doc, "summary", this.text("access.more", { count: entries.length - visible })));
-          const label = node(doc, "span", this.text("access.other"), "access-group-label");
-          more.append(label);
-          for (const { link } of entries.slice(visible)) this.#appendLink(more, link);
+          const body = node(doc, "div", "", "access-more-body");
+          for (const { link } of entries.slice(visible)) {
+            const destination2 = node(doc, "span", "", "access-alternative");
+            const name = link.getAttribute("aria-label") || link.title || new URL(link.href).hostname;
+            link.append(node(doc, "span", name, "access-link-label"));
+            destination2.append(link);
+            body.append(destination2);
+          }
+          more.append(body);
           container.append(more);
         }
       } else {

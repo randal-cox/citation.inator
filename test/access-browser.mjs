@@ -22,7 +22,7 @@ export async function checkReaderAccess(browser, origin, evidence) {
     await panel.waitFor();
     await panel.getByRole("link", { name: "Download PDF" }).waitFor();
     const more = panel.locator('[data-citation-part="access-more"]');
-    assert.equal(await more.locator("summary").textContent(), "2 more");
+    assert.equal(await more.locator("summary").textContent(), "Other sources (2)");
     await panel.getByRole("button", { name: /Tell us where you can read/ }).click();
     const settings = reader.getByRole("dialog", { name: "Where you can read" });
     if (evidence) await page.screenshot({ path: join(evidence, "reader-access-settings.png") });
@@ -31,7 +31,7 @@ export async function checkReaderAccess(browser, origin, evidence) {
     await settings.getByRole("button", { name: "Save", exact: true }).click();
     await settings.waitFor({ state: "detached" });
     await panel.getByRole("link", { name: "Find at JSTOR", exact: true }).waitFor();
-    assert.equal(await panel.locator('[data-citation-part="access-more"] summary').textContent(), "1 more");
+    assert.equal(await panel.locator('[data-citation-part="access-more"] summary').textContent(), "Other source (1)");
     assert.equal(await page.locator("#access-profile-state").textContent(), "jstor");
     await panel.getByRole("button", { name: "Copy citation" }).click();
     assert(!(await page.evaluate(() => navigator.clipboard.readText())).includes("jstor-handbook"));

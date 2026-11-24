@@ -644,10 +644,10 @@ try {
     assert.ok(await content.getByText("the study | journal article; preprint available", { exact: true }).isVisible());
     assert.equal(await content.locator('a[data-ci-record="ioannidis-2005"]').count(), 4);
     assert.equal(await content.locator('a[data-ci-record="palmerpenguins-2020-software"]').count(), 2);
-    await page.getByText("Custom keyword and legacy notation", { exact: true }).click();
+    await page.getByText("Custom keyword and short forms", { exact: true }).click();
     assert.equal(await page.getByRole("region", { name: "Rendered custom keyword example" })
       .locator("a[data-ci-record]").count(), 3);
-    assert.ok(await page.getByRole("region", { name: "Rendered legacy endnotes example" })
+    assert.ok(await page.getByRole("region", { name: "Rendered alternate endnotes example" })
       .getByRole("heading", { name: "Endnotes" }).isVisible());
   }
   await page.goto(origin + "/demos/dynamic/");

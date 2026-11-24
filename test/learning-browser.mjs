@@ -49,11 +49,23 @@ try{
   assert.equal(await page.evaluate(()=>window.bad),undefined);
   assert.equal(await page.locator('#result script,#result style,#result [onerror],#result [style]').count(),0);
   await page.locator('#reset').click();
-  for(const value of await page.locator('#example option').evaluateAll(nodes=>nodes.map(n=>n.value))){
-    await page.locator('#example').selectOption(value);
+  assert(await page.locator('#hover').isChecked());
+  assert.equal(await page.locator('#example-gallery [aria-pressed="true"]').getAttribute('data-example'),'first');
+  for(const value of await page.locator('#example-gallery button').evaluateAll(nodes=>nodes.map(n=>n.dataset.example))){
+    await page.locator(`[data-example="${value}"]`).click();
     assert(await page.locator('#error').isHidden(),value);
     assert(await page.locator('#result [data-ci-record]').count(),value);
   }
+  await page.locator('[data-example="access"]').click();
+  await page.locator('#source').fill((await page.locator('#source').inputValue())+'\nAfter the references.');
+  await page.waitForFunction(()=>!document.getElementById('result').hasAttribute('data-stale'));
+  const order=await page.locator('#result').evaluate(node=>({text:node.textContent,html:node.innerHTML}));
+  assert(!order.text.includes('{citation endnote}'));assert(order.html.indexOf('data-citation-part="endnotes"')<order.html.indexOf('After the references.'));
+  const alternatives=page.locator('#result [data-citation-part="access-more"]');await alternatives.locator('summary').click();
+  assert.match(await alternatives.innerText(),/JSTOR/);assert.match(await alternatives.innerText(),/WorldCat/);
+  assert.equal(await alternatives.locator('[data-citation-part="backlinks"]').count(),0);
+  const expanded=await alternatives.evaluate(node=>({summary:node.querySelector('summary').getBoundingClientRect().bottom,body:node.querySelector('[data-citation-part="access-more-body"]').getBoundingClientRect().top}));assert(expanded.body>=expanded.summary);
+  await page.locator('[data-example="first"]').click();
   await page.locator('#configuration').fill(JSON.stringify({citationStyle:'chicago-author-date',locale:'es'}));
   await page.waitForFunction(()=>document.getElementById('result').textContent.includes('Notas finales'));
   await page.locator('#result [data-ci-record]').first().click();
@@ -61,7 +73,7 @@ try{
   assert.equal(await page.locator('citation-inspector').evaluate(e=>e.shadowRoot.querySelector('[data-citation-part~="panel-placement"]').getAttribute('aria-label')),'Mover panel de cita');
   await page.keyboard.press('Escape');
   await page.locator('#reset').click();
-  await page.locator('#example').selectOption('first');
+  await page.locator('[data-example="first"]').click();
   const trigger=page.locator('#result [data-ci-record]').first();
   await page.waitForFunction(()=>document.querySelector('#result [data-ci-record]')?.getAttribute('role')==='button');
   await page.locator('citation-inspector').evaluate(e=>e.configureAccess({locale:'es'}));
@@ -118,6 +130,11 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('[data-review-group]').length===2&&document.getElementById('document-preview').textContent.includes('Ioannidis'));
     assert.equal(await page.locator('#errors').innerText(),'');
   }
+  for(const route of ['guide.html','notation.html','reference/integration.html','import/','tools/editor-tools.html','host/']){
+    await page.goto(origin+route);assert.deepEqual(await page.locator('header nav[aria-label="Learning"] a').allTextContents(),['Playground','Import','GitHub','Guide']);
+  }
+  await page.goto(origin+'import/');assert.match(await page.locator('.intro').innerText(),/Turn citations in an existing document/);
+  assert.equal(await page.locator('body').evaluate(node=>getComputedStyle(node).colorScheme),'light');
   await page.goto(origin+'host/');
   await page.locator('#record-count').filter({hasText:'2 site records'}).waitFor();
   const editorSource=page.getByRole('textbox',{name:'The article, in Markdown',exact:true});

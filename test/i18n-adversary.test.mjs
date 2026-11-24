@@ -27,7 +27,7 @@ test("independent i18n: plural categories use the selected locale", () => {
 test("independent i18n: incomplete plural overrides fall back per category", () => {
   const messages = createCitationMessages({ strings: { "access.more": { one: "One remaining" } } });
   assert.equal(messages.text("access.more", { count: 1 }), "One remaining");
-  assert.equal(messages.text("access.more", { count: 2 }), "2 more");
+  assert.equal(messages.text("access.more", { count: 2 }), "Other sources (2)");
 });
 
 test("independent i18n: instances snapshot overrides and do not contaminate defaults", () => {
@@ -39,7 +39,7 @@ test("independent i18n: instances snapshot overrides and do not contaminate defa
   assert.equal(first.text("access.save"), "Keep");
   assert.equal(first.text("access.more", { count: 1 }), "single");
   assert.equal(second.text("access.save"), "Save");
-  assert.equal(second.text("access.more", { count: 1 }), "1 more");
+  assert.equal(second.text("access.more", { count: 1 }), "Other source (1)");
   assert(Object.isFrozen(first));
   assert(Object.isFrozen(citationLocales));
   assert(Object.isFrozen(citationLocales.en));
@@ -111,7 +111,7 @@ test("independent i18n: hostile overrides are escaped at compiler text and attri
 test("independent i18n: built-in counts format locally while custom counts retain numeric plural context", () => {
   const messages = createCitationMessages({ locale: "ar" });
   const count = 1234;
-  assert.equal(messages.text("access.more", { count }), `${new Intl.NumberFormat("ar").format(count)} more`);
+  assert.equal(messages.text("access.more", { count }), `Other sources (${new Intl.NumberFormat("ar").format(count)})`);
   const custom = createCitationMessages({ locale: "ar", strings: { "access.more": { two: "raw {count}; display {countLabel}", other: "other" } } });
   assert.equal(custom.text("access.more", { count: 2 }), `raw 2; display ${new Intl.NumberFormat("ar").format(2)}`);
 });

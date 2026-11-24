@@ -24,7 +24,7 @@ const seed = compileDemoStyles(`Open this book from the bundled cache {citation 
 
 {citation endnote}`, cache, "live");
 
-const alternateSource = String.raw`Custom keyword {ref isbn:9780593656433} and legacy citation {cite isbn:9780593656433}. Escaped characters can appear in a label {ref isbn:9780593656433 | label:"book\; edition\| \"hardcover\" \{example\} \\"}.
+const alternateSource = String.raw`Custom keyword {ref isbn:9780593656433} and short citation {cite isbn:9780593656433}. Escaped characters can appear in a label {ref isbn:9780593656433 | label:"book\; edition\| \"hardcover\" \{example\} \\"}.
 
 {ref evidence} · {ref credit}
 
@@ -34,13 +34,13 @@ const alternateOptions = { citationKeyword: "ref", classPrefix: "notation-exampl
 const alternate = compileCitations(alternateSource, article.cache, { ...alternateOptions, namespace: "alternate" });
 const legacyEndnotes = compileCitations(legacyEndnotesSource, article.cache, { ...alternateOptions, namespace: "legacy" });
 const notationExamples = `<details class="notation-examples">
-  <summary>Custom keyword and legacy notation</summary>
+  <summary>Custom keyword and short forms</summary>
   <h3>Custom keyword</h3>
   <pre><code>${escapeHTML(alternateSource)}</code></pre>
   <section aria-label="Rendered custom keyword example">${alternate.html}</section>
-  <h3>Legacy endnotes marker</h3>
+  <h3>Alternate endnotes marker</h3>
   <pre><code>${escapeHTML(legacyEndnotesSource)}</code></pre>
-  <section aria-label="Rendered legacy endnotes example">${legacyEndnotes.html}</section>
+  <section aria-label="Rendered alternate endnotes example">${legacyEndnotes.html}</section>
 </details>`;
 
 await mkdir("dist", { recursive: true });
@@ -302,7 +302,7 @@ initializeCitationInspector(element, {...options, cache: result.cache});</code><
       <h2 id="guide-notation">Complete notation</h2>
       <dl>${notation.map(([syntax, explanation]) => `<dt><code>${escapeHTML(syntax)}</code></dt><dd>${explanation}</dd>`).join("")}</dl>
       <p>The reading also demonstrates <code>doi:</code>, <code>isbn:</code>, <code>pmid:</code>, <code>pmcid:</code>, <code>arxiv:</code>, <code>url:</code>, <code>dataset:</code>, <code>software:</code>, a recognized HTTPS URL or an ID from the local cache. Bare DOIs also work. A missing record is marked unresolved.</p>
-      <p>Keep each directive on one line. To display <code>{citation endnote}</code> as literal text, put <code>\\{citation endnote\\}</code> in the source. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. Legacy <code>{cite …}</code> and <code>{endnotes}</code> also work. Expand <strong>Custom keyword and legacy notation</strong> below the reading in either demo to see both rendered alongside their source.</p>
+      <p>Keep each directive on one line. To display <code>{citation endnote}</code> as literal text, put <code>\\{citation endnote\\}</code> in the source. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. The short work-citation form <code>{cite …}</code> and alternate endnote marker <code>{endnotes}</code> also work. Expand <strong>Custom keyword and short forms</strong> below the reading in either demo to see both rendered alongside their source.</p>
       <h3>Set your keyword</h3>
       <p>With <code>citationKeyword: "ref"</code>, write <code>{ref DOI}</code>, <code>{ref endnote}</code>, <code>{ref evidence}</code>, and <code>{ref credit}</code>. The keyword and class prefix accept 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter. Use the same class prefix in the browser if you initialize it separately.</p>
       <pre><code>${escapeHTML(compileExample)}</code></pre>

@@ -1,6 +1,14 @@
 # citation.inator
 
-A small citation library. Write citations in plain text, compile them into linked references and endnotes, and add an optional browser inspector. [Try programmatic citations](#try-programmatic-citations).
+Write DOI or ISBN markers in your article and turn them into linked references, endnotes and source panels.
+
+```text
+A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
+
+{citation endnote}
+```
+
+The optional `note:` helps editors reading the source; it does not appear in the reader's citation. A build or import step resolves bibliographic metadata and keeps a generated cache. Authors normally write identifiers, rather than reference JSON. Curated records remain useful for sources without identifiers and for site-specific metadata. [Load and initialize](#load-and-initialize) · [Try the examples](https://randal-cox.github.io/citation.inator/).
 
 **Release 0.4.0 — Reviewed citation import.** [Release and downloads](https://github.com/randal-cox/citation.inator/releases/tag/v0.4.0). Includes the browser/Node import API, native extraction and browser compiler alongside the reader and editor tools.
 

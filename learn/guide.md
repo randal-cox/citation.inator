@@ -1,4 +1,18 @@
-# Load, compile, initialize
+# Guide
+
+[Quick start](#load-compile-initialize) · [Worked examples](#examples) · [Complete notation](./notation.html) · [API reference](#api-reference)
+
+Write a source identifier directly in your article:
+
+```text
+A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
+
+{citation endnote}
+```
+
+The DOI identifies the work. `note:` is an optional reminder for editors; readers see the formatted citation instead. Use `isbn:` for a particular book edition. The endnote marker places the reference list at that point in the article.
+
+## Load, compile, initialize
 
 Copy `citation-compiler.mjs`, `citation-inspector.mjs`, `citation-inspector.css`, `LICENSE` and `THIRD_PARTY_LICENSES.txt` from the same release into your site. Serve the folder over HTTP. There is no required framework or runtime service.
 
@@ -9,16 +23,16 @@ Copy `citation-compiler.mjs`, `citation-inspector.mjs`, `citation-inspector.css`
 ```
 
 ```js
-// article.mjs — source and cache are your article and reference data.
+// article.mjs — the metadata file is generated during resolution or import.
 import {compileMarkdown} from './citation-compiler.mjs';
 import {initializeCitationInspector} from './citation-inspector.mjs';
-const source = 'A claim {citation ioannidis-2005}.\n\n{citation endnote}';
+const source = 'A claim {citation doi:10.1371/journal.pmed.0020124}.\n\n{citation endnote}';
 const cache = await fetch('./citations.json').then(r => r.json());
 const options = {citationStyle:'chicago-author-date', namespace:'article'};
 const result = compileMarkdown(source, cache, options);
 const element = document.querySelector('#references');
 element.innerHTML = result.html; // Trusted authored content only.
-initializeCitationInspector(element, {cache:result.cache, activation:'click'});
+initializeCitationInspector(element, {cache:result.cache, activation:'hover'});
 ```
 
 For untrusted or editable HTML, sanitize the final compiled output with an established sanitizer before insertion. The compiler preserves authored HTML; it is not a sanitizer. The playground uses DOMPurify and passes the cache explicitly after embedded scripts are removed. Keep library-generated SVG icons when choosing a sanitizer profile.
@@ -33,15 +47,37 @@ With npm, import `compileMarkdown` from `citation-inator/markup` in your build, 
 
 The [complete notation reference](./notation.html) covers every marker option, directive, escape rule, scope and compatibility form.
 
-[Open the playground](./index.html#playground), select **First citation**, and edit its sentence. The identifier after `citation` names a cached record. Download both Markdown and reference cache when using local IDs: the marker alone does not contain the bibliography.
+[Open the playground](./index.html#playground), select **First citation**, and edit its sentence. Write a DOI or ISBN in the marker; you do not need to invent a local record ID or type a JSON reference. The examples include saved metadata so they work offline.
 
 ```text
-A claim {citation ioannidis-2005}.
+A claim {citation doi:10.1371/journal.pmed.0020124}.
 
 {citation endnote}
 ```
 
-The last marker emits the references cited in this scope. It is literal source notation in this code block; the playground's Result shows the processed version. A DOI or ISBN can identify a cached record too. Compilation does not fetch missing metadata automatically; the import workflow proposes identifiers separately.
+The last marker emits the references cited in this scope. It is literal source notation in this code block; the playground's Result shows the processed version. Metadata supplies the author, title and publication details. Resolve identifiers once in your build or import workflow, then retain the generated metadata for reliable rendering. Compilation itself does not make network requests.
+
+## Resolve source metadata
+
+Authors write identifiers; a build or editor resolves the bibliographic details. For a Node build, use the supplied resolver:
+
+```js
+import {createCrossrefResolver} from 'citation-inator/crossref';
+import {compileMarkdown} from 'citation-inator/markup';
+const resolver = createCrossrefResolver();
+const lookup = await resolver.resolve('doi:10.1371/journal.pmed.0020124');
+if (!lookup.record || lookup.record.state !== 'resolved') {
+  throw new Error('Review the metadata lookup before publishing.');
+}
+const metadata = {schema:'citation-inator.cache.v1', records:[lookup.record]};
+const result = compileMarkdown(source, metadata, {citationStyle:'chicago-author-date'});
+```
+
+Use `createOpenLibraryResolver` for ISBN editions. Keep successful metadata in your site's cache and handle provider failure without inventing a reference. For an existing paper, [import review](./import/) finds identifiers and produces the metadata file. The playground and starters include saved metadata; they do not send new identifiers to a provider. See [resolver and cache configuration](./reference/integration.html#network-and-host-behavior).
+
+### When to supply reference records
+
+Sources without a DOI or ISBN still need citations: archival material, interviews, unpublished work and some artworks are examples. A site may also curate edition details, rights, access links, tags or authored reference formatting. These are legitimate uses for structured records and local IDs. Most authors should encounter the generated metadata through an editor, rather than write JSON by hand.
 
 ## Formatting and appearance
 
@@ -57,7 +93,7 @@ const options = {
 };
 ```
 
-With `citationKeyword:'reference'`, write `{reference ioannidis-2005}` and `{reference endnote}`. `classPrefix` changes generated class names; `data-citation-part` remains the stable styling hook. Pass the same prefix to the inspector. Give separate article fragments separate namespaces so citation/endnote IDs cannot collide.
+With `citationKeyword:'reference'`, write `{reference doi:10.1371/journal.pmed.0020124}` and `{reference endnote}`. `classPrefix` changes generated class names; `data-citation-part` remains the stable styling hook. Pass the same prefix to the inspector. Give separate article fragments separate namespaces so citation/endnote IDs cannot collide.
 
 ```css
 /* Keep host styling confined to the component. */
@@ -81,9 +117,9 @@ Evidence and credit remain hoverable when ordinary references use click. Click, 
 ## Locators, groups and source formatting
 
 ```text
-{citation durkheim-1995-fields | prefix:"see also" | locator:"p. 34"}
-{citation vaswani-2017-arxiv | locator:"§ 3" | form:narrative}
-{citation adelie-penguins-2020; palmerpenguins-2020-software}
+{citation isbn:9780029079379 | prefix:"see also" | locator:"p. 34"}
+{citation arxiv:1706.03762 | locator:"§ 3" | form:narrative}
+{citation doi:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f; doi:10.5281/zenodo.3960218}
 ```
 
 Locators can name pages, chapters, sections or timestamps. They are text, not a promise that every medium has a universal fragment-address standard. The selected citation style determines the surrounding punctuation. Use `compileHTML` to compile within existing authored HTML, or `compileMarkdown` for Markdown; code blocks and excluded interactive elements are skipped. Structured editors can use `planCitationOccurrences` and stable occurrence IDs instead of splicing compiled HTML by position.
@@ -103,7 +139,7 @@ Artwork records can retain uncertain creators, literal dates, medium, institutio
 Editor notes are invisible to readers:
 
 ```text
-{citation ioannidis-2005 | note:"Ioannidis 2005" | tags:methods,reliability}
+{citation doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005" | tags:methods,reliability}
 ```
 
 Use `markerKind` to distinguish citations from directives. `describeCitation` makes a context-free work label; `annotateMarkers(source, cache, {noteContext:'work'})` keeps editor notes consistent with it, without changing reader-facing year letters. `collectMarkerTags` totals contributions; curators still decide which accumulated tags become record topics.
@@ -143,4 +179,4 @@ Explicit authored headings and panel titles win. Source titles/authors, citation
 
 ## Next recipes
 
-Browse the [annotated working examples and API guides](./tutorials.html), try the [editor-note and tag tools](./tools/editor-tools.html), or explore the [shared bibliography](./tools/bibliography.html). The [worked draft integration](./host/) runs the accepted editor code, with [source, staging, revision, undo and persistence notes](./host/recipe.html). These are separate hosts of the same library; the import API does not require a particular page layout or CSS framework.
+Browse the [annotated working examples and API guides](./guide.html#examples), try the [editor-note and tag tools](./tools/editor-tools.html), or explore the [shared bibliography](./tools/bibliography.html). The [worked draft integration](./host/) runs the accepted editor code, with [source, staging, revision, undo and persistence notes](./host/recipe.html). These are separate hosts of the same library; the import API does not require a particular page layout or CSS framework.

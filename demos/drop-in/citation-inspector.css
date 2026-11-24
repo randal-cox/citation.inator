@@ -18,7 +18,7 @@ citation-inspector { display: contents; }
   align-items: center;
   gap: .25rem;
 }
-:is([data-citation-part~="note-actions"], citation-inspector .ci-note-actions) { margin-block: .25rem .7rem; }
+:is([data-citation-part~="note-actions"], citation-inspector .ci-note-actions) { margin-block: .25rem .7rem; align-items:flex-start; }
 :is([data-citation-part~="note-actions"], citation-inspector .ci-note-actions) :is([data-citation-part~="icon"], citation-inspector .ci-icon) { --ci-icon-size: 1.85rem; }
 :is([data-citation-part~="note-actions"], citation-inspector .ci-note-actions) :is([data-citation-part~="icon"], citation-inspector .ci-icon) svg { width: 16px; height: 16px; }
 :is([data-citation-part~="note-actions"], citation-inspector .ci-note-actions) > :is([data-citation-part~="backlinks"], citation-inspector .ci-backlinks):not(:first-child) { margin-inline-start: .35rem; }
@@ -282,11 +282,18 @@ citation-inspector { display: contents; }
 
 [data-citation-part~="access"] { margin-block: 1rem; display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
 [data-citation-part~="access-group-label"] { flex-basis: 100%; font: 600 .85rem/1.4 system-ui, sans-serif; }
-[data-citation-part~="access-more"] { padding: .3rem; }
+[data-citation-part~="access-more"] { display: block; max-width:100%; padding:0; }
+[data-citation-part~="access-more"] > summary { cursor:pointer; padding:.25rem .45rem; font:600 .85rem/1.5 system-ui,sans-serif; }
+[data-citation-part~="access-more-body"] { display:grid; gap:.5rem; padding:.7rem; margin-top:.3rem; border:1px solid var(--citation-line,#a9bad4); background:var(--citation-wash,#edf2f8); border-radius:5px; }
+[data-citation-part~="access-alternative"] { display:block; }
+[data-citation-part~="access-alternative"] a { display:inline-flex; width:auto; height:auto; gap:.5rem; padding:.35rem .5rem; max-width:100%; text-decoration:none; }
+[data-citation-part~="access-alternative"] a svg { flex:none; }
+[data-citation-part~="access-link-label"] { font:500 .85rem/1.4 system-ui,sans-serif; overflow-wrap:anywhere; }
+[data-citation-part~="access-inline"] { align-items:flex-start; }
 [data-citation-part~="access-more"] a { margin-inline: .2rem; }
 [data-citation-part~="access-help"] { font: inherit; color: var(--citation-accent, #214fab); background: transparent; border: 0; padding: .35rem 0; text-decoration: underline; cursor: pointer; }
 [data-citation-part~="access"] [data-citation-part~="access-help"] { flex-basis: 100%; text-align: start; }
-[data-citation-part~="access-inline"] { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
+[data-citation-part~="access-inline"] { display: inline-flex; flex-wrap: wrap; align-items: flex-start; gap: .25rem; }
 [data-citation-part~="access-inline"] [data-citation-part~="access-help"] { font-size: .8em; }
 [data-citation-part~="access-stale"] { font-size: .75em; }
 [data-citation-part~="access-settings"] {
@@ -329,3 +336,5 @@ citation-inspector { display: contents; }
 @media (forced-colors: active) { [data-citation-part~="tag"] { color: inherit; } }
 /* Keep bibliography controls beside the reference, before its site-use lines. */
 [data-citation-part~="reference-list"] > li > [data-ci-note-record] { display: inline-flex; vertical-align: middle; margin: .25rem 0 .25rem .5em; }
+[data-citation-part~="access-settings"] select { padding:.45rem 2.5rem .45rem .65rem; appearance:none; background-color:var(--citation-paper,#fff); color:var(--citation-ink,#172848); background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-size:.3rem .3rem,.3rem .3rem; background-repeat:no-repeat; background-position:calc(100% - 1.1rem) center,calc(100% - .8rem) center; }
+@media(forced-colors:active) { [data-citation-part~="access-settings"] select { appearance:auto; background-image:none; } }

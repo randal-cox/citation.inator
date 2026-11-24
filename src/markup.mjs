@@ -108,6 +108,20 @@ export function compileMarkdown(source, cache, options = {}) {
   const starts = new RegExp(String.raw`\\[{}\\]|\{(?:endnotes\}|(?:cite|${keyword})[ \t])`);
   const markdown = new Marked({
     extensions: [{
+      name: "citationBlockDirective", level: "block",
+      start(input) {
+        const match = new RegExp(String.raw`\n {0,3}\{(?:endnotes\}|(?:cite|${keyword})[ \t]+(?:endnotes?|list)(?=[ \t|}]))`).exec(input);
+        return match ? match.index + 1 : undefined;
+      },
+      tokenizer(input) {
+        const line = input.split("\n", 1)[0];
+        if (/^(?: {4}|\t)/.test(line)) return;
+        const tokens = parseDirectives(line, { citationKeyword: keyword });
+        if (!standalone(tokens)) return;
+        return { type: "citationBlockDirective", raw: line + (input[line.length] === "\n" ? "\n" : "") };
+      },
+      renderer(token) { return escapeHTML(token.raw) + "\n"; }
+    }, {
       name: "citationDirective", level: "inline",
       start(input) { return starts.exec(input)?.index; },
       tokenizer(input) {

@@ -9,17 +9,28 @@ async function start(){
 const data=await fetch('./records.json').then(response=>{if(!response.ok)throw new Error('Reference cache could not be loaded.');return response.json();});
 const records=data.records;
 const version=await fetch('./version.json').then(response=>{if(!response.ok)throw new Error('Version information could not be loaded.');return response.json();});
-$('brand').insertAdjacentHTML('afterbegin',brandIconMarkup);
+if(!$('brand').querySelector('svg'))$('brand').insertAdjacentHTML('afterbegin',brandIconMarkup);
 $('version').textContent=version.version;
-for(const lesson of lessons)$('example').add(new Option(lesson.title,lesson.id));
+let selected=lessons[0].id;
+for(const lesson of lessons){
+ const button=document.createElement('button');button.type='button';button.dataset.example=lesson.id;button.setAttribute('aria-pressed','false');
+ const thumbnail=document.createElement('span');thumbnail.className='example-thumbnail';thumbnail.setAttribute('aria-hidden','true');
+ const preview=document.createElement('div');preview.innerHTML=DOMPurify.sanitize(compileMarkdown(lesson.source,{...data,records:records.map(record=>({...record,...lesson.recordOverrides?.[record.id]}))},lesson.options).html);
+ const sample=[...preview.querySelectorAll('p,li')].find(node=>node.textContent.trim());
+ thumbnail.innerHTML=DOMPurify.sanitize(sample?.innerHTML||'References',{ALLOWED_TAGS:['span','em','strong','i','b','br'],ALLOWED_ATTR:['class','data-citation-part']});
+ if(lesson.id==='filters')thumbnail.innerHTML='<span class="sample-tag">Methods</span> <span class="sample-tag">Data</span> <span class="sample-tag">Software</span>';
+
+ const name=document.createElement('strong');name.textContent=lesson.title;button.append(thumbnail,name);
+ button.addEventListener('click',()=>{selected=lesson.id;load();});$('example-gallery').append(button);
+}
 const requested=new URL(location.href).searchParams.get('example');
-if(lessons.some(item=>item.id===requested))$('example').value=requested;
+if(lessons.some(item=>item.id===requested))selected=requested;
 let compiled=null, timer;
 const json=value=>JSON.stringify(value,null,2);
 function options(){const value=JSON.parse($('configuration').value);if(!value||Array.isArray(value)||typeof value!=='object')throw new Error('Configuration must be a JSON object.');return value;}
 function render(){
   try{
-    const cache=JSON.parse($('records').value), configuration={namespace:'learning',activation:'click',...options()};
+    const cache=JSON.parse($('records').value), configuration={namespace:'learning',activation:'hover',...options()};
     if(!['click','hover'].includes(configuration.activation))throw new Error('Activation must be click or hover.');
     $('hover').checked=configuration.activation==='hover';
     $('hover-help').textContent=`initializeCitationInspector(element, {activation: ${JSON.stringify(configuration.activation)}})`;
@@ -38,10 +49,10 @@ function render(){
     for(const id of ['download-source','download-cache'])$(id).disabled=false;
   }catch(error){compiled=null;$('error').textContent=`Preview not updated: ${error.message}`;$('error').hidden=false;$('result').setAttribute('data-stale','');for(const id of ['download-source','download-cache'])$(id).disabled=true;}
 }
-function load(){const lesson=lessons.find(item=>item.id===$('example').value);const url=new URL(location.href);if(lesson.id==='first')url.searchParams.delete('example');else url.searchParams.set('example',lesson.id);history.replaceState(null,'',url);$('source').value=lesson.source;$('records').value=json({schema:'citation-inator.cache.v1',records:records.map(record=>({...record,...lesson.recordOverrides?.[record.id]}))});$('configuration').value=json({namespace:'learning',activation:'click',citationStyle:'chicago-author-date',...lesson.options,...(lesson.id==='site'?{siteOccurrences:data.siteOccurrences,siteOrigin:location.origin}:{})});$('style').value='chicago-author-date';$('hover').checked=false;$('appearance').value='paper';$('lesson').textContent=lesson.text;appearance();render();}
+function load(){const lesson=lessons.find(item=>item.id===selected);const url=new URL(location.href);if(lesson.id==='first')url.searchParams.delete('example');else url.searchParams.set('example',lesson.id);history.replaceState(null,'',url);$('source').value=lesson.source;$('records').value=json({schema:'citation-inator.cache.v1',records:records.map(record=>({...record,...lesson.recordOverrides?.[record.id]}))});$('configuration').value=json({namespace:'learning',activation:'hover',citationStyle:'chicago-author-date',...lesson.options,...(lesson.id==='site'?{siteOccurrences:data.siteOccurrences,siteOrigin:location.origin}:{})});$('style').value='chicago-author-date';$('hover').checked=true;$('appearance').value='paper';$('lesson').textContent=lesson.text;$('example-title').textContent=lesson.title;for(const button of $('example-gallery').children)button.setAttribute('aria-pressed',String(button.dataset.example===selected));appearance();render();}
 function appearance(){document.querySelector('.result').className=`result ${$('appearance').value}`;$('css-help').textContent=$('appearance').value==='ink'?'citation-inspector { --citation-paper: #182c44; --citation-ink: #f4f7fb; --citation-accent: #8cdeed; }':$('appearance').value==='compact'?'citation-inspector { --citation-heading-font: system-ui; --citation-panel-radius: 4px; --citation-icon-radius: 3px; }':'citation-inspector { --citation-paper: #fff; --citation-ink: #182c44; }';}
 for(const id of ['source','records','configuration'])$(id).addEventListener('input',()=>{clearTimeout(timer);$('result').setAttribute('data-stale','');for(const download of ['download-source','download-cache'])$(download).disabled=true;timer=setTimeout(()=>{try{$('style').value=options().citationStyle||'chicago-author-date';}catch{}render();},180);});
-$('example').addEventListener('change',load);$('reset').addEventListener('click',load);$('hover').addEventListener('change',()=>{try{$('configuration').value=json({...options(),activation:$('hover').checked?'hover':'click'});render();}catch{render();}});$('appearance').addEventListener('change',appearance);
+$('reset').addEventListener('click',load);$('hover').addEventListener('change',()=>{try{$('configuration').value=json({...options(),activation:$('hover').checked?'hover':'click'});render();}catch{render();}});$('appearance').addEventListener('change',appearance);
 $('style').addEventListener('change',()=>{try{$('configuration').value=json({...options(),citationStyle:$('style').value});render();}catch{render();}});
 for(const help of document.querySelectorAll('.help-wrap'))for(const event of ['pointerenter','focusin'])help.addEventListener(event,()=>{
  delete help.dataset.dismissed;

@@ -35,7 +35,7 @@ await writeFile('site/records.json',JSON.stringify({...cache,siteOccurrences}));
 await mkdir('site/examples',{recursive:true});
 await writeFile('site/examples/reader.mjs',`import {initializeCitationInspector} from '../assets/citation-inspector.mjs';\nconst data=await fetch('../records.json').then(r=>r.json());\ninitializeCitationInspector(document.querySelector('citation-inspector'),{cache:{schema:'citation-inator.cache.v1',records:data.records},accessStorageKey:'citation-inator-learning-access'});`);
 for(const article of articles)await writeFile('site/examples/'+article.id+'.html',`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${article.label} · citation.inator</title><link rel="stylesheet" href="../learning.css"><link rel="stylesheet" href="../assets/citation-inspector.css"></head><body><header><a class="brand" href="../">${brandIconMarkup}citation.inator</a><nav aria-label="Examples"><a href="./article-one.html">Article one</a><a href="./article-two.html">Article two</a><a href="../?example=site">Bibliography</a><a href="../guide.html">Guide</a></nav></header><main><h1>${article.label}</h1><citation-inspector>${article.result.html}</citation-inspector><details><summary>Source</summary><pre>${escapeHTML(article.source)}</pre></details></main><script type="module" src="./reader.mjs"></script></body></html>`);
-const starter={version,sourceRef,source:lessons[0].source,records:{schema:'citation-inator.cache.v1',records:records.filter(record=>record.id==='ioannidis-2005')},options:{namespace:'starter',citationStyle:'chicago-author-date',activation:'click'}};
+const starter={version,sourceRef,source:lessons[0].source,records:{schema:'citation-inator.cache.v1',records:records.filter(record=>record.id==='ioannidis-2005')},options:{namespace:'starter',citationStyle:'chicago-author-date',activation:'hover'}};
 await writeFile('site/citation-starter.zip',await learningStarter(starter));
 await writeFile('site/citation-npm-starter.zip',await npmLearningStarter(starter));
 const guide = learningMarkdown(await readFile('learn/guide.md','utf8'));
@@ -52,7 +52,12 @@ for(const extension of ['md','txt','pdf','docx','odt']){
 await writeFile('site/documents/manifest.json',JSON.stringify({source:'sample.md',author:'Randal Cox',license:'MIT for the example prose and files; bibliographic metadata identifies the cited work.',files:documentManifest},null,2));
 for(const file of ['document-examples.mjs','enrichment-browser.mjs','identity-state.mjs','import-demo.css','import-demo.mjs','review-labels.mjs','review-progress.mjs','review-window.mjs','text-source.mjs','provider-fixtures.mjs']){
   const content=(await readFile('demos/import/'+file,'utf8')).replaceAll('../../dist/','../assets/');
-  await writeFile('site/import/'+file,content);
+  if(file==='import-demo.css'){
+    // The learning shell stays light; the standalone import host retains its dark theme.
+    let css=content,start;
+    while((start=css.indexOf('@media(prefers-color-scheme:dark)'))>=0){let end=css.indexOf('{',start),depth=1;while(depth&&++end<css.length){if(css[end]==='{')depth++;else if(css[end]==='}')depth--;}css=css.slice(0,start)+css.slice(end+1);}
+    await writeFile('site/import/'+file,css);
+  }else await writeFile('site/import/'+file,content);
 }
 let importHTML=(await readFile('demos/import/index.html','utf8')).replaceAll('../../dist/','../assets/');
 importHTML=importHTML.replace(/<header>[\s\S]*?<\/header>/,`<header><a href="../">citation.inator</a><nav aria-label="Learning"><a href="../">Playground</a><a href="../guide.html">Guide</a></nav></header>`).replaceAll('../../docs/citation-styles.md','../guide.html').replaceAll('../../docs/import-demo.md','../guide.html');
@@ -60,7 +65,7 @@ for(const mode of ['saved','live']){
   const config={processing:'browser',localExamples:false,...(mode==='saved'?{providerResponses:'./provider-responses.json'}:{})};
   const label=mode==='saved'?'Saved lookups for the examples':'Live lookups send reference details to Crossref and Open Library';
   const other=mode==='saved'?'<a href="./live.html" target="_blank" rel="noopener">Look up my document ↗</a>':'<a href="./" target="_blank" rel="noopener">Saved examples ↗</a>';
-  let html=importHTML.replace('id="citation-import-config">{}','id="citation-import-config">'+JSON.stringify(config)).replace('<main>','<main><p>'+label+' · '+other+'</p>');
+  let html=importHTML.replace('id="citation-import-config">{}','id="citation-import-config">'+JSON.stringify(config)).replace('<main>','<main><p class="lookup-mode">'+label+' · '+other+'</p>');
   if(mode==='saved')html=html.replace('Books: ISBN edition choices','Books: finish without an ISBN').replace('Real references: DOIs omitted','Real references: partial saved metadata');
   await writeFile('site/import/'+(mode==='saved'?'index':'live')+'.html',html);
 }
@@ -68,7 +73,7 @@ const fixtureRecords=records.filter(record=>record.id.startsWith('einstein-')||r
 fixtureRecords.push({id:'planck-1901',title:'Ueber das Gesetz der Energieverteilung im Normalspectrum',authors:[{family:'Planck',given:'Max'}],issued:[1901],containerTitle:'Annalen der Physik',volume:'309',issue:'3',pages:'553–563',identifiers:[{scheme:'doi',value:'10.1002/andp.19013090310'}]});
 await writeFile('site/import/provider-responses.json',JSON.stringify({purpose:'Fixed example metadata envelopes derived from the public example references, not recorded live search responses or an accuracy benchmark.',works:fixtureRecords.map(record=>({DOI:record.identifiers.find(id=>id.scheme==='doi').value,type:'journal-article',title:[record.title],author:record.authors,'published-print':{'date-parts':[record.issued]},'container-title':[record.containerTitle],volume:record.volume,issue:record.issue,page:record.pages}))},null,2));
 await mkdir('site/tools',{recursive:true});
-for(const file of ['article-1.html','article-2.html','bibliography.html','editor-tools.html','article-tools-demo.css','editor-tools-demo.mjs','tag-book.svg','tag-tool.svg']){
+for(const file of ['article-1.html','article-2.html','bibliography.html','editor-tools.html','article-tools-demo.css','article-tools.json','editor-tools-demo.mjs','tag-book.svg','tag-tool.svg']){
   let content=(await readFile('demos/static/'+file,'utf8')).replaceAll('../../dist/','../assets/');
   if(file.endsWith('.html'))content=content.replace('<a href="./">Reading room</a>','<a href="../">Playground</a>').replace('</head>','<script type="module" src="./learning-scope.mjs"></script></head>');
   await writeFile('site/tools/'+file,content);
@@ -87,8 +92,10 @@ for(const name of referenceNames){
   });
   await writeFile('site/reference/'+name+'.html',page(name,content));
 }
-const tutorialHTML=`<h1>Working examples</h1><p>Choose a lesson, edit its source, then compare the result. Each example includes its reference data and configuration.</p><ul>${lessons.map(lesson=>`<li><a href="#${lesson.id}">${escapeHTML(lesson.title)}</a></li>`).join('')}</ul>`+lessons.map(lesson=>`<section id="${lesson.id}"><h2>${escapeHTML(lesson.title)}</h2><p>${escapeHTML(lesson.text)}</p><p><a href="./?example=${lesson.id}">Open working example</a></p><pre><code>${escapeHTML(lesson.source)}</code></pre>${Object.keys(lesson.options).length?`<h3>Configuration</h3><pre><code>${escapeHTML(JSON.stringify(lesson.options,null,2))}</code></pre>`:''}</section>`).join('')+`<h2>Complete API guides</h2><ul>${referenceNames.map(name=>`<li><a href="./reference/${name}.html">${name.replaceAll('-',' ')}</a></li>`).join('')}</ul><p><a href="./tools/editor-tools.html">Try the editor-note and tag tools</a> · <a href="./tools/bibliography.html">Try the shared bibliography</a></p>`;
-await writeFile('site/tutorials.html',page('Tutorials',tutorialHTML).replaceAll('href="../','href="./').replace('href="../learning.css"','href="./learning.css"'));
+const tutorialHTML=`<h2>Worked examples</h2><p>Start with a DOI or ISBN marker, then explore formatting, reading lists and other source types.</p><ul>${lessons.map(lesson=>`<li><a href="#${lesson.id}">${escapeHTML(lesson.title)}</a></li>`).join('')}</ul>`+lessons.map(lesson=>`<section id="${lesson.id}"><h2>${escapeHTML(lesson.title)}</h2><p>${escapeHTML(lesson.text)}</p><p><a href="./?example=${lesson.id}">Open working example</a></p><pre><code>${escapeHTML(lesson.source)}</code></pre>${Object.keys(lesson.options).length?`<h3>Configuration</h3><pre><code>${escapeHTML(JSON.stringify(lesson.options,null,2))}</code></pre>`:''}</section>`).join('')+`<h2 id="api-reference">API reference</h2><ul>${referenceNames.map(name=>`<li><a href="./reference/${name}.html">${name.replaceAll('-',' ')}</a></li>`).join('')}</ul><p><a href="./tools/editor-tools.html">Try the editor-note and tag tools</a> · <a href="./tools/bibliography.html">Try the shared bibliography</a></p>`;
+const combinedGuide=await readFile('site/guide.html','utf8');
+await writeFile('site/guide.html',combinedGuide.replace('</main>',`<section id="examples">${tutorialHTML}</section></main>`));
+await writeFile('site/tutorials.html',`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./guide.html#examples"><title>Guide · citation.inator</title></head><body><a href="./guide.html#examples">Open the Guide</a></body></html>`);
 await mkdir('site/host',{recursive:true});
 for(const file of ['editor.js','importer.js','forms.js','citation.js','editor.css','SOURCE.json'])await copyFile('learn/vendor/draft-inator/'+file,'site/host/'+file);
 await copyFile('learn/vendor/draft-inator/LICENSE','site/host/DRAFT_LICENSE.txt');
@@ -104,6 +111,20 @@ await copyFile('scripts/static-server.mjs','site/server.mjs');
 await writeFile('site/package.json',JSON.stringify({name:'citation-learning-site',private:true,type:'module',version,scripts:{start:'node server.mjs'},engines:{node:'>=22.13.0'}},null,2));
 await writeFile('site/README.md',`# citation.inator learning site — ${version}\n\nRun npm start (no install required), or node server.mjs, then open http://127.0.0.1:4188/. Node 22.13.0 or later is required. Any static HTTP server also works. Use HTTP, not file://.\n\nCore compilation, saved import metadata, native sample files and the pinned draft editor run locally. Live lookup is a separate page which sends bibliographic details to Crossref/Open Library. No document storage or authentication is configured.\n\nLibrary notices are in assets/. DOMPurify's license is assets/LEARNING_THIRD_PARTY.txt. The pinned draft editor's MIT license and source manifest are in host/. The public document samples have attribution/checksums in documents/manifest.json. The npm starter contains its own pinned library tarball; npm install is needed only inside that extracted starter.\n`);
 const downloadFiles={},routes=JSON.parse(await readFile('learn/generated-routes.json','utf8'));
+// One navigation shell across every learning route; local links remain in the body.
+for(const route of routes.filter(path=>path.endsWith('.html'))){
+ const prefix=route.includes('/')?'../':'./';
+ const header=`<header><a class="brand" href="${prefix}">${brandIconMarkup}citation.inator</a><nav aria-label="Learning"><a href="${prefix}#playground">Playground</a><a href="${prefix}import/">Import</a><a href="https://github.com/randal-cox/citation.inator">GitHub</a><a href="${prefix}guide.html">Guide</a></nav><span id="version">${version}</span></header>`;
+ let html=await readFile('site/'+route,'utf8');
+ if(html.includes('<header>'))html=html.replace(/<header>[\s\S]*?<\/header>/,header);else html=html.replace(/(<body[^>]*>)/,'$1'+header);
+ if(!html.includes('href="'+prefix+'learning.css"'))html=html.replace('</head>',`<link rel="stylesheet" href="${prefix}learning.css"></head>`);
+ if(route.startsWith('tools/')&&route.endsWith('.html'))html=html.replace('<main>','<main><nav class="local-navigation" aria-label="Bibliography examples"><a href="./article-1.html">Article one</a><a href="./article-2.html">Article two</a><a href="./bibliography.html">Shared bibliography</a><a href="./editor-tools.html">Editor tools</a></nav>');
+ if(route.startsWith('examples/'))html=html.replace('<main>','<main><nav class="local-navigation" aria-label="Article examples"><a href="./article-one.html">Article one</a><a href="./article-two.html">Article two</a><a href="../?example=site">Shared bibliography</a></nav>');
+ html=html.replace(/<body([^>]*)>/,(_,attrs)=>attrs.includes('class=')?'<body'+attrs.replace(/class="([^"]*)"/,'class="$1 learning-site"')+'>':'<body'+attrs+' class="learning-site">');
+ // The playground initializes the existing shared brand, not a second icon.
+ if(route==='index.html')html=html.replace('class="brand"','class="brand" id="brand"');
+ await writeFile('site/'+route,html);
+}
 if(!Array.isArray(routes)||new Set(routes).size!==routes.length||!routes.every(path=>typeof path==='string'&&/^[a-zA-Z0-9_-][a-zA-Z0-9_.-]*(?:\/[a-zA-Z0-9_-][a-zA-Z0-9_.-]*)*$/.test(path)))throw new Error('Public learning routes must be unique safe relative filenames.');
 for(const path of routes.filter(path=>path!=='citation-learning-site.zip')){
   if(!(await lstat('site/'+path)).isFile())throw new Error('Learning downloads require regular files: '+path);
