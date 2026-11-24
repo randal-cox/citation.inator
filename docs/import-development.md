@@ -1,6 +1,6 @@
 # F4 import development for milestone 0.4.0
 
-**Development history and implementation notes.** Public release remains 0.3.0. The unpublished 0.4.0-preview.0 candidate now exports a shared Node/browser API, JSON CLI and bounded native extraction. Start with the [current API guide](import-api.md) for installation and support. Historical test counts and source-only prototype descriptions below record earlier stages, not current candidate availability.
+**Development history and implementation notes.** Version 0.4.0 exports a shared Node/browser API, JSON CLI and bounded native extraction. Start with the [current API guide](import-api.md) for installation and support. Historical test counts and source-only prototype descriptions below record earlier stages, not current candidate availability.
 
 ## Full-source development adapter
 

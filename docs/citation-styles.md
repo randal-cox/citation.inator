@@ -12,7 +12,7 @@ Formatting presets below exist in released 0.2.0. All import recognition/referen
 | `apa` | Author–date, narrative and locators | Common books/journal articles | Experimental author–date recognition and initial byline/date/title reference rules |
 | `mla` | Author–page and narrative | Common books/journal articles | Not yet implemented |
 | `harvard` | Author–date preset | Common books/journal articles; exact Cite Them Right/institutional conformity is not certified | Not yet implemented |
-| `vancouver` | Numeric references | Common books/journal articles | Experimental bracketed numbers/ranges; reference labels/explicit DOIs only |
+| `vancouver` | Numeric references | Common books/journal articles | Experimental bracketed numbers/ranges; common compact journal bylines and year/volume/page tails; bounded explicit DOI line-wrap recovery |
 | `default` | Original compatibility format | Existing generic behavior | Not an import style |
 
 Named presets are purpose-built formatters, not a CSL engine or a promise of exhaustive conformity to a published manual. Formatting a citation and recognizing an existing citation are different capabilities. Chapters, legislation, webpages, software, datasets and media need source-specific scrutiny; see [media coverage](media-support.md). Curated reference text/parts can preserve a required house form where automatic formatting is insufficient. Existing citation.inator endnotes are reference lists, not an implementation of Chicago shortened notes, ibid. or legal citation conventions.

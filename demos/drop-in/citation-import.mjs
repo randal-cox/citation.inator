@@ -1,4 +1,4 @@
-/*! citation-inator import v0.4.0-preview.4 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! citation-inator import v0.4.0 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -92,10 +92,10 @@ function normalizeIdentifier(input) {
       return null;
   }
 }
-function localRecordId(prefix, key) {
+function localRecordId(prefix2, key) {
   let hash2 = 14695981039346656037n;
   for (const byte of new TextEncoder().encode(key)) hash2 = BigInt.asUintN(64, (hash2 ^ BigInt(byte)) * 1099511628211n);
-  return `${prefix}-${hash2.toString(16)}`;
+  return `${prefix2}-${hash2.toString(16)}`;
 }
 var identifierKey = ({ scheme, value }) => `${scheme}:${value}`;
 function canonicalIdentifierKey(identifier) {
@@ -465,13 +465,13 @@ var Preprocessor = class {
     return this.droppedBufferSize + this.pos;
   }
   getError(code, cpOffset) {
-    const { line, col, offset } = this;
+    const { line: line2, col, offset } = this;
     const startCol = col + cpOffset;
     const startOffset = offset + cpOffset;
     return {
       code,
-      startLine: line,
-      endLine: line,
+      startLine: line2,
+      endLine: line2,
       startCol,
       endCol: startCol,
       startOffset,
@@ -4824,7 +4824,7 @@ var LIMITED_QUIRKS_WITH_SYSTEM_ID_PUBLIC_ID_PREFIXES = [
   "-//w3c//dtd html 4.01 transitional//"
 ];
 function hasPrefix(publicId, prefixes) {
-  return prefixes.some((prefix) => publicId.startsWith(prefix));
+  return prefixes.some((prefix2) => publicId.startsWith(prefix2));
 }
 function isConforming(token) {
   return token.name === VALID_DOCTYPE_NAME && token.publicId === null && (token.systemId === null || token.systemId === VALID_SYSTEM_ID);
@@ -8149,7 +8149,7 @@ function parseFragment(fragmentContext, html, options) {
 // package.json
 var package_default = {
   name: "citation-inator",
-  version: "0.4.0-preview.4",
+  version: "0.4.0",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9041,6 +9041,49 @@ var sha256 = /* @__PURE__ */ createHasher(
 // src/import-hash.mjs
 var importHash = (value) => bytesToHex(sha256(utf8ToBytes(value)));
 
+// src/import-identifiers.mjs
+var line = "[ \\t]*(?:\\r?\\n)[ \\t]*";
+var wrap = "(?:" + line + ")?";
+var prefix = new RegExp("(?:https?:\\/\\/" + wrap + "(?:dx\\.)?doi\\.org\\/" + wrap + "|doi:[ \\t]*" + wrap + ")(10\\." + wrap + "\\d{4,9}\\/[^\\s<>]*)", "giu");
+function referenceDOIs(text) {
+  const identifiers = [], evidence = [], diagnostics = [], blocked = /* @__PURE__ */ new Set();
+  for (const match of text.matchAll(prefix)) {
+    let value = match[1].replace(/[ \t\r\n]/gu, ""), end = match.index + match[0].length, joined = /\r?\n/u.test(match[0]);
+    const initial = normalizeIdentifier("doi:" + value.replace(/[.,;]+$/u, ""));
+    let uncertain = false;
+    for (let n = 0; n < 4 && /[.\/-]$/u.test(value); n++) {
+      const continuation = /^[ \t]*\r?\n[ \t]*([^\s<>]+)/u.exec(text.slice(end));
+      if (!continuation) break;
+      const token = continuation[1];
+      if (/^(?:PMID|PMCID|doi|ISBN|https?):/iu.test(token)) break;
+      if (/^(?:PMID|PMCID|ISBN|Table|Figure|Fig|Chapter|Appendix|Accessed|Retrieved|Copyright|References|pp?|sec)(?=[:._-]|\d|$)/iu.test(token) || /^[A-Z]{2,}[-_.]?\d/u.test(token) || !/\d/u.test(token) || !(/[./_()-]/u.test(token) || /^[a-z]\d{6,}$/iu.test(token) || /^0\d{4,}$/u.test(token) && /\d+\.$/u.test(value)) || /^\d{1,4}\.?$/u.test(token) || /^10\.\d{4,9}\//u.test(token) || !/^[-a-z\d._;()/:%+]+$/iu.test(token)) {
+        uncertain = true;
+        break;
+      }
+      if (/^\d+$/u.test(token) && !(/^0\d{4,}$/u.test(token) && /\d+\.$/u.test(value))) {
+        uncertain = true;
+        break;
+      }
+      if (initial) blocked.add(initial.value);
+      value += token;
+      end += continuation[0].length;
+      joined = true;
+    }
+    if (/[.\/-]$/u.test(value) && /^[ \t]*\r?\n[ \t]*(?!PMID:|PMCID:|doi:|ISBN:|https?:)\S/iu.test(text.slice(end))) uncertain = true;
+    const id = normalizeIdentifier("doi:" + value.replace(/[.,;]+$/u, ""));
+    if (uncertain) {
+      if (initial) blocked.add(initial.value);
+      diagnostics.push({ code: "import-wrapped-identifier-review-required", scheme: "doi" });
+      continue;
+    }
+    if (!id) continue;
+    if (!identifiers.some((existing) => existing.value === id.value)) identifiers.push(id);
+    evidence.push({ field: "identifiers", start: match.index, end, raw: text.slice(match.index, end), exact: !joined, rule: joined ? "explicit-doi-line-wrap" : "explicit-doi-text" });
+    if (joined) diagnostics.push({ code: "import-wrapped-identifier-recovered", scheme: "doi", value: id.value });
+  }
+  return { identifiers: identifiers.filter((id) => !blocked.has(id.value)), evidence, diagnostics, blocked };
+}
+
 // src/import-references.mjs
 var year2 = "(?:1[5-9]\\d{2}|20\\d{2})";
 function parseAPAAuthorList(text) {
@@ -9059,6 +9102,59 @@ function parseOrganizationAuthor(text) {
   if (!name2 || name2.length > 150 || /[;,<>]/u.test(name2)) return null;
   return /\b(?:organization|organisation|institute|university|ministry|department|association|society|committee|council|agency|office|government|foundation|corporation|company|centres?|centers?|laborator(?:y|ies)|labs?|bureau|bank|united nations)\b/iu.test(name2) || /^[A-Z]{2,12}$/u.test(name2) ? [{ literal: name2 }] : null;
 }
+function numberedAuthors(raw) {
+  const shortened = /,?\s+et al\.?$/iu.test(raw), body = raw.replace(/,?\s+et al\.?$/iu, "");
+  const people = [];
+  for (const entry of body.split(/,\s*/u)) {
+    const m2 = /^([\p{L}\p{M}'’ .-]+?)\s+([A-Z]{1,6}(?:-[A-Z]{1,3})?)$/u.exec(entry.trim());
+    if (!m2 || !/[\p{L}]/u.test(m2[1]) || /\bet al\b|\.\.\.|…/iu.test(m2[1])) return null;
+    people.push({ family: m2[1], given: m2[2].split("-").map((part) => [...part].map((letter) => letter + ".").join(" ")).join("-") });
+  }
+  return people.length ? { authors: people, authorsComplete: !shortened } : null;
+}
+function numberedFields(text, fields, propose, diagnostics) {
+  const flat = text.replace(/\s/gu, " "), start = /^\s*[1-9]\d{0,3}\.\s+/u.exec(flat)?.[0].length ?? 0;
+  const byline = /^(.+?)\.\s+/u.exec(flat.slice(start));
+  if (!byline) {
+    diagnostics.push({ code: "import-reference-fields-unsupported" });
+    return;
+  }
+  const authorText = byline[1], people = numberedAuthors(authorText) || (() => {
+    const authors2 = !/[:—–?!]/u.test(authorText) && parseOrganizationAuthor(authorText);
+    return authors2 ? { authors: authors2, authorsComplete: true } : null;
+  })();
+  propose("authorText", authorText, start, start + authorText.length, "numbered-byline");
+  if (people) {
+    Object.assign(fields, people);
+    propose("authors", people.authors, start, start + authorText.length, "numbered-byline-authors");
+  } else diagnostics.push({ code: "import-reference-byline-unparsed" });
+  const after = start + byline[0].length;
+  const date2 = new RegExp("\\b(" + year2 + ")(?:\\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*(?:\\s+\\d{1,2})?)?\\s*;\\s*(\\d+)(?:\\s*\\(([^)]+)\\))?(?:\\s*:\\s*([a-z]?\\d+(?:[-\u2013][a-z]?\\d+)?))?(?=\\.|\\s|$)", "iu").exec(flat.slice(after));
+  if (date2) {
+    const before = flat.slice(after, after + date2.index).trimEnd().replace(/\.$/u, "");
+    const boundaries = [...before.matchAll(/\.\s+(?=\p{Lu})/gu)].filter((m2) => !/(?:\b(?:[A-Z]|Dr|Mr|Mrs|Ms|Prof|St|vs|al|Glob|Int|Med|Soc|Sci|Res|Biol|Phys|Chem)|\b[A-Z](?:\.[A-Z])+)$/.test(before.slice(0, m2.index)));
+    const boundary = boundaries.at(-1);
+    if (boundary) {
+      const title = before.slice(0, boundary.index).trim(), container = before.slice(boundary.index + boundary[0].length).trim();
+      if (title && container) {
+        propose("title", title, after, after + boundary.index, "numbered-title-before-journal");
+        const containerStart = after + boundary.index + boundary[0].length;
+        propose("containerTitle", container, containerStart, containerStart + container.length, "numbered-journal-before-date");
+        propose("issued", [Number(date2[1])], after + date2.index, after + date2.index + 4, "numbered-journal-date");
+        fields.type = "article-journal";
+        fields.volume = date2[2];
+        if (date2[3]) fields.issue = date2[3];
+        if (date2[4]) fields[/^e\d/iu.test(date2[4]) ? "articleNumber" : "pages"] = date2[4];
+        if (boundaries.length > 1) {
+          fields.type = "document";
+          diagnostics.push({ code: "import-reference-title-boundary-review-required" });
+        }
+      }
+    }
+  }
+  if (!fields.title) diagnostics.push({ code: "import-reference-fields-unsupported" });
+  diagnostics.push({ code: "import-reference-partial-fields", message: "Review proposed fields against the original reference." });
+}
 function parseReference(text, { style = "apa" } = {}) {
   if (typeof text !== "string" || !text.trim() || text.length > 2e4) throw new TypeError("Supply one reference entry, up to 20000 characters.");
   if (!["apa", "chicago-author-date", "vancouver"].includes(style)) throw new TypeError("Initial reference rules support apa, chicago-author-date and vancouver.");
@@ -9067,20 +9163,14 @@ function parseReference(text, { style = "apa" } = {}) {
     fields[field] = value;
     evidence.push({ field, start, end, raw: text.slice(start, end), rule });
   };
-  const identifierCandidates = [];
-  for (const match of text.matchAll(/(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:\s*)(10\.\d{4,9}\/[^\s<>]+)/giu)) {
-    const value = match[1].replace(/[.,;]+$/, "");
-    const identifier = normalizeIdentifier("doi:" + value);
-    if (identifier && !identifierCandidates.some((candidate) => candidate.value === identifier.value)) {
-      identifierCandidates.push(identifier);
-      evidence.push({ field: "identifiers", start: match.index, end: match.index + match[0].length, raw: match[0], rule: "explicit-doi-text" });
-    }
-  }
-  if (identifierCandidates.length) fields.identifiers = identifierCandidates;
+  const doiText = referenceDOIs(text);
+  if (doiText.identifiers.length) fields.identifiers = doiText.identifiers;
+  evidence.push(...doiText.evidence);
+  diagnostics.push(...doiText.diagnostics);
   if (style === "vancouver") {
     const label = /^\s*([1-9]\d{0,3})\.\s+/.exec(text);
     if (label) propose("referenceNumber", Number(label[1]), label.index, label[0].length, "leading-number");
-    diagnostics.push({ code: "import-reference-fields-unsupported", message: "Numeric labels and explicit identifiers only; byline/title/date remain raw." });
+    numberedFields(text, fields, propose, diagnostics);
   } else {
     const pattern = style === "apa" ? new RegExp(`\\((${year2})([a-z]?)\\)\\.\\s+`, "u") : new RegExp(`\\.\\s+(${year2})([a-z]?)\\.\\s+`, "u");
     const date2 = pattern.exec(text);
@@ -9109,14 +9199,14 @@ function parseReferences(entries, options = {}) {
 
 // src/class-names.mjs
 var defaultClassPrefix = "citation";
-function validClassPrefix(prefix) {
-  return typeof prefix === "string" && /^[a-z][a-z0-9-]{0,31}$/.test(prefix);
+function validClassPrefix(prefix2) {
+  return typeof prefix2 === "string" && /^[a-z][a-z0-9-]{0,31}$/.test(prefix2);
 }
-function validateClassPrefix(prefix) {
-  if (!validClassPrefix(prefix)) throw new TypeError("Use a lowercase citation class prefix.");
+function validateClassPrefix(prefix2) {
+  if (!validClassPrefix(prefix2)) throw new TypeError("Use a lowercase citation class prefix.");
 }
-function partClassNames(prefix, parts) {
-  return parts.split(" ").map((part) => `${prefix}-${part}`);
+function partClassNames(prefix2, parts) {
+  return parts.split(" ").map((part) => `${prefix2}-${part}`);
 }
 
 // src/icons.mjs
@@ -10099,8 +10189,8 @@ function compileBlocks(blocks2, cache, {
       const tags = features.tags(record, list);
       const prefixValue = referenceItemPrefix?.(structuredClone({ record, tags, namespace, number: item.entry.number, kind: list ? "reading-list" : "endnote" }));
       if (prefixValue !== void 0 && prefixValue !== null && typeof prefixValue !== "string") throw new TypeError("referenceItemPrefix must return text, null or undefined.");
-      const prefix = prefixValue ? `<span ${part("reference-prefix")}>${escapeHTML(prefixValue)}</span>` : "";
-      return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map((tag) => tag.id)))}">${prefix}${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${actions}${annotation}${siteLinks(record.id)}</li>`;
+      const prefix2 = prefixValue ? `<span ${part("reference-prefix")}>${escapeHTML(prefixValue)}</span>` : "";
+      return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map((tag) => tag.id)))}">${prefix2}${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${actions}${annotation}${siteLinks(record.id)}</li>`;
     }).join("\n");
     if (list && !listFilters) return `<ol ${part("reference-list")}>${rows}</ol>`;
     const level = marker.level ?? 2;
@@ -10234,14 +10324,14 @@ function parentheticalItem(text) {
     if (!original || original.length !== 1 || !cited) return null;
     return cited.map((item) => ({ ...item, prefix: secondary[1].trim().replace(/,\s*$/u, "") + ", as cited in" + (item.prefix ? " " + item.prefix : ""), secondarySource: { raw: secondary[1].trim().replace(/,\s*$/u, ""), authors: original[0].authors, year: original[0].year }, requiresRelationshipReview: true }));
   }
-  const prefix = /^(see also|see|cf\.|e\.g\.,?)\s+/i.exec(text.trim());
-  const body = text.trim().slice(prefix?.[0].length || 0);
+  const prefix2 = /^(see also|see|cf\.|e\.g\.,?)\s+/i.exec(text.trim());
+  const body = text.trim().slice(prefix2?.[0].length || 0);
   const dateAt = new RegExp(`(?:(?:\\[${year3}\\]\\s*)?${year3}[a-z]?|n\\.d\\.(?:-?[a-z])?)`, "iu").exec(body);
   if (!dateAt) return null;
   const byline = authors(body.slice(0, dateAt.index).replace(/,\s*$/, "").trim());
   const dates = datedList(body.slice(dateAt.index));
   if (!byline || !dates) return null;
-  return dates.map((date2) => ({ authors: byline.names, etAl: byline.etAl, ...date2, ...prefix && { prefix: prefix[1] } }));
+  return dates.map((date2) => ({ authors: byline.names, etAl: byline.etAl, ...date2, ...prefix2 && { prefix: prefix2[1] } }));
 }
 function parseInTextCitations(text, options = {}) {
   if (typeof options === "string") options = { style: options };
@@ -12036,12 +12126,12 @@ function partitionImportDocument(source, { startLine = "auto", endLine = null, l
   if (typeof source !== "string" || source.length > limits.sourceCharacters) throw new TypeError("Use a document of at most " + limits.sourceCharacters.toLocaleString("en") + " characters.");
   const lines = sourceLines(source), blocks2 = markdownBlocks(source), headings = [], eligible = extractImportText(source, { format: "markdown", citationKeyword }).segments;
   let blockIndex = 0;
-  for (const line of lines) {
-    while (blockIndex < blocks2.length && blocks2[blockIndex].end <= line.start) blockIndex++;
+  for (const line2 of lines) {
+    while (blockIndex < blocks2.length && blocks2[blockIndex].end <= line2.start) blockIndex++;
     const block = blocks2[blockIndex];
     if (!block?.eligible) continue;
-    if (block.type === "heading" && block.start === line.start && /^(?:References|Bibliography|Works cited):?$/iu.test(block.text?.trim() || "")) headings.push({ line: line.line, start: block.start, end: block.end, label: block.text.trim(), depth: block.depth });
-    else if (block.type === "paragraph" && heading.test(line.text) && eligible.some((segment) => segment.sourceStart < line.end && segment.sourceEnd > line.start)) headings.push({ line: line.line, start: line.start, end: line.end, label: line.text.trim() });
+    if (block.type === "heading" && block.start === line2.start && /^(?:References|Bibliography|Works cited):?$/iu.test(block.text?.trim() || "")) headings.push({ line: line2.line, start: block.start, end: block.end, label: block.text.trim(), depth: block.depth });
+    else if (block.type === "paragraph" && heading.test(line2.text) && eligible.some((segment) => segment.sourceStart < line2.end && segment.sourceEnd > line2.start)) headings.push({ line: line2.line, start: line2.start, end: line2.end, label: line2.text.trim() });
     if (headings.length > 100) throw new RangeError("Too many bibliography heading candidates. Use a smaller document.");
   }
   let boundaryRequired = false, selected = null;
@@ -12050,9 +12140,9 @@ function partitionImportDocument(source, { startLine = "auto", endLine = null, l
     selected = headings.length === 1 ? headings[0] : null;
   } else if (startLine !== "none") {
     if (!Number.isSafeInteger(startLine) || startLine < 1 || startLine > lines.length) throw new TypeError("Choose a valid bibliography start line.");
-    const line = lines[startLine - 1];
-    if (blocks2.some((block) => !["heading", "paragraph", "list", "space"].includes(block.type) && line.start >= block.start && line.start < block.end)) throw new TypeError("Choose a bibliography boundary outside code or HTML.");
-    selected = headings.find((item) => item.line === startLine) || { ...line, label: line.text.trim() };
+    const line2 = lines[startLine - 1];
+    if (blocks2.some((block) => !["heading", "paragraph", "list", "space"].includes(block.type) && line2.start >= block.start && line2.start < block.end)) throw new TypeError("Choose a bibliography boundary outside code or HTML.");
+    selected = headings.find((item) => item.line === startLine) || { ...line2, label: line2.text.trim() };
   }
   if (endLine !== null && (!Number.isSafeInteger(endLine) || endLine < 1 || endLine > lines.length)) throw new TypeError("Choose a valid bibliography end line.");
   if (selected && endLine !== null && endLine < selected.line) throw new TypeError("The bibliography end must follow its start.");
@@ -12153,20 +12243,20 @@ function bibliographyEntries(source, document, style, limits) {
     if (block.type === "list") {
       for (const item of block.items) if (item.start >= entriesStart && item.start < end) appendEntry({ start: item.start, end: Math.min(item.end, end) });
     } else if (block.type === "paragraph" && block.eligible) {
-      const lines = document.lines.filter((line) => line.start >= Math.max(block.start, entriesStart) && line.start < Math.min(block.end, end) && line.text.trim());
+      const lines = document.lines.filter((line2) => line2.start >= Math.max(block.start, entriesStart) && line2.start < Math.min(block.end, end) && line2.text.trim());
       const starts = (text) => style === "vancouver" ? /^\s*[1-9]\d{0,3}\.\s+/u.test(text) : style === "apa" ? /^(?:[^,\n]+,.*|[\p{L}\p{M} .&’'-]{1,150})\s*\((?:1[5-9]\d{2}|20\d{2}|n\.d\.)[a-z]?\)\.\s+/iu.test(text) : /^[^,\n]+,.*\.\s+(?:1[5-9]\d{2}|20\d{2})/u.test(text);
-      const boundaries = lines.filter((line) => starts(referenceExtraction(line.text, style).text.trim()));
+      const boundaries = lines.filter((line2) => starts(referenceExtraction(line2.text, style).text.trim()));
       if (boundaries.length > 1) {
         const beginning = Math.max(block.start, entriesStart);
         if (boundaries[0].start > beginning && source.slice(beginning, boundaries[0].start).trim()) appendEntry({ start: beginning, end: boundaries[0].start });
-        for (const [index, line] of boundaries.entries()) appendEntry({ start: line.start, end: boundaries[index + 1]?.start ?? Math.min(block.end, end) });
+        for (const [index, line2] of boundaries.entries()) appendEntry({ start: line2.start, end: boundaries[index + 1]?.start ?? Math.min(block.end, end) });
       } else appendEntry({ start: Math.max(block.start, entriesStart), end: Math.min(block.end, end) });
     }
     if (entries.length > limits.references) throw new RangeError("Use at most " + limits.references + " reference entries.");
   }
   if (entries.length > limits.references) throw new RangeError("Use at most " + limits.references + " reference entries.");
   return entries.map((entry) => {
-    const raw = source.slice(entry.start, entry.end).trimEnd(), line = document.lines.find((line2) => line2.start <= entry.start && entry.start < line2.end)?.line;
+    const raw = source.slice(entry.start, entry.end).trimEnd(), line2 = document.lines.find((line3) => line3.start <= entry.start && entry.start < line3.end)?.line;
     const bullet = style !== "vancouver" ? /^ {0,3}[-+*]\s+/u.exec(raw) : null;
     const offset = bullet?.[0].length || 0, body = raw.slice(offset), visible = referenceExtraction(body, style), extraction = visible.extraction, map = [];
     let flat = "";
@@ -12177,11 +12267,11 @@ function bibliographyEntries(source, document, style, limits) {
     }
     map.push(visible.text.length);
     const parsed = flat.trim() && flat.length <= 2e4 ? entryFields(flat, style) : { schema: "citation-inator.import-reference.v1", fields: {}, evidence: [], diagnostics: [{ code: "import-reference-unparsed" }], requiresReview: true, state: "unparsed" };
-    const wrapped = new Set([...visible.text.matchAll(/(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:[ \t]*)(10\.\d{4,9}\/[^\s<>]*[.\/-])[ \t]*\r?\n[ \t]*(?!PMID\b|doi:|https?:)(?=\S)/giu)].map((match) => match[1].replace(/[.,;]+$/u, "").toLowerCase()));
-    if (wrapped.size) {
-      parsed.fields.identifiers = (parsed.fields.identifiers || []).filter((id) => id.scheme !== "doi" || !wrapped.has(id.value.toLowerCase()));
-      parsed.diagnostics.push({ code: "import-wrapped-identifier-review-required", scheme: "doi" });
-    }
+    const sourceDOIs = referenceDOIs(visible.text);
+    parsed.fields.identifiers = sourceDOIs.identifiers;
+    parsed.diagnostics = parsed.diagnostics.filter((item) => !item.code.startsWith("import-wrapped-identifier-"));
+    parsed.diagnostics.push(...sourceDOIs.diagnostics);
+    parsed.evidence = parsed.evidence.filter((item) => item.field !== "identifiers");
     const evidence = parsed.evidence.flatMap((item) => {
       if (!visible.mapped) return [{ ...item, start: 0, end: raw.length, raw, exact: false, rule: "formatted-reference-text-proposal" }];
       const fragments = mapImportRange(extraction, { start: map[item.start], end: map[item.end] });
@@ -12197,8 +12287,14 @@ function bibliographyEntries(source, document, style, limits) {
       for (const identifier of identifiers) if (!parsed.fields.identifiers.some((existing) => existing.scheme === identifier.scheme && existing.value === identifier.value)) parsed.fields.identifiers.push(identifier);
       evidence.push({ field: "identifiers", start: link.sourceStart + offset, end: link.sourceEnd + offset, raw: raw.slice(link.sourceStart + offset, link.sourceEnd + offset), exact: false, rule: "bibliography-link-identifier" });
     }
-    if (wrapped.size) parsed.fields.identifiers = (parsed.fields.identifiers || []).filter((id) => id.scheme !== "doi" || !wrapped.has(id.value.toLowerCase()));
-    return { ...parsed, ...entry, line, raw, id: "ref-" + digest2(raw).slice(0, 20), evidence };
+    for (const item of sourceDOIs.evidence) {
+      const fragments = mapImportRange(extraction, item);
+      if (!fragments.length) continue;
+      const start = fragments[0].sourceStart + offset, end2 = fragments.at(-1).sourceEnd + offset;
+      evidence.push({ ...item, start, end: end2, raw: raw.slice(start, end2), exact: item.exact !== false && fragments.every((fragment) => fragment.exact) });
+    }
+    parsed.fields.identifiers = (parsed.fields.identifiers || []).filter((id) => !sourceDOIs.blocked.has(id.value));
+    return { ...parsed, ...entry, line: line2, raw, id: "ref-" + digest2(raw).slice(0, 20), evidence };
   });
 }
 function analyzeImportDocument(source, { style = "auto", bibliography = {}, limits: overrides, citationKeyword = "citation" } = {}) {
@@ -12216,7 +12312,10 @@ function analyzeImportDocument(source, { style = "auto", bibliography = {}, limi
     if (seen.has(entry.id)) continue;
     seen.add(entry.id);
     const record = normalizeRecord({ id: entry.id, type: "document", state: "partial", ...entry.fields, original: entry.raw, citationText: entry.raw, citationParts: [{ text: entry.raw }], provenance: [{ provider: "Imported bibliography", note: `Source lines ${entry.line}; SHA-256 ${digest2(entry.raw)}` }] });
-    records.push({ ...record, ...entry.fields.referenceNumber && { referenceNumber: entry.fields.referenceNumber }, ...entry.fields.sourceSuffix && { sourceSuffix: entry.fields.sourceSuffix }, ...entry.fields.undated && { undated: true } });
+    const recovered = new Set(entry.diagnostics.filter((item) => item.code === "import-wrapped-identifier-recovered").map((item) => item.value));
+    const identifierProposals = record.identifiers.filter((id) => recovered.has(id.value));
+    record.identifiers = record.identifiers.filter((id) => !recovered.has(id.value));
+    records.push({ ...record, ...identifierProposals.length && { identifierProposals }, ...entry.fields.referenceNumber && { referenceNumber: entry.fields.referenceNumber }, ...entry.fields.sourceSuffix && { sourceSuffix: entry.fields.sourceSuffix }, ...entry.fields.undated && { undated: true } });
   }
   const citations = [], diagnostics = [];
   const claims = /* @__PURE__ */ new Map();
@@ -12287,6 +12386,7 @@ function processImportRequest(input) {
   const style = model?.effectiveStyle ?? (requestedStyle === "auto" ? formatDetection.style || "apa" : requestedStyle);
   const cache = makeCache(records);
   if (cache.records.some((record) => record.title.length > limits.titleCharacters || record.authors.length > limits.authorsPerRecord) || records.some((record) => JSON.stringify(record).length > limits.recordCharacters)) throw new TypeError("Use shorter reference records.");
+  const recoveredProposals = new Map((model?.records || []).filter((record) => record.identifierProposals?.length).map((record) => [record.id, record.identifierProposals]));
   const site = importSiteContext(cache.records, input.siteCache, limits);
   const hostRecords = input.recordDecisions !== void 0 || input.siteCache !== void 0 || input.recordId !== void 0 || input.recordIds !== void 0;
   const contextHash = importHash(JSON.stringify({ siteCache: input.siteCache ?? null, limits, mode: fullDocument ? "document" : "fixture", bibliography: input.bibliography ?? {}, records, style: requestedStyle, citationKeyword, namespace, referenceText: input.referenceText || "" }));
@@ -12307,11 +12407,11 @@ function processImportRequest(input) {
     let parsedReferences = model ? { entries: model.entries } : void 0;
     if (input.referenceText !== void 0) {
       if (typeof input.referenceText !== "string" || input.referenceText.length > limits.sourceCharacters) throw new TypeError("Supply bounded reference text.");
-      const entries = input.referenceText.split(/\r?\n/).filter((line) => line.trim());
+      const entries = input.referenceText.split(/\r?\n/).filter((line2) => line2.trim());
       if (entries.length > limits.references) throw new TypeError("Use at most " + limits.references + " explicitly separated entries.");
       parsedReferences = parseReferences(entries, { style });
     }
-    return { siteMatches: site.matches, review, document: model?.document, referenceEntries: model?.entries, formatDetection, formatChoiceRequired, effectiveStyle: style, diagnostics: matched.diagnostics, parsedReferences, referenceRecords: cache.records.map((record) => ({ id: record.id, type: record.type, authorsComplete: record.authorsComplete, title: record.title, authors: record.authors, issued: record.issued, originalIssued: record.originalIssued, publisher: record.publisher, publisherPlace: record.publisherPlace, containerTitle: record.containerTitle, volume: record.volume, issue: record.issue, pages: record.pages, articleNumber: record.articleNumber, identifiers: record.identifiers, referenceNumber: records.find((input2) => input2.id === record.id)?.referenceNumber, undated: records.find((input2) => input2.id === record.id)?.undated === true })) };
+    return { siteMatches: site.matches, review, document: model?.document, referenceEntries: model?.entries, formatDetection, formatChoiceRequired, effectiveStyle: style, diagnostics: matched.diagnostics, parsedReferences, referenceRecords: cache.records.map((record) => ({ id: record.id, type: record.type, authorsComplete: record.authorsComplete, title: record.title, authors: record.authors, issued: record.issued, originalIssued: record.originalIssued, publisher: record.publisher, publisherPlace: record.publisherPlace, containerTitle: record.containerTitle, volume: record.volume, issue: record.issue, pages: record.pages, articleNumber: record.articleNumber, identifiers: record.identifiers, ...recoveredProposals.has(record.id) && { identifierProposals: recoveredProposals.get(record.id) }, referenceNumber: records.find((input2) => input2.id === record.id)?.referenceNumber, undated: records.find((input2) => input2.id === record.id)?.undated === true })) };
   }
   if (action !== "preview") throw new TypeError("Choose analyze or preview.");
   if (model?.document.boundaryRequired) throw new TypeError("Choose the bibliography boundary.");

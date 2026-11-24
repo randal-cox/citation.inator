@@ -5,7 +5,9 @@ These features are available in 0.2.0 and later. They are absent from 0.1.4; see
 <a id="unreleased-draftinator-compatibility-additions"></a>
 <a id="030-draftinator-compatibility-additions"></a>
 
-## Compile an article in a browser (0.4.0 preview)
+<a id="compile-an-article-in-a-browser-040-preview"></a>
+
+## Compile an article in a browser (0.4.0)
 
 For a static editor preview, copy `dist/citation-compiler.mjs` and `dist/THIRD_PARTY_LICENSES.txt` into your site. This self-contained ES module exports `compileMarkdown`, `compileHTML` and `compileCitations`; it needs no npm installation or compiler server in the browser. Serve it over HTTP(S), including a local server, rather than a `file:` page. With npm use `citation-inator/compiler-browser`.
 
@@ -46,7 +48,9 @@ const result = annotateMarkers(source, cache, {
 
 `noteContext: 'article'` is the unchanged default, using the full source's disambiguation. `work` describes each work independently with fragment scope, so two same-author/year works both get `note:"Cox 1995"`, matching standalone descriptions. It overrides cache-wide suffix scope for note text, not reader formatting. Use the same style/reprint options for the picker and annotation. Reader-facing suffixes still come from normal compilation. Partial records, escaping, protected regions and unresolved-group behavior retain their existing contracts. JSON CLI annotation and stale-note checks accept `options.noteContext` too; use the same value for writing and checking notes.
 
-## Write local record IDs (0.4.0 preview)
+<a id="write-local-record-ids-040-preview"></a>
+
+## Write local record IDs (0.4.0)
 
 `formatRecordId` is shared by the compiler, `citation-inator/tools`, `citation-inator/import` and their self-contained browser tools/import bundles. Give it a bare local record ID, not a DOI or another persistent identifier:
 

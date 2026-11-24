@@ -15,7 +15,8 @@ const setSource=text=>{workingSource=text;$('source').value=text;};
 const el=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
 const reviewWindows=new WeakMap();
 const completionStates=new Map(),lookup=createBrowserEnrichment();let lookupEpoch=0,manualLookupTimer;
-const referenceIdentifier=source=>source?.identifiers?.find(id=>['doi','isbn'].includes(id.scheme));
+const knownReferenceIdentifier=source=>source?.identifiers?.find(id=>['doi','isbn'].includes(id.scheme));
+const referenceIdentifier=source=>knownReferenceIdentifier(source)||source?.identifierProposals?.find(id=>['doi','isbn'].includes(id.scheme));
 const searchKind=source=>source.type==='book'?'isbn':source.type==='document'?'both':'doi';
 const identifierMatches=count=>count+(count===1?' identifier match':' identifier matches');
 const completionLabel=entry=>identityNeedsReview(entry)?'Identifier needs review':entry?.kept?'Kept without identifier':entry?.accepted?(entry.automatic?'DOI matched automatically':'Identifier selected'):entry?.label || 'Identifier needed';
@@ -104,7 +105,7 @@ function currentReviewProgress(){
   const targets=selectedTargets(group);
   return {index:Number(group.dataset.group),skipped:group.dataset.action==='reject',sourceReview:group.dataset.needsSpan==='true'||group.dataset.action==='defer'&&targets.every(target=>target?.recordId || target?.identifier),items:targets.map(target=>{
    const key=target?.recordId || (target?.identifier?'manual:'+target.identifier:null),source=referenceRecords.find(record=>record.id===target?.recordId);
-   return {key,selected:Boolean(key),lookupEligible:!target?.identifier||Boolean(enrichmentIdentifier(target.identifier)),invalid:Boolean(target?.identifier&&!normalizeImportIdentifier(target.identifier)),bibliographyMatched:Boolean(target?.recordId),known:Boolean(target?.identifier&&normalizeImportIdentifier(target.identifier)||referenceIdentifier(source)),metadata:completionStates.get(key)};
+   return {key,selected:Boolean(key),lookupEligible:!target?.identifier||Boolean(enrichmentIdentifier(target.identifier)),invalid:Boolean(target?.identifier&&!normalizeImportIdentifier(target.identifier)),bibliographyMatched:Boolean(target?.recordId),known:Boolean(target?.identifier&&normalizeImportIdentifier(target.identifier)||knownReferenceIdentifier(source)),metadata:completionStates.get(key)};
   })};
  });return {...reviewProgress(groups),...reviewReadiness(groups,{blocked:formatChoiceRequired||documentModel?.boundaryRequired})};
 }
@@ -206,15 +207,15 @@ function selectedTargets(group) {
 function updateReviewAppearance(group) {
  const anchor=document.querySelector(`[data-review-group="${group.dataset.group}"]`);if(!anchor)return;
  const targets=selectedTargets(group),entries=targets.map(target=>target?.recordId?completionStates.get(target.recordId):target?.identifier?completionStates.get('manual:'+target.identifier):null);
- const ready=targets.every((target,index)=>(!target?.identifier || normalizeImportIdentifier(target.identifier))&&identifierReady(entries[index],Boolean(target?.identifier&&normalizeImportIdentifier(target.identifier)||target?.recordId&&referenceIdentifier(referenceRecords.find(record=>record.id===target.recordId)))));
+ const ready=targets.every((target,index)=>(!target?.identifier || normalizeImportIdentifier(target.identifier))&&identifierReady(entries[index],Boolean(target?.identifier&&normalizeImportIdentifier(target.identifier)||target?.recordId&&knownReferenceIdentifier(referenceRecords.find(record=>record.id===target.recordId)))));
  const identityReview=entries.some(identityNeedsReview);
  const invalidManual=targets.some(target=>target?.identifier&&!normalizeImportIdentifier(target.identifier));
  const unmatched=group.dataset.action==='defer'&&review.matches[Number(group.dataset.group)].items.some(item=>item.state==='unmatched');
  const state=group.dataset.action==='reject'?'kept':group.dataset.needsSpan==='true'||invalidManual||identityReview?'needs-review':group.dataset.action==='accept'?(ready?'selected':'completing'):unmatched?'unmatched':'needs-review';
- for(const [itemIndex,target] of targets.entries()){const badge=group.querySelector('[data-item-state="'+itemIndex+'"]');if(!badge)continue;const entry=entries[itemIndex],source=referenceRecords.find(record=>record.id===target?.recordId),known=Boolean(target?.identifier&&normalizeImportIdentifier(target.identifier)||referenceIdentifier(source));badge.textContent=group.dataset.action==='reject'?'Left unchanged':identityNeedsReview(entry)?'Needs review':!target?'Choose reference':identifierReady(entry,known)?'Ready':entry?.pending?'Looking up…':completionLabel(entry);}
+ for(const [itemIndex,target] of targets.entries()){const badge=group.querySelector('[data-item-state="'+itemIndex+'"]');if(!badge)continue;const entry=entries[itemIndex],source=referenceRecords.find(record=>record.id===target?.recordId),known=Boolean(target?.identifier&&normalizeImportIdentifier(target.identifier)||knownReferenceIdentifier(source));badge.textContent=group.dataset.action==='reject'?'Left unchanged':identityNeedsReview(entry)?'Needs review':!target?'Choose reference':identifierReady(entry,known)?'Ready':entry?.pending?'Looking up…':completionLabel(entry);}
  anchor.dataset.reviewState=state;
  const description=state==='selected'?'Reference ready':state==='completing'?entries.map(completionLabel).join('; '):state==='kept'?'Left unchanged':state==='unmatched'?'Unmatched':'Needs review';
- anchor.setAttribute('aria-label',`Review citation ${Number(group.dataset.group)+1}: ${anchor.textContent} (${description.toLowerCase()})`);anchor.title=description;updateReviewNavigation();
+ anchor.setAttribute('aria-label',`Review citation ${Number(group.dataset.group)+1}: ${anchor.textContent} (${description.toLowerCase()})`);anchor.title=description;
 }
 function redTarget(index,direction) {
  const reviewIndices=new Set(currentReviewProgress().reviewGroups);
@@ -222,8 +223,14 @@ function redTarget(index,direction) {
  return direction>0 ? anchors.find(anchor=>Number(anchor.dataset.reviewGroup)>index) : anchors.reverse().find(anchor=>Number(anchor.dataset.reviewGroup)<index);
 }
 function updateReviewNavigation() {
- for(const group of $('groups').children)for(const button of group.querySelectorAll('[data-direction]')){const direction=Number(button.dataset.direction),target=redTarget(Number(group.dataset.group),direction);button.disabled=false;button.setAttribute('aria-label',target?(direction>0?'Next unresolved citation':'Previous unresolved citation'):'Close review');button.title=target?(direction>0?'Next unresolved citation':'Previous unresolved citation'):'Close review';}
+ const reviewIndices=currentReviewProgress().reviewGroups;
+ for(const group of $('groups').children)for(const button of group.querySelectorAll('[data-direction]')){
+  const direction=Number(button.dataset.direction),index=Number(group.dataset.group),hasTarget=reviewIndices.some(target=>direction>0?target>index:target<index);
+  const label=hasTarget?(direction>0?'Next unresolved citation':'Previous unresolved citation'):'Close review';
+  button.disabled=false;button.setAttribute('aria-label',label);button.title=label;
+ }
 }
+
 function moveReview(index,direction) {
  const anchor=redTarget(index,direction);if(!anchor){if(activeGroup){const restore=activeGroup.contains(document.activeElement),trigger=document.querySelector(`[data-review-group="${activeGroup.dataset.group}"]`);closeReview();if(restore)trigger?.focus({preventScroll:true});}return;}
  anchor.scrollIntoView({block:'center',behavior:'instant'});openReview(Number(anchor.dataset.reviewGroup),true);
@@ -296,6 +303,7 @@ async function convertDocument() {
  try {
   const result=await request('preview',{review,reviewId:review.reviewId,decisions,completions:completionData()});if(ticket!==version)return;
   for(const outcome of result.outcomes){if(outcome.state==='accepted-needs-span'||outcome.state==='accepted-needs-adapter'){const group=$('groups').children[outcome.citationIndex];group.dataset.action='defer';updateReviewAppearance(group);}}
+  updateReviewNavigation();
   output=result;$('use-output').disabled=false;$('download').disabled=false;$('download-records').disabled=false;$('output').value=result.source;$('outcomes').textContent=JSON.stringify(result.outcomes,null,2);
   $('preview-notice').textContent=result.previewNotice ? 'Resolve remaining numbered citations to view this preview.' : '';
   const reader=$('reading-preview');reader.innerHTML=result.html;initializeCitationInspector(reader,{cache:result.cache});

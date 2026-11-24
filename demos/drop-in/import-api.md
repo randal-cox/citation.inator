@@ -1,16 +1,16 @@
-# Reviewed import API · 0.4.0 candidate
+# Reviewed import API · 0.4.0
 
-This API is implemented on the import development branch. It is not part of the published 0.3.0 artifacts. Final 0.4.0 release and draft.inator host agreement are pending.
+The Node/browser import API and native extraction are included in 0.4.0. The headless host contract is agreed and accepted by draft.inator. Published 0.3.0 artifacts do not include import.
 
 ## Load the library
 
-Node requires 22.13 or later. In an installed 0.4.0 candidate:
+Node requires 22.13 or later. In an installed 0.4.0 package:
 
 ```js
 import { processImportRequest } from 'citation-inator/import';
 ```
 
-For a browser without npm, copy `dist/citation-import.mjs` and `dist/THIRD_PARTY_LICENSES.txt` from the same candidate:
+For a browser without npm, copy `dist/citation-import.mjs` and `dist/THIRD_PARTY_LICENSES.txt` from the same release:
 
 ```js
 import { processImportRequest } from './citation-import.mjs';
@@ -127,15 +127,19 @@ citation-inator import --json < preview-request.json > preview.json
 
 ## Host appearance and language
 
-Hosts can render their own document decorations and review controls from the headless result. No citation-owned full-page CSS or DOM structure is imposed. The example host uses scoped classes; it is not yet a generic mountable editor component. Draft.inator agrees that the headless API is the 0.4.0 integration boundary; reusable styled views remain separate. Existing-site record reuse and host-assigned new record IDs are implemented; adopter integration remains a release gate. Comprehensive teaching demos and translation/i18n configuration are planned for 0.5.0; do not treat the current English diagnostic messages as a localization API. Stable diagnostic codes are the integration hook.
+Hosts can render their own document decorations and review controls from the headless result. No citation-owned full-page CSS or DOM structure is imposed. The example host uses scoped classes; it is not yet a generic mountable editor component. Draft.inator agrees that the headless API is the 0.4.0 integration boundary; reusable styled views remain separate. Existing-site record reuse and host-assigned new record IDs are implemented; draft has integrated and accepted these APIs; final release-file re-vendoring is separate. Comprehensive teaching demos and translation/i18n configuration are planned for 0.5.0; do not treat the current English diagnostic messages as a localization API. Stable diagnostic codes are the integration hook.
 
 Crossref titles include supplied subtitles, decode text entities and remove formatting-only wrappers before identity comparison. Meaningful mathematical markup remains distinct; raw provider evidence is retained. Open Library discovery retries once with the main title when a subtitle query returns no works, retaining the author constraint and the same three-work/five-edition bounds. This widens suggestions without automatically accepting a book edition or changing the source title/year.
 
 Native PDF extraction accepts Node Buffers as byte arrays without changing caller bytes. Repeated edge footers containing a consistent page/total fraction can be excluded after matching the actual page number, document total and repeated prefix on at least three and half the pages; excluded text remains in metadata. A bare wrapped year continues a numeric bibliography entry before record-limit enforcement.
 
-The observed DOI fragments ending in punctuation at a line break are withheld with `import-wrapped-identifier-review-required`, including when Markdown autolinks are extracted. This is a conservative guard, not general DOI reconstruction. Numeric reference rules still retain bylines/titles/dates as raw text, so DOI-free numeric references require manual identifiers or intentional completion without one. The [public PDF sample](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/evidence/import-plos-0294391-2026-11-21.json) records both matching success and remaining identifier gaps.
+Explicit DOI text can cross a single line break in the resolver prefix (`https://` / `doi.org/` / `10.…`) or at a supported punctuation boundary within the identifier. Recovery is bounded to four continuations and requires DOI-shaped evidence; arbitrary whitespace is not removed. Metadata labels, reference labels, ordinary prose and ambiguous bare numbers are not appended. Numeric-only continuations are restricted to zero-leading suffix segments after a numeric segment. Unsupported fragments remain withheld with `import-wrapped-identifier-review-required`; recovered proposals use `import-wrapped-identifier-recovered` and `explicit-doi-line-wrap` evidence with `exact: false`. Original text and source ranges remain available. Recovered values appear in `referenceRecords[].identifierProposals`, separate from exact `identifiers`; they are not promoted automatically into the portable cache or canonical markers. They remain local until accepted completion metadata or an explicit manual identifier decision. The demo resolves them directly but keeps them orange until accepted. Syntactic recovery does not establish work identity; provider conflict checks and editorial choices still apply. Markdown autolinks cannot restore a withheld partial identifier.
 
-## Reuse site records and choose new IDs (0.4.0 preview)
+Common numbered journal references now propose compact personal bylines, institutional bylines, title, journal, year, volume, issue and pages/article number from an explicit `year;volume(issue):pages` tail. `et al.` sets `authorsComplete: false`. Multiple title/journal boundaries carry `import-reference-title-boundary-review-required`; the type stays generic to prevent automatic identity approval from an uncertain split. Unsupported book/report/web fields and unusual bylines remain raw/partial, with coded diagnostics. Accessed dates are not treated as publication years. The [updated public PDF audit](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/evidence/import-plos-0294391-2026-11-23.json) separates canonical reference-field accuracy from native PDF hyphenation differences and records 15 exact DOI records plus 12 recovered proposals against all 27 publisher DOI values. This is one regression sample, not a general accuracy guarantee.
+
+<a id="reuse-site-records-and-choose-new-ids-040-preview"></a>
+
+## Reuse site records and choose new IDs (0.4.0)
 
 Pass `siteCache`, a normal citation.inator cache, to analysis and preview. Source bibliography matches remain separate from site identity proposals. Analysis returns `siteMatches`: one `{ recordId, candidates }` entry per imported reference. Each candidate has the site record ID, title, evidence and `requiresReview: true`. Look up full metadata in the cache you supplied. Shared canonical identifiers or compatible bibliographic evidence produce proposals; neither automatically reuses a work. Matching main titles may propose a site work whose subtitle, type or given-name spelling differs, provided author and year evidence remains compatible. `evidence.mainTitleMatch` reports title agreement and `evidence.differences` lists differing fields (`title`, `authors`, `type`). Read their full values from `referenceRecords` and the supplied site cache; the full candidate assessment remains unchanged. This broader site proposal rule does not relax provider identifier verification.
 

@@ -17,7 +17,7 @@ test('Chicago date boundary and numeric labels propose partial fields only',()=>
  const chicago=parseReference('Avery, Jordan. 2021. A synthetic title. Example.',{style:'chicago-author-date'});
  assert.equal(chicago.fields.authorText,'Avery, Jordan');assert.deepEqual(chicago.fields.issued,[2021]);assert.equal(chicago.fields.authors,undefined);
  const numeric=parseReference('7. Avery J. A title. Journal. 2021;4:9. doi:10.1234/example',{style:'vancouver'});
- assert.equal(numeric.fields.referenceNumber,7);assert.equal(numeric.fields.authors,undefined);assert.equal(numeric.fields.issued,undefined);assert.equal(numeric.fields.identifiers.length,1);
+ assert.equal(numeric.fields.referenceNumber,7);assert.deepEqual(numeric.fields.authors,[{family:'Avery',given:'J.'}]);assert.deepEqual(numeric.fields.issued,[2021]);assert.equal(numeric.fields.title,'A title');assert.equal(numeric.fields.containerTitle,'Journal');assert.equal(numeric.fields.identifiers.length,1);
 });
 test('entry arrays preserve unsupported and uncited references without source deletion',()=>{
  const entries=['Avery, J. (2021). Title. Press.','Unrecognized raw entry'];const result=parseReferences(entries);

@@ -2,6 +2,7 @@ import {normalizeImportLimits} from './import-limits.mjs';
 // Experimental full-source text/Markdown import. Original source is never rewritten here.
 import {Lexer} from 'marked';
 import {importHash} from './import-hash.mjs';
+import {referenceDOIs} from './import-identifiers.mjs';
 import {parseReference,parseAPAAuthorList} from './import-references.mjs';
 import {extractImportText,detectExtractedCitations,mapImportRange} from './import-extraction.mjs';
 import {detectCitationFormat} from './import-format.mjs';
@@ -118,9 +119,10 @@ function bibliographyEntries(source,document,style,limits) {
   const bullet=style!=='vancouver'?/^ {0,3}[-+*]\s+/u.exec(raw):null;
   const offset=bullet?.[0].length || 0,body=raw.slice(offset),visible=referenceExtraction(body,style),extraction=visible.extraction,map=[];let flat='';for(let index=0;index<visible.text.length;index++){map.push(index);flat+=visible.text[index]==='\r'||visible.text[index]==='\n'?' ':visible.text[index];if(visible.text[index]==='\r'&&visible.text[index+1]==='\n')index++;}map.push(visible.text.length);
   const parsed=flat.trim()&&flat.length<=20000?entryFields(flat,style):{schema:'citation-inator.import-reference.v1',fields:{},evidence:[],diagnostics:[{code:'import-reference-unparsed'}],requiresReview:true,state:'unparsed'};
-  // Never promote an identifier fragment ending at a line wrap into a known DOI.
-  const wrapped=new Set([...visible.text.matchAll(/(?:https?:\/\/(?:dx\.)?doi\.org\/|doi:[ \t]*)(10\.\d{4,9}\/[^\s<>]*[.\/-])[ \t]*\r?\n[ \t]*(?!PMID\b|doi:|https?:)(?=\S)/giu)].map(match=>match[1].replace(/[.,;]+$/u,'').toLowerCase()));
-  if(wrapped.size){parsed.fields.identifiers=(parsed.fields.identifiers || []).filter(id=>id.scheme!=='doi'||!wrapped.has(id.value.toLowerCase()));parsed.diagnostics.push({code:'import-wrapped-identifier-review-required',scheme:'doi'});}
+  const sourceDOIs=referenceDOIs(visible.text);
+  parsed.fields.identifiers=sourceDOIs.identifiers;
+  parsed.diagnostics=parsed.diagnostics.filter(item=>!item.code.startsWith('import-wrapped-identifier-'));parsed.diagnostics.push(...sourceDOIs.diagnostics);
+  parsed.evidence=parsed.evidence.filter(item=>item.field!=='identifiers');
   const evidence=parsed.evidence.flatMap(item=>{if(!visible.mapped)return [{...item,start:0,end:raw.length,raw,exact:false,rule:'formatted-reference-text-proposal'}];const fragments=mapImportRange(extraction,{start:map[item.start],end:map[item.end]});if(!fragments.length)return [];const start=fragments[0].sourceStart+offset,end=fragments.at(-1).sourceEnd+offset;return [{...item,start,end,raw:raw.slice(start,end),exact:fragments.every(fragment=>fragment.exact)}];});
   for(const link of extraction.links){
    if(!link.href || link.href.length>20000)continue;
@@ -130,7 +132,8 @@ function bibliographyEntries(source,document,style,limits) {
    for(const identifier of identifiers)if(!parsed.fields.identifiers.some(existing=>existing.scheme===identifier.scheme&&existing.value===identifier.value))parsed.fields.identifiers.push(identifier);
    evidence.push({field:'identifiers',start:link.sourceStart+offset,end:link.sourceEnd+offset,raw:raw.slice(link.sourceStart+offset,link.sourceEnd+offset),exact:false,rule:'bibliography-link-identifier'});
   }
-  if(wrapped.size)parsed.fields.identifiers=(parsed.fields.identifiers || []).filter(id=>id.scheme!=='doi'||!wrapped.has(id.value.toLowerCase()));
+  for(const item of sourceDOIs.evidence){const fragments=mapImportRange(extraction,item);if(!fragments.length)continue;const start=fragments[0].sourceStart+offset,end=fragments.at(-1).sourceEnd+offset;evidence.push({...item,start,end,raw:raw.slice(start,end),exact:item.exact!==false&&fragments.every(fragment=>fragment.exact)});}
+  parsed.fields.identifiers=(parsed.fields.identifiers || []).filter(id=>!sourceDOIs.blocked.has(id.value));
   return {...parsed,...entry,line,raw,id:'ref-'+digest(raw).slice(0,20),evidence};
  });
 }
@@ -146,7 +149,10 @@ export function analyzeImportDocument(source,{style='auto',bibliography={},limit
  const entries=bibliographyEntries(source,document,effectiveStyle,limits),seen=new Set(),records=[];
  for(const entry of entries){if(seen.has(entry.id))continue;seen.add(entry.id);
   const record=normalizeRecord({id:entry.id,type:'document',state:'partial',...entry.fields,original:entry.raw,citationText:entry.raw,citationParts:[{text:entry.raw}],provenance:[{provider:'Imported bibliography',note:`Source lines ${entry.line}; SHA-256 ${digest(entry.raw)}`} ]});
-  records.push({...record,...(entry.fields.referenceNumber&&{referenceNumber:entry.fields.referenceNumber}),...(entry.fields.sourceSuffix&&{sourceSuffix:entry.fields.sourceSuffix}),...(entry.fields.undated&&{undated:true})});
+  const recovered=new Set(entry.diagnostics.filter(item=>item.code==='import-wrapped-identifier-recovered').map(item=>item.value));
+  const identifierProposals=record.identifiers.filter(id=>recovered.has(id.value));
+  record.identifiers=record.identifiers.filter(id=>!recovered.has(id.value));
+  records.push({...record,...(identifierProposals.length&&{identifierProposals}),...(entry.fields.referenceNumber&&{referenceNumber:entry.fields.referenceNumber}),...(entry.fields.sourceSuffix&&{sourceSuffix:entry.fields.sourceSuffix}),...(entry.fields.undated&&{undated:true})});
  }
  const citations=[],diagnostics=[];
  // Imported prose can repeat a page-header DOI across unrelated entries. Keep

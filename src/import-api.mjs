@@ -29,6 +29,7 @@ export function processImportRequest(input) {
   const style=model?.effectiveStyle ?? (requestedStyle==='auto'?(formatDetection.style || 'apa'):requestedStyle);
   const cache=makeCache(records);
   if(cache.records.some(record=>record.title.length>limits.titleCharacters || record.authors.length>limits.authorsPerRecord) || records.some(record=>JSON.stringify(record).length>limits.recordCharacters))throw new TypeError('Use shorter reference records.');
+  const recoveredProposals=new Map((model?.records || []).filter(record=>record.identifierProposals?.length).map(record=>[record.id,record.identifierProposals]));
   const site=importSiteContext(cache.records,input.siteCache,limits);
   const hostRecords=input.recordDecisions!==undefined||input.siteCache!==undefined||input.recordId!==undefined||input.recordIds!==undefined;
   const contextHash=importHash(JSON.stringify({siteCache:input.siteCache ?? null,limits,mode:fullDocument?'document':'fixture',bibliography:input.bibliography ?? {},records,style:requestedStyle,citationKeyword,namespace,referenceText:input.referenceText || ''}));
@@ -44,7 +45,7 @@ export function processImportRequest(input) {
       if(entries.length>limits.references)throw new TypeError('Use at most '+limits.references+' explicitly separated entries.');
       parsedReferences=parseReferences(entries,{style});
     }
-    return {siteMatches:site.matches,review,document:model?.document,referenceEntries:model?.entries,formatDetection,formatChoiceRequired,effectiveStyle:style,diagnostics:matched.diagnostics,parsedReferences,referenceRecords:cache.records.map(record=>({id:record.id,type:record.type,authorsComplete:record.authorsComplete,title:record.title,authors:record.authors,issued:record.issued,originalIssued:record.originalIssued,publisher:record.publisher,publisherPlace:record.publisherPlace,containerTitle:record.containerTitle,volume:record.volume,issue:record.issue,pages:record.pages,articleNumber:record.articleNumber,identifiers:record.identifiers,referenceNumber:records.find(input=>input.id===record.id)?.referenceNumber,undated:records.find(input=>input.id===record.id)?.undated === true}))};
+    return {siteMatches:site.matches,review,document:model?.document,referenceEntries:model?.entries,formatDetection,formatChoiceRequired,effectiveStyle:style,diagnostics:matched.diagnostics,parsedReferences,referenceRecords:cache.records.map(record=>({id:record.id,type:record.type,authorsComplete:record.authorsComplete,title:record.title,authors:record.authors,issued:record.issued,originalIssued:record.originalIssued,publisher:record.publisher,publisherPlace:record.publisherPlace,containerTitle:record.containerTitle,volume:record.volume,issue:record.issue,pages:record.pages,articleNumber:record.articleNumber,identifiers:record.identifiers,...(recoveredProposals.has(record.id)&&{identifierProposals:recoveredProposals.get(record.id)}),referenceNumber:records.find(input=>input.id===record.id)?.referenceNumber,undated:records.find(input=>input.id===record.id)?.undated === true}))};
   }
   if (action!=='preview') throw new TypeError('Choose analyze or preview.');
   if(model?.document.boundaryRequired)throw new TypeError('Choose the bibliography boundary.');

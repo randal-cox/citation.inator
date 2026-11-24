@@ -1,0 +1,692 @@
+{
+  "date": "2026-11-23",
+  "candidate": "0.4.0-preview.5",
+  "article": {
+    "title": "A qualitative study examining the health system’s response to COVID-19 in Sierra Leone",
+    "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0294391",
+    "doi": "10.1371/journal.pone.0294391",
+    "license": "CC BY",
+    "pages": 20,
+    "pdfSHA256": "f16851dce9987c3caa48151cddb0d5da3367c4b5280142eb7af1908d97579c25"
+  },
+  "method": "Re-downloaded identical public PDF; native Node extraction; independent publisher XML DOI and canonical field inventory. Source-only analysis/preview uses no provider lookups. Canonical fields and native PDF text measured separately.",
+  "results": {
+    "publisherReferences": 52,
+    "importedReferences": 52,
+    "citationGroups": 53,
+    "publisherCitedItems": 62,
+    "importedCitedItems": 62,
+    "orderedCitationSequenceEqual": true,
+    "unmatchedCitedItems": 0,
+    "reviewedBatchPreviewEdits": 53,
+    "wrongOrExtraDOIs": 0,
+    "exactSourceDOIRecords": 15,
+    "recoveredDOIProposalRecords": 12,
+    "correctDOIValuesOrProposals": 27
+  },
+  "independentComparison": {
+    "identifierBoundary": {
+      "references": 52,
+      "exactDOIRecords": 15,
+      "recoveredDOIProposalRecords": 12,
+      "expectedDOIRecords": 27,
+      "comparisons": [
+        {
+          "number": 2,
+          "expected": [
+            "10.1016/s2214-109x(20)30264-3"
+          ],
+          "actual": [
+            "10.1016/s2214-109x(20)30264-3"
+          ],
+          "equal": true
+        },
+        {
+          "number": 3,
+          "expected": [
+            "10.1098/rstb.2016.0307"
+          ],
+          "actual": [
+            "10.1098/rstb.2016.0307"
+          ],
+          "equal": true
+        },
+        {
+          "number": 6,
+          "expected": [
+            "10.1016/s0140-6736(15)00946-0"
+          ],
+          "actual": [
+            "10.1016/s0140-6736(15)00946-0"
+          ],
+          "equal": true
+        },
+        {
+          "number": 8,
+          "expected": [
+            "10.1371/journal.pone.0224511"
+          ],
+          "actual": [
+            "10.1371/journal.pone.0224511"
+          ],
+          "equal": true
+        },
+        {
+          "number": 9,
+          "expected": [
+            "10.1136/bmjgh-2016-000065"
+          ],
+          "actual": [
+            "10.1136/bmjgh-2016-000065"
+          ],
+          "equal": true
+        },
+        {
+          "number": 10,
+          "expected": [
+            "10.3201/eid2203.150977"
+          ],
+          "actual": [
+            "10.3201/eid2203.150977"
+          ],
+          "equal": true
+        },
+        {
+          "number": 12,
+          "expected": [
+            "10.1136/bmjopen-2020-040328"
+          ],
+          "actual": [
+            "10.1136/bmjopen-2020-040328"
+          ],
+          "equal": true
+        },
+        {
+          "number": 13,
+          "expected": [
+            "10.1136/bmjgh-2021-005988"
+          ],
+          "actual": [
+            "10.1136/bmjgh-2021-005988"
+          ],
+          "equal": true
+        },
+        {
+          "number": 15,
+          "expected": [
+            "10.1093/heapol/czw055"
+          ],
+          "actual": [
+            "10.1093/heapol/czw055"
+          ],
+          "equal": true
+        },
+        {
+          "number": 17,
+          "expected": [
+            "10.7189/jogh.09.010406"
+          ],
+          "actual": [
+            "10.7189/jogh.09.010406"
+          ],
+          "equal": true
+        },
+        {
+          "number": 24,
+          "expected": [
+            "10.1098/rstb.2016.0306"
+          ],
+          "actual": [
+            "10.1098/rstb.2016.0306"
+          ],
+          "equal": true
+        },
+        {
+          "number": 25,
+          "expected": [
+            "10.1016/s0140-6736(15)60644-4"
+          ],
+          "actual": [
+            "10.1016/s0140-6736(15)60644-4"
+          ],
+          "equal": true
+        },
+        {
+          "number": 27,
+          "expected": [
+            "10.1136/bmjgh-2020-003228"
+          ],
+          "actual": [
+            "10.1136/bmjgh-2020-003228"
+          ],
+          "equal": true
+        },
+        {
+          "number": 28,
+          "expected": [
+            "10.1371/journal.pone.0250236"
+          ],
+          "actual": [
+            "10.1371/journal.pone.0250236"
+          ],
+          "equal": true
+        },
+        {
+          "number": 29,
+          "expected": [
+            "10.18683/germs.2020.1228"
+          ],
+          "actual": [
+            "10.18683/germs.2020.1228"
+          ],
+          "equal": true
+        },
+        {
+          "number": 30,
+          "expected": [
+            "10.1136/bmjgh-2020-002873"
+          ],
+          "actual": [
+            "10.1136/bmjgh-2020-002873"
+          ],
+          "equal": true
+        },
+        {
+          "number": 32,
+          "expected": [
+            "10.7189/jogh.08.020601"
+          ],
+          "actual": [
+            "10.7189/jogh.08.020601"
+          ],
+          "equal": true
+        },
+        {
+          "number": 33,
+          "expected": [
+            "10.1186/s12913-016-1546-8"
+          ],
+          "actual": [
+            "10.1186/s12913-016-1546-8"
+          ],
+          "equal": true
+        },
+        {
+          "number": 35,
+          "expected": [
+            "10.1093/inthealth/ihv024"
+          ],
+          "actual": [
+            "10.1093/inthealth/ihv024"
+          ],
+          "equal": true
+        },
+        {
+          "number": 36,
+          "expected": [
+            "10.1093/heapol/czaa131"
+          ],
+          "actual": [
+            "10.1093/heapol/czaa131"
+          ],
+          "equal": true
+        },
+        {
+          "number": 43,
+          "expected": [
+            "10.1136/bmjgh-2019-002145"
+          ],
+          "actual": [
+            "10.1136/bmjgh-2019-002145"
+          ],
+          "equal": true
+        },
+        {
+          "number": 44,
+          "expected": [
+            "10.1371/journal.pone.0250940"
+          ],
+          "actual": [
+            "10.1371/journal.pone.0250940"
+          ],
+          "equal": true
+        },
+        {
+          "number": 47,
+          "expected": [
+            "10.1001/jama.2020.21332"
+          ],
+          "actual": [
+            "10.1001/jama.2020.21332"
+          ],
+          "equal": true
+        },
+        {
+          "number": 48,
+          "expected": [
+            "10.7717/peerj.10038"
+          ],
+          "actual": [
+            "10.7717/peerj.10038"
+          ],
+          "equal": true
+        },
+        {
+          "number": 49,
+          "expected": [
+            "10.3390/ijerph18189675"
+          ],
+          "actual": [
+            "10.3390/ijerph18189675"
+          ],
+          "equal": true
+        },
+        {
+          "number": 50,
+          "expected": [
+            "10.3389/fpubh.2020.00403"
+          ],
+          "actual": [
+            "10.3389/fpubh.2020.00403"
+          ],
+          "equal": true
+        },
+        {
+          "number": 52,
+          "expected": [
+            "10.1017/s1041610220000988"
+          ],
+          "actual": [
+            "10.1017/s1041610220000988"
+          ],
+          "equal": true
+        }
+      ]
+    },
+    "journalFields": [
+      {
+        "number": 2,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 3,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": false,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 6,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 8,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 9,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 10,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 12,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 13,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 14,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 15,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 17,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 18,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 24,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 25,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 27,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": false
+      },
+      {
+        "number": 28,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 29,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 30,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 31,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": false,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 32,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 33,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 35,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 36,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 40,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 41,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 42,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 43,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 44,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 45,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": false,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 47,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 48,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 49,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": false,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 50,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      },
+      {
+        "number": 52,
+        "proposed": true,
+        "canonicalTitleEqual": true,
+        "canonicalContainerEqual": true,
+        "canonicalYearEqual": true,
+        "nativeTitleEqual": true,
+        "nativeContainerEqual": true,
+        "nativeYearEqual": true,
+        "authorsCompleteEqual": true
+      }
+    ]
+  },
+  "limits": [
+    "The single public sample is a regression target, not a general extraction-accuracy estimate.",
+    "Native PDF hyphenation stays authored: normalized titles match 21/34 journal XML titles, containers 31/34, years 34/34.",
+    "One dotted-initial byline (reference 27) remains unparsed; incomplete et al. bylines retain authorsComplete false.",
+    "Unsupported books/reports/web entries may still need manual fields or identifiers; no accessed date is guessed as publication year.",
+    "DOI line joining uses a bounded explicit-prefix and continuity rule; ambiguous metadata/digit/prose continuations are withheld. Syntactic recovery does not verify work identity.",
+    "No OCR, native document editing or general layout reconstruction.",
+    "Recovered DOI proposals are separate from exact source identifiers and do not enter canonical output/cache until an accepted completion."
+  ]
+}

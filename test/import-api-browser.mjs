@@ -13,6 +13,11 @@ export async function checkImportAPI(browser,origin){
    try{processImportRequest({...previewRequest,limits:{references:4}});}catch{changedContextRejected=true;}
    return {analysisJSON:JSON.stringify(analysis),previewJSON:JSON.stringify(preview),staleRejected,changedContextRejected};
   },{origin,base,previewRequest});
+  const numberedBase={mode:'document',style:'vancouver',source:'Two claims [1, 2].\n\nReferences\n1. Rivera R, Chen SM, et al. Trial outcomes. Test Journal. 2020;12(3):101–9. https://doi.org/10.1371/journal.\npone.0224511\n2. Smith A. Another study. Test Journal. 2021;4:22–30.'};
+  const numberedAnalysis=processImportRequest(numberedBase),numberedRequest={...numberedBase,action:'preview',review:numberedAnalysis.review,reviewId:numberedAnalysis.review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:numberedAnalysis.review.matches[0].items.map(i=>({recordId:i.candidates[0].recordId}))}]};
+  const numberedResult=await page.evaluate(async ({origin,base,request})=>{const {processImportRequest}=await import(origin+'/dist/citation-import.mjs');return {analysis:processImportRequest(base),preview:processImportRequest(request)};},{origin,base:numberedBase,request:numberedRequest});
+  assert.deepEqual(numberedResult.analysis,numberedAnalysis);assert.deepEqual(numberedResult.preview,processImportRequest(numberedRequest));
+  assert.equal(numberedResult.analysis.referenceRecords[0].title,'Trial outcomes');assert.equal(numberedResult.analysis.referenceRecords[0].authorsComplete,false);assert.equal(numberedResult.analysis.referenceRecords[0].identifierProposals[0].value,'10.1371/journal.pone.0224511');
   const helperResults=await page.evaluate(async origin=>{
    const imports=await import(origin+'/dist/citation-import.mjs'),tools=await import(origin+'/dist/citation-tools.mjs');
    return ['bell-1992-ritual','list-2001','list','endnote','nocite','evidence','credit'].map(id=>['minimal','explicit'].map(identifierForm=>{

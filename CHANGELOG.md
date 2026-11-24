@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 23 November 2026
+
+- Recover supported explicit DOI line wraps with source evidence; withhold ambiguous numeric/metadata/prose continuations and prevent autolinks from restoring partial IDs. Keep recovered proposals out of canonical identifiers/cache/Ready until accepted metadata. Public regression sample now accounts for all 27 publisher DOI values (15 exact, 12 recovered proposals) without extras.
+- Parse common numbered journal bylines/title/date/publication fields, preserve incomplete `et al.` authors and flag ambiguous title boundaries; keep unsupported fields raw.
+- Compute unresolved-review navigation once per refresh instead of repeatedly per citation, improving larger document interaction and avoiding the observed in-app selection timeout. Add a 180-group browser/lookup regression.
 
 - Add shared `formatRecordId` in tools/import entries, minimal safe local-ID spelling by default and an explicit mode; note refresh preserves existing spelling. Document directive-name compatibility.
 - Keep site identity proposals when main titles agree but subtitles, work types or given-name spelling differ, retaining the differences as evidence and requiring approval.

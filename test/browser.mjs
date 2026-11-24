@@ -18,6 +18,8 @@ import {checkImportAPI} from './import-api-browser.mjs';
 import {checkImportIdentityState} from './import-identity-state-browser.mjs';
 import { checkImportWindows } from './import-window-browser.mjs';
 import { checkReviewNavigation } from './import-review-navigation-browser.mjs';
+import {checkRecoveredIdentifier} from './import-recovered-browser.mjs';
+import {checkLargeImport} from './import-large-browser.mjs';
 import { checkEnrichment } from './import-enrichment-browser.mjs';
 import { checkImportDemo } from "./import-demo-browser.mjs";
 import { checkReaderAccess } from "./access-browser.mjs";
@@ -562,6 +564,8 @@ try {
   await checkReaderAccess(browser, origin, evidence);
   await checkImportDemo(browser, origin, evidence);
   await checkEnrichment(browser, origin);
+  await checkLargeImport(browser, origin);
+  await checkRecoveredIdentifier(browser, origin);
   await checkReviewNavigation(browser, origin);
   await checkImportWindows(browser, origin);
   await checkImportReviewUI(browser, origin);
