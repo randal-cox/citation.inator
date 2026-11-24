@@ -24,19 +24,19 @@ This is the active feature-to-example inventory for [milestone 0.5.0](milestones
 | Import intake and extraction | [Import guide](import-demo.md), [import demo](../demos/import/index.html) | Complete public documents in paste/text/Markdown/PDF/DOCX/ODT paths, source evidence and original-file preservation | Saved/live hosts; public TXT/MD/PDF/DOCX/ODT files, manifest and preserved originals |
 | Import review and identifiers | [Import API](import-api.md), [public audit](evidence/import-plos-0294391-2026-11-23.json) | Ambiguous/unmatched groups, DOI/ISBN choices, recovered proposals, local/identifier-free completion and exported Markdown/cache | Fixed DOI teaching metadata; separate live discovery, edition/manual/local completion docs |
 | Editor/host integration | [Draft integration](draft-integration.md), [headless API](import-api.md) | Actual draft recipe, host appearance, site-cache reuse, IDs, stale revisions, undo and atomic text/record persistence | Pinned actual draft editor; cancel/convert/site reuse/staging/bundle/text Undo tested; adopter review pending |
-| Static sites, builds and browser compiler | [Article tools](article-tools.md), [integration](integration.md) | Static/build recipes and self-contained browser compiler with CSP/source-sanitization guidance | npm static build + copied browser compile; complete offline site ZIP; Pages workflow prepared |
+| Static sites, builds and browser compiler | [Article tools](article-tools.md), [integration](integration.md) | Static/build recipes and self-contained browser compiler with CSP/source-sanitization guidance | npm static build + copied browser compile; complete offline site ZIP; Pages preview deployed and verified |
 | Translation and locale | [Existing access labels](reader-access.md) | Consistent configurable UI catalogue, English fallback, plural rules, locale-aware values and an example translation | language lesson; shared en/es catalogue, twelve independent tests, dynamic inspector/settings checks |
 | Failure and offline cases | [Import API](import-api.md), [UX scenarios](ux-adversaries.md) | Missing references, unavailable providers, malformed input, skipped regions, identity conflicts, stale results and safe offline paths | missing lesson; JSON/bootstrap/host404 guards, fixed fixture provenance, cancellation/stale-context tests |
 
 ## Shared acceptance checklist
 
-- [x] Parent clean-consumer checks complete the first citation with npm and copied files using their supplied commands; independent final archive review remains pending.
-- [ ] Source notation, reference data and initialization/configuration correspond to the visible result; existing supported options link to a runnable example or an explicit documented limit.
+- [x] Clean-consumer checks complete the first citation with npm and copied files using their supplied commands; independent preview archive review passes for `4c7f568`.
+- [x] Source notation, reference data and initialization/configuration correspond to the visible result; the 20-lesson browser run and independent documentation review pass. Supported options link to runnable examples or documented limits in the inventory above.
 - [x] Playground edits/reset, npm/copied downloads and library-version metadata are exercised locally.
 - [x] Public examples use authored teaching prose, attributed bibliographic facts and pinned MIT code; independent provenance review passes.
 - [x] Core lessons and fixed import metadata run without external requests; live lookup is separate and fixture exports retain explicit provenance.
-- [ ] Static deployment works under the GitHub Pages project base path; deployed links/assets and downloadable projects are verified.
-- [ ] Keyboard, focus, touch/narrow layouts, contrast and source readability are checked on the actual output. Platform evidence remains specific.
+- [x] Static deployment works under the GitHub Pages project base path; all 82 public assets and downloaded projects are verified for `4c7f568`, with exact archive checksums in the milestone record.
+- [x] Keyboard/focus and emulated touch/narrow layouts pass browser checks; actual desktop/phone-size screenshots and source readability passed independent UX review. This does not claim physical-device or new Safari acceptance.
 - [x] Translation covers labels, plurals, values, fallback and escaped overrides; English/Spanish runtime changes preserve unsaved fields.
 - [ ] The standard milestone checks and independent reviews pass; worked draft integration receives adopter review.
 
