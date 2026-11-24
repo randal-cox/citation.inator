@@ -9,6 +9,7 @@
 - Avoid an extra Chicago period after a final author initial. Browser checks now default to a dedicated Playwright test browser; system Chrome requires an explicit path.
 - Update the test-only Playwright driver and pin the CI runner instead of relying on a drifting Ubuntu image; retain strict keyboard focus assertions and document the older Chromium 140 gap.
 - Make the selector regression test independent of platform-specific native menu Arrow/Escape behavior while checking element identity and focus during background completion.
+- Write learning-test screenshots to the operating system's temporary directory.
 - Public deployment, full independent milestone review, whole-site download and adopter tutorial acceptance remain pending in the milestone checklist.
 
 ## 0.4.0 — 23 November 2026

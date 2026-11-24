@@ -86,7 +86,7 @@ try{
   const download=page.waitForEvent('download');
   await page.locator('#download-cache').click();
   assert.equal((await download).suggestedFilename(),'citations.json');
-  await page.screenshot({path:'/private/tmp/citation-learning-first.png',fullPage:true});
+  await page.screenshot({path:join(tmpdir(),'citation-learning-first.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   const help=page.getByRole('button',{name:'Hover configuration',exact:true});
@@ -95,7 +95,7 @@ try{
   const tooltip=page.locator('#hover-help');assert(await tooltip.isVisible());
   const tooltipBounds=await tooltip.boundingBox();assert(tooltipBounds.x>=0&&tooltipBounds.x+tooltipBounds.width<=390);
   await page.keyboard.press('Escape');assert(await tooltip.isHidden());
-  await page.screenshot({path:'/private/tmp/citation-learning-phone.png',fullPage:true});
+  await page.screenshot({path:join(tmpdir(),'citation-learning-phone.png'),fullPage:true});
   await page.goto(origin+'guide.html');
   assert(await page.getByRole('heading',{name:'Load, compile, initialize',exact:true}).count());
   await page.goto(origin+'?example=site');
@@ -142,7 +142,7 @@ try{
   assert(bundle.cache.records.some(record=>record.id==='ioannidis-2005'));
   await editorSource.focus();await page.keyboard.press(process.platform==='darwin'?'Meta+z':'Control+z');
   assert.equal(await editorSource.inputValue(),original);
-  await page.screenshot({path:'/private/tmp/citation-learning-host.png',fullPage:true});
+  await page.screenshot({path:join(tmpdir(),'citation-learning-host.png'),fullPage:true});
   for(const asset of ['article.md','citations.json','editor.js','forms.js']){
     const pattern='**/host/'+asset;
     await page.route(pattern,route=>route.fulfill({status:404,contentType:'text/plain',body:'Unavailable'}));
