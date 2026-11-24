@@ -10,11 +10,11 @@ A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
 {citation endnote}
 ```
 
-The DOI identifies the work. `note:` stays in the source and is hidden from readers. The formatted author/year text comes from the work’s bibliographic metadata. Use `isbn:` for a particular book edition. The endnote marker places the reference list at that point in the article. Use `{cite identifier}` for a work and `{citation endnote}` for its reference list; `{citation identifier}` is also supported.
+The DOI identifies the work. `note:` is a generated work label, hidden from readers; `annotateMarkers` and editor tools replace it when refreshing notes. Keep personal reminders in your article comments, outside the marker. The formatted author/year text comes from the work’s bibliographic metadata. Use `isbn:` for a particular book edition. The endnote marker places the reference list at that point in the article. `cite` is the work-only short form; directives such as `endnote` use the configured keyword (`citation` by default). Use `{cite identifier}` for a work and `{citation endnote}` for its reference list; `{citation identifier}` is also supported. Without an endnote directive, the list is appended to the article.
 
 ## Load, compile, initialize
 
-Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
+This Guide documents `0.5.0-preview.3`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
 
 ### Without a package installation
 
@@ -66,12 +66,13 @@ const [source,cache,options] = await Promise.all([
   fetch('./configuration.json').then(r => r.json())
 ]);
 const result = compileMarkdown(source, cache, options);
+console.table(result.diagnostics); // citation-unresolved: metadata is missing or unresolved.
 const element = document.querySelector('#article');
 element.innerHTML = result.html; // Trusted authored content only.
 initializeCitationInspector(element, {...options, cache:result.cache});
 ```
 
-The npm starter compiles in Node through `build.mjs`, then `article.mjs` initializes the browser panels. It uses the same options for both stages. Keep browser code and Node build code in their respective files.
+The npm starter compiles in Node through `build.mjs`, then `article.mjs` initializes the browser panels using the copied distribution file. Bundled applications can instead import `initializeCitationInspector` from `cite-inator/browser`. It uses the same options for both stages. Keep browser code and Node build code in their respective files.
 
 For untrusted or editable HTML, sanitize the compiled output before inserting it. The compiler preserves authored HTML; it is not a sanitizer. The playground uses DOMPurify and keeps library-generated SVG icons. Its implementation is an example of this boundary.
 
@@ -132,7 +133,7 @@ await writeFile('citations.json',JSON.stringify(cache,null,2)+'\n');
 console.log('Saved bibliographic metadata. Run npm start to build and view the article.');
 ```
 
-This example resolves explicit DOI/ISBN markers. Archival sources, unsupported identifier types and incomplete provider records require import review or curated metadata. It does not guess missing identifiers. The copied-file starter has no Node package dependencies; use your site's build/editor to resolve additional metadata before copying it there. See [resolver configuration](./reference/integration.html#network-and-host-behavior) for persistence and refresh options.
+This example resolves explicit DOI/ISBN markers. Archival sources, unsupported identifier types and incomplete provider records require import review or curated metadata. It does not guess missing identifiers. For the copied-file starter, download the npm starter too: copy your `article.md`, `configuration.json` and `citations.json` into it, run `npm install` and `npm run resolve`, then copy the updated `citations.json` back. You need Node and npm for that metadata step; serving the copied-file site still needs no package installation. Seeded existing records keep their curated IDs; newly resolved records receive provider-generated IDs. The DOI/ISBN marker remains the stable lookup key. See [resolver configuration](./reference/integration.html#network-and-host-behavior) for persistence and refresh options.
 
 ### When to supply reference records
 
@@ -140,7 +141,7 @@ Sources without a DOI or ISBN still need citations: archival material, interview
 
 ## Formatting and appearance
 
-The **Style** selector changes `citationStyle`: `chicago-author-date`, `apa`, `mla`, `harvard`, or `vancouver`. These are library presets, not a complete CSL engine or a claim of exhaustive manual conformity. Compare the same source in each preset before choosing a house style. **CSS** changes appearance; **Style** changes citation formatting. The CSS examples affect only the citation result.
+When omitted, `citationStyle` uses the legacy `default` author–date preset; choose a named preset explicitly for a house style. The starter selects Chicago author–date. The **Style** selector changes `citationStyle`: `chicago-author-date`, `apa`, `mla`, `harvard`, or `vancouver`. These are library presets, not a complete CSL engine or a claim of exhaustive manual conformity. Compare the same source in each preset before choosing a house style. **CSS** changes appearance; **Style** changes citation formatting. The CSS examples affect only the citation result.
 
 In either starter, edit `configuration.json`. The compiler and inspector both receive these settings:
 
@@ -159,7 +160,7 @@ In either starter, edit `configuration.json`. The compiler and inspector both re
 }
 ```
 
-With `citationKeyword:'reference'`, write `{reference doi:10.1371/journal.pmed.0020124}` and `{reference endnote}`. `classPrefix` changes generated class names; `data-citation-part` remains the stable styling hook. Pass the same prefix to the inspector. Give separate article fragments separate namespaces so citation/endnote IDs cannot collide.
+With `citationKeyword:'reference'`, write `{reference doi:10.1371/journal.pmed.0020124}` and `{reference endnote}`. `classPrefix` changes generated class names; `data-citation-part` remains the stable styling hook. Pass the same configuration to compile, initialization and editor tools so style, locale and class names agree. With different prefixes, class-based host styling can miss generated elements; stable parts remain available. Changing the keyword leaves old `{citation …}` markers as ordinary text without a diagnostic; `{cite …}` work markers keep working. Misspelled keywords are also ordinary text. Give separate article fragments separate namespaces so citation/endnote IDs cannot collide.
 
 ```css
 /* Keep host styling confined to the component. */
@@ -179,7 +180,7 @@ Evidence and credit remain hoverable when ordinary references use click. Click, 
 {citation doi:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f; doi:10.5281/zenodo.3960218}
 ```
 
-Locators can name pages, chapters, sections or timestamps. A locator adds citation text; it does not by itself link to a particular page or timestamp. The selected citation style determines the surrounding punctuation. Use `compileHTML` to compile within existing authored HTML, or `compileMarkdown` for Markdown; code blocks and excluded interactive elements are skipped. Structured editors can use `planCitationOccurrences` and stable occurrence IDs instead of splicing compiled HTML by position.
+Locators can name pages, chapters, sections or timestamps. A locator adds citation text; it does not by itself link to a particular page or timestamp. The selected citation style determines the surrounding punctuation. Use `compileHTML` to compile within existing authored HTML, or `compileMarkdown` for Markdown; code blocks and excluded interactive elements are skipped. Structured editors can import `planCitationOccurrences` from `cite-inator` and call `planCitationOccurrences(occurrences, cache, options)` with stable occurrence IDs instead of splicing compiled HTML by position; see the [structured occurrence contract](./reference/integration.html). Browser applications import the same export from `citation-compiler.mjs`.
 
 Record `citationParts` retain italics, bold text and safe links in authored reference formatting. Keep source bibliographic data in structured fields when you want presets to format it automatically. `originalIssued` and `issued` distinguish original publication from the cited edition. `reprintYear` chooses `both`, `original` or `edition`. Year letters normally belong to one reference list. Use `suffixScope:'cache'` only for one work split across pages sharing a bibliography, not independent essays.
 
@@ -199,9 +200,20 @@ Editor notes are invisible to readers:
 {citation doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005" | tags:methods,reliability}
 ```
 
-Use `markerKind` to distinguish citations from directives. `describeCitation` makes a context-free work label; `annotateMarkers(source, cache, {noteContext:'work'})` keeps editor notes consistent with it, without changing reader-facing year letters. `collectMarkerTags` totals contributions; curators still decide which accumulated tags become record topics.
+Import editor tools from `cite-inator/tools`, or copy `dist/citation-tools.mjs` from the same version for browser use; the minimal copied-file starter does not include this optional bundle.
 
-Reading-list directives, `tagCatalogue`, `inlineTags` and `listFilters` produce topic badges and filters. `data-ci-tag` supports per-tag styling. `referenceItemPrefix` adds escaped text before each item. Cross-page links use `createSiteOccurrenceIndex` from actual compiled anchors, never guessed article positions. Supply `siteOccurrences` and a trusted `siteOrigin`; listed-only entries retain their distinct “Listed in” meaning.
+```js
+import {markerKind, describeCitation, annotateMarkers, collectMarkerTags,
+  createSiteOccurrenceIndex} from 'cite-inator/tools';
+const kind = markerKind(`{${options.citationKeyword ?? 'citation'} endnote}`, options);
+const label = describeCitation('doi:10.1371/journal.pmed.0020124', cache, options).text;
+const updated = annotateMarkers(source, cache, {...options, format:'markdown', noteContext:'work'});
+const counts = collectMarkerTags([{source, format:'markdown'}], cache, options);
+```
+
+Use the same style/keyword configuration as your build. `annotateMarkers` replaces existing `note:` text with a generated label; `noteContext:'work'` omits article-local year letters from those notes without changing reader-facing letters. `collectMarkerTags` counts contributions; curators decide which accumulated tags become record topics. Use only documented marker options; unknown fields are not an extensible metadata contract and may be treated as legacy hints or make the marker malformed. Editors must preserve source rather than reconstruct it from HTML.
+
+Reading-list directives, `tagCatalogue`, `inlineTags` and `listFilters` produce topic badges and filters. `data-ci-tag` supports per-tag styling. `referenceItemPrefix` adds escaped text before each item. Cross-page links use `createSiteOccurrenceIndex` from actual compiled anchors, never guessed article positions; its input and output are in the [article tools reference](./reference/article-tools.html). Supply `siteOccurrences` and a trusted `siteOrigin`; listed-only entries retain their distinct “Listed in” meaning.
 
 ## Reviewed import
 
@@ -219,7 +231,11 @@ Import starts with a complete document and its bibliography. Text, Markdown, PDF
 
 An identifier recovered from a wrapped URL is a proposal. It becomes a canonical identifier only after successful metadata completion or explicit acceptance. A work can finish with a local record and no DOI/ISBN. Keep the downloaded converted Markdown and cache together. Provider failure leaves manual identifier entry and local completion available; it must not invent metadata or silently accept an edition.
 
-The API separates analysis from preview. Bind review decisions to the exact source/reference/style context. If the document changes during review, analyze it again before applying old choices. An editor must check the document revision and commit source and record changes together. Cancellation leaves the source/cache untouched. Bibliography removal is an additional reviewed action, including uncited works.
+Use `processImportRequest` from `cite-inator/import`, or the browser `citation-import.mjs` bundle. Call it with `action:'analyze'`, retain the returned `review`, then submit `action:'preview'` with that review, its `reviewId` and your accepted `decisions`. The [headless API reference](./reference/import-api.html) supplies complete request and response examples.
+
+The library never edits your document or cache: preview returns proposed text and records. Bind a host revision token when review begins; immediately before saving, re-check that revision (also after asynchronous lookups) and commit text and accepted new records together. Discard previews on cancel. The worked draft host stages records in memory; its Undo reverts text only.
+
+Preview's `cache` can include the supplied site library and uncited source entries. `newRecordIds` means newly allocated, not necessarily cited. Preserve the original site records and persist only new records referenced by the accepted final text; do not replace your site library wholesale with `result.cache`. The [worked download handler](./host/integration-source.mjs) compiles the final Markdown and filters staged additions by the referenced record IDs, covering later deletion and Undo. Removing the old bibliography is a separate reviewed source edit owned by the host; the API does not remove it for you.
 
 ## Translation
 

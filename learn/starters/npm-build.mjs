@@ -4,6 +4,7 @@ const source=await readFile('article.md','utf8');
 const cache=JSON.parse(await readFile('citations.json','utf8'));
 const options=JSON.parse(await readFile('configuration.json','utf8'));
 const result=compileMarkdown(source,cache,options);
+console.table(result.diagnostics);
 // Build trusted authored source. Sanitize untrusted HTML before insertion.
 const template=await readFile('template.html','utf8');
 await writeFile('index.html',template.replace('<!--citation-fragment-->',result.html));

@@ -1,6 +1,12 @@
 # Changelog
 
-## 0.5.0-preview.2 — In development
+## 0.5.0-preview.3 — In development
+
+- Save only still-referenced staged editor additions alongside the existing site library, including after Undo or later deletion.
+- Clarify generated note ownership, keyword changes, diagnostics, new-identifier resolution, tools imports and host-owned import persistence in the Guide and integration recipe.
+- Distinguish intact source identifiers from provider-verified metadata; recovered proposals remain withheld until accepted.
+
+## 0.5.0-preview.2 — Preview
 
 - Verify completion of the GitHub, physical-folder and Codex project/attachment rename to cite.inator; retain existing browser/data compatibility contracts.
 - Prepare the cite.inator repository/project/folder name and cite-inator package; preserve browser/data contracts and the old CLI alias.

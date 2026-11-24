@@ -4,7 +4,7 @@ The Node/browser import API and native extraction are included in 0.4.0. The hea
 
 ## Load the library
 
-Node requires 22.13 or later. In an installed 0.4.0 package:
+Node requires 22.13 or later. With the current `cite-inator` preview package (the original 0.4.0 release uses the `citation-inator` name):
 
 ```js
 import { processImportRequest } from 'cite-inator/import';
@@ -175,7 +175,11 @@ const result = processImportRequest({
 
 For JSON/CLI callers, use `recordIds: { [sourceRecordId]: 'your-new-id' }` instead. Omitted new IDs keep their source IDs if available; keys for unknown or reused records fail. Choose either `recordId` or `recordIds`. Explicit site reuse bypasses new-ID allocation. Source and manual-completion IDs must be distinct before allocation. Manual completion records also pass through the allocator; their explicit DOI/ISBN targets remain canonical notation. Record-ID targets use the allocated/reused local ID even when metadata has a DOI. The API handles notation escaping; hosts should not rewrite markers afterward.
 
-Preview adds `recordMap` (source/completion ID to output ID), `newRecordIds` and `reusedRecordIds`. Filter with `newRecordIds` when persisting new works. Naming options are preview-time choices; identity review stays bound to the source, original proposals and the entire supplied site cache. Changing any site metadata invalidates the review. Hosts must still check the live editor revision and apply text/records together. Site cache size uses `limits.references`; returned identity proposals use `limits.candidateChoices`.
+Preview adds `recordMap` (source/completion ID to output ID), `newRecordIds` and `reusedRecordIds`. The returned `cache` can contain the existing site library and every source entry, including uncited works. `newRecordIds` identifies allocated additions, not a cited-only save set. Preserve the original site library and persist only additions referenced by accepted final markers; re-evaluate that set at save time after Undo or later deletion. Do not persist the whole preview cache as a replacement site library. Naming options are preview-time choices; identity review stays bound to the source, original proposals and the entire supplied site cache. Changing any site metadata invalidates the review. Hosts must still check the live editor revision and apply text/records together. Site cache size uses `limits.references`; returned identity proposals use `limits.candidateChoices`.
+
+## Identifier evidence and canonical fields
+
+Recovered `identifierProposals` are withheld from `identifiers`; merely selecting the bibliography entry does not promote them. An accepted completion or explicit identifier decision can supply canonical identifiers. However, an intact DOI extracted directly from the supplied bibliography can already appear in `identifiers` without a provider lookup. The field identifies the record's retained identifiers; it is not an independent verification certificate. Hosts that require provider verification must inspect source/provider evidence and require the corresponding review before saving. Do not equate a syntactically exact source identifier with a confirmed title/edition match.
 
 ## Additional author-date import forms
 

@@ -1,4 +1,4 @@
-/*! cite-inator v0.5.0-preview.2 | MIT | See LICENSE */
+/*! cite-inator v0.5.0-preview.3 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {

@@ -86,6 +86,11 @@ try{
   assert.match(await alternatives.innerText(),/JSTOR/);assert.match(await alternatives.innerText(),/WorldCat/);
   assert.equal(await alternatives.locator('[data-citation-part="backlinks"]').count(),0);
   const expanded=await alternatives.evaluate(node=>({summary:node.querySelector('summary').getBoundingClientRect().bottom,body:node.querySelector('[data-citation-part="access-more-body"]').getBoundingClientRect().top}));assert(expanded.body>=expanded.summary);
+  const endnoteSourceSummary=await alternatives.locator('summary').innerText();
+  await page.locator('#result [data-ci-record]').first().click();
+  const accessPanel=page.getByRole('dialog',{name:'Source and access',exact:true});
+  assert.equal(await accessPanel.locator('[data-citation-part="access-more"] summary').innerText(),endnoteSourceSummary);
+  await page.keyboard.press('Escape');
   await page.locator('[data-example="first"]').click();
   await page.locator('#configuration').fill(JSON.stringify({citationStyle:'chicago-author-date',locale:'es'}));
   await page.waitForFunction(()=>document.getElementById('result').textContent.includes('Notas finales'));
@@ -184,6 +189,22 @@ try{
   assert(bundle.cache.records.some(record=>record.id==='ioannidis-2005'));
   await editorSource.focus();await page.keyboard.press(process.platform==='darwin'?'Meta+z':'Control+z');
   assert.equal(await editorSource.inputValue(),original);
+  async function savedHostBundle(){
+    const download=page.waitForEvent('download');await page.locator('#download-bundle').click();
+    const artifact=await download,stream=await artifact.createReadStream(),chunks=[];
+    for await(const chunk of stream)chunks.push(chunk);
+    return JSON.parse(Buffer.concat(chunks));
+  }
+  const undone=await savedHostBundle();
+  assert.equal(undone.source,original);assert.equal(undone.cache.records.length,2);
+  assert(!undone.cache.records.some(record=>record.id==='turner-1969-ritual'));
+  for(const marker of ['{citation turner-1969-ritual}','{cite local:turner-1969-ritual}']){
+    await editorSource.fill(marker);
+    assert((await savedHostBundle()).cache.records.some(record=>record.id==='turner-1969-ritual'));
+  }
+  await editorSource.fill('`{citation turner-1969-ritual}`');
+  assert.equal((await savedHostBundle()).cache.records.length,2);
+  await editorSource.fill(original);
   await page.screenshot({path:join(tmpdir(),'citation-learning-host.png'),fullPage:true});
   for(const asset of ['article.md','citations.json','editor.js','forms.js']){
     const pattern='**/host/'+asset;
