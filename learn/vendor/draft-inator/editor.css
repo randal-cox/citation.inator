@@ -1,0 +1,188 @@
+/* draft.inator editor. Everything is scoped to .di-editor so it can sit inside a site's page without touching it.
+   Colours are --di- tokens: a site can set them on .di-editor to match itself. Preview text styles use :where(), so a
+   site's own article class (the previewClass option) wins. */
+.di-editor {
+  --di-bg: #fbfaf7; --di-surface: #ffffff; --di-ink: #1d1b18; --di-muted: #5d5850; --di-line: #d9d4ca;
+  --di-accent: #7a2e1f; --di-accent-ink: #ffffff; --di-focus: #1f5fbf; --di-mark: #fff1b8;
+  --di-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --di-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --di-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --di-radius: 12px;
+  display: flex; flex-direction: column; min-height: 24rem; height: min(80vh, 56rem);
+  background: var(--di-bg); color: var(--di-ink); font: 15px/1.5 var(--di-sans);
+  border: 2px solid var(--di-accent); border-radius: var(--di-radius); overflow: hidden;
+  box-shadow: 0 6px 24px rgb(0 0 0 / .12); text-align: left;
+}
+@media (prefers-color-scheme: dark) {
+  .di-editor:not([data-di-theme="light"]) {
+    --di-bg: #171614; --di-surface: #201f1c; --di-ink: #ece8e1; --di-muted: #a8a196; --di-line: #3a3732;
+    --di-accent: #e39a7f; --di-accent-ink: #1b1210; --di-focus: #8ab4ff; --di-mark: #5a4a12; color-scheme: dark;
+  }
+}
+.di-editor[data-di-theme="dark"] {
+  --di-bg: #171614; --di-surface: #201f1c; --di-ink: #ece8e1; --di-muted: #a8a196; --di-line: #3a3732;
+  --di-accent: #e39a7f; --di-accent-ink: #1b1210; --di-focus: #8ab4ff; --di-mark: #5a4a12; color-scheme: dark;
+}
+/* A site hides the box with the hidden attribute; that must win over display: flex above. */
+.di-editor[hidden] { display: none !important; }
+.di-editor.di-full { height: 100%; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+.di-editor *, .di-editor *::before, .di-editor *::after { box-sizing: border-box; }
+.di-editor :focus-visible { outline: 3px solid var(--di-focus); outline-offset: 2px; }
+
+/* Buttons and fields, the editor's own, whatever the site's are. */
+.di-editor button, .di-editor .di-button {
+  font: 600 .85rem/1.2 var(--di-sans); border-radius: 6px; padding: .35rem .7rem; cursor: pointer; margin: 0;
+  border: 1px solid var(--di-line); background: var(--di-surface); color: var(--di-ink);
+}
+.di-editor button:hover:not(:disabled) { border-color: var(--di-accent); }
+.di-editor button:disabled { opacity: .45; cursor: default; }
+.di-editor .di-primary { background: var(--di-accent); border-color: var(--di-accent); color: var(--di-accent-ink); }
+.di-editor .di-quiet { background: transparent; color: var(--di-accent); border-color: var(--di-accent); }
+.di-editor input[type=text], .di-editor select, .di-editor textarea {
+  width: 100%; font: inherit; color: var(--di-ink); background: var(--di-bg); border: 1px solid var(--di-line); border-radius: 6px; padding: .4rem .55rem;
+}
+.di-editor label { display: block; font-weight: 600; margin: .6rem 0 .2rem; }
+.di-editor fieldset { border: 1px solid var(--di-line); border-radius: 8px; margin: .75rem 0; padding: .5rem .9rem .9rem; }
+.di-editor legend { font-weight: 700; padding: 0 .3rem; }
+.di-editor fieldset.checks label { display: flex; gap: .5rem; align-items: center; font-weight: 400; margin: .2rem 0; }
+.di-editor .actions, .di-editor .di-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+.di-editor .di-actions { justify-content: flex-end; }
+.di-editor .hint { color: var(--di-muted); font-size: .85rem; font-weight: 400; }
+.di-editor .visually-hidden, .di-editor .di-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.di-editor .check { display: flex; gap: .5rem; align-items: center; margin: .6rem 0; }
+.di-editor .check label { margin: 0; }
+.di-editor .image-row { display: flex; gap: .75rem; align-items: flex-start; }
+.di-editor .image-row > div { flex: 1; display: grid; gap: .4rem; }
+.di-editor .image-row .thumb { width: 6rem; height: 4rem; object-fit: cover; border: 1px solid var(--di-line); border-radius: 4px; }
+.di-editor label.button { display: inline-block; text-align: center; border: 1px solid var(--di-accent); border-radius: 6px; padding: .4rem .8rem; cursor: pointer; color: var(--di-accent); margin: 0; }
+.di-editor input.visually-hidden:focus-visible + label.button { outline: 3px solid var(--di-focus); outline-offset: 2px; }
+
+/* Head: what this is, the View menu, and the actions. */
+.di-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; padding: .5rem .9rem; background: var(--di-surface); border-bottom: 1px solid var(--di-line); }
+.di-label { font: 700 .72rem/1 var(--di-sans); letter-spacing: .08em; text-transform: uppercase; color: var(--di-accent-ink); background: var(--di-accent); border-radius: 999px; padding: .3rem .6rem; }
+.di-title { color: var(--di-muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto; }
+.di-spacer { flex: 1; }
+.di-view { position: relative; }
+.di-menu-button::after { content: " ▾"; }
+.di-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; min-width: 13rem; display: grid; padding: .35rem;
+  background: var(--di-surface); border: 1px solid var(--di-line); border-radius: 8px; box-shadow: 0 8px 24px rgb(0 0 0 / .18); }
+.di-menu[hidden] { display: none; }
+.di-editor .di-menu button { text-align: left; border: 0; border-radius: 5px; background: transparent; font-weight: 500; padding: .45rem .6rem .45rem 1.8rem; position: relative; }
+.di-editor .di-menu button:hover, .di-editor .di-menu button:focus-visible { background: var(--di-bg); outline-offset: -2px; }
+.di-menu [aria-checked="true"]::before { content: "✓"; position: absolute; left: .6rem; color: var(--di-accent); }
+.di-menu [role=separator] { height: 1px; background: var(--di-line); margin: .3rem .2rem; }
+
+.di-toolbar { display: flex; flex-wrap: wrap; gap: .35rem .9rem; padding: .4rem .9rem; border-bottom: 1px solid var(--di-line); background: var(--di-bg); }
+.di-group { display: flex; gap: .3rem; }
+.di-editor .di-blocks [data-cmd="citation"], .di-editor .di-blocks [data-cmd="figure"] { color: var(--di-accent); border-color: var(--di-accent); }
+.di-editor .di-blocks [data-cmd="edit"]:not(:disabled) { background: var(--di-accent); color: var(--di-accent-ink); border-color: var(--di-accent); }
+.di-no-toolbar .di-toolbar { display: none; }
+
+/* Panes and layouts. */
+.di-panes { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 1fr; }
+.di-pane { min-width: 0; min-height: 0; overflow: auto; }
+.di-write { border-right: 1px solid var(--di-line); background: var(--di-surface); }
+.di-editor .di-source { display: block; width: 100%; height: 100%; margin: 0 auto; resize: none; border: 0; border-radius: 0;
+  background: var(--di-surface); padding: 1.1rem 1.25rem; font: .92rem/1.65 var(--di-mono); tab-size: 2; }
+.di-editor .di-source:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--di-focus); }
+.di-read { padding: 1.25rem 1.5rem 1.5rem; background: var(--di-bg); }
+.di-editor[data-layout="stacked"] .di-panes { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+.di-editor[data-layout="stacked"] .di-write { border-right: 0; border-bottom: 1px solid var(--di-line); }
+.di-editor[data-layout="write"] .di-panes, .di-editor[data-layout="preview"] .di-panes { grid-template-columns: 1fr; }
+.di-editor[data-layout="write"] .di-read, .di-editor[data-layout="preview"] .di-write { display: none; }
+.di-editor[data-layout="write"] .di-write { border-right: 0; }
+.di-editor[data-layout="write"] .di-source { max-width: 48rem; }
+.di-editor[data-layout="preview"] .di-article { margin-inline: auto; }
+@container (max-width: 700px) { .di-editor[data-layout="split"] .di-panes { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } }
+@media (max-width: 760px) {
+  .di-editor[data-layout="split"] .di-panes { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .di-editor[data-layout="split"] .di-write { border-right: 0; border-bottom: 1px solid var(--di-line); }
+}
+
+/* Plain: nothing but the text, filling the window wherever the editor sits. */
+.di-editor.di-plain { position: fixed; inset: 0; z-index: 1000; height: auto; border: 0; border-radius: 0; box-shadow: none; }
+.di-plain .di-head, .di-plain .di-toolbar, .di-plain .di-status, .di-plain .di-read { display: none; }
+.di-plain .di-panes { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.di-plain .di-write { border: 0; background: var(--di-bg); }
+.di-editor.di-plain .di-source { background: var(--di-bg); max-width: 44rem; padding-top: 3.5rem; font-size: 1rem; line-height: 1.8; }
+.di-editor.di-plain .di-source:focus-visible { box-shadow: none; }
+.di-editor .di-exit-plain { position: fixed; z-index: 1001; top: calc(.6rem + env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+  opacity: .4; background: transparent; color: var(--di-muted); font-size: .78rem; padding: .25rem .6rem; }
+.di-editor .di-exit-plain:hover, .di-editor .di-exit-plain:focus-visible { opacity: 1; }
+
+.di-status { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: .3rem .9rem; border-top: 1px solid var(--di-line);
+  background: var(--di-surface); color: var(--di-muted); font-size: .78rem; font-variant-numeric: tabular-nums; }
+.di-note { max-width: 42rem; margin-top: 2rem; font-size: .78rem; color: var(--di-muted); border-top: 1px dashed var(--di-line); padding-top: .5rem; }
+
+/* The dialog for a block's form. */
+.di-editor .di-dialog { width: min(40rem, calc(100vw - 32px)); max-height: calc(100vh - 32px); border: 1px solid var(--di-line); border-radius: 12px;
+  background: var(--di-bg); color: var(--di-ink); padding: 1rem 1.25rem; }
+.di-dialog::backdrop { background: rgb(0 0 0 / .45); }
+.di-dialog h2 { margin: 0 0 .5rem; font: 600 1.3rem/1.2 var(--di-serif); }
+.di-dialog h3 { font-size: .9rem; margin: 1rem 0 .3rem; }
+.di-code { display: block; white-space: pre-wrap; word-break: break-word; font: .82rem/1.5 var(--di-mono); background: var(--di-surface);
+  border: 1px solid var(--di-line); border-radius: 6px; padding: .6rem; }
+.di-error { color: #b3261e; min-height: 1.2em; margin: .5rem 0 0; }
+.di-editor[data-di-theme="dark"] .di-error { color: #ffb4a9; }
+
+/* Preview defaults: a site's own article styles (previewClass) take over. */
+:where(.di-article) { font: 1.05rem/1.65 var(--di-serif); max-width: 42rem; }
+:where(.di-article)::after { content: ""; display: block; clear: both; }
+:where(.di-article) :where(h1) { font-size: 1.9rem; margin: 0 0 .75rem; line-height: 1.15; }
+:where(.di-article) :where(h2) { font-size: 1.3rem; margin: 1.6rem 0 .5rem; }
+:where(.di-article) :where(p, ul, ol) { margin: 0 0 1rem; }
+:where(.di-article) :where(blockquote) { margin: 1rem 0; padding-left: 1rem; border-left: 3px solid var(--di-line); color: var(--di-muted); }
+:where(.di-article) :where(a.cite) { color: var(--di-accent); text-decoration: none; border-bottom: 1px dotted var(--di-accent); }
+:where(.di-article) :where(code) { font-size: .88em; background: var(--di-surface); padding: .05rem .25rem; border-radius: 3px; }
+:where(.di-article) :where(.endnotes) { clear: both; margin-top: 2rem; border-top: 1px solid var(--di-line); padding-top: .75rem; font-size: .92rem; }
+:where(.di-article) :where(.endnotes h2) { font: 600 1rem/1.3 var(--di-sans); }
+:where(.di-article) :where(.endnotes li:target) { background: var(--di-mark); }
+:where(.di-article) :where(.unresolved) { color: var(--di-muted); font-style: italic; }
+
+/* Figures, as the {figure …} tag places them. A site can use these on its own pages by giving the article the
+   di-article class, or copy them into its stylesheet. */
+.di-article .fig { margin: 1rem 0 1.25rem; }
+.di-article .fig img { display: block; width: 100%; height: auto; border-radius: 3px; }
+.di-article .fig figcaption { font: .85rem/1.4 var(--di-sans); color: var(--di-muted); margin-top: .35rem; }
+.di-article .fig.width-third { width: 33.333%; } .di-article .fig.width-half { width: 50%; }
+.di-article .fig.width-two-thirds { width: 66.666%; } .di-article .fig.width-full { width: 100%; }
+.di-article .fig.align-centre { margin-inline: auto; }
+.di-article .fig.align-left.wrap { float: left; margin: .3rem 1.25rem .75rem 0; }
+.di-article .fig.align-right.wrap { float: right; margin: .3rem 0 .75rem 1.25rem; }
+.di-article .fig.align-right:not(.wrap) { margin-left: auto; }
+.di-article .fig.align-wide { width: calc(100% + 3rem); margin-inline: -1.5rem; }
+.di-article .fig.align-full { width: 100%; clear: both; }
+.di-article .di-missing { display: grid; place-items: center; aspect-ratio: 3 / 2; border: 1px dashed var(--di-line); border-radius: 3px;
+  color: var(--di-muted); font: .85rem/1.4 var(--di-sans); padding: 1rem; text-align: center; }
+
+/* Import citations: the review dialog. */
+.di-editor .di-import { width: min(48rem, calc(100vw - 32px)); }
+.di-import-controls { display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: end; }
+.di-import-controls label { margin: 0; width: 100%; }
+.di-editor .di-import-controls select { width: auto; flex: 1 1 12rem; }
+.di-import-summary { margin: .75rem 0 .25rem; font-weight: 600; }
+.di-import-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .6rem; }
+.di-import-row { border: 1px solid var(--di-line); border-radius: 8px; padding: .5rem .75rem; background: var(--di-surface); }
+.di-import-context { margin: 0 0 .25rem; font: .95rem/1.5 var(--di-serif); }
+.di-import-context mark { background: var(--di-mark); color: inherit; padding: 0 .1em; border-radius: 2px; }
+.di-editor .di-import-item { margin: .35rem 0 .1rem; padding: .3rem .7rem .5rem; }
+.di-editor .di-import-item legend { font-size: .85rem; }
+.di-import-choice { display: flex; gap: .5rem; align-items: baseline; margin: .2rem 0; }
+.di-editor .di-import-choice label { margin: 0; font-weight: 400; }
+.di-import-choice small { color: var(--di-muted); }
+/* Unsaved changes kept in this browser, offered when the editor opens. */
+.di-recover { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem;
+  padding: .5rem .9rem; background: var(--di-mark); border-bottom: 1px solid var(--di-line); font-size: .9rem; }
+.di-recover[hidden] { display: none; }
+.di-recover-actions { display: flex; gap: .4rem; }
+.di-recover.di-recover-changed { border-left: 4px solid #b3261e; }
+
+/* citation.inator's compiled citations and endnotes in the preview (a site's own styles win through previewClass). */
+.di-article .citation-cite { text-decoration: none; color: var(--di-accent); }
+.di-article .citation-cite:hover { text-decoration: underline; }
+.di-article .citation-endnotes { margin-top: 2rem; border-top: 1px solid var(--di-line); padding-top: .5rem; font-size: .92em; }
+.di-article .citation-endnotes h2 { font-size: 1.05rem; }
+.di-article .citation-endnotes li { margin: .3rem 0; }
+.di-article .citation-note-actions { display: inline; margin-left: .35rem; }
+.di-article .citation-icon { font-size: .75em; vertical-align: super; text-decoration: none; margin-right: .2rem; }
+.di-article .citation-note-status { font-weight: 600; font-size: .85em; color: var(--di-muted); }

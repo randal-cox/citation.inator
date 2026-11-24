@@ -12,6 +12,10 @@ const read = path => staged
   ? Promise.resolve(git("show", ":" + path))
   : readFile(resolve(root, path), "utf8");
 const fail = message => failures.push(message);
+// Authored learning Markdown links to generated public routes. Check the staged
+// declaration here; the learning build checks actual output files and anchors.
+const learningRoutes = files.has('learn/generated-routes.json')
+  ? new Set(JSON.parse(await read('learn/generated-routes.json'))) : new Set();
 
 try {
   git("diff", "--cached", "--check");
@@ -69,7 +73,12 @@ for (const path of files) {
       const raw = target.split("#")[0];
       if (!raw) continue;
       const destination = posix.normalize(posix.join(posix.dirname(path), decodeURIComponent(raw)));
-      if (!files.has(destination)) fail(path + " links to missing tracked file " + target + ".");
+      if (!files.has(destination)) {
+        const generated = path.startsWith('learn/')
+          ? posix.normalize(posix.join(posix.dirname(path.slice('learn/'.length).replace(/\.md$/, '.html')), decodeURIComponent(raw))) : null;
+        const route = generated && (raw.endsWith('/') ? posix.join(generated, 'index.html') : generated);
+        if (!route || !learningRoutes.has(route)) fail(path + " links to missing tracked file " + target + ".");
+      }
     }
   } catch (error) {
     fail("Could not check " + path + ": " + error.message);

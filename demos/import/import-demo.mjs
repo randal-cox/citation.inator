@@ -7,6 +7,7 @@ import {createBrowserEnrichment,compareIdentity,assessImportCandidate,rankImport
 import {initializeCitationInspector} from '../../dist/citation-inspector.mjs';
 import {editTextSource} from './text-source.mjs';
 import {documentExamples} from './document-examples.mjs';
+import {savedProviderFetch,savedProviderEvidence} from './provider-fixtures.mjs';
 const $=id=>document.getElementById(id);
 const importOptions=JSON.parse($('citation-import-config')?.textContent || '{}'),importLimits=normalizeImportLimits(importOptions.limits);
 let activeExampleSelection='apa',fileController=null;
@@ -14,7 +15,14 @@ let workingSource='',review=null,version=0,output=null,referenceRecords=[],refer
 const setSource=text=>{workingSource=text;$('source').value=text;};
 const el=(tag,text)=>{const node=document.createElement(tag);if(text!==undefined)node.textContent=text;return node;};
 const reviewWindows=new WeakMap();
-const completionStates=new Map(),lookup=createBrowserEnrichment();let lookupEpoch=0,manualLookupTimer;
+let savedRequest;
+const fixtureFetch=async(...args)=>{
+ savedRequest ||= fetch(importOptions.providerResponses).then(response=>{if(!response.ok)throw Error('Saved example metadata unavailable. Reload to try again.');return response.json();}).then(savedProviderFetch);
+ return (await savedRequest)(...args);
+};
+const providerLookup=createBrowserEnrichment(importOptions.providerResponses?{fetch:fixtureFetch}:{});
+const lookup=importOptions.providerResponses?{...providerLookup,lookup:async(...args)=>savedProviderEvidence(await providerLookup.lookup(...args))}:providerLookup;
+const completionStates=new Map();let lookupEpoch=0,manualLookupTimer;
 const knownReferenceIdentifier=source=>source?.identifiers?.find(id=>['doi','isbn'].includes(id.scheme));
 const referenceIdentifier=source=>knownReferenceIdentifier(source)||source?.identifierProposals?.find(id=>['doi','isbn'].includes(id.scheme));
 const searchKind=source=>source.type==='book'?'isbn':source.type==='document'?'both':'doi';
@@ -355,4 +363,4 @@ document.addEventListener('dragover',event=>{if(event.dataTransfer?.types.includ
 document.addEventListener('drop',event=>{if(event.dataTransfer?.types.includes('Files'))event.preventDefault();});
 
 async function loadLocalExamples(){try{const response=await fetch('./examples');if(!response.ok)return;const examples=await response.json();if(!examples.length)return;const group=el('optgroup');group.label='Your documents';for(const item of examples)group.append(new Option(item.label,'local:'+item.id));$('example').append(group);}catch{ /* Public demos have no private corpus catalogue. */ }}
-$('example').disabled=true;await loadLocalExamples();$('example').disabled=false;void loadExample();
+$('example').disabled=true;if(importOptions.localExamples!==false)await loadLocalExamples();$('example').disabled=false;void loadExample();

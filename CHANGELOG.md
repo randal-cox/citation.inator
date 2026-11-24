@@ -3,10 +3,11 @@
 ## 0.5.0-preview.0 — In development
 
 - Add an editable static learning playground with source, reference JSON, configuration, five citation presets, component-only CSS examples, reset and Markdown/cache downloads. Sanitize editable previews with DOMPurify in the host.
-- Add progressive first-citation lessons, a load/init-first guide and a copied-file starter with a dependency-free Node server.
+- Add 20 progressive lessons, a load/init-first guide, rendered API guides and copied-file/npm/offline-site downloads. The npm starter includes a pinned library tarball; copied-file projects use a dependency-free Node server.
+- Add distinct saved-metadata/live import hosts, rights-cleared native sample files, actual cross-page links and a worked integration using pinned, unmodified draft editor files with their license. Fixture exports retain explicit example provenance.
 - Add shared English/Spanish UI messages for compiler, inspector and access settings, with configurable labels, plural categories, locale formatting and English fallback. Authored metadata and citation-style conventions remain separate.
 - Avoid an extra Chicago period after a final author initial. Browser checks now default to a dedicated Playwright test browser; system Chrome requires an explicit path.
-- Public deployment, the full feature/tutorial inventory, npm starter acceptance and worked draft integration remain pending in the milestone checklist.
+- Public deployment, full independent milestone review, whole-site download and adopter tutorial acceptance remain pending in the milestone checklist.
 
 ## 0.4.0 — 23 November 2026
 

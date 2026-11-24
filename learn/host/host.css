@@ -1,0 +1,2 @@
+.example-editor.di-editor{--di-accent:#2f5d47;--di-accent-ink:#fff;--di-bg:#f3f5f1;--di-surface:#fff;--di-ink:#1f2a24;--di-muted:#5a6b61;--di-line:#cfd8d1;--di-radius:12px;height:76vh;min-height:32rem}#editor textarea{min-height:0}.example-editor button,.example-editor select{font:inherit}#cache,#initialization{padding:1rem;white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:760px){.example-editor.di-editor{height:78dvh;min-height:30rem}}
+#host-error{padding:.8rem 1rem;border-inline-start:4px solid #a72a48;background:#fff0f3;color:#7e1430}

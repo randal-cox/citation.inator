@@ -1,0 +1,11 @@
+Citation import sample
+
+This example pairs a published article with a deliberately missing reference.
+
+An article examined why published findings can be false (Ioannidis, 2005).
+
+The second citation has no bibliography entry (Missing, 2001).
+
+References
+
+Ioannidis, J. P. A. (2005). Why Most Published Research Findings Are False. PLOS Medicine, 2(8), e124.

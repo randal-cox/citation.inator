@@ -109,7 +109,7 @@ The panel shows a location’s supplied verification date. `staleAfterDays` adds
 | `access.checked`, `access.stale` | Verification notes using `{date}` |
 | `access.kind.free`, `access.kind.publisher`, `access.kind.subscription`, `access.kind.library`, `access.kind.lending`, `access.kind.accessibility`, `access.kind.discovery` | Catalogue groups |
 
-Translate catalogue labels through `accessCatalog`.
+Translate service catalogue labels through `accessCatalog`. In the 0.5.0 preview, these access messages share the English/Spanish library UI catalogue, including locale-formatted counts and per-category fallback. See [UI language configuration](i18n.md).
 
 OpenURL field mapping follows the [OCLC reference](https://help.oclc.org/Resource_Sharing/Tipasa/Reference/Configure_OpenURL). Chapters use the book format with a chapter title and collection title.
 

@@ -1,4 +1,8 @@
-# Import-review development demo
+# Import-review example host
+
+The 0.5.0 learning build includes this host under `site/import/`, with saved example metadata by default and a separate live-lookup page. Build it with `npm run build:learn`; see [the learning-site guide](learning-site.md). Public sample documents exercise TXT, Markdown, PDF, DOCX and ODT without publishing private manuscripts.
+
+The host's JSON configuration accepts `processing:'browser'` (default), `localExamples:false` to skip the optional private catalogue endpoint, and `providerResponses:'./provider-responses.json'` for fixed teaching metadata. Saved results and exported cache provenance are explicitly labelled as examples; they do not claim a live provider verification or search-accuracy measurement. These options configure the example host, not the headless import API. Ordinary live import continues to look up selected references automatically.
 
 Run from the `codex/citation-import` checkout with Node 22.13 or later:
 

@@ -40,7 +40,12 @@ export class AccessView {
     this.#options = next;
     this.#messages = messages;
     for (const {node,key,prefix} of this.#sheetMessages) node.textContent = prefix + this.text(key);
-    if (this.#sheet) { this.#sheet.lang = messages.locale; this.#sheet.setAttribute("aria-label", this.text("access.settings")); }
+    if (this.#sheet) {
+      this.#sheet.lang = messages.locale;
+      this.#sheet.setAttribute("aria-label", this.text("access.settings"));
+      const error=this.#sheet.querySelector('[data-ci-access-error]');
+      if(error?.textContent)error.textContent=this.text('access.invalid');
+    }
     accessCatalog(this.#options.accessCatalog);
     if (this.#options.accessLayout && !["flat", "grouped"].includes(this.#options.accessLayout)) throw new TypeError("Use grouped or flat access.");
     if (this.#options.accessSettings && !["builtin", "host", "off"].includes(this.#options.accessSettings)) throw new TypeError("Use builtin, host or off access settings.");
@@ -258,7 +263,7 @@ export class AccessView {
     kind.addEventListener("change", () => { address.disabled = kind.value === "none"; });
     library.append(kindLabel, addressLabel, message("p", "access.library.help"));
     form.append(library);
-    const error = node(doc, "p"); error.setAttribute("role", "alert"); form.append(error);
+    const error = node(doc, "p"); error.dataset.ciAccessError = ""; error.setAttribute("role", "alert"); form.append(error);
     const save = message("button", "access.save"); save.type = "submit";
     const clear = message("button", "access.clear"); clear.type = "button";
     clear.addEventListener("click", () => { setAccessProfile(null, this.storageOptions); close(); });

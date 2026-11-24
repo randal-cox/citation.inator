@@ -1171,6 +1171,8 @@ var AccessView = class {
     if (this.#sheet) {
       this.#sheet.lang = messages.locale;
       this.#sheet.setAttribute("aria-label", this.text("access.settings"));
+      const error = this.#sheet.querySelector("[data-ci-access-error]");
+      if (error?.textContent) error.textContent = this.text("access.invalid");
     }
     accessCatalog(this.#options.accessCatalog);
     if (this.#options.accessLayout && !["flat", "grouped"].includes(this.#options.accessLayout)) throw new TypeError("Use grouped or flat access.");
@@ -1438,6 +1440,7 @@ var AccessView = class {
     library.append(kindLabel, addressLabel, message("p", "access.library.help"));
     form.append(library);
     const error = node(doc, "p");
+    error.dataset.ciAccessError = "";
     error.setAttribute("role", "alert");
     form.append(error);
     const save = message("button", "access.save");

@@ -1,0 +1,38 @@
+{
+  "repository": "https://github.com/randal-cox/draft.inator",
+  "ref": "36c79b1",
+  "license": "MIT",
+  "purpose": "Unmodified accepted editor files for the worked integration lesson.",
+  "files": [
+    {
+      "name": "editor.js",
+      "path": "src/editor/editor.js",
+      "blob": "0164a91fcf25fbcc858dc552102f7a014db82440"
+    },
+    {
+      "name": "importer.js",
+      "path": "src/editor/importer.js",
+      "blob": "a3f466f29cdd9b838bf796afa986f35ce5516a83"
+    },
+    {
+      "name": "forms.js",
+      "path": "src/editor/forms.js",
+      "blob": "cfdd6233242d527c09ef091b21e506c6ef69bb8c"
+    },
+    {
+      "name": "citation.js",
+      "path": "src/blocks/citation.js",
+      "blob": "f43407ecef0306335238ceea3f63a1af03ec00fc"
+    },
+    {
+      "name": "editor.css",
+      "path": "src/editor/editor.css",
+      "blob": "9c54d89ce59d2f9838c7456358f095072ab5c0a2"
+    },
+    {
+      "name": "LICENSE",
+      "path": "LICENSE",
+      "blob": "4357a3335e829b15bfce25e30bcfc2eb00de6e86"
+    }
+  ]
+}

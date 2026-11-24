@@ -393,7 +393,7 @@ var package_default = {
     start: "node scripts/serve.mjs",
     prepack: "npm run build",
     "checkin:check": "node scripts/checkin.mjs --staged",
-    "milestone:check": "npm test && npm run build && npm run test:browser && node scripts/checkin.mjs",
+    "milestone:check": "npm test && npm run build && npm run test:browser && npm run test:learn && node scripts/checkin.mjs",
     "hooks:install": "git config --local core.hooksPath .githooks",
     "build:learn": "npm run build && node scripts/build-learning.mjs",
     "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs"

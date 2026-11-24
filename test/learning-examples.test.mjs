@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {compileMarkdown} from '../src/markup.mjs';
 import {lessons} from '../learn/lessons.mjs';
-const records=JSON.parse(await readFile(new URL('../fixtures/notation-records.json',import.meta.url),'utf8'));
+import {learningRecords} from '../learn/example-records.mjs';
+const records=learningRecords(JSON.parse(await readFile(new URL('../fixtures/notation-records.json',import.meta.url),'utf8')));
 test('learning examples resolve their cited records in all five formatting presets',()=>{
   for(const citationStyle of ['chicago-author-date','apa','mla','harvard','vancouver'])for(const lesson of lessons){
-    const result=compileMarkdown(lesson.source,{schema:'citation-inator.cache.v1',records},{...lesson.options,citationStyle});
+    const result=compileMarkdown(lesson.source,{schema:'citation-inator.cache.v1',records:records.map(record=>({...record,...lesson.recordOverrides?.[record.id]}))},{...lesson.options,citationStyle});
     assert(result.cache.records.length,lesson.id);
-    assert(!result.cache.records.some(record=>record.state==='unresolved'),lesson.id);
-    assert.equal(result.diagnostics.length,0,lesson.id);
+    assert.equal(result.cache.records.some(record=>record.state==='unresolved'),Boolean(lesson.unresolved),lesson.id);
+    if(!lesson.unresolved)assert.equal(result.diagnostics.length,0,lesson.id);
   }
 });
 test('Chicago first-citation example does not add punctuation after a final author initial',()=>{

@@ -23,9 +23,15 @@ initializeCitationInspector(element, {cache:result.cache, activation:'click'});
 
 For untrusted or editable HTML, sanitize the final compiled output with an established sanitizer before insertion. The compiler preserves authored HTML; it is not a sanitizer. The playground uses DOMPurify and passes the cache explicitly after embedded scripts are removed. Keep library-generated SVG icons when choosing a sanitizer profile.
 
-With npm, install the release tarball, import `compileMarkdown` from `citation-inator/markup` in your build, and import the browser module from `citation-inator/browser` through your bundler. The release is available as a GitHub asset; an npm registry publication is not implied. Node requires 22.13.0 or later. Copy the bundled CSS and notices alongside browser assets.
+Download the [copied-file starter](./citation-starter.zip) for the first complete example: run `npm start` without an install, or `node server.mjs` without npm. Download the [npm build starter](./citation-npm-starter.zip) for a pinned library tarball and static build: run `npm install`, then `npm start`. Both serve at `http://127.0.0.1:4188/` and include their source, cache, configuration and notices.
+
+The [offline learning site](./citation-learning-site.zip) includes the whole playground, tutorials, saved import metadata, public native samples and pinned editor example. Run `npm start` or `node server.mjs` in its extracted folder; no install is required. Live lookup remains a separate online page.
+
+With npm, import `compileMarkdown` from `citation-inator/markup` in your build, and import the browser module from `citation-inator/browser` through your bundler. The release is available as a GitHub asset; an npm registry publication is not implied. Node requires 22.13.0 or later. Copy the bundled CSS and notices alongside browser assets.
 
 ## First citation
+
+The [complete notation reference](./notation.html) covers every marker option, directive, escape rule, scope and compatibility form.
 
 [Open the playground](./index.html#playground), select **First citation**, and edit its sentence. The identifier after `citation` names a cached record. Download both Markdown and reference cache when using local IDs: the marker alone does not contain the bibliography.
 
@@ -106,6 +112,16 @@ Reading-list directives, `tagCatalogue`, `inlineTags` and `listFilters` produce 
 
 ## Reviewed import
 
+Open the [saved-metadata import walkthrough](./import/). Its fixed example metadata works without contacting providers. The separate [live lookup demo](./import/live.html) sends bibliographic reference details to Crossref and Open Library; it does not upload the complete document. Saved examples demonstrate the review flow, not search accuracy or current provider availability.
+
+Try the same small public document as [plain text](./documents/sample.txt), [Markdown](./documents/sample.md), [PDF](./documents/sample.pdf), [DOCX](./documents/sample.docx) or [ODT](./documents/sample.odt). Download one, then drop it into Import Document. One reference is real; the second deliberately has no bibliography entry. Original-file download should reproduce your input bytes. The [manifest](./documents/manifest.json) supplies checksums and attribution. These are newly authored public examples, not private manuscript exports.
+
+1. In the Einstein example, open an ambiguous citation and choose the paper matching the sentence. Its identifier lookup starts automatically.
+2. Compare the supplied bibliography with candidate metadata. Keep identity/edition conflicts for review; an automatic match is not a check of the sentence's claim.
+3. For a missing source, paste a DOI/ISBN/URL or leave the citation unchanged. A reference without an identifier can finish as a local record.
+4. Open Converted Document to inspect the actual `{cite ...}` notation, then Reading Preview. Download both converted Markdown and references.
+5. Edit Raw Document and verify that stale choices cannot be applied to the changed source. The working copy includes its bibliography; choosing another example replaces that complete source.
+
 Import starts with a complete document and its bibliography. Text, Markdown, PDF, DOCX and ODT adapters extract reviewable text while preserving the original file. They do not reconstruct arbitrary native layouts or provide OCR. Review ambiguity, combined citations, unmatched spans and edition differences before applying a conversion.
 
 An identifier recovered from a wrapped URL is a proposal. It becomes a canonical identifier only after successful metadata completion or explicit acceptance. A work can finish with a local record and no DOI/ISBN. Keep the downloaded converted Markdown and cache together. Provider failure leaves manual identifier entry and local completion available; it must not invent metadata or silently accept an edition.
@@ -119,7 +135,7 @@ Pass the same `locale` and `strings` to compiler and inspector. English is the f
 ```js
 const options = {
   locale:'es',
-  strings:{'access.more':{one:'{count} más',other:'{count} más'}}
+  strings:{'access.more':{one:'{countLabel} más',other:'{countLabel} más'}}
 };
 ```
 
@@ -127,4 +143,4 @@ Explicit authored headings and panel titles win. Source titles/authors, citation
 
 ## Next recipes
 
-The repository includes complete guides for article tools, reader access, media support, import API, citation styles and draft integration. Downloads and worked host recipes are being built for milestone 0.5.0; the published 0.4.0 release remains available while this learning site is under development.
+Browse the [annotated working examples and API guides](./tutorials.html), try the [editor-note and tag tools](./tools/editor-tools.html), or explore the [shared bibliography](./tools/bibliography.html). The [worked draft integration](./host/) runs the accepted editor code, with [source, staging, revision, undo and persistence notes](./host/recipe.html). These are separate hosts of the same library; the import API does not require a particular page layout or CSS framework.
