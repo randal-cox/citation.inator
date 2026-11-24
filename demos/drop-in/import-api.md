@@ -7,7 +7,7 @@ The Node/browser import API and native extraction are included in 0.4.0. The hea
 Node requires 22.13 or later. In an installed 0.4.0 package:
 
 ```js
-import { processImportRequest } from 'citation-inator/import';
+import { processImportRequest } from 'cite-inator/import';
 ```
 
 For a browser without npm, copy `dist/citation-import.mjs` and `dist/THIRD_PARTY_LICENSES.txt` from the same release:
@@ -16,7 +16,7 @@ For a browser without npm, copy `dist/citation-import.mjs` and `dist/THIRD_PARTY
 import { processImportRequest } from './citation-import.mjs';
 ```
 
-The import bundle is self-contained and has no required UI, network request, storage or framework. Bundlers can use `citation-inator/import-browser`. The demo is one host of this API; its full-page layout is not required in another editor.
+The import bundle is self-contained and has no required UI, network request, storage or framework. Bundlers can use `cite-inator/import-browser`. The demo is one host of this API; its full-page layout is not required in another editor.
 
 ## Analyze, review, preview
 
@@ -95,14 +95,14 @@ If distinct imported references claim the same canonical DOI/ISBN, `import-confl
 This is a separate optional bundle, so ordinary parsing/compiling does not load PDF code:
 
 ```js
-import { extractImportFile } from 'citation-inator/import-files';
+import { extractImportFile } from 'cite-inator/import-files';
 const extracted = await extractImportFile(bytes, { filename: 'paper.docx' });
 const analysis = processImportRequest({
   mode: 'document', source: extracted.text, style: 'auto'
 });
 ```
 
-In a browser, copy `citation-import-files.mjs`, its adjacent `citation-pdf.worker.mjs` and the license notices. Import `./citation-import-files.mjs`, or use `citation-inator/import-files-browser` with a bundler and configure `pdfWorkerSrc` to the copied worker URL. The page must permit the same-origin module worker under its CSP (`worker-src 'self'`). `File`, `Blob`, `Uint8Array` and `ArrayBuffer` inputs are accepted. No URL is fetched as a document input.
+In a browser, copy `citation-import-files.mjs`, its adjacent `citation-pdf.worker.mjs` and the license notices. Import `./citation-import-files.mjs`, or use `cite-inator/import-files-browser` with a bundler and configure `pdfWorkerSrc` to the copied worker URL. The page must permit the same-origin module worker under its CSP (`worker-src 'self'`). `File`, `Blob`, `Uint8Array` and `ArrayBuffer` inputs are accepted. No URL is fetched as a document input.
 
 | Input | Working copy and limits |
 | --- | --- |
@@ -135,13 +135,13 @@ Native PDF extraction accepts Node Buffers as byte arrays without changing calle
 
 Explicit DOI text can cross a single line break in the resolver prefix (`https://` / `doi.org/` / `10.…`) or at a supported punctuation boundary within the identifier. Recovery is bounded to four continuations and requires DOI-shaped evidence; arbitrary whitespace is not removed. Metadata labels, reference labels, ordinary prose and ambiguous bare numbers are not appended. Numeric-only continuations are restricted to zero-leading suffix segments after a numeric segment. Unsupported fragments remain withheld with `import-wrapped-identifier-review-required`; recovered proposals use `import-wrapped-identifier-recovered` and `explicit-doi-line-wrap` evidence with `exact: false`. Original text and source ranges remain available. Recovered values appear in `referenceRecords[].identifierProposals`, separate from exact `identifiers`; they are not promoted automatically into the portable cache or canonical markers. They remain local until accepted completion metadata or an explicit manual identifier decision. The demo resolves them directly but keeps them orange until accepted. Syntactic recovery does not establish work identity; provider conflict checks and editorial choices still apply. Markdown autolinks cannot restore a withheld partial identifier.
 
-Common numbered journal references now propose compact personal bylines, institutional bylines, title, journal, year, volume, issue and pages/article number from an explicit `year;volume(issue):pages` tail. `et al.` sets `authorsComplete: false`. Multiple title/journal boundaries carry `import-reference-title-boundary-review-required`; the type stays generic to prevent automatic identity approval from an uncertain split. Unsupported book/report/web fields and unusual bylines remain raw/partial, with coded diagnostics. Accessed dates are not treated as publication years. The [updated public PDF audit](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/evidence/import-plos-0294391-2026-11-23.json) separates canonical reference-field accuracy from native PDF hyphenation differences and records 15 exact DOI records plus 12 recovered proposals against all 27 publisher DOI values. This is one regression sample, not a general accuracy guarantee.
+Common numbered journal references now propose compact personal bylines, institutional bylines, title, journal, year, volume, issue and pages/article number from an explicit `year;volume(issue):pages` tail. `et al.` sets `authorsComplete: false`. Multiple title/journal boundaries carry `import-reference-title-boundary-review-required`; the type stays generic to prevent automatic identity approval from an uncertain split. Unsupported book/report/web fields and unusual bylines remain raw/partial, with coded diagnostics. Accessed dates are not treated as publication years. The [updated public PDF audit](https://github.com/randal-cox/cite.inator/blob/codex/citation-import/docs/evidence/import-plos-0294391-2026-11-23.json) separates canonical reference-field accuracy from native PDF hyphenation differences and records 15 exact DOI records plus 12 recovered proposals against all 27 publisher DOI values. This is one regression sample, not a general accuracy guarantee.
 
 <a id="reuse-site-records-and-choose-new-ids-040-preview"></a>
 
 ## Reuse site records and choose new IDs (0.4.0)
 
-Pass `siteCache`, a normal citation.inator cache, to analysis and preview. Source bibliography matches remain separate from site identity proposals. Analysis returns `siteMatches`: one `{ recordId, candidates }` entry per imported reference. Each candidate has the site record ID, title, evidence and `requiresReview: true`. Look up full metadata in the cache you supplied. Shared canonical identifiers or compatible bibliographic evidence produce proposals; neither automatically reuses a work. Matching main titles may propose a site work whose subtitle, type or given-name spelling differs, provided author and year evidence remains compatible. `evidence.mainTitleMatch` reports title agreement and `evidence.differences` lists differing fields (`title`, `authors`, `type`). Read their full values from `referenceRecords` and the supplied site cache; the full candidate assessment remains unchanged. This broader site proposal rule does not relax provider identifier verification.
+Pass `siteCache`, a normal cite.inator cache, to analysis and preview. Source bibliography matches remain separate from site identity proposals. Analysis returns `siteMatches`: one `{ recordId, candidates }` entry per imported reference. Each candidate has the site record ID, title, evidence and `requiresReview: true`. Look up full metadata in the cache you supplied. Shared canonical identifiers or compatible bibliographic evidence produce proposals; neither automatically reuses a work. Matching main titles may propose a site work whose subtitle, type or given-name spelling differs, provided author and year evidence remains compatible. `evidence.mainTitleMatch` reports title agreement and `evidence.differences` lists differing fields (`title`, `authors`, `type`). Read their full values from `referenceRecords` and the supplied site cache; the full candidate assessment remains unchanged. This broader site proposal rule does not relax provider identifier verification.
 
 ```js
 const context = { mode: 'document', source, style: 'apa', siteCache };

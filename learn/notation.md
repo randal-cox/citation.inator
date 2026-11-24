@@ -29,9 +29,9 @@ An identifier names what it actually identifies. An ISBN selects an edition, an 
 ## Per-work options
 
 ```text
-{citation durkheim-1995-fields | prefix:"see also" | locator:"p. 34"}
-{citation ioannidis-2005 | form:narrative}
-{citation ioannidis-2005 | note:"Ioannidis 2005" | tags:methods,reliability}
+{citation isbn:9780029079379 | prefix:"see also" | locator:"p. 34"}
+{citation doi:10.1371/journal.pmed.0020124 | form:narrative}
+{citation doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005" | tags:methods,reliability}
 ```
 
 | Option | Effect |
@@ -57,8 +57,8 @@ Tags use lowercase letters/digits/hyphens, start with a letter or digit and cont
 Quote values containing notation separators. Escape a literal backslash, brace, semicolon, pipe or double quote with a backslash.
 
 ```text
-{citation ioannidis-2005 | label:"A label with \"quotes\" and a \; separator"}
-\{citation ioannidis-2005\}
+{citation doi:10.1371/journal.pmed.0020124 | label:"A label with \"quotes\" and a \; separator"}
+\{citation doi:10.1371/journal.pmed.0020124\}
 ```
 
 The second line displays literal braces rather than a processed citation. Labels require nonempty double-quoted text. Prefixes/locators can be unquoted when they contain no separators. Do not put newlines inside a marker. Duplicate or invalid options can make the marker malformed; inspect diagnostic codes and retain the original source when uncertain.
@@ -73,16 +73,16 @@ Markdown code spans/fences and excluded HTML/interactive regions remain literal 
 {citation endnote | scope:since-last | heading:none}
 ```
 
-Place endnote directives on their own line or paragraph. In Markdown prose, the following text does not need a separating blank line. Inside a tight list item, give the directive its own paragraph; an inline directive remains literal with a diagnostic. `heading` overrides the configured `endnotesHeading`; `heading:none` keeps an accessible section without a visible heading. `level` accepts 1 through 6. `scope:since-last` closes the current local reference scope, useful for separate entries on one page. A trailing unclosed scope receives its final list. Running-prose placement is diagnosed rather than guessed.
+Place endnote directives on their own line or paragraph. In Markdown prose, the following text does not need a separating blank line. Inside a list item, put a blank line before and after the directive and indent it to match the item’s text; an inline directive remains literal with a diagnostic. `heading` overrides the configured `endnotesHeading`; `heading:none` keeps an accessible section without a visible heading. `level` accepts 1 through 6. `scope:since-last` closes the current local reference scope, useful for separate entries on one page. A trailing unclosed scope receives its final list. Running-prose placement is diagnosed rather than guessed.
 
 Repeated mentions share one work entry in their scope, with contextual lettered return links. Use separate document namespaces for separate compiled fragments. Year suffixes normally belong to the current reference list; `suffixScope:'cache'` suits one work split over pages sharing a bibliography, not independent articles.
 
 ## Reading lists and uncited works
 
 ```text
-{citation list ioannidis-2005; durkheim-1995-fields | sort:author}
-{citation list ioannidis-2005; adelie-penguins-2020 | tags:methods,data | tag-mode:any}
-{citation nocite durkheim-1995-fields}
+{citation list doi:10.1371/journal.pmed.0020124; isbn:9780029079379 | sort:author}
+{citation list doi:10.1371/journal.pmed.0020124; doi:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f | tags:methods,data | tag-mode:any}
+{citation nocite isbn:9780029079379}
 ```
 
 `list` emits the supplied works as a reading list without inventing in-text mentions. `sort` accepts `author` or `year`. `tags` filters the supplied list by curated effective tags; `tag-mode` is `any` or `all`. Runtime `listFilters` adds reader checkboxes separately from this build-time selection.

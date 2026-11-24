@@ -28,14 +28,14 @@ export async function checkStructuredDemo(browser, url, compact, evidence) {
     if (await otherLocations.count()) await otherLocations.click();
     await panel.getByText("Collection code: CLIMATE-NORMALS (Demo catalog)").waitFor();
     assert.equal(await panel.evaluate(node => getComputedStyle(node).backgroundColor), "rgb(245, 240, 223)");
-    assert.match(await panel.getByRole("link", { name: /Open publisher page/ }).getAttribute("href"), /ncei\.noaa\.gov/);
+    assert.match(await panel.getByRole("link", { name: /Read online/ }).getAttribute("href"), /ncei\.noaa\.gov/);
     await panel.getByRole("button", { name: "Go to endnote" }).click();
     assert.equal(await note.evaluate(node => node === document.activeElement), true);
     await note.getByRole("link", { name: "Return to Table caption" }).click();
     assert.equal(await captions.nth(1).evaluate(node => node === document.activeElement), true);
     await activate(reader.getByRole("button", { name: "Inspect citation: Station relocation log" }));
     await panel.getByText("Unresolved", { exact: true }).waitFor();
-    assert.equal(await panel.getByRole("link", { name: /Open publisher page/ }).count(), 0);
+    assert.equal(await panel.getByRole("link", { name: /Read online/ }).count(), 0);
     await page.keyboard.press("Escape");
     await panel.waitFor({ state: "hidden" });
 

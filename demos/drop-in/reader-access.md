@@ -2,6 +2,8 @@
 
 These features are available in version 0.1.4. Run `npm start` and open **Reader access and artwork** in the Reading room or Plain HTML.
 
+Direct reading/download actions remain visible. The inspector shows labelled **Read online** and **Download PDF** controls when it has those destinations; catalogue and optional service links may be collapsed. A DOI provides an online destination, not a guarantee of free access. The settings prompt names the library/services configuration and is omitted where there are no source links.
+
 ## Load and configure
 
 Load the browser module and its adjacent CSS using the [integration guide](integration.md#load-and-initialize). Access settings work with compiled markup and structured occurrences.
@@ -19,7 +21,7 @@ initializeCitationInspector(reader, {
   accessCatalog: [{ id: "hathi-trust", label: "Hathi Trust", kind: "library" }],
   locale: "en",
   strings: {
-    "access.help.unknown": "Tell us where you read",
+    "access.help.unknown": "Choose your library or reading services",
     "access.more": { one: "{count} other place", other: "{count} other places" }
   }
 });

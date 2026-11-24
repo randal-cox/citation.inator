@@ -61,6 +61,7 @@ function destination(list, label, icon, url, { version, download = false } = {})
   const row = element("li");
   const name = version ? `${label} (${version})` : label;
   const link = iconControl(external(url), icon, name, `${name}\n${url}`);
+  link.dataset.accessKind=({publisher:'publisher',pdf:'pdf',repository:'repository',external:'preprint'})[icon]||'';
   if (download) link.download = "";
   row.append(link);
   list.append(row);
@@ -127,7 +128,7 @@ class CitationInspector extends HTMLElement {
     this.#dialog.part = "panel";
     this.#dialog.setAttribute("aria-labelledby", "panel-name");
     const header = element("header", "", "panel-header");
-    this.#heading = element("h2", "citation.inator");
+    this.#heading = element("h2", "cite.inator");
     this.#heading.id = "panel-name";
     this.#heading.tabIndex = -1;
     this.#brandIcon = element("img", "", "brand-icon");
@@ -896,7 +897,7 @@ class CitationInspector extends HTMLElement {
   #updateHeader(annotation) {
     const panel = annotation ? this.#trigger?.dataset.ciPanel : "panel";
     this.#heading.textContent = this.getAttribute(`${panel}-title`)?.trim() ||
-      annotation?.getAttribute("aria-label") || "citation.inator";
+      annotation?.getAttribute("aria-label") || "cite.inator";
     const icon = (this.getAttribute(`${panel}-icon`) ?? this.getAttribute("panel-icon"))?.trim();
     let source;
     if (icon && icon !== "none") {
@@ -1068,7 +1069,7 @@ class CitationInspector extends HTMLElement {
     const list = element("ul", "", "destinations");
     list.setAttribute("aria-label", this.#messages.text('access.links'));
     destination(list, this.#messages.text('access.action.pdf'), "pdf", pdf?.url, { version: pdf?.version, download: true });
-    destination(list, this.#messages.text('access.action.publisher'), "publisher", publisher?.url === doiURL ? "" : publisher?.url);
+    destination(list, this.#messages.text('access.action.publisher'), "publisher", publisher?.url || doiURL);
     destination(list, this.#messages.text('access.action.repository'), "repository", location("repository")?.url);
     destination(list, this.#messages.text('ui.pubmed'), "article", id("pmid"));
     destination(list, this.#messages.text('ui.pmc'), "repository", id("pmcid"));

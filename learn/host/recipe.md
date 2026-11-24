@@ -1,6 +1,6 @@
 # Mount the editor and citation tools
 
-This working example uses unmodified draft.inator editor files from its accepted citation.inator 0.4.0 integration at commit `36c79b1`. Its [source manifest](./SOURCE.json) records exact Git blob identities and its [license](./DRAFT_LICENSE.txt) accompanies the files. It demonstrates the real `mountEditor` API, not a replacement editor invented for this tutorial. See draft's [accepted recipe](https://github.com/randal-cox/draft.inator/blob/36c79b1/docs/editor.md) and [integration example](https://github.com/randal-cox/draft.inator/blob/36c79b1/demo/editor/editor.mjs).
+This working example uses unmodified draft.inator editor files from its accepted cite.inator 0.4.0 integration at commit `36c79b1`. Its [source manifest](./SOURCE.json) records exact Git blob identities and its [license](./DRAFT_LICENSE.txt) accompanies the files. It demonstrates the real `mountEditor` API, not a replacement editor invented for this tutorial. See draft's [accepted recipe](https://github.com/randal-cox/draft.inator/blob/36c79b1/docs/editor.md) and [integration example](https://github.com/randal-cox/draft.inator/blob/36c79b1/demo/editor/editor.mjs).
 
 Load the editor CSS, forms, works data and Cite block first. Then import your initialization module:
 
@@ -33,7 +33,7 @@ The headless API binds its review to the source, bibliography, style, keyword, n
 
 ## Fit the host
 
-The editor receives `render`, `citations`, `importer`, `previewClass` and its own theme variables. citation.inator supplies compilation, identities, review evidence and reference data; draft owns forms, layout, selection, undo and persistence hooks. The [host stylesheet](./host.css) changes the editor box without changing the library's citation format. The learning site's editable preview is sanitized separately from the library's trusted-authored-HTML compiler contract.
+The editor receives `render`, `citations`, `importer`, `previewClass` and its own theme variables. cite.inator supplies compilation, identities, review evidence and reference data; draft owns forms, layout, selection, undo and persistence hooks. The [host stylesheet](./host.css) changes the editor box without changing the library's citation format. The learning site's editable preview is sanitized separately from the library's trusted-authored-HTML compiler contract.
 
 Keep one citation style across the site build, `describeCitation`, editor notes and preview. For notes read by editors, use `noteContext:'work'` with `annotateMarkers` so article-local year letters do not fight with context-free descriptions. Use `markerKind` and `formatRecordId` instead of copying marker/directive rules.
 

@@ -1,6 +1,6 @@
 {
-  "name": "citation-inator",
-  "version": "0.5.0-preview.1",
+  "name": "cite-inator",
+  "version": "0.5.0-preview.2",
   "description": "Portable citations, endnotes, and source inspection",
   "type": "module",
   "license": "MIT",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/randal-cox/citation.inator.git"
+    "url": "git+https://github.com/randal-cox/cite.inator.git"
   },
   "engines": {
     "node": ">=22.13.0"
@@ -36,6 +36,7 @@
     "./i18n": "./src/i18n.mjs"
   },
   "bin": {
+    "cite-inator": "./scripts/compile.mjs",
     "citation-inator": "./scripts/compile.mjs"
   },
   "files": [

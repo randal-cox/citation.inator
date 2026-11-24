@@ -1,4 +1,4 @@
-# citation.inator UX adversaries
+# cite.inator UX adversaries
 
 Launch supplement, 2026-11-10. These are acceptance scenarios, not claims that testing has passed. Apply them to the actual standalone distribution as well as the development demo. Prioritize the first eight in the first usable slice; exercise the rest before sharing the distribution with adopters. Drag/resize scenarios apply only if those features ship.
 

@@ -33,7 +33,7 @@ Without npm, run \`node server.mjs\` (Node 22.13.0 or later). Any static HTTP se
 
 The HTML loads citation-inspector.css, creates a citation-inspector element and loads article.mjs. That module imports the compiler and inspector, compiles article.md with citations.json/configuration.json, inserts trusted authored output and initializes the reader panel with the returned cache.
 
-Edit DOI/ISBN markers in article.md and appearance in configuration.json, then reload. citations.json is saved bibliographic metadata for this offline example. Resolve newly added identifiers in your build/import workflow; you do not need to author JSON for each DOI. Keep any local-ID markers with their generated metadata. This copied-file starter uses bundled browser assets, not an npm registry dependency. For npm build integration, see https://github.com/randal-cox/citation.inator/blob/${sourceRef}/README.md .
+Edit DOI/ISBN markers in article.md and appearance in configuration.json, then reload. citations.json is saved bibliographic metadata for this offline example. Resolve newly added identifiers in your build/import workflow; you do not need to author JSON for each DOI. Keep any local-ID markers with their generated metadata. This copied-file starter uses bundled browser assets, not an npm registry dependency. For npm build integration, see https://github.com/randal-cox/cite.inator/blob/${sourceRef}/README.md .
 
 Only use trusted authored HTML with this starter's direct insertion. A public editing host must sanitize compiled HTML before inserting it. The learning playground demonstrates that boundary with DOMPurify.
 
@@ -56,21 +56,21 @@ export async function npmLearningStarter({version,source,records,options={}}){
     }
     const output=JSON.parse(execFileSync('npm',['pack','--ignore-scripts','--json'],{cwd:directory,encoding:'utf8',timeout:30000,env:{...process.env,npm_config_cache:join(tmpdir(),'citation-learning-pack-cache')}}));
     const tarball=output[0].filename;
-    if(tarball!==`citation-inator-${version}.tgz`)throw new Error('Starter library version differs from the learning site.');
+    if(tarball!==`cite-inator-${version}.tgz`)throw new Error('Starter library version differs from the learning site.');
     const files={},add=(name,text)=>files['citation-npm-starter/'+name]=strToU8(text);
     files['citation-npm-starter/'+tarball]=new Uint8Array(await readFile(join(directory,tarball)));
-    add('package.json',JSON.stringify({name:'citation-npm-starter',private:true,type:'module',version:'1.0.0',engines:{node:'>=22.13.0'},scripts:{build:'node build.mjs',prestart:'npm run build',start:'node server.mjs'},dependencies:{'citation-inator':'file:./'+tarball}},null,2));
-    for(const [destination,path] of Object.entries({'build.mjs':'learn/starters/npm-build.mjs','article.mjs':'learn/starters/npm-browser.mjs','template.html':'learn/starters/npm-index.html','server.mjs':'scripts/static-server.mjs'}))files['citation-npm-starter/'+destination]=new Uint8Array(await readFile(path));
+    add('package.json',JSON.stringify({name:'citation-npm-starter',private:true,type:'module',version:'1.0.0',engines:{node:'>=22.13.0'},scripts:{resolve:'node resolve.mjs',build:'node build.mjs',prestart:'npm run build',start:'node server.mjs'},dependencies:{'cite-inator':'file:./'+tarball}},null,2));
+    for(const [destination,path] of Object.entries({'resolve.mjs':'learn/starters/resolve.mjs','build.mjs':'learn/starters/npm-build.mjs','article.mjs':'learn/starters/npm-browser.mjs','template.html':'learn/starters/npm-index.html','server.mjs':'scripts/static-server.mjs'}))files['citation-npm-starter/'+destination]=new Uint8Array(await readFile(path));
     add('article.md',source);add('citations.json',JSON.stringify(records,null,2));add('configuration.json',JSON.stringify(options,null,2));
     add('README.md',`# npm citation starter — ${version}
 
 Run \`npm install\`, then \`npm start\`. Open http://127.0.0.1:4188/.
 
-The library tarball is included and pinned by filename; no npm registry publication of citation.inator is assumed. npm installs its dependencies and creates your lockfile. Node 22.13.0 or later is required.
+The library tarball is included and pinned by filename; no npm registry publication of cite.inator is assumed. npm installs its dependencies and creates your lockfile. Node 22.13.0 or later is required.
 
-Edit DOI/ISBN markers in article.md and options in configuration.json, then run \`npm run build\`. The build imports compileMarkdown from citation-inator/markup and writes static index.html plus its compiled cache. article.mjs initializes the reader using the matching prebuilt browser assets. npm start builds first and serves the folder; no server-side compiler endpoint or provider account is needed.
+Edit DOI/ISBN markers in article.md and options in configuration.json, then run \`npm run build\`. The build imports compileMarkdown from cite-inator/markup and writes static index.html plus its compiled cache. article.mjs initializes the reader using the matching prebuilt browser assets. npm start builds first and serves the folder; no server-side compiler endpoint or provider account is needed.
 
-citations.json contains saved bibliographic metadata for the example, rather than a required authoring format. Resolve new DOI/ISBN identifiers in your build/import workflow. Curated records support sources without identifiers. The generated HTML is readable without JavaScript. Keep local-ID markers with their cache. Only build trusted authored HTML using this example's direct insertion; a public editing host must sanitize its compiled output. License and notices are copied from the installed library during build.
+citations.json contains saved bibliographic metadata for the example, rather than a required authoring format. After adding a new DOI/ISBN to article.md, run \`npm run resolve\`, then \`npm start\`. Resolution contacts Crossref/Open Library for missing identifiers and preserves the metadata file if any lookup fails. Curated records support sources without identifiers. The generated HTML is readable without JavaScript. Keep local-ID markers with their cache. Only build trusted authored HTML using this example's direct insertion; a public editing host must sanitize its compiled output. License and notices are copied from the installed library during build.
 `);
     return zipSync(files,{level:6});
   }finally{await rm(directory,{recursive:true,force:true});}

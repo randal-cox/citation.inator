@@ -18,7 +18,7 @@ function node(doc, tag, text, part) {
 }
 
 function containerIsPanel(container) {
-  return container.getRootNode().host?.localName === "citation-inspector";
+  return container.dataset.ciPanelAccess === "true" || container.dataset.citationPart?.split(/\s+/).includes("access") || container.getRootNode().host?.localName === "citation-inspector";
 }
 
 export class AccessView {
@@ -115,11 +115,18 @@ export class AccessView {
       const item = locations.find(item => item.url === link.href && (!provider || item.provider === provider)) ||
         (known && { url: link.href, provider, service: known.id, serviceLabel: known.label, kind: "library", access: "unknown" });
       if (!item) {
+        const directKind=link.dataset.accessKind || (link.href.startsWith('https://doi.org/')?'publisher':link.href.startsWith('https://arxiv.org/')?'preprint':/https:\/\/(?:pmc\.ncbi\.nlm\.nih\.gov|www\.ncbi\.nlm\.nih\.gov\/pmc)\//.test(link.href)?'repository':record.identifiers.some(id=>id.scheme==='url'&&id.value===link.href)?'publisher':'');
+        if(['publisher','pdf','repository','preprint'].includes(directKind)){
+          link.dataset.accessKind=directKind;link.dataset.accessPrimary='true';
+          const label=this.text('access.action.'+directKind);link.setAttribute('aria-label',label);link.title=label+'\n'+link.href;
+        }
         if (hidden(link.dataset.ciAccessProvider || "")) link.remove();
         continue;
       }
       if ([item.provider, item.service, item.serviceLabel].some(value => value && hidden(value))) { link.remove(); continue; }
       const kind = item.kind === "preprint" && /\.pdf(?:[?#]|$)/i.test(item.url) ? "pdf" : item.kind;
+      link.dataset.accessKind=kind;
+      link.dataset.accessPrimary=String(['publisher','pdf','repository','preprint'].includes(kind));
       const key = item.service === "reader-library" ? "access.library" : "access.action." + kind;
       let label = this.text(key, { service: item.serviceLabel });
       if (item.version) label = this.text("access.version", { label, version: item.version });
@@ -146,6 +153,10 @@ export class AccessView {
     }
   }
   #appendLink(container, link) {
+    if(containerIsPanel(container)&&!link.querySelector('[data-citation-part="access-link-label"]')){
+      link.append(node(container.ownerDocument,'span',link.getAttribute('aria-label')||link.title?.split('\n')[0],'access-link-label'));
+    }
+    if(containerIsPanel(container))link.dataset.accessLabeled='';
     if (containerIsPanel(container) && link.dataset.accessChecked) {
       const item = node(container.ownerDocument, "span", "", "access-destination");
       item.append(link, node(container.ownerDocument, "small",
@@ -161,7 +172,9 @@ export class AccessView {
       if (showHelp) this.help(container, links);
       return;
     }
-    const groups = groupAccess(links.map(link => ({
+    const primary=links.filter(link=>link.dataset.accessPrimary==='true');
+    for(const link of primary)this.#appendLink(container,link);
+    const groups = groupAccess(links.filter(link=>!primary.includes(link)).map(link => ({
       link, access: link.dataset.accessState, service: link.dataset.accessService
     })), this.profile);
     for (const [key, entries] of Object.entries(groups)) {
@@ -174,6 +187,7 @@ export class AccessView {
           const more = node(doc, "details", "", "access-more");
           more.append(node(doc, "summary", this.text("access.more", { count: entries.length - visible })));
           const body = node(doc, "div", "", "access-more-body");
+          if(containerIsPanel(container))body.dataset.ciPanelAccess='true';
           for (const { link } of entries.slice(visible)) {
             const destination = node(doc, "span", "", "access-alternative");
             const name = link.getAttribute("aria-label") || link.title || new URL(link.href).hostname;
@@ -191,7 +205,7 @@ export class AccessView {
     if (showHelp) this.help(container, links);
   }
   help(container, links) {
-    if (this.settings === "off") return;
+    if (this.settings === "off" || !links.length) return;
     const profile = this.profile;
     const matched = links.some(link => link.dataset.accessService === "reader-library" || profile?.services.includes(link.dataset.accessService));
     const key = profile === null ? "unknown" : matched ? "match" : "none";
@@ -363,8 +377,10 @@ export class AccessView {
     }
     if (unknown && this.settings !== 'off') for (const list of lists) {
       if (this.#listHelps.has(list)) continue;
+      const links=[...list.querySelectorAll('[data-ci-note-record] a[href^="https:"]')];
+      if(!links.length)continue;
       const help=node(list.ownerDocument,'div','','access-list-help');
-      this.help(help,[]);list.after(help);this.#listHelps.set(list,help);
+      this.help(help,links);list.after(help);this.#listHelps.set(list,help);
     }
   }
   #title(row, record, hidden) {

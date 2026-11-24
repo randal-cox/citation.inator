@@ -1,6 +1,6 @@
 # Article editor tools, site bibliographies and tags
 
-These features are available in 0.2.0 and later. They are absent from 0.1.4; see the [milestone record](https://github.com/randal-cox/citation.inator/blob/main/docs/milestones/0.2.0.md). Reviewed document import is included in 0.4.0; see the [import API guide](https://github.com/randal-cox/citation.inator/blob/main/docs/import-api.md).
+These features are available in 0.2.0 and later. They are absent from 0.1.4; see the [milestone record](https://github.com/randal-cox/cite.inator/blob/main/docs/milestones/0.2.0.md). Reviewed document import is included in 0.4.0; see the [import API guide](https://github.com/randal-cox/cite.inator/blob/main/docs/import-api.md).
 
 <a id="unreleased-draftinator-compatibility-additions"></a>
 <a id="030-draftinator-compatibility-additions"></a>
@@ -9,7 +9,7 @@ These features are available in 0.2.0 and later. They are absent from 0.1.4; see
 
 ## Compile an article in a browser (0.4.0)
 
-For a static editor preview, copy `dist/citation-compiler.mjs` and `dist/THIRD_PARTY_LICENSES.txt` into your site. This self-contained ES module exports `compileMarkdown`, `compileHTML` and `compileCitations`; it needs no npm installation or compiler server in the browser. Serve it over HTTP(S), including a local server, rather than a `file:` page. With npm use `citation-inator/compiler-browser`.
+For a static editor preview, copy `dist/citation-compiler.mjs` and `dist/THIRD_PARTY_LICENSES.txt` into your site. This self-contained ES module exports `compileMarkdown`, `compileHTML` and `compileCitations`; it needs no npm installation or compiler server in the browser. Serve it over HTTP(S), including a local server, rather than a `file:` page. With npm use `cite-inator/compiler-browser`.
 
 ```js
 import { compileMarkdown } from './citation-compiler.mjs';
@@ -21,11 +21,11 @@ const result = compileMarkdown(
 // Render result.html in your preview; initialize the inspector separately.
 ```
 
-Supply a normal citation.inator cache containing the marker's IDs. The three entry points have the same results/options as their Node counterparts, including custom keyword, namespace and class configuration. The compiler performs no provider lookup, persistence or publication. It runs under `script-src 'self'` without eval or `new Function`; your host controls other preview assets and sanitization. Markdown/HTML compilation preserves author-supplied HTML according to the normal markup contract: sanitize untrusted document HTML before inserting it into a live page. Use `citation-inspector.mjs` separately for interactive reader panels and its styles. Published 0.3.0 archives do not contain this new compiler bundle.
+Supply a normal cite.inator cache containing the marker's IDs. The three entry points have the same results/options as their Node counterparts, including custom keyword, namespace and class configuration. The compiler performs no provider lookup, persistence or publication. It runs under `script-src 'self'` without eval or `new Function`; your host controls other preview assets and sanitization. Markdown/HTML compilation preserves author-supplied HTML according to the normal markup contract: sanitize untrusted document HTML before inserting it into a live page. Use `citation-inspector.mjs` separately for interactive reader panels and its styles. Published 0.3.0 archives do not contain this new compiler bundle.
 
 ## Marker classification and work-context notes (0.3.0)
 
-The 0.3.0 release adds `markerKind` to `citation-inator/tools`, the self-contained `citation-tools.mjs` and the main `citation-inspector.mjs` browser bundle. These additions are not in the published 0.2.0 artifacts.
+The 0.3.0 release adds `markerKind` to `cite-inator/tools`, the self-contained `citation-tools.mjs` and the main `citation-inspector.mjs` browser bundle. These additions are not in the published 0.2.0 artifacts.
 
 ```js
 import { markerKind } from './citation-tools.mjs'; // also citation-inspector.mjs
@@ -52,7 +52,7 @@ const result = annotateMarkers(source, cache, {
 
 ## Write local record IDs (0.4.0)
 
-`formatRecordId` is shared by the compiler, `citation-inator/tools`, `citation-inator/import` and their self-contained browser tools/import bundles. Give it a bare local record ID, not a DOI or another persistent identifier:
+`formatRecordId` is shared by the compiler, `cite-inator/tools`, `cite-inator/import` and their self-contained browser tools/import bundles. Give it a bare local record ID, not a DOI or another persistent identifier:
 
 ```js
 import { formatRecordId } from './citation-tools.mjs';
@@ -75,8 +75,8 @@ The directive names and their interpretation are part of the notation's compatib
 For a Node build, editor service or command-line adapter:
 
 ```js
-import { compileCitations } from 'citation-inator';
-import { describeCitation, annotateMarkers, collectMarkerTags, createSiteOccurrenceIndex } from 'citation-inator/tools';
+import { compileCitations } from 'cite-inator';
+import { describeCitation, annotateMarkers, collectMarkerTags, createSiteOccurrenceIndex } from 'cite-inator/tools';
 ```
 
 For an editor running in a browser, copy the prebuilt `dist/citation-tools.mjs` to your site and import it directly:
@@ -85,7 +85,7 @@ For an editor running in a browser, copy the prebuilt `dist/citation-tools.mjs` 
 import { describeCitation, annotateMarkers, collectMarkerTags, createSiteOccurrenceIndex } from './citation-tools.mjs';
 ```
 
-An installed package also exports `citation-inator/tools-browser` as a self-contained browser module. A bare package specifier needs a bundler or import map in browsers. Tools do not register the inspector; load `citation-inspector.mjs` and its adjacent stylesheet separately for reader panels. Browser tools include their parsing dependencies and need no npm install on the serving machine. The JSON cache is an ordinary argument to the functions. None of these functions fetches providers or writes files.
+An installed package also exports `cite-inator/tools-browser` as a self-contained browser module. A bare package specifier needs a bundler or import map in browsers. Tools do not register the inspector; load `citation-inspector.mjs` and its adjacent stylesheet separately for reader panels. Browser tools include their parsing dependencies and need no npm install on the serving machine. The JSON cache is an ordinary argument to the functions. None of these functions fetches providers or writes files.
 
 Keep the library LICENSE and the bundled dependency notices with distributed assets. The tools module carries the parse5, marked and entities notices in its header, and `THIRD_PARTY_LICENSES.txt` is included beside it in `dist/` and the standalone folder.
 
@@ -137,9 +137,9 @@ A group containing an unresolved work is left unchanged and reported, retaining 
 All operations read one JSON request on standard input and emit one JSON result. They do not modify files. Shell redirection or the host saves an accepted result.
 
 ```sh
-citation-inator --describe --json < describe-request.json
-citation-inator --annotate --json < article-request.json
-citation-inator --check-notes --json < article-request.json
+cite-inator --describe --json < describe-request.json
+cite-inator --annotate --json < article-request.json
+cite-inator --check-notes --json < article-request.json
 ```
 
 A description request is `{ "citation": "source-one", "cache": CACHE, "options": { "citationStyle": "chicago-author-date" } }`. An annotation/check request replaces `citation` with a `source` string and can include `format` in `options`. These examples use `CACHE` as a placeholder for the complete cache object, not a literal JSON token. `--style` and `--format` override corresponding options. `--check-notes` returns exit code 1 for stale notes or diagnostics and 0 for current notes without diagnostics; it still emits its JSON result. Other invalid requests return a nonzero status and an error on standard error. The same commands are available as `node scripts/compile.mjs …` in a source checkout.
@@ -167,7 +167,7 @@ Sources can be strings (text by default) or objects with `source`, optional `nam
 
 Set `inlineTags: 'marker'` to display only the tags contributed at each in-text citation. A mention with no contributed tags shows none inline. Reference lists and inspector panels retain the work's accumulated record tags. `inlineTags: true` instead displays accumulated tags beside each mention; `false` (default) keeps marker contributions out of reader output entirely. Displayed marker tags use the supplied catalogue and its normal unknown-tag fallback.
 
-The JSON CLI supports `citation-inator --collect-tags --json`, with `{ "sources": SOURCES, "cache": CACHE, "options": { "includeDiagnostics": true } }`. `cache` is optional; `SOURCES` and `CACHE` are placeholders for actual JSON values. The result uses the same plain/detailed shape as the JavaScript function. Inspect detailed diagnostics; a syntactically valid collection request does not fail solely because some contributions need review.
+The JSON CLI supports `cite-inator --collect-tags --json`, with `{ "sources": SOURCES, "cache": CACHE, "options": { "includeDiagnostics": true } }`. `cache` is optional; `SOURCES` and `CACHE` are placeholders for actual JSON values. The result uses the same plain/detailed shape as the JavaScript function. Inspect detailed diagnostics; a syntactically valid collection request does not fail solely because some contributions need review.
 
 ## Cross-page occurrence index
 
@@ -239,6 +239,8 @@ Tag IDs are 1–64 lowercase ASCII letters/digits/hyphens, starting with a lette
 Tags are retained in the library JSON cache and through provider refresh. Bibliographic CSL, BibTeX and RIS exports do not carry these application-specific tags. A library record's topics and an article's use of that record can differ. Use `listItemTags: { 'source-one': ['praxis'] }` to replace tags for that compilation's list items and their Inspect panels without changing the record. Compile separate lists independently when the same source has different roles. Existing `data-ci-list-record` hooks remain available for host-specific badges and other content. This does not introduce an arbitrary HTML insertion hook.
 
 Tags appear on references and in the panel. Set `inlineTags: true` to also show them beside ordinary in-text citation triggers. Set a custom `classPrefix` normally; all new rendered parts use `data-citation-part` and the configured prefix. Common parts are `tags`, `tag`, `site-returns` and `tag-filters`. Library CSS remains scoped to those parts.
+
+Tags and filter choices use compact pill outlines. Set `--citation-tag-paper`, `--citation-tag-ink`, `--citation-tag-border` and `--citation-tag-selected` on the inspector to match your host.
 
 Each tag has `data-ci-tag="theory"` (using its own ID), in static HTML and panel content. For example, scope a host rule to `[data-ci-tag="theory"]` to style one tag. Panel content lives in Shadow DOM: set an inherited colour variable on the inspector and use the shared component stylesheet if you need tag-specific panel rules; ordinary host selectors style the static list, not Shadow DOM contents. Panel badges also expose `part="tag tag-theory"` (using the actual ID), so a host can style `citation-inspector::part(tag-theory)` without editing the shared stylesheet.
 

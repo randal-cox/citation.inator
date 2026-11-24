@@ -324,7 +324,7 @@ citation-inspector { display: contents; }
 [data-citation-part~="access-checked"] { font-size: .75em; max-width: 16rem; }
 
 :is([data-citation-part~="tags"]) { display: inline-flex; flex-wrap: wrap; gap: .35em; margin: .3em .4em; vertical-align: middle; font: 500 .8rem/1.4 var(--citation-panel-font, system-ui, sans-serif); }
-[data-citation-part~="tag"] { display: inline-flex; align-items: center; gap: .25em; color: inherit; }
+[data-citation-part~="tag"] { display:inline-flex; align-items:center; gap:.3em; padding:.18em .65em; border:1px solid var(--citation-tag-border,var(--citation-line,#a9bad4)); border-radius:999px; color:var(--citation-tag-ink,var(--citation-ink,#172848)); background:var(--citation-tag-paper,var(--citation-wash,#eaf1fd)); font-weight:600; }
 [data-citation-part~="tag"] svg { flex: none; }
 [data-citation-part~="site-returns"] { margin-block: .6em; font: .9rem/1.5 var(--citation-panel-font, system-ui, sans-serif); }
 [data-citation-part~="site-returns"] h4 { margin: .5em 0; font-size: 1em; }
@@ -338,3 +338,8 @@ citation-inspector { display: contents; }
 [data-citation-part~="reference-list"] > li > [data-ci-note-record] { display: inline-flex; vertical-align: middle; margin: .25rem 0 .25rem .5em; }
 [data-citation-part~="access-settings"] select { padding:.45rem 2.5rem .45rem .65rem; appearance:none; background-color:var(--citation-paper,#fff); color:var(--citation-ink,#172848); background-image:linear-gradient(45deg,transparent 50%,currentColor 50%),linear-gradient(135deg,currentColor 50%,transparent 50%);background-size:.3rem .3rem,.3rem .3rem; background-repeat:no-repeat; background-position:calc(100% - 1.1rem) center,calc(100% - .8rem) center; }
 @media(forced-colors:active) { [data-citation-part~="access-settings"] select { appearance:auto; background-image:none; } }
+[data-citation-part~="tag-filters"] label { padding:.2em .65em; border:1px solid var(--citation-tag-border,var(--citation-line,#a9bad4)); border-radius:999px; background:var(--citation-tag-paper,var(--citation-paper,#fff)); }
+[data-citation-part~="tag-filters"] label:has(input:checked) { border-color:var(--citation-accent,#214fab); background:var(--citation-tag-selected,var(--citation-wash,#eaf1fd)); }
+
+[data-citation-part~="access"] a[data-access-labeled]{display:inline-flex;gap:.5rem;align-items:center;width:auto;height:auto;min-height:2.35rem;padding:.5rem .75rem;font:600 .95rem/1.4 system-ui,sans-serif;text-decoration:none}
+[data-citation-part~="access"] a[data-access-labeled] svg{flex:none}

@@ -1,10 +1,10 @@
-/*! citation-inator v0.5.0-preview.1 | MIT | See LICENSE */
+/*! cite-inator v0.5.0-preview.2 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {
   "access.links": "Source links",
   "access.action.pdf": "Download PDF",
-  "access.action.publisher": "Open publisher page",
+  "access.action.publisher": "Read online",
   "access.action.repository": "Open repository",
   "access.action.preprint": "Open preprint",
   "access.action.library": "Find at {service}",
@@ -14,9 +14,9 @@ var en = {
   "access.selected": "Through your services",
   "access.other": "Other places to look",
   "access.more": { one: "Other source ({count})", other: "Other sources ({count})" },
-  "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
-  "access.help.none": "None of these is on your list. Add a service, or try your library.",
-  "access.help.match": "Change where you read",
+  "access.help.unknown": "Choose your library or reading services",
+  "access.help.none": "Edit your library or reading services",
+  "access.help.match": "Change reading services",
   "access.settings": "Where you can read",
   "access.services": "Services you can use",
   "access.preferred": "Open titles in",
@@ -66,16 +66,16 @@ var es = {
   "access.library.address": "Direcci\xF3n de la biblioteca",
   "access.library.help": "Usa la direcci\xF3n HTTPS de tu biblioteca. Solo se utiliza al abrir un enlace de biblioteca.",
   "access.privacy": "Se guarda en este navegador para este sitio. La disponibilidad depende del t\xEDtulo.",
-  "access.help.unknown": "\xBFNo puedes abrirlos? Indica d\xF3nde puedes leer.",
-  "access.help.none": "Ninguno est\xE1 en tu lista. A\xF1ade un servicio o prueba tu biblioteca.",
-  "access.help.match": "Cambiar d\xF3nde lees",
+  "access.help.unknown": "Elige tu biblioteca o servicios de lectura",
+  "access.help.none": "Editar tu biblioteca o servicios de lectura",
+  "access.help.match": "Cambiar servicios de lectura",
   "access.at": "en {service}",
   "access.checked": "Comprobado el {date}",
   "access.stale": "Puede haber cambiado de direcci\xF3n",
   "access.destination": "Abrir en {service}",
   "access.invalid": "Revisa la direcci\xF3n de tu biblioteca y el servicio preferido.",
   "access.action.pdf": "Descargar PDF",
-  "access.action.publisher": "Abrir editorial",
+  "access.action.publisher": "Leer en l\xEDnea",
   "access.action.repository": "Abrir repositorio",
   "access.action.preprint": "Abrir prepublicaci\xF3n",
   "access.action.library": "Buscar en {service}",
@@ -124,7 +124,7 @@ Object.assign(en, {
   "ui.softwareLicense": "The software uses the MIT license. Cited material retains its own terms.",
   "ui.citeSoftware": "How to cite this software",
   "ui.repository": "GitHub repository",
-  "ui.software": "citation.inator \xB7 Portable Citation Inspector",
+  "ui.software": "cite.inator \xB7 Portable Citation Inspector",
   "ui.lookupISBN": "Look up ISBN",
   "ui.openSource": "Open source",
   "ui.inspectCitation": "Inspect citation: {label}",
@@ -177,7 +177,7 @@ Object.assign(es, {
   "ui.softwareLicense": "El software usa la licencia MIT. El material citado conserva sus propias condiciones.",
   "ui.citeSoftware": "C\xF3mo citar este software",
   "ui.repository": "Repositorio de GitHub",
-  "ui.software": "citation.inator \xB7 Inspector port\xE1til de citas",
+  "ui.software": "cite.inator \xB7 Inspector port\xE1til de citas",
   "ui.lookupISBN": "Buscar ISBN",
   "ui.openSource": "Abrir fuente",
   "ui.inspectCitation": "Consultar cita: {label}",
@@ -1145,7 +1145,7 @@ function node(doc, tag, text, part) {
   return value;
 }
 function containerIsPanel(container) {
-  return container.getRootNode().host?.localName === "citation-inspector";
+  return container.dataset.ciPanelAccess === "true" || container.dataset.citationPart?.split(/\s+/).includes("access") || container.getRootNode().host?.localName === "citation-inspector";
 }
 var AccessView = class {
   #owner;
@@ -1266,6 +1266,14 @@ var AccessView = class {
       const known = provider && serviceFor({ provider }, this.catalog);
       const item = locations.find((item2) => item2.url === link.href && (!provider || item2.provider === provider)) || known && { url: link.href, provider, service: known.id, serviceLabel: known.label, kind: "library", access: "unknown" };
       if (!item) {
+        const directKind = link.dataset.accessKind || (link.href.startsWith("https://doi.org/") ? "publisher" : link.href.startsWith("https://arxiv.org/") ? "preprint" : /https:\/\/(?:pmc\.ncbi\.nlm\.nih\.gov|www\.ncbi\.nlm\.nih\.gov\/pmc)\//.test(link.href) ? "repository" : record.identifiers.some((id) => id.scheme === "url" && id.value === link.href) ? "publisher" : "");
+        if (["publisher", "pdf", "repository", "preprint"].includes(directKind)) {
+          link.dataset.accessKind = directKind;
+          link.dataset.accessPrimary = "true";
+          const label2 = this.text("access.action." + directKind);
+          link.setAttribute("aria-label", label2);
+          link.title = label2 + "\n" + link.href;
+        }
         if (hidden(link.dataset.ciAccessProvider || "")) link.remove();
         continue;
       }
@@ -1274,6 +1282,8 @@ var AccessView = class {
         continue;
       }
       const kind = item.kind === "preprint" && /\.pdf(?:[?#]|$)/i.test(item.url) ? "pdf" : item.kind;
+      link.dataset.accessKind = kind;
+      link.dataset.accessPrimary = String(["publisher", "pdf", "repository", "preprint"].includes(kind));
       const key = item.service === "reader-library" ? "access.library" : "access.action." + kind;
       let label = this.text(key, { service: item.serviceLabel });
       if (item.version) label = this.text("access.version", { label, version: item.version });
@@ -1300,6 +1310,10 @@ var AccessView = class {
     }
   }
   #appendLink(container, link) {
+    if (containerIsPanel(container) && !link.querySelector('[data-citation-part="access-link-label"]')) {
+      link.append(node(container.ownerDocument, "span", link.getAttribute("aria-label") || link.title?.split("\n")[0], "access-link-label"));
+    }
+    if (containerIsPanel(container)) link.dataset.accessLabeled = "";
     if (containerIsPanel(container) && link.dataset.accessChecked) {
       const item = node(container.ownerDocument, "span", "", "access-destination");
       item.append(link, node(
@@ -1319,7 +1333,9 @@ var AccessView = class {
       if (showHelp) this.help(container, links);
       return;
     }
-    const groups = groupAccess(links.map((link) => ({
+    const primary = links.filter((link) => link.dataset.accessPrimary === "true");
+    for (const link of primary) this.#appendLink(container, link);
+    const groups = groupAccess(links.filter((link) => !primary.includes(link)).map((link) => ({
       link,
       access: link.dataset.accessState,
       service: link.dataset.accessService
@@ -1334,6 +1350,7 @@ var AccessView = class {
           const more = node(doc, "details", "", "access-more");
           more.append(node(doc, "summary", this.text("access.more", { count: entries.length - visible })));
           const body = node(doc, "div", "", "access-more-body");
+          if (containerIsPanel(container)) body.dataset.ciPanelAccess = "true";
           for (const { link } of entries.slice(visible)) {
             const destination2 = node(doc, "span", "", "access-alternative");
             const name = link.getAttribute("aria-label") || link.title || new URL(link.href).hostname;
@@ -1352,7 +1369,7 @@ var AccessView = class {
     if (showHelp) this.help(container, links);
   }
   help(container, links) {
-    if (this.settings === "off") return;
+    if (this.settings === "off" || !links.length) return;
     const profile = this.profile;
     const matched = links.some((link) => link.dataset.accessService === "reader-library" || profile?.services.includes(link.dataset.accessService));
     const key = profile === null ? "unknown" : matched ? "match" : "none";
@@ -1565,8 +1582,10 @@ var AccessView = class {
     }
     if (unknown && this.settings !== "off") for (const list of lists) {
       if (this.#listHelps.has(list)) continue;
+      const links = [...list.querySelectorAll('[data-ci-note-record] a[href^="https:"]')];
+      if (!links.length) continue;
       const help = node(list.ownerDocument, "div", "", "access-list-help");
-      this.help(help, []);
+      this.help(help, links);
       list.after(help);
       this.#listHelps.set(list, help);
     }
@@ -1680,6 +1699,7 @@ function destination(list, label, icon, url, { version, download = false } = {})
   const name = version ? `${label} (${version})` : label;
   const link = iconControl(external(url), icon, name, `${name}
 ${url}`);
+  link.dataset.accessKind = { publisher: "publisher", pdf: "pdf", repository: "repository", external: "preprint" }[icon] || "";
   if (download) link.download = "";
   row.append(link);
   list.append(row);
@@ -1741,7 +1761,7 @@ var CitationInspector = class extends HTMLElement {
     this.#dialog.part = "panel";
     this.#dialog.setAttribute("aria-labelledby", "panel-name");
     const header = element("header", "", "panel-header");
-    this.#heading = element("h2", "citation.inator");
+    this.#heading = element("h2", "cite.inator");
     this.#heading.id = "panel-name";
     this.#heading.tabIndex = -1;
     this.#brandIcon = element("img", "", "brand-icon");
@@ -2452,7 +2472,7 @@ var CitationInspector = class extends HTMLElement {
   }
   #updateHeader(annotation) {
     const panel = annotation ? this.#trigger?.dataset.ciPanel : "panel";
-    this.#heading.textContent = this.getAttribute(`${panel}-title`)?.trim() || annotation?.getAttribute("aria-label") || "citation.inator";
+    this.#heading.textContent = this.getAttribute(`${panel}-title`)?.trim() || annotation?.getAttribute("aria-label") || "cite.inator";
     const icon = (this.getAttribute(`${panel}-icon`) ?? this.getAttribute("panel-icon"))?.trim();
     let source;
     if (icon && icon !== "none") {
@@ -2642,7 +2662,7 @@ var CitationInspector = class extends HTMLElement {
     const list = element("ul", "", "destinations");
     list.setAttribute("aria-label", this.#messages.text("access.links"));
     destination(list, this.#messages.text("access.action.pdf"), "pdf", pdf?.url, { version: pdf?.version, download: true });
-    destination(list, this.#messages.text("access.action.publisher"), "publisher", publisher?.url === doiURL ? "" : publisher?.url);
+    destination(list, this.#messages.text("access.action.publisher"), "publisher", publisher?.url || doiURL);
     destination(list, this.#messages.text("access.action.repository"), "repository", location("repository")?.url);
     destination(list, this.#messages.text("ui.pubmed"), "article", id("pmid"));
     destination(list, this.#messages.text("ui.pmc"), "repository", id("pmcid"));

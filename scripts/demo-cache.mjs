@@ -43,7 +43,7 @@ export function demoCache(fixtures) {
         ...(item.urls?.jstor ? [{ kind: "repository", provider: "JSTOR", url: item.urls.jstor, verifiedAt }] : [])
       ],
       provenance: [
-        { provider: "citation.inator editorial handoff", retrievedAt: resolved ? verifiedAt : null, note: "Original citation and curation preserved in the source fixtures." },
+        { provider: "cite.inator editorial handoff", retrievedAt: resolved ? verifiedAt : null, note: "Original citation and curation preserved in the source fixtures." },
         ...(publisher ? [{ provider, url: publisher, retrievedAt: verifiedAt }] : [])
       ]
     };

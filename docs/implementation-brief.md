@@ -1,4 +1,4 @@
-# citation.inator implementation brief
+# cite.inator implementation brief
 
 ## Build the smallest real vertical slice
 

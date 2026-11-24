@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0-preview.2 — In development
+
+- Prepare the cite.inator repository/project/folder name and cite-inator package; preserve browser/data contracts and the old CLI alias.
+- Keep gallery cards alongside their editable details, align the Playground heading, add leading endnote icons and pill-shaped topic/filter labels, and remove the Endnotes title rule.
+- Remove remaining dark-theme rules from the learning import host. Keep direct reading/download actions visibly labelled and outside optional-source disclosures, with a contextual settings label.
+- Provide a starter-first Guide and runnable metadata resolver, reviewed independently for English and developer/LLM comprehensibility.
+
+
 ## 0.5.0-preview.1 — In development
 
 - Lead authoring examples and the guide with DOI/ISBN markers and source-only notes; keep generated reference metadata in an advanced disclosure.

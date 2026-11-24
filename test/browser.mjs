@@ -90,8 +90,8 @@ try {
   });
 
   const primary = page.locator("citation-inspector:not(#access-demo-reader):not(#media-demo-reader) .citation-cite").first();
-  const panel = page.getByRole("dialog", { name: "citation.inator" });
-  const dialogHeading = panel.getByRole("heading", { name: "citation.inator", exact: true });
+  const panel = page.getByRole("dialog", { name: "cite.inator" });
+  const dialogHeading = panel.getByRole("heading", { name: "cite.inator", exact: true });
   const checkHeadingFocus = async label => {
     const appearance = await dialogHeading.evaluate(node => {
       const css = getComputedStyle(node);
@@ -129,7 +129,7 @@ try {
   assert.ok(geometry.introFillsMain && geometry.proseFillsArticle && geometry.notesMatchProse);
   assert.equal(geometry.circleWidth, geometry.circleHeight);
 
-  assert.equal(await page.getByRole("link", { name: "citation.inator", exact: true }).locator("svg").count(), 1);
+  assert.equal(await page.getByRole("link", { name: "cite.inator", exact: true }).locator("svg").count(), 1);
   await primary.and(page.getByRole("button")).waitFor();
   await primary.click();
   await panel.waitFor();
@@ -139,7 +139,7 @@ try {
   const pdf = panel.getByRole("link", { name: "Download PDF (author preprint)" });
   assert.equal(await pdf.getAttribute("download"), "");
   assert.match(await pdf.getAttribute("title"), /https:\/\/scottaclifford.com\//);
-  const publisher = panel.getByRole("link", { name: "Open publisher page" });
+  const publisher = panel.getByRole("link", { name: "Read online" });
   assert.equal(await publisher.getAttribute("target"), "_blank");
   assert.match(await publisher.getAttribute("title"), /https:\/\/www.cambridge.org\//);
   assert.ok(await panel.getByText("Abstract excerpt", { exact: true }).isVisible());
@@ -450,7 +450,7 @@ try {
   const mobile = await phone.newPage();
   await mobile.goto(origin + "/demos/static/");
   await mobile.getByRole("button", { name: /Inspect citation: Simas/ }).first().tap();
-  const sheet = mobile.getByRole("dialog", { name: "citation.inator", exact: true });
+  const sheet = mobile.getByRole("dialog", { name: "cite.inator", exact: true });
   await sheet.waitFor();
   assert.equal(await sheet.evaluate(node => node.matches(":modal")), true);
   const mobileBox = await sheet.boundingBox();

@@ -22,7 +22,7 @@ export async function writeArticleToolsDemo(directory, cache, assets) {
   const buildFiltered = compileCitations(`{citation list ${one}; ${two}; ${three} | tags:theory,praxis | tag-mode:all}`, data, { ...fullOptions, namespace: 'both-topics' });
   const reader = (html, id) => `<citation-inspector id="${id}" data-cache="./article-tools.json" access-settings="off">${html}</citation-inspector>`;
   const page = (title, body, script = '') => `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} | citation.inator</title>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title} | cite.inator</title>
 <link rel="stylesheet" href="${assets}citation-inspector.css"><link rel="stylesheet" href="./article-tools-demo.css"><script type="module" src="${assets}citation-inspector.mjs"></script>${script}</head>
 <body><header><a href="./">Reading room</a><nav aria-label="Article tools examples"><a href="./article-1.html">Article one</a> · <a href="./article-2.html">Article two</a> · <a href="./bibliography.html">Site bibliography</a> · <a href="./editor-tools.html">Editor tools</a></nav></header>
 <main><h1>${brandIconMarkup}<span>${title}</span></h1><hr>${body}</main></body></html>`;

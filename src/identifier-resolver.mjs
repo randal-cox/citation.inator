@@ -112,7 +112,7 @@ export function createIdentifierResolver({
     let log = [];
     try {
       const response = await request(url, {
-        headers: { Accept: "application/json", "User-Agent": `citation-inator/${packageInfo.version}${mailto ? ` (mailto:${mailto})` : ""}` },
+        headers: { Accept: "application/json", "User-Agent": `cite-inator/${packageInfo.version}${mailto ? ` (mailto:${mailto})` : ""}` },
         signal: AbortSignal.timeout(8000), redirect: "error"
       });
       status = response.status;

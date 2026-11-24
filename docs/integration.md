@@ -1,8 +1,8 @@
-# Integrate citation.inator
+# Integrate cite.inator
 
 ## Load and initialize
 
-Copy `citation-inspector.mjs` and its adjacent `citation-inspector.css` to your site's public assets. Both files are in the standalone ZIP, the downloaded repository’s `dist/` directory, and `node_modules/citation-inator/dist/` after installing the npm tarball. A static site can use the browser files without npm or Node. Place the compiled HTML fragment in the custom element and point `data-cache` to the matching JSON on the same origin.
+Copy `citation-inspector.mjs` and its adjacent `citation-inspector.css` to your site's public assets. Both files are in the standalone ZIP, the downloaded repository’s `dist/` directory, and `node_modules/cite-inator/dist/` after installing the npm tarball. A static site can use the browser files without npm or Node. Place the compiled HTML fragment in the custom element and point `data-cache` to the matching JSON on the same origin.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">
@@ -39,17 +39,19 @@ For assets served with a long cache lifetime, put each tested checkout in a path
 
 ## Try the standalone HTML
 
-Run `npm start` from the repository root and open [Plain HTML](http://127.0.0.1:4187/demos/drop-in/). For an npm-free preview, serve `demos/drop-in/` or the extracted ZIP with any static server. For example, run `python3 -m http.server --bind 127.0.0.1 8080` in that folder and open [the example](http://127.0.0.1:8080/). With the Windows Python launcher, use `py -3` in place of `python3`.
+Run `npm start` from the repository root and open [Plain HTML](http://127.0.0.1:4187/demos/drop-in/). For a copied-file preview, run `node server.mjs` inside `demos/drop-in/` or the extracted ZIP and open `http://127.0.0.1:4188/`. The included server requires Node 22.13.0 or later; any static HTTP server also works.
 
 Serve `.mjs` as JavaScript and `.json` as JSON. Static links and endnotes work when opening the HTML directly from disk. The inspector uses a same-origin HTTP or HTTPS host to load its cache. Keep the MIT license with the JavaScript and CSS.
 
+For pre-0.5 packages, use the original package/import name; [migration details](naming-migration.md) distinguish those archives from current examples. The tarball filename below matches the current preview; use the actual filename printed by `npm pack` when building another version.
+
 ## Compile and add a page
 
-Build the current tarball by running `npm ci` and `npm pack` in the downloaded library checkout with Node.js 22 or later. Install that tarball in your project. Copy `reading.txt` and `citations.json` from the ZIP into this directory for the example.
+Build the current tarball by running `npm ci` and `npm pack` in the downloaded library checkout with Node.js 22.13.0 or later. Install that tarball in your project. Copy `reading.txt` and `citations.json` from the ZIP into this directory for the example.
 
 ```sh
-npm install ./citation-inator-0.3.0.tgz
-npm exec -- citation-inator reading.txt citations.json article.html my-article
+npm install ./cite-inator-0.5.0-preview.2.tgz
+npm exec -- cite-inator reading.txt citations.json article.html my-article
 ```
 
 The command writes an HTML fragment and `article.html.json` with the records used by that fragment. The example intentionally emits one unresolved-reference diagnostic. It still writes both files. For each independently compiled fragment on a page, supply a distinct namespace such as `my-article`.
@@ -65,7 +67,7 @@ node scripts/compile.mjs --style chicago-author-date --endnotes-heading Referenc
 
 Find the source files and the site’s build commands. Review the existing citations, endnotes, and bibliography. Start with a representative page and verify that each migrated reference still points to the intended work and supports the surrounding claim. Reuse verified records, and flag uncertain matches or missing metadata for review.
 
-For HTML or Markdown sites, use the markup compiler below and keep the site layout in its existing templates. Regenerate the fragment and its JSON together when changing citations. Keep the prose and cache inputs with the site’s authoring files, and record the citation.inator commit used by the site.
+For HTML or Markdown sites, use the markup compiler below and keep the site layout in its existing templates. Regenerate the fragment and its JSON together when changing citations. Keep the prose and cache inputs with the site’s authoring files, and record the cite.inator commit used by the site.
 
 Run the site’s build and preview the changed pages over HTTP before rolling out the change. Check the reference destinations, the endnotes, and their return links. Open the inspector by click and keyboard, and test **Move panel** in a narrow viewport. Disable JavaScript and check that the endnotes still work. Check the browser console and network panel for missing assets. Report which pages and references were checked and which still need review.
 
@@ -100,7 +102,7 @@ Schechner {citation local:schechner1979 | form:suppress-author; local:schechner1
 Provide both local IDs in your cache to render “Schechner (1979; see also Schechner 1985).” A literal `label` overrides the generated citation text, including affixes.
 
 ```js
-import { createCitationCompiler } from "citation-inator";
+import { createCitationCompiler } from "cite-inator";
 
 const compiler = createCitationCompiler({
   citationKeyword: "ref",
@@ -128,13 +130,13 @@ Set `citationStyle` in the compiler options, or pass `--style` on the CLI. Set `
 | `mla` | MLA 9 author–page | (Ostrom 34) |
 | `harvard` | Cite Them Right Harvard | (Ostrom, 1990, p. 34) |
 | `vancouver` | Vancouver (ICMJE/NLM) | (1) |
-| `default` | Original citation.inator author–year format | (Ostrom, 1990) |
+| `default` | Original cite.inator author–year format | (Ostrom, 1990) |
 
 Use `locator:34` for a page or `locator:"34–36"` for a range. APA, Harvard and Vancouver supply `p.` or `pp.` for bare numbers and ranges. You can write a labeled locator such as `locator:"chap. 2"` to keep that wording. Vancouver numbers references by first mention and reuses that number for repeat mentions. Chicago, APA, Harvard and the default format add deterministic year suffixes where author–year labels collide. The named styles focus on books and journal articles. Titles keep their supplied spelling and capitalization. Set `apaTitle` for a sentence-cased title in APA while keeping the source title in `title`. Use editorial text for style-specific edge cases such as APA citations whose different author lists shorten to the same names. Check venue-specific rules and supply editorial formatting for source types or metadata beyond the built-in fields. For Vancouver, supply a journal’s established abbreviation as `containerAbbreviation` and a book’s publication city as `publisherPlace` where known.
 
 ### Shared excerpts, scoped endnotes, and reading lists
 
-Compile a reusable card with `references: "isolated"`, or mark individual items with `| isolated`. These citations retain their configured style and inspector metadata. They emit no citation IDs, backlinks, or endnotes. Set `isolatedHref: "/references#{id}"` to link each citation to a host-provided fallback target. Without a template, citation.inator uses a known identifier URL or source location when available. Isolated fragments omit interactive evidence and credit links. Multiple inspectors with the same-origin `data-cache` URL share one fetch per page.
+Compile a reusable card with `references: "isolated"`, or mark individual items with `| isolated`. These citations retain their configured style and inspector metadata. They emit no citation IDs, backlinks, or endnotes. Set `isolatedHref: "/references#{id}"` to link each citation to a host-provided fallback target. Without a template, cite.inator uses a known identifier URL or source location when available. Isolated fragments omit interactive evidence and credit links. Multiple inspectors with the same-origin `data-cache` URL share one fetch per page.
 
 Place `{citation endnote | scope:since-last}` on its own line or paragraph at the end of each entry. Its list and backlinks belong to that entry. When scoped markers are used, each endnote marker closes a scope and any trailing citations get a final list. The compiler assigns author-year suffixes across the fragment. A standalone marker works inside definition entries, list items, table cells and other prose containers. A marker left in running prose produces a `misplaced-directive` diagnostic. Use `{citation endnote | scope:since-last | heading:"Sources" | level:4}` for a local heading, or `heading:none` to omit it. Heading levels run from 1 through 6.
 
@@ -159,7 +161,7 @@ For source-only editor notes, `describeCitation` / `annotateMarkers`, the JSON e
 With npm dependencies installed, use these Node imports. From a source checkout, the same functions are available in `src/markup.mjs`.
 
 ```js
-import { compileHTML, compileMarkdown, rebaseCitationFragment } from "citation-inator/markup";
+import { compileHTML, compileMarkdown, rebaseCitationFragment } from "cite-inator/markup";
 
 const options = { namespace: "consent-essay", citationStyle: "chicago-author-date", endnotesHeading: "References" };
 const result = compileHTML('<p><em>Consent</em> has a history {citation local:consent}.</p><p>{citation endnote}</p>', cache, options);
@@ -173,7 +175,7 @@ Reuse the same compiled fragment on separate pages when it appears only once per
 
 ## Call the compiler from Python
 
-Run the CLI with `--json` and send one object on standard input. It returns `html`, `cache` and `diagnostics` together. Each request compiles one document, so repeated works share an endnote and year suffixes are computed together. Python launches Node.js 22 or later. Run this example from the citation.inator checkout.
+Run the CLI with `--json` and send one object on standard input. It returns `html`, `cache` and `diagnostics` together. Each request compiles one document, so repeated works share an endnote and year suffixes are computed together. Python launches Node.js 22.13.0 or later. Run this example from the cite.inator checkout.
 
 ```python
 import json
@@ -206,8 +208,8 @@ This API is available in version `0.1.4`. Try it in the [Reading room](http://12
 Use `planCitationOccurrences` when your application renders its own chart captions, table cells, or other controls. Give each reference list a document namespace. Use an occurrence ID tied to the content or control that cites the record. An occurrence keeps its ID when you move it within the list. Numeric styles still follow the order you supply.
 
 ```js
-import { planCitationOccurrences } from "citation-inator";
-import { bindCitationTrigger, initializeCitationInspector } from "citation-inator/browser";
+import { planCitationOccurrences } from "cite-inator";
+import { bindCitationTrigger, initializeCitationInspector } from "cite-inator/browser";
 
 const plan = planCitationOccurrences([
   { occurrenceId: "map-caption", recordId: "field-atlas", locator: "42", context: "Map caption" }
@@ -248,9 +250,9 @@ For artwork and images, preserve attribution, date ranges, medium, institution, 
 
 ## Supply the cache
 
-The ZIP includes an example `citations.json`. The npm package exports a larger sample cache at `citation-inator/citations.json`. Its local path is `node_modules/citation-inator/dist/citations.json`.
+The ZIP includes an example `citations.json`. The npm package exports a larger sample cache at `cite-inator/citations.json`. Its local path is `node_modules/cite-inator/dist/citations.json`.
 
-Use `makeCache(records)` from `citation-inator/records` to produce the versioned cache and reject duplicate IDs and identifier collisions. Records can include structured authors, dates, identifiers, locations, version and integrity metadata, and provenance. Give PDF and preprint locations an HTTPS URL, a named source and a valid `verifiedAt` timestamp. Record the document version when known.
+Use `makeCache(records)` from `cite-inator/records` to produce the versioned cache and reject duplicate IDs and identifier collisions. Records can include structured authors, dates, identifiers, locations, version and integrity metadata, and provenance. Give PDF and preprint locations an HTTPS URL, a named source and a valid `verifiedAt` timestamp. Record the document version when known.
 
 Use `relatedIdentifiers: [{ label, value, authority }]` for identifiers such as a catalog or application number that can describe multiple editions or versions. The inspector displays them as text. They travel with the cache record and stay out of the identifier lookup index.
 
@@ -297,7 +299,7 @@ Use `activation="hover"` on the element to enable mouse previews. Click or keybo
 
 On compact screens the sheet uses up to 60% of the visible height and scrolls internally, leaving room to move it and reveal the page underneath.
 
-The citation panel defaults to `citation.inator` and the built-in mark. Set `panel-title` and `panel-icon`, `evidence-title` and `evidence-icon`, or `credit-title` and `credit-icon` for each panel. Evidence and Credit inherit the main icon if you supply one. Use a same-origin icon URL or `none` to hide it. Allow `img-src 'self'` for custom icons. The title settings apply to the panel headings. Directive labels and software credit remain part of the compiled content.
+The citation panel defaults to `cite.inator` and the built-in mark. Set `panel-title` and `panel-icon`, `evidence-title` and `evidence-icon`, or `credit-title` and `credit-icon` for each panel. Evidence and Credit inherit the main icon if you supply one. Use a same-origin icon URL or `none` to hide it. Allow `img-src 'self'` for custom icons. The title settings apply to the panel headings. Directive labels and software credit remain part of the compiled content.
 
 The component reflects a boolean `open` attribute while any inspector panel is visible. Site tests can assert `citation-inspector[open]` after activation and wait for it to disappear after dismissal. Endnote backlinks are lettered in occurrence order. Their tooltips and accessible names identify the surrounding passage.
 
@@ -327,12 +329,12 @@ destinationHeading.focus({ preventScroll: true });
 
 The browser component loads its CSS and JSON from the same origin. Use `script-src 'self'; style-src 'self'; connect-src 'self'` with those assets. An already loaded page can keep using its cache offline. Offline reload with enhancement depends on host caching.
 
-For server-side resolution, import `createCrossrefResolver` from `citation-inator/crossref`. The source checkout’s Resolution bench uses it on explicit Resolve or Force refresh requests. Resolve can reuse a fresh cache. Force refresh attempts a DOI lookup subject to Crossref backoff. A provider attempt supplies raw response and merge information. Static and cache-only records may have only normalized metadata.
+For server-side resolution, import `createCrossrefResolver` from `cite-inator/crossref`. The source checkout’s Resolution bench uses it on explicit Resolve or Force refresh requests. Resolve can reuse a fresh cache. Force refresh attempts a DOI lookup subject to Crossref backoff. A provider attempt supplies raw response and merge information. Static and cache-only records may have only normalized metadata.
 
-Import `createOpenLibraryResolver` from `citation-inator/openlibrary` for ISBN editions. Call it server-side. It uses the same cache, attempt and force-refresh contract as Crossref. Open Library supplies edition metadata and an edition link when available. A lookup can also return a partial record, a miss, or a provider error. Preserve the result state and review the edition before replacing curated metadata.
+Import `createOpenLibraryResolver` from `cite-inator/openlibrary` for ISBN editions. Call it server-side. It uses the same cache, attempt and force-refresh contract as Crossref. Open Library supplies edition metadata and an edition link when available. A lookup can also return a partial record, a miss, or a provider error. Preserve the result state and review the edition before replacing curated metadata.
 
 ```js
-import { createOpenLibraryResolver } from "citation-inator/openlibrary";
+import { createOpenLibraryResolver } from "cite-inator/openlibrary";
 
 const books = createOpenLibraryResolver({ mailto: "citations@example.org" });
 const result = await books.resolve("isbn:9780140328721");
@@ -348,7 +350,7 @@ The demo uses Crossref for DOI requests and Open Library for ISBN requests. The 
 Use the search API from a server or build tool. Candidates are ranked on a 0–100 similarity score based on title, author, and requested year. The result includes catalog-listed ISBNs, publisher and date when available, the matched work and edition URLs, and provider evidence. The author names come from the matched work. Check that the candidate matches the edition and binding you consulted before adding its ISBN to your own cache. A catalog record can list more than one ISBN.
 
 ```js
-import { createOpenLibrarySearch } from "citation-inator/openlibrary";
+import { createOpenLibrarySearch } from "cite-inator/openlibrary";
 
 const finder = createOpenLibrarySearch({ mailto: "citations@example.org" });
 const result = await finder.search({
@@ -378,7 +380,7 @@ For a list, save a JSON object with a `books` array of search inputs and an opti
 node scripts/compile.mjs --find-isbns --json < books.json > isbn-candidates.json
 ```
 
-With the npm package installed, use `npm exec -- citation-inator --find-isbns --json` in place of `node scripts/compile.mjs --find-isbns --json`.
+With the npm package installed, use `npm exec -- cite-inator --find-isbns --json` in place of `node scripts/compile.mjs --find-isbns --json`.
 
 
 ### Audit citations across a site
@@ -397,9 +399,9 @@ For custom notation or mixed build inputs, use `--report --json` and send `{ cac
 
 Development tools and both browser bundles export `markerKind` for canonical/legacy/custom marker classification. `annotateMarkers(..., { noteContext: "work" })` keeps notes consistent with an editor works picker built from standalone `describeCitation`. See [the compatibility contract](article-tools.md#030-draftinator-compatibility-additions). These additions are not present in released 0.2.0 artifacts.
 
-The [experimental import demo](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-demo.md) lives on the separate import branch. Its modules and local service are excluded from this candidate.
+The [experimental import demo](https://github.com/randal-cox/cite.inator/blob/codex/citation-import/docs/import-demo.md) lives on the separate import branch. Its modules and local service are excluded from this candidate.
 
 
 The source checkout includes a text-only `referenceItemPrefix` callback for host badges before reference items; see [the callback contract](article-tools.md#030-host-prefix-hook). Unknown access-profile help now appears once per owned list while inspector help remains available. These changes are not in the published 0.2.0 artifacts.
 
-See the [style catalogue and coverage matrix](citation-styles.md) to distinguish reference formatting from experimental import recognition. Reviewed import remains source-only: [development APIs and measured limits](https://github.com/randal-cox/citation.inator/blob/codex/citation-import/docs/import-development.md).
+See the [style catalogue and coverage matrix](citation-styles.md) to distinguish reference formatting from experimental import recognition. Reviewed import remains source-only: [development APIs and measured limits](https://github.com/randal-cox/cite.inator/blob/codex/citation-import/docs/import-development.md).

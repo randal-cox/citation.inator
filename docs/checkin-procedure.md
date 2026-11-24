@@ -1,6 +1,6 @@
 # Check-in and milestone procedure
 
-This procedure applies to citation.inator commits and milestone releases. The current milestone record and roadmap are part of every check-in review.
+This procedure applies to cite.inator commits and milestone releases. The current milestone record and roadmap are part of every check-in review.
 
 ## Before every check-in
 

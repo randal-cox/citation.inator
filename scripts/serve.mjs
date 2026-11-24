@@ -172,5 +172,5 @@ const server = createServer(async (request, response) => {
 
 const port = Number(process.env.CITATION_PORT || 4187);
 server.listen(port, "127.0.0.1", () => {
-  console.log(`citation.inator on http://127.0.0.1:${server.address().port}/`);
+  console.log(`cite.inator on http://127.0.0.1:${server.address().port}/`);
 });

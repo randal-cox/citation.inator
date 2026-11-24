@@ -80,7 +80,7 @@ export function createOpenLibrarySearch({
     if (nextRequest > start) await new Promise(resolve => setTimeout(resolve, nextRequest - start));
     nextRequest = now() + minInterval;
     const response = await request(url, {
-      headers: { Accept: "application/json", "User-Agent": `citation-inator/${packageInfo.version}${mailto ? ` (mailto:${mailto})` : ""}` },
+      headers: { Accept: "application/json", "User-Agent": `cite-inator/${packageInfo.version}${mailto ? ` (mailto:${mailto})` : ""}` },
       signal: AbortSignal.timeout(8000), redirect: "error"
     });
     if ([429, 503].includes(response.status)) backOffUntil = now() + retryDelay(response.headers.get("retry-after"), now());

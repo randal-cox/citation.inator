@@ -16,8 +16,8 @@ finally{await rm(unexpected);}
 // Mount at a project base path to catch assumptions hidden by root hosting.
 const server=createServer(async(req,res)=>{
   const path=new URL(req.url,'http://localhost').pathname;
-  if(!/^\/citation\.inator\/(?:(?:assets|examples|import|documents|reference|tools|host)\/)?[\w.-]*$/.test(path)){res.writeHead(404).end();return;}
-  let file=path.slice('/citation.inator/'.length);
+  if(!/^\/cite\.inator\/(?:(?:assets|examples|import|documents|reference|tools|host)\/)?[\w.-]*$/.test(path)){res.writeHead(404).end();return;}
+  let file=path.slice('/cite.inator/'.length);
   if(!file||file.endsWith('/'))file+='index.html';
   try{const content=await readFile(new URL('../site/'+file,import.meta.url));res.setHeader('Content-Type',/\.(?:mjs|js)$/.test(file)?'text/javascript':file.endsWith('.css')?'text/css':file.endsWith('.json')?'application/json':'text/html');res.end(content);}catch{res.writeHead(404).end();}
 });
@@ -30,12 +30,27 @@ try{
   const errors=[],remote=[];
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',req=>{if(!req.url().startsWith('http://127.0.0.1:'))remote.push(req.url());});
-  const origin=`http://127.0.0.1:${server.address().port}/citation.inator/`;
+  const origin=`http://127.0.0.1:${server.address().port}/cite.inator/`;
   await page.goto(origin);
+  assert.equal(await page.locator('main>h1').innerText(),'Playground');
+  const layout=await page.locator('.playground-layout').evaluate(node=>{const a=node.querySelector('.examples').getBoundingClientRect(),b=node.querySelector('.example-detail').getBoundingClientRect();return {galleryRight:a.right,detailLeft:b.left,galleryTop:a.top,detailTop:b.top};});
+  assert(layout.detailLeft>=layout.galleryRight);assert(Math.abs(layout.galleryTop-layout.detailTop)<4);
   await page.locator('#result [data-ci-record]').first().click();
   await page.waitForFunction(()=>document.querySelector('citation-inspector').hasAttribute('open'));
+  const firstPanel=page.getByRole('dialog',{name:'cite.inator',exact:true});
+  assert(await firstPanel.getByRole('link',{name:'Read online',exact:true}).isVisible());
+  assert(await firstPanel.getByRole('link',{name:'Download PDF',exact:true}).isVisible());
+  assert.match(await firstPanel.getByRole('link',{name:'Read online',exact:true}).innerText(),/Read online/);
+  assert.match(await firstPanel.getByRole('link',{name:'Download PDF',exact:true}).innerText(),/Download PDF/);
+  assert.match(await firstPanel.getByRole('button',{name:'Choose your library or reading services',exact:true}).innerText(),/library/);
   await page.keyboard.press('Escape');
   await page.waitForFunction(()=>!document.querySelector('citation-inspector').hasAttribute('open'));
+  const doiOnly=JSON.parse(await page.locator('#records').inputValue());doiOnly.records.find(record=>record.id==='ioannidis-2005').locations=[];
+  await page.getByText('Advanced: reference metadata',{exact:true}).click();
+  await page.locator('#records').fill(JSON.stringify(doiOnly));await page.waitForFunction(()=>!document.getElementById('result').hasAttribute('data-stale'));
+  await page.locator('#result [data-ci-record]').first().click();const doiPanel=page.getByRole('dialog',{name:'cite.inator',exact:true});
+  assert.match(await doiPanel.getByRole('link',{name:'Read online',exact:true}).innerText(),/Read online/);
+  assert.equal(await doiPanel.getByRole('link',{name:'Download PDF',exact:true}).count(),0);await page.keyboard.press('Escape');await page.locator('#reset').click();await page.getByText('Advanced: reference metadata',{exact:true}).click();
   await page.locator('#style').selectOption('apa');
   assert.match(await page.locator('#result').innerText(),/Ioannidis, 2005/);
   await page.getByText('Configuration (JSON)',{exact:true}).click();
@@ -56,6 +71,12 @@ try{
     assert(await page.locator('#error').isHidden(),value);
     assert(await page.locator('#result [data-ci-record]').count(),value);
   }
+  await page.locator('[data-example="leading"]').click();
+  const leading=await page.locator('#result li').first().evaluate(node=>node.firstElementChild.hasAttribute('data-ci-inspect-icon'));assert(leading);
+  assert.equal(await page.locator('#result [data-citation-part="endnotes"]>h2').evaluate(node=>getComputedStyle(node).borderBottomStyle),'none');
+  await page.locator('[data-example="filters"]').click();
+  await page.locator('#result').getByRole('checkbox',{name:'Methods',exact:true}).waitFor({state:'visible'});
+  assert(await page.locator('#result [data-citation-part="tag"]').first().evaluate(node=>parseFloat(getComputedStyle(node).borderRadius)>=8));
   await page.locator('[data-example="access"]').click();
   await page.locator('#source').fill((await page.locator('#source').inputValue())+'\nAfter the references.');
   await page.waitForFunction(()=>!document.getElementById('result').hasAttribute('data-stale'));
@@ -133,7 +154,11 @@ try{
   for(const route of ['guide.html','notation.html','reference/integration.html','import/','tools/editor-tools.html','host/']){
     await page.goto(origin+route);assert.deepEqual(await page.locator('header nav[aria-label="Learning"] a').allTextContents(),['Playground','Import','GitHub','Guide']);
   }
+  await page.emulateMedia({colorScheme:'dark'});
   await page.goto(origin+'import/');assert.match(await page.locator('.intro').innerText(),/Turn citations in an existing document/);
+  for(const selector of ['.document-sheet','#source','#choose-file'])assert.equal(await page.locator(selector).evaluate(node=>getComputedStyle(node).backgroundColor),'rgb(255, 255, 255)');
+  await page.emulateMedia({colorScheme:'light'});
+
   assert.equal(await page.locator('body').evaluate(node=>getComputedStyle(node).colorScheme),'light');
   await page.goto(origin+'host/');
   await page.locator('#record-count').filter({hasText:'2 site records'}).waitFor();

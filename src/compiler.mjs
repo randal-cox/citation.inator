@@ -545,7 +545,7 @@ function annotationContent(name, namespace, records, part, messages) {
   if (name === "credit") {
     const repository = httpsURL(packageInfo.repository.url.replace(/^git\+/, "").replace(/\.git$/, ""));
     const author = packageInfo.author;
-    const citation = `Cox, R. (2026). citation.inator (Version ${packageInfo.version}) [Computer software]. ${repository}`;
+    const citation = `Cox, R. (2026). cite.inator (Version ${packageInfo.version}) [Computer software]. ${repository}`;
     content = `<p>${escapeHTML(messages.text('ui.software'))}</p><p>${escapeHTML(messages.text('ui.softwareLicense'))}</p><h3>${escapeHTML(messages.text('ui.citeSoftware'))}</h3><p>${escapeHTML(citation)}</p><p><a href="${escapeHTML(httpsURL(author.url))}">${escapeHTML(author.name)} (ORCID)</a> · <a href="${escapeHTML(repository)}">${escapeHTML(messages.text('ui.repository'))}</a></p>`;
   } else {
     const sources = records.map(record => ({

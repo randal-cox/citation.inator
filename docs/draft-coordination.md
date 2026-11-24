@@ -6,7 +6,7 @@ Use GitHub issues in draft.inator labelled `cite.inator`, one issue per request,
 
 On 21 November 2026 the connected GitHub account reported pull/push/maintain/admin permissions on `randal-cox/draft.inator`. The maintainer subsequently authorized routine two-way issues/comments under the `cite.inator` label, following draft.inator#7. No private corpus should enter that channel. This does not authorize unrelated messaging or unilateral implementation changes in the other project.
 
-Keep implementation ownership separate: citation.inator owns reusable recognition/matching/review data; draft.inator owns editor decorations, transactions, authentication and publishing. Shared examples should be synthetic/publicly licensed, never private manuscript extracts.
+Keep implementation ownership separate: cite.inator owns reusable recognition/matching/review data; draft.inator owns editor decorations, transactions, authentication and publishing. Shared examples should be synthetic/publicly licensed, never private manuscript extracts.
 
 ## Current import discussion
 
@@ -14,4 +14,4 @@ Keep implementation ownership separate: citation.inator owns reusable recognitio
 
 ## First handoff
 
-The maintainer explicitly authorized this channel on 21 November 2026. The first labelled adoption request is [draft.inator#8](https://github.com/randal-cox/draft.inator/issues/8), with the immutable 0.3.0 release commit/artifact links, completed checks and requested adoption criteria. Draft reported final-artifact verification and closed it after adoption in `865c11c`; its 39 tests and repeated note cycles passed. Reader rendering was outside draft's adoption check and remains citation.inator's responsibility.
+The maintainer explicitly authorized this channel on 21 November 2026. The first labelled adoption request is [draft.inator#8](https://github.com/randal-cox/draft.inator/issues/8), with the immutable 0.3.0 release commit/artifact links, completed checks and requested adoption criteria. Draft reported final-artifact verification and closed it after adoption in `865c11c`; its 39 tests and repeated note cycles passed. Reader rendering was outside draft's adoption check and remains cite.inator's responsibility.

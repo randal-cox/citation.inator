@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Citation guide | citation.inator</title>
+  <title>Citation guide | cite.inator</title>
   <link rel="stylesheet" href="../../dist/citation-inspector.css">
   <link rel="stylesheet" href="../static/demo.css">
   <script type="module" src="../../dist/citation-inspector.mjs"></script>
 </head>
 <body>
-  <header class="site"><a class="brand" href="./"><svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg><span>citation.inator</span></a>
+  <header class="site"><a class="brand" href="./"><svg viewBox="0 0 64 64" width="24" height="24" aria-hidden="true" focusable="false"><rect x="2" y="2" width="60" height="60" rx="14" fill="#082a66" stroke="#28cce6" stroke-width="4"/><path d="M25 21h-7v22h7m14-22h7v22h-7m-11-7h8m-8-8h8" fill="none" stroke="#b8f9ff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffbe53" stroke="#082a66" stroke-width="1.5"/></svg><span>cite.inator</span></a>
   <nav aria-label="Demos">
     <a href="../static/" >Reading room</a>
     <a href="../dynamic/" >Resolution bench</a>
@@ -23,11 +23,11 @@
     <article class="reading guide">
     <section aria-labelledby="guide-load">
       <h2 id="guide-load">Load and initialize</h2>
-      <p>Clone the <a href="https://github.com/randal-cox/citation.inator">repository</a> with <code>git clone https://github.com/randal-cox/citation.inator.git</code> and check out <code>v0.5.0-preview.1</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; 0.4.0 includes the editor, bibliography, compiler and import tools.</p>
-      <pre><code>cd citation.inator
+      <p>Clone the <a href="https://github.com/randal-cox/cite.inator">repository</a> with <code>git clone https://github.com/randal-cox/cite.inator.git</code> and check out <code>v0.5.0-preview.2</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; 0.4.0 includes the editor, bibliography, compiler and import tools.</p>
+      <pre><code>cd cite.inator
 npm start</code></pre>
       <p>Without npm, run <code>node server.mjs</code> in the standalone folder and open <code>http://127.0.0.1:4188/</code>. You can also use any static HTTP server. See the standalone <a href="../drop-in/README.md">README</a>.</p>
-      <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/citation-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
+      <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/cite-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
       <pre><code>&lt;link rel=&quot;stylesheet&quot; href=&quot;./citation-inspector.css&quot;&gt;
 &lt;script type=&quot;module&quot; src=&quot;./citation-inspector.mjs&quot;&gt;&lt;/script&gt;
 
@@ -103,7 +103,7 @@ This edition carries both its original publication date and the year of the tran
       <p>Keep each directive on one line. To display <code>{citation endnote}</code> as literal text, put <code>\{citation endnote\}</code> in the source. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. The short work-citation form <code>{cite …}</code> and alternate endnote marker <code>{endnotes}</code> also work. Expand <strong>Custom keyword and short forms</strong> below the reading in either demo to see both rendered alongside their source.</p>
       <h3>Set your keyword</h3>
       <p>With <code>citationKeyword: "ref"</code>, write <code>{ref DOI}</code>, <code>{ref endnote}</code>, <code>{ref evidence}</code>, and <code>{ref credit}</code>. The keyword and class prefix accept 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter. Use the same class prefix in the browser if you initialize it separately.</p>
-      <pre><code>import { createCitationCompiler } from &quot;citation-inator&quot;;
+      <pre><code>import { createCitationCompiler } from &quot;cite-inator&quot;;
 
 const compiler = createCitationCompiler({
   citationKeyword: &quot;ref&quot;,
@@ -121,8 +121,8 @@ const result = compiler.compile(
       <p>The <a href="../drop-in/citation-styles.md">style catalogue and support matrix</a> distinguishes citation families, named presets, source types and experimental import coverage.</p>
       <p>In Chicago author–date, set the same <code>id</code> on an author in each record to identify a single person across bylines such as Richard Wrangham and Richard W. Wrangham. The bibliography keeps each record’s spelling.</p>
       <p>Keep the default <code>suffixScope: "fragment"</code> for articles with independent reference lists. Use <code>suffixScope: "cache"</code> for pages that share one bibliography, such as chapters of an online book. The compiler reports when a year letter in a page’s endnotes has a companion work outside those endnotes.</p>
-      <p>With npm dependencies installed, compile trusted HTML or Markdown using <code>citation-inator/markup</code>, or pass <code>--format html</code> or <code>--format markdown</code> to the CLI. Each directive must stay inside one text node. Use a distinct namespace for each copy of a fragment on the same page.</p>
-      <pre><code>import { compileHTML, compileMarkdown, rebaseCitationFragment } from &quot;citation-inator/markup&quot;;
+      <p>With npm dependencies installed, compile trusted HTML or Markdown using <code>cite-inator/markup</code>, or pass <code>--format html</code> or <code>--format markdown</code> to the CLI. Each directive must stay inside one text node. Use a distinct namespace for each copy of a fragment on the same page.</p>
+      <pre><code>import { compileHTML, compileMarkdown, rebaseCitationFragment } from &quot;cite-inator/markup&quot;;
 
 const options = { namespace: &quot;essay&quot;, citationStyle: &quot;chicago-author-date&quot;, endnotesHeading: &quot;References&quot; };
 const result = compileHTML(&quot;&lt;p&gt;&lt;em&gt;Consent&lt;/em&gt; has a history {citation local:consent}.&lt;/p&gt;&quot;, cache, options);
@@ -138,7 +138,7 @@ const anotherCopy = rebaseCitationFragment(result.html, &quot;essay&quot;, &quot
     </section>
     <section aria-labelledby="guide-article-tools">
       <h2 id="guide-article-tools">Article editors, shared bibliographies and tags</h2>
-      <p>Version 0.2.0 adds editor-only notes such as <code>{citation source-one | note:"Cox 1995"}</code>. Notes do not replace reader labels. Import <code>describeCitation</code> and <code>annotateMarkers</code> from <code>citation-inator/tools</code> in Node, or copy the self-contained <code>citation-tools.mjs</code> into a browser editor. JSON CLI operations <code>--describe --json</code>, <code>--annotate --json</code> and <code>--check-notes --json</code> let other build systems use the same API.</p>
+      <p>Version 0.2.0 adds editor-only notes such as <code>{citation source-one | note:"Cox 1995"}</code>. Notes do not replace reader labels. Import <code>describeCitation</code> and <code>annotateMarkers</code> from <code>cite-inator/tools</code> in Node, or copy the self-contained <code>citation-tools.mjs</code> into a browser editor. JSON CLI operations <code>--describe --json</code>, <code>--annotate --json</code> and <code>--check-notes --json</code> let other build systems use the same API.</p>
       <p>The compiler returns actual <code>occurrences</code>. Join them to page routes with <code>createSiteOccurrenceIndex</code>, then supply <code>siteOccurrences</code> when compiling the shared bibliography. Its cross-page return links work without JavaScript; the inspector shows <strong>Cited on this site</strong>.</p>
       <p>Records accept <code>tags</code>; configure <code>tagCatalogue</code> for labels and same-origin masked icons. Use <code>listItemTags</code> for article-specific roles, <code>listFilters: true</code> for browser checkboxes, and notation such as <code>{citation list source-one; source-two | tags:theory,praxis | tag-mode:all}</code> for build-time filtering. <code>inlineTags: true</code> adds tags beside in-text citations.</p>
       <p>Editors can contribute tags at each mention: <code>{citation source-one | note:"Cox 1995" | tags:theory,praxis}</code>. <code>collectMarkerTags(sources, cache, { includeDiagnostics: true })</code> counts contributions while reporting skipped/malformed input; the host validates topics and applies curator overrides. The browser bundle and <code>--collect-tags --json</code> expose the same function. <code>inlineTags: "marker"</code> displays only that mention's tags; record topics remain in the panel. Try the collector in the editor example.</p>
@@ -159,10 +159,10 @@ const anotherCopy = rebaseCitationFragment(result.html, &quot;essay&quot;, &quot
       <p>For curated reference text, put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
       <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. Set <code>hiddenAccessProviders</code> to hide services in the panel and endnotes. The application can reuse its own preference settings.</p>
       <p>Use <code>originalIssued: [1912]</code> and <code>issued: [1995]</code> to store both dates for a translated or reprinted work. Try the Durkheim citation in the reading room with Chicago and APA selected.</p>
-      <p>The <a href="https://github.com/randal-cox/citation.inator/blob/main/docs/integration.md">integration guide</a> shows how to find ISBN candidates by title and author and review them before updating a cache.</p>
+      <p>The <a href="https://github.com/randal-cox/cite.inator/blob/main/docs/integration.md">integration guide</a> shows how to find ISBN candidates by title and author and review them before updating a cache.</p>
     </section>
   </article>
   </main>
-  <footer class="site">citation.inator · Portable Citation Inspector 0.5.0-preview.1</footer>
+  <footer class="site">cite.inator · Portable Citation Inspector 0.5.0-preview.2</footer>
 </body>
 </html>

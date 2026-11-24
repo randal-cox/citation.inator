@@ -27,7 +27,7 @@ export async function checkArticleTools(browser, origin, evidence) {
     const repeatedRow = rows.filter({ has: page.getByRole('link', { name: /Return to Article 1.*occurrence b/ }) });
     const inspect = repeatedRow.getByRole('button', { name: /^Inspect reference/ });
     await inspect.press('Enter');
-    const panel = page.getByRole('dialog', { name: 'citation.inator', exact: true });
+    const panel = page.getByRole('dialog', { name: 'cite.inator', exact: true });
     await panel.waitFor();
     assert.ok(await panel.getByText('Theory', { exact: true }).isVisible());
     assert.equal(await panel.locator('[data-ci-tag="theory"]').getAttribute('part'), 'tag tag-theory');

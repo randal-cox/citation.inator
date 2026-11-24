@@ -13,11 +13,11 @@ On 21 November 2026 the maintainer separated stable editor integration from the 
 | [0.5.0](docs/milestones/0.5.0.md) | Comprehensive developer documentation, annotated/live demos, worked draft.inator integration and translation/i18n | First preview deployed and verified; DOI-first gallery revision deployed and verified; adopter tutorial review and final library release pending |
 | [0.6.0](docs/milestones/0.6.0.md) | Zotero/other managers, interchange formats and source maintenance | Planned after learning milestone |
 
-The current release is [0.4.0](https://github.com/randal-cox/citation.inator/releases/tag/v0.4.0), published 23 November 2026. Older 0.3.0 packages do not include import. The import branch keeps the work already built; its document-first review prototype is a 0.4.0 experiment. Version changes and publication follow the check-in/review procedure.
+The current release is [0.4.0](https://github.com/randal-cox/cite.inator/releases/tag/v0.4.0), published 23 November 2026. Older 0.3.0 packages do not include import. The import branch keeps the work already built; its document-first review prototype is a 0.4.0 experiment. Version changes and publication follow the check-in/review procedure.
 
 Version 0.4.0 is released and its final files are verified by draft.inator with 91 passing tests. Its PR merge and remaining issue closure belong to draft. [The adopter receipt](docs/milestones/0.4.0.md#adopter-receipt) records exactly what was checked.
 
-The active track is [0.5.0 — Developer learning and live demos](docs/milestones/0.5.0.md). It covers progressive tutorials, editable live examples, npm/non-npm starter projects, comprehensive feature documentation, difficult/offline cases, host/draft integration and UI translation. The [feature/example matrix](docs/learning-coverage.md) identifies the existing baseline and the teaching work still needed. Development package version is 0.5.0-preview.1; the revised learning preview is deployed and verified. Stable 0.4.0 artifacts remain unchanged.
+The active track is [0.5.0 — Developer learning and live demos](docs/milestones/0.5.0.md). It covers progressive tutorials, editable live examples, npm/non-npm starter projects, comprehensive feature documentation, difficult/offline cases, host/draft integration and UI translation. The [feature/example matrix](docs/learning-coverage.md) identifies the existing baseline and the teaching work still needed. Development package version is 0.5.0-preview.2; the revised learning preview is deployed and verified. Stable 0.4.0 artifacts remain unchanged.
 
 ## Completed milestone 0.2.0 — Article tooling
 
@@ -56,13 +56,13 @@ The local import-review demo is runnable now; see [its guide](docs/import-demo.m
 - Measure reviewed import on additional public documents and extend partial reference rules from observed failures before expanding backends. The [article-tooling plan](docs/article-tooling-plan.md) retains its review and fallback requirements.
 - Verify the implemented once-per-list unknown-profile help across additional host integrations; each inspector retains settings access.
 - Extend the documented text-only referenceItemPrefix hook through host integration tests; richer content should use explicit APIs rather than generated-HTML string matching.
-- Maintain and extend the [style catalogue and support matrix](docs/citation-styles.md), including its link to the maintained broad style registry. Cover author–date, author–page, numeric, and notes and bibliography styles, including disciplinary and publisher variants. Record each style's edition or variant, link to its governing guide where available, and show what citation.inator can format today by source type and citation form. Use real migration examples to identify which gaps matter most and whether a broader style engine would help.
+- Maintain and extend the [style catalogue and support matrix](docs/citation-styles.md), including its link to the maintained broad style registry. Cover author–date, author–page, numeric, and notes and bibliography styles, including disciplinary and publisher variants. Record each style's edition or variant, link to its governing guide where available, and show what cite.inator can format today by source type and citation form. Use real migration examples to identify which gaps matter most and whether a broader style engine would help.
 - Extend the reported host-site verification to additional integrations and retain regression checks for formatted references, year letters, service preferences and return links.
 - Test on a physical phone and with Safari and VoiceOver. Cover opening the inspector, moving it, dismissing it, and returning from an endnote.
 
-## Coordinated naming follow-up
+## Naming migration in 0.5.0
 
-Move the public name to **cite.inator**, alongside draft.inator. Coordinate the GitHub repository rename/redirects, local folder and Codex project association, branding and documentation, package/import compatibility, Pages URLs and draft's pinned integrations. Confirm the migration path before activating the rename; this is separate from the current learning-page fixes.
+The maintainer brought the **cite.inator** rename into this milestone. Repository, physical folder and Codex project/attachment are separate activation checks. The prepared package name is `cite-inator`; browser/data compatibility and legacy installs are documented in [the migration guide](docs/naming-migration.md). GitHub/physical-folder activation and Codex's manual project edit remain tracked in the [milestone](docs/milestones/0.5.0.md).
 
 ## Near-term research revisit
 
@@ -77,7 +77,7 @@ Move the public name to **cite.inator**, alongside draft.inator. Coordinate the 
 - **Source maintenance (0.6.0).** Give editors a review queue for broken links and newer editions. Show the proposed change alongside the cited record and keep the original edition and the editor's decision traceable.
 - **More ways to find and access sources.** Use recurring ISBN misses and gaps in full-text or library access to prioritize additional providers. Preserve edition identity and provider provenance when comparing candidates.
 
-The [verification history](docs/launch-verification.md) preserves the earlier assays and links to the released milestone. The [product brief](https://github.com/randal-cox/citation.inator/blob/main/docs/prd-citation-inspector.md#milestones) describes the longer-term feature sequence.
+The [verification history](docs/launch-verification.md) preserves the earlier assays and links to the released milestone. The [product brief](https://github.com/randal-cox/cite.inator/blob/main/docs/prd-citation-inspector.md#milestones) describes the longer-term feature sequence.
 
 A separate [public bibliography-auditor product hypothesis](docs/research/bibliography-auditor-2026-11-23.md) records existing competitors and optional user-funded AI routes. It is queued above for a near-term research revisit, with no milestone assignment or implementation commitment; it does not expand 0.4.0 release gates.
 

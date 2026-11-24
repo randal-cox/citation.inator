@@ -1,4 +1,4 @@
-/*! citation-inator import v0.5.0-preview.1 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator import v0.5.0-preview.2 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -8148,8 +8148,8 @@ function parseFragment(fragmentContext, html, options) {
 
 // package.json
 var package_default = {
-  name: "citation-inator",
-  version: "0.5.0-preview.1",
+  name: "cite-inator",
+  version: "0.5.0-preview.2",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -8159,7 +8159,7 @@ var package_default = {
   },
   repository: {
     type: "git",
-    url: "git+https://github.com/randal-cox/citation.inator.git"
+    url: "git+https://github.com/randal-cox/cite.inator.git"
   },
   engines: {
     node: ">=22.13.0"
@@ -8185,6 +8185,7 @@ var package_default = {
     "./i18n": "./src/i18n.mjs"
   },
   bin: {
+    "cite-inator": "./scripts/compile.mjs",
     "citation-inator": "./scripts/compile.mjs"
   },
   files: [
@@ -9205,7 +9206,7 @@ function parseReferences(entries, options = {}) {
 var en = {
   "access.links": "Source links",
   "access.action.pdf": "Download PDF",
-  "access.action.publisher": "Open publisher page",
+  "access.action.publisher": "Read online",
   "access.action.repository": "Open repository",
   "access.action.preprint": "Open preprint",
   "access.action.library": "Find at {service}",
@@ -9215,9 +9216,9 @@ var en = {
   "access.selected": "Through your services",
   "access.other": "Other places to look",
   "access.more": { one: "Other source ({count})", other: "Other sources ({count})" },
-  "access.help.unknown": "Can\u2019t open these? Tell us where you can read.",
-  "access.help.none": "None of these is on your list. Add a service, or try your library.",
-  "access.help.match": "Change where you read",
+  "access.help.unknown": "Choose your library or reading services",
+  "access.help.none": "Edit your library or reading services",
+  "access.help.match": "Change reading services",
   "access.settings": "Where you can read",
   "access.services": "Services you can use",
   "access.preferred": "Open titles in",
@@ -9267,16 +9268,16 @@ var es = {
   "access.library.address": "Direcci\xF3n de la biblioteca",
   "access.library.help": "Usa la direcci\xF3n HTTPS de tu biblioteca. Solo se utiliza al abrir un enlace de biblioteca.",
   "access.privacy": "Se guarda en este navegador para este sitio. La disponibilidad depende del t\xEDtulo.",
-  "access.help.unknown": "\xBFNo puedes abrirlos? Indica d\xF3nde puedes leer.",
-  "access.help.none": "Ninguno est\xE1 en tu lista. A\xF1ade un servicio o prueba tu biblioteca.",
-  "access.help.match": "Cambiar d\xF3nde lees",
+  "access.help.unknown": "Elige tu biblioteca o servicios de lectura",
+  "access.help.none": "Editar tu biblioteca o servicios de lectura",
+  "access.help.match": "Cambiar servicios de lectura",
   "access.at": "en {service}",
   "access.checked": "Comprobado el {date}",
   "access.stale": "Puede haber cambiado de direcci\xF3n",
   "access.destination": "Abrir en {service}",
   "access.invalid": "Revisa la direcci\xF3n de tu biblioteca y el servicio preferido.",
   "access.action.pdf": "Descargar PDF",
-  "access.action.publisher": "Abrir editorial",
+  "access.action.publisher": "Leer en l\xEDnea",
   "access.action.repository": "Abrir repositorio",
   "access.action.preprint": "Abrir prepublicaci\xF3n",
   "access.action.library": "Buscar en {service}",
@@ -9325,7 +9326,7 @@ Object.assign(en, {
   "ui.softwareLicense": "The software uses the MIT license. Cited material retains its own terms.",
   "ui.citeSoftware": "How to cite this software",
   "ui.repository": "GitHub repository",
-  "ui.software": "citation.inator \xB7 Portable Citation Inspector",
+  "ui.software": "cite.inator \xB7 Portable Citation Inspector",
   "ui.lookupISBN": "Look up ISBN",
   "ui.openSource": "Open source",
   "ui.inspectCitation": "Inspect citation: {label}",
@@ -9378,7 +9379,7 @@ Object.assign(es, {
   "ui.softwareLicense": "El software usa la licencia MIT. El material citado conserva sus propias condiciones.",
   "ui.citeSoftware": "C\xF3mo citar este software",
   "ui.repository": "Repositorio de GitHub",
-  "ui.software": "citation.inator \xB7 Inspector port\xE1til de citas",
+  "ui.software": "cite.inator \xB7 Inspector port\xE1til de citas",
   "ui.lookupISBN": "Buscar ISBN",
   "ui.openSource": "Abrir fuente",
   "ui.inspectCitation": "Consultar cita: {label}",
@@ -10055,7 +10056,7 @@ function annotationContent(name2, namespace, records, part, messages) {
   if (name2 === "credit") {
     const repository = httpsURL(package_default.repository.url.replace(/^git\+/, "").replace(/\.git$/, ""));
     const author = package_default.author;
-    const citation = `Cox, R. (2026). citation.inator (Version ${package_default.version}) [Computer software]. ${repository}`;
+    const citation = `Cox, R. (2026). cite.inator (Version ${package_default.version}) [Computer software]. ${repository}`;
     content = `<p>${escapeHTML(messages.text("ui.software"))}</p><p>${escapeHTML(messages.text("ui.softwareLicense"))}</p><h3>${escapeHTML(messages.text("ui.citeSoftware"))}</h3><p>${escapeHTML(citation)}</p><p><a href="${escapeHTML(httpsURL(author.url))}">${escapeHTML(author.name)} (ORCID)</a> \xB7 <a href="${escapeHTML(repository)}">${escapeHTML(messages.text("ui.repository"))}</a></p>`;
   } else {
     const sources = records.map((record) => ({

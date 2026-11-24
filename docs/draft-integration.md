@@ -14,7 +14,7 @@ Use `annotateMarkers(source, cache, { noteContext: "work", ...styleOptions })` f
 
 ## Boundary to agree and test
 
-- citation.inator proposes extracted text, fields, matches, diagnostics and revision-bound decisions. draft.inator owns editor selection, transaction/undo, user authorization, persistence, authentication and publishing.
+- cite.inator proposes extracted text, fields, matches, diagnostics and revision-bound decisions. draft.inator owns editor selection, transaction/undo, user authorization, persistence, authentication and publishing.
 - The 0.4.0 candidate exports the same revision/context-bound protocol in Node and a self-contained browser bundle. The editor must also validate its current document revision before applying proposals. See the [candidate API](import-api.md).
 - Generated import markers use bare record IDs when unambiguous and `local:<record-id>` for reserved names; `identifierForm: 'explicit'` keeps all local IDs explicit. Use the shared `formatRecordId` helper rather than maintaining a directive-name list. The current Cite block looks up the whole marker identifier directly in its works table. The host adapter must normalize local identifiers to record IDs for lookup/picker selection while preserving a valid marker on write. Test both bare and explicit local identifiers, reserved names, DOI aliases and missing works.
 - Reuse `describeCitation`/`annotateMarkers` for notes. Import decisions must not manufacture a competing description or author/year identity system.
@@ -29,7 +29,7 @@ Use `annotateMarkers(source, cache, { noteContext: "work", ...styleOptions })` f
 
 ## Document-first review direction
 
-The maintainer requested reading the whole document with its bibliography and opening choices on unresolved/ambiguous citation highlights. The local 0.4.0 demo now prototypes hover/click/keyboard review rather than a permanent side panel. The editor should own decorations, positioning and transactions; citation.inator should provide candidate references, supplied/provider provenance, match reasons, missing/conflicting fields and exact source-range uncertainty.
+The maintainer requested reading the whole document with its bibliography and opening choices on unresolved/ambiguous citation highlights. The local 0.4.0 demo now prototypes hover/click/keyboard review rather than a permanent side panel. The editor should own decorations, positioning and transactions; cite.inator should provide candidate references, supplied/provider provenance, match reasons, missing/conflicting fields and exact source-range uncertainty.
 
 Questions for draft.inator:
 

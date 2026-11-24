@@ -60,7 +60,7 @@ export function createCrossrefSearch({ fetch:request = globalThis.fetch, store =
       const at = new Date(now()).toISOString();
       const attempt = { provider:'Crossref', url:url.href, at, status:null };
       evidence.push(attempt);
-      const response = await request(url,{headers:{Accept:'application/json','User-Agent':`citation-inator/${packageInfo.version}${mailto ? ` (mailto:${mailto})` : ''}`},signal:AbortSignal.timeout(8000),redirect:'error'});
+      const response = await request(url,{headers:{Accept:'application/json','User-Agent':`cite-inator/${packageInfo.version}${mailto ? ` (mailto:${mailto})` : ''}`},signal:AbortSignal.timeout(8000),redirect:'error'});
       attempt.status = response.status;
       if (response.status === 429 || response.status >= 500) backOffUntil = now() + retryDelay(response.headers.get('retry-after'),now());
       const payload = await readPayload(response);

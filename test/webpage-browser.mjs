@@ -53,8 +53,8 @@ export async function checkWebpageBrowser({ page, directory, origin }) {
     const trigger = reader.getByRole("button", { name: /Inspect citation/ });
     if (style === "default") await trigger.press("Enter");
     else await trigger.click();
-    const panel = reader.getByRole("dialog", { name: "citation.inator" });
-    const heading = panel.getByRole("heading", { name: "citation.inator" });
+    const panel = reader.getByRole("dialog", { name: "cite.inator" });
+    const heading = panel.getByRole("heading", { name: "cite.inator" });
     assert.equal(await heading.evaluate(node => node.getRootNode().activeElement === node), true);
     assert.equal(await heading.evaluate(node => getComputedStyle(node).outlineStyle), "none");
 

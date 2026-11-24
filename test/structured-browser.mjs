@@ -77,7 +77,7 @@ export async function checkStructuredBrowser({ page, directory, origin }) {
   assert.equal(await page.locator("#citation-3-map-note-atlas").count(), 1);
   assert.equal(await page.locator(`#${first.endnotes[0].id}`).count(), 1);
   const trigger = page.locator(`#${first.occurrences[0].anchorId}`);
-  const panel = page.getByRole("dialog", { name: "citation.inator" });
+  const panel = page.getByRole("dialog", { name: "cite.inator" });
   await trigger.waitFor();
   await page.waitForFunction(id => document.getElementById(id)?.getAttribute("role") === "button", first.occurrences[0].anchorId);
   await trigger.press("Enter");

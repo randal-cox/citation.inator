@@ -91,7 +91,7 @@ try {
   } else {
     const [sourcePath, cachePath, outputPath, namespace = "cit", citationKeyword = "citation", classPrefix = "citation"] = positionals;
     if (!outputPath || positionals.length > 6) {
-      throw new TypeError("Usage: citation-inator [--format text|html|markdown] [--style default|chicago-author-date|apa|mla|harvard|vancouver] [--endnotes-heading HEADING] SOURCE CACHE OUTPUT [NAMESPACE] [KEYWORD] [CLASS-PREFIX], or citation-inator --json, or citation-inator --find-isbns --json");
+      throw new TypeError("Usage: cite-inator [--format text|html|markdown] [--style default|chicago-author-date|apa|mla|harvard|vancouver] [--endnotes-heading HEADING] SOURCE CACHE OUTPUT [NAMESPACE] [KEYWORD] [CLASS-PREFIX], or cite-inator --json, or cite-inator --find-isbns --json");
     }
     const [source, data] = await Promise.all([readFile(sourcePath, "utf8"), readFile(cachePath, "utf8")]);
     const output = await compile(source, JSON.parse(data), { namespace, citationKeyword, classPrefix, ...overrides }, values.format);

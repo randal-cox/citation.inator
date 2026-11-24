@@ -69,7 +69,7 @@ export async function checkInspectIcons(browser, origin, evidence) {
     await page.evaluate(() => { document.getElementById("reader").cache = window.inspectFixtureCache; });
     await page.waitForFunction(() => document.querySelectorAll('[data-citation-part="note-actions"]').length === 0);
     await inspect.first().press("Enter");
-    const panel = page.getByRole("dialog", { name: "citation.inator" });
+    const panel = page.getByRole("dialog", { name: "cite.inator" });
     await panel.waitFor();
     await page.keyboard.press("Escape");
     assert(await inspect.first().evaluate(node => document.activeElement === node));

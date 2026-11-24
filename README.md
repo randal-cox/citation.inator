@@ -1,4 +1,4 @@
-# citation.inator
+# cite.inator
 
 Write DOI or ISBN markers in your article and turn them into linked references, endnotes and source panels.
 
@@ -8,21 +8,23 @@ A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
 {citation endnote}
 ```
 
-The optional `note:` helps editors reading the source; it does not appear in the reader's citation. A build or import step resolves bibliographic metadata and keeps a generated cache. Authors normally write identifiers, rather than reference JSON. Curated records remain useful for sources without identifiers and for site-specific metadata. [Load and initialize](#load-and-initialize) · [Try the examples](https://randal-cox.github.io/citation.inator/).
+The optional `note:` helps editors reading the source; it does not appear in the reader's citation. A build or import step resolves bibliographic metadata and keeps a generated cache. Authors normally write identifiers, rather than reference JSON. Curated records remain useful for sources without identifiers and for site-specific metadata. [Load and initialize](#load-and-initialize) · [Try the examples](https://randal-cox.github.io/cite.inator/).
 
-**Release 0.4.0 — Reviewed citation import.** [Release and downloads](https://github.com/randal-cox/citation.inator/releases/tag/v0.4.0). Includes the browser/Node import API, native extraction and browser compiler alongside the reader and editor tools.
+**Release 0.4.0 — Reviewed citation import.** [Release and downloads](https://github.com/randal-cox/cite.inator/releases/tag/v0.4.0). Includes the browser/Node import API, native extraction and browser compiler alongside the reader and editor tools.
 
-**0.2.0 — Article tooling.** Editor notes, a site-wide bibliography and tag filters are included in this milestone. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/citation.inator/releases).
+**Article tooling, introduced in 0.2.0.** Editor notes, a site-wide bibliography and tag filters are included. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/cite.inator/releases).
+
+The 0.5.0 project name is **cite.inator**; released 0.4.0 archives retain their original `citation-inator` package name. Existing browser assets, markup and stored-data contracts remain compatible; see [the naming migration](docs/naming-migration.md).
 
 ## Load and initialize
 
-Try the [live learning playground](https://randal-cox.github.io/citation.inator/): 20 editable examples, annotated tutorials, import review, a worked editor integration and downloadable starter projects. The active 0.5.0 preview also adds shared [UI language configuration](docs/i18n.md). To run it locally, use `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). The stable library release remains 0.4.0; see the preview's [milestone checklist](docs/milestones/0.5.0.md) for acceptance and release status.
+Try the [live learning playground](https://randal-cox.github.io/cite.inator/): 21 editable examples, annotated tutorials, import review, a worked editor integration and downloadable starter projects. The active 0.5.0 preview also adds shared [UI language configuration](docs/i18n.md). To run it locally, use `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). The stable library release remains 0.4.0; see the preview's [milestone checklist](docs/milestones/0.5.0.md) for acceptance and release status.
 
 To serve the demos from the checkout, run `npm start` from the repository root.
 
-**Without npm.** Start with [the standalone demo](https://github.com/randal-cox/citation.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
+**Without npm.** Start with [the standalone demo](https://github.com/randal-cox/cite.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
-**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball whose filename `npm pack` prints into your project, then pass that file to `npm install`. Its version follows the checkout; use tag `v0.4.0` to reproduce the stable release. The same browser assets are in `node_modules/citation-inator/dist/`. Import the compiler from `citation-inator`.
+**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball whose filename `npm pack` prints into your project, then pass that file to `npm install`. Its version follows the checkout; use tag `v0.4.0` to reproduce the stable release. The same browser assets are in `node_modules/cite-inator/dist/`. Import the compiler from `cite-inator`.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">
@@ -90,7 +92,7 @@ See the [citation-style catalogue and support matrix](docs/citation-styles.md). 
 
 See the [integration guide](docs/integration.md) for HTML and Markdown examples, reused fragments, the Python command, ISBN lookup and title-and-author search, and the browser API. See the [roadmap](ROADMAP.md) for follow-up work.
 
-Static editor previews can copy `dist/citation-compiler.mjs` and import `compileMarkdown`, `compileHTML` or `compileCitations` directly, without a compiler server. With npm use `citation-inator/compiler-browser`. See the [browser compiler example](docs/article-tools.md#compile-an-article-in-a-browser-040-preview). The import API also supports reviewable existing-site record reuse and host-chosen new IDs; see [site integration](docs/import-api.md#reuse-site-records-and-choose-new-ids-040-preview).
+Static editor previews can copy `dist/citation-compiler.mjs` and import `compileMarkdown`, `compileHTML` or `compileCitations` directly, without a compiler server. With npm use `cite-inator/compiler-browser`. See the [browser compiler example](docs/article-tools.md#compile-an-article-in-a-browser-040-preview). The import API also supports reviewable existing-site record reuse and host-chosen new IDs; see [site integration](docs/import-api.md#reuse-site-records-and-choose-new-ids-040-preview).
 
 ## Try the import-review development demo
 
@@ -104,22 +106,22 @@ This example demo saves no documents and uses the shared import API in the brows
 
 ## Work on the source checkout
 
-Clone the [GitHub repository](https://github.com/randal-cox/citation.inator) and use Node.js 22.13 or later.
+Clone the [GitHub repository](https://github.com/randal-cox/cite.inator) and use Node.js 22.13 or later.
 
 ```sh
-git clone https://github.com/randal-cox/citation.inator.git
-cd citation.inator
+git clone https://github.com/randal-cox/cite.inator.git
+cd cite.inator
 npm ci
 npm run build
 npm test
 ```
 
-Run `npm start` to open the [reading room](http://127.0.0.1:4187/) and find the notation guide and Resolution bench. The reading room’s **CSS** and **Style** selectors preview appearance and citation formatting separately. The help buttons beside **Hover**, **CSS**, and **Style** show the corresponding configuration. Install the dedicated browser with `npx playwright-core install chromium --only-shell`, then run `npm run test:browser`. Tests use Playwright’s isolated browser by default; `CITATION_CHROME` explicitly selects another test executable. Run the [adversarial review](https://github.com/randal-cox/citation.inator/blob/main/docs/adversarial-testing.md) at every milestone and when a change warrants it.
+Run `npm start` to open the [reading room](http://127.0.0.1:4187/) and find the notation guide and Resolution bench. The reading room’s **CSS** and **Style** selectors preview appearance and citation formatting separately. The help buttons beside **Hover**, **CSS**, and **Style** show the corresponding configuration. Install the dedicated browser with `npx playwright-core install chromium --only-shell`, then run `npm run test:browser`. Tests use Playwright’s isolated browser by default; `CITATION_CHROME` explicitly selects another test executable. Run the [adversarial review](https://github.com/randal-cox/cite.inator/blob/main/docs/adversarial-testing.md) at every milestone and when a change warrants it.
 
 Before a check-in, follow the [check-in procedure](docs/checkin-procedure.md) and review the milestone record and roadmap. Install the local staged-check hook with `npm run hooks:install`. Use `npm run checkin:check` for the fast checks and `npm run milestone:check` when closing a milestone.
 
 ## Credit and license
 
-Randal Cox maintains citation.inator. [ORCID](https://orcid.org/0009-0002-3427-7190) · [GitHub repository](https://github.com/randal-cox/citation.inator)
+Randal Cox maintains cite.inator. [ORCID](https://orcid.org/0009-0002-3427-7190) · [GitHub repository](https://github.com/randal-cox/cite.inator)
 
 The software uses the MIT license. The optional tools bundle includes parser dependencies with their own notices, retained in its header and [THIRD_PARTY_LICENSES.txt](dist/THIRD_PARTY_LICENSES.txt). Third-party source material retains its own terms. See [CITATION.cff](CITATION.cff) for the software citation and [CHANGELOG.md](CHANGELOG.md) for release changes. Source records carry their own attribution.

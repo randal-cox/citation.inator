@@ -23,7 +23,7 @@ export async function checkReaderAccess(browser, origin, evidence) {
     await panel.getByRole("link", { name: "Download PDF" }).waitFor();
     const more = panel.locator('[data-citation-part="access-more"]');
     assert.equal(await more.locator("summary").textContent(), "Other sources (2)");
-    await panel.getByRole("button", { name: /Tell us where you can read/ }).click();
+    await panel.getByRole("button", { name: /Choose your library or reading services/ }).click();
     const settings = reader.getByRole("dialog", { name: "Where you can read" });
     if (evidence) await page.screenshot({ path: join(evidence, "reader-access-settings.png") });
     await settings.getByRole("checkbox", { name: "JSTOR", exact: true }).check();
@@ -52,7 +52,7 @@ export async function checkReaderAccess(browser, origin, evidence) {
     });
     assert.deepEqual(configured.state, "none");
     await trigger.click();
-    await panel.getByRole("button", { name: /None of these is on your list/ }).click();
+    await panel.getByRole("button", { name: /Edit your library or reading services/ }).click();
     await settings.getByRole("button", { name: "Clear settings" }).click();
     await settings.waitFor({ state: "detached" });
     assert.equal(await page.locator("#access-profile-state").textContent(), "Not set");
@@ -131,7 +131,7 @@ export async function checkReaderAccess(browser, origin, evidence) {
     const copiesTrigger = page.locator("#fixture-cite-two-copies-1");
     await page.waitForFunction(() => document.getElementById("fixture-cite-two-copies-1").getAttribute("role") === "button");
     await copiesTrigger.press("Enter");
-    const copiesPanel = root.getByRole("dialog", { name: "citation.inator" });
+    const copiesPanel = root.getByRole("dialog", { name: "cite.inator" });
     assert.equal(await copiesPanel.getByRole("link", { name: "Download PDF", exact: true }).count(), 2);
     await copiesPanel.getByRole("link", { name: "Find at Translated JSTOR", exact: true }).waitFor();
     await page.keyboard.press("Escape");
@@ -145,15 +145,15 @@ export async function checkReaderAccess(browser, origin, evidence) {
     await root.evaluate(node => { node.hiddenProviders = []; });
     await page.waitForFunction(() => document.querySelector('#fixture-note-two-copies a[href="https://example.org/jstor"]'));
     const noteActions = page.locator('#fixture-note-two-copies [data-ci-note-record]');
-    await noteActions.getByRole("button", { name: "Change where you read", exact: true }).click();
+    await noteActions.getByRole("button", { name: "Change reading services", exact: true }).click();
     const noteSettings = root.getByRole("dialog", { name: "Where you can read" });
     await noteSettings.getByRole("button", { name: "Clear settings" }).click();
     await noteSettings.waitFor({ state: "detached" });
-    assert.equal(await root.locator('[data-citation-part="access-list-help"]').getByRole("button", { name: /Tell us where you can read/ }).evaluate(node => node === document.activeElement), true);
+    assert.equal(await root.locator('[data-citation-part="access-list-help"]').getByRole("button", { name: /Choose your library or reading services/ }).evaluate(node => node === document.activeElement), true);
     await page.setViewportSize({ width: 390, height: 850 });
     assert.equal(await root.locator('[data-citation-part="access-list-help"]').count(),1);
     assert.equal(await root.locator('li [data-citation-part="access-help"]').count(),0);
-    await root.locator('[data-citation-part="access-list-help"]').getByRole("button", { name: /Tell us where you can read/ }).tap();
+    await root.locator('[data-citation-part="access-list-help"]').getByRole("button", { name: /Choose your library or reading services/ }).tap();
     await noteSettings.waitFor();
     assert((await noteSettings.boundingBox()).width <= 390);
     if (evidence) await page.screenshot({ path: join(evidence, "reader-access-narrow.png") });

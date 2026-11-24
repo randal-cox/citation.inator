@@ -47,12 +47,12 @@ await mkdir("dist", { recursive: true });
 await build({
   entryPoints: ["src/browser.mjs"], bundle: true, format: "esm", target: "es2022",
   outfile: "dist/citation-inspector.mjs",
-  banner: { js: `/*! citation-inator v${version} | MIT | See LICENSE */` }
+  banner: { js: `/*! cite-inator v${version} | MIT | See LICENSE */` }
 });
 const importDependencies=[['@noble/hashes','LICENSE'],['fflate','LICENSE'],['@xmldom/xmldom','LICENSE'],['pdfjs-dist','LICENSE']];
 const importNotices=(await Promise.all(importDependencies.map(async ([name,file])=>`${name} ${JSON.parse(await readFile(`node_modules/${name}/package.json`,'utf8')).version}\n${await readFile(`node_modules/${name}/${file}`,'utf8')}`))).join('\n\n');
-await build({entryPoints:['src/import-api.mjs'],bundle:true,format:'esm',target:'es2022',outfile:'dist/citation-import.mjs',banner:{js:`/*! citation-inator import v${version} | MIT | See THIRD_PARTY_LICENSES.txt */`}});
-await build({entryPoints:['src/import-files.mjs'],bundle:true,format:'esm',target:'es2022',external:['node:*'],outfile:'dist/citation-import-files.mjs',banner:{js:`/*! citation-inator native import v${version} | MIT | See THIRD_PARTY_LICENSES.txt */`}});
+await build({entryPoints:['src/import-api.mjs'],bundle:true,format:'esm',target:'es2022',outfile:'dist/citation-import.mjs',banner:{js:`/*! cite-inator import v${version} | MIT | See THIRD_PARTY_LICENSES.txt */`}});
+await build({entryPoints:['src/import-files.mjs'],bundle:true,format:'esm',target:'es2022',external:['node:*'],outfile:'dist/citation-import-files.mjs',banner:{js:`/*! cite-inator native import v${version} | MIT | See THIRD_PARTY_LICENSES.txt */`}});
 await cp('node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs','dist/citation-pdf.worker.mjs');
 await build({entryPoints:["src/import-enrichment.mjs"],bundle:true,format:"esm",target:"es2022",outfile:"demos/import/enrichment-browser.mjs"});
 const toolsNotices = (await Promise.all([
@@ -64,11 +64,11 @@ const toolsNotices = (await Promise.all([
 await build({
   entryPoints: ["src/tools.mjs"], bundle: true, format: "esm", target: "es2022",
   outfile: "dist/citation-tools.mjs",
-  banner: { js: `/*! citation-inator tools v${version} | MIT | See LICENSE */\n/* Bundled dependency notices:\n${toolsNotices.replaceAll('*/', '* /')}\n*/` }
+  banner: { js: `/*! cite-inator tools v${version} | MIT | See LICENSE */\n/* Bundled dependency notices:\n${toolsNotices.replaceAll('*/', '* /')}\n*/` }
 });
 await build({
   entryPoints:['src/compiler-browser.mjs'],bundle:true,format:'esm',target:'es2022',outfile:'dist/citation-compiler.mjs',
-  banner:{js:`/*! citation-inator compiler v${version} | MIT | See LICENSE */\n/* Bundled dependency notices:\n${toolsNotices.replaceAll('*/','* /')}\n*/`}
+  banner:{js:`/*! cite-inator compiler v${version} | MIT | See LICENSE */\n/* Bundled dependency notices:\n${toolsNotices.replaceAll('*/','* /')}\n*/`}
 });
 await writeFile('dist/THIRD_PARTY_LICENSES.txt', toolsNotices+'\n\n'+importNotices);
 await Promise.all([
@@ -112,13 +112,13 @@ function document({ title, intro, content, active, showPreferences = active && a
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${title} | citation.inator</title>
+  <title>${title} | cite.inator</title>
   <link rel="stylesheet" href="${assets}citation-inspector.css">
   ${style ? `<link rel="stylesheet" href="${style}">` : ""}
   <script type="module" src="${assets}citation-inspector.mjs"></script>
 ${showPreferences ? '  <script type="module" src="../static/preferences.mjs"></script>\n' : ""}${script ? `  ${script}\n` : ""}</head>
 <body>
-  <header class="site"><a class="brand" href="./">${brandIconMarkup}<span>citation.inator</span></a>
+  <header class="site"><a class="brand" href="./">${brandIconMarkup}<span>cite.inator</span></a>
   ${nav ? `<nav aria-label="Demos">
     <a href="../static/" ${active === "static" ? 'aria-current="page"' : ""}>Reading room</a>
     <a href="../dynamic/" ${active === "dynamic" ? 'aria-current="page"' : ""}>Resolution bench</a>
@@ -131,7 +131,7 @@ ${showPreferences ? '  <script type="module" src="../static/preferences.mjs"></s
     <p class="intro">${intro}</p>
 ${showPreferences ? `    ${preferences}\n` : ""}    ${content}
   </main>
-  <footer class="site">citation.inator · Portable Citation Inspector ${version}</footer>
+  <footer class="site">cite.inator · Portable Citation Inspector ${version}</footer>
 </body>
 </html>
 `;
@@ -237,10 +237,10 @@ initializeCitationInspector(document.querySelector("citation-inspector"), {
   hiddenAccessProviders: ["JSTOR"]
 });`;
 
-const demoServer = `cd citation.inator
+const demoServer = `cd cite.inator
 npm start`;
 
-const compileExample = `import { createCitationCompiler } from "citation-inator";
+const compileExample = `import { createCitationCompiler } from "cite-inator";
 
 const compiler = createCitationCompiler({
   citationKeyword: "ref",
@@ -255,7 +255,7 @@ const result = compiler.compile(
 const checkoutCompile = `node scripts/compile.mjs --style chicago-author-date --endnotes-heading References \\
   demos/drop-in/reading.txt demos/drop-in/citations.json article.html my-article`;
 
-const markupExample = `import { compileHTML, compileMarkdown, rebaseCitationFragment } from "citation-inator/markup";
+const markupExample = `import { compileHTML, compileMarkdown, rebaseCitationFragment } from "cite-inator/markup";
 
 const options = { namespace: "essay", citationStyle: "chicago-author-date", endnotesHeading: "References" };
 const result = compileHTML("<p><em>Consent</em> has a history {citation local:consent}.</p>", cache, options);
@@ -269,10 +269,10 @@ await writeFile("demos/static/guide.html", document({
   content: `<article class="reading guide">
     <section aria-labelledby="guide-load">
       <h2 id="guide-load">Load and initialize</h2>
-      <p>Clone the <a href="https://github.com/randal-cox/citation.inator">repository</a> with <code>git clone https://github.com/randal-cox/citation.inator.git</code> and check out <code>v${version}</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; 0.4.0 includes the editor, bibliography, compiler and import tools.</p>
+      <p>Clone the <a href="https://github.com/randal-cox/cite.inator">repository</a> with <code>git clone https://github.com/randal-cox/cite.inator.git</code> and check out <code>v${version}</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; 0.4.0 includes the editor, bibliography, compiler and import tools.</p>
       <pre><code>${escapeHTML(demoServer)}</code></pre>
       <p>Without npm, run <code>node server.mjs</code> in the standalone folder and open <code>http://127.0.0.1:4188/</code>. You can also use any static HTTP server. See the standalone <a href="../drop-in/README.md">README</a>.</p>
-      <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/citation-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
+      <p>Copy <code>dist/citation-inspector.mjs</code>, its adjacent <code>dist/citation-inspector.css</code>, and <code>dist/LICENSE</code> to your site. To build the current npm tarball, run <code>npm ci</code> then <code>npm pack</code> in the downloaded repository. That tarball includes the same browser assets under <code>node_modules/cite-inator/dist/</code>. Serve the compiled citation fragment and its cache from the same origin. The module registers the element when it loads.</p>
       <pre><code>${escapeHTML(loadingExample)}</code></pre>
       <p>Set options on the element or in your site's browser module. The default classes start with <code>citation-</code>. Use <code>class-prefix</code> or <code>classPrefix</code> to give them your own prefix.</p>
       <pre><code>${escapeHTML(initExample)}</code></pre>
@@ -313,7 +313,7 @@ initializeCitationInspector(element, {...options, cache: result.cache});</code><
       <p>The <a href="../drop-in/citation-styles.md">style catalogue and support matrix</a> distinguishes citation families, named presets, source types and experimental import coverage.</p>
       <p>In Chicago author–date, set the same <code>id</code> on an author in each record to identify a single person across bylines such as Richard Wrangham and Richard W. Wrangham. The bibliography keeps each record’s spelling.</p>
       <p>Keep the default <code>suffixScope: "fragment"</code> for articles with independent reference lists. Use <code>suffixScope: "cache"</code> for pages that share one bibliography, such as chapters of an online book. The compiler reports when a year letter in a page’s endnotes has a companion work outside those endnotes.</p>
-      <p>With npm dependencies installed, compile trusted HTML or Markdown using <code>citation-inator/markup</code>, or pass <code>--format html</code> or <code>--format markdown</code> to the CLI. Each directive must stay inside one text node. Use a distinct namespace for each copy of a fragment on the same page.</p>
+      <p>With npm dependencies installed, compile trusted HTML or Markdown using <code>cite-inator/markup</code>, or pass <code>--format html</code> or <code>--format markdown</code> to the CLI. Each directive must stay inside one text node. Use a distinct namespace for each copy of a fragment on the same page.</p>
       <pre><code>${escapeHTML(markupExample)}</code></pre>
       <p>For a build tool such as Python, run the CLI with <code>--json</code> and send <code>{ paragraphs, cache, options }</code> on standard input. It returns <code>{ html, cache, diagnostics }</code>. For HTML or Markdown send <code>{ source, format, cache, options }</code>.</p>
     </section>
@@ -325,7 +325,7 @@ initializeCitationInspector(element, {...options, cache: result.cache});</code><
     </section>
     <section aria-labelledby="guide-article-tools">
       <h2 id="guide-article-tools">Article editors, shared bibliographies and tags</h2>
-      <p>Version 0.2.0 adds editor-only notes such as <code>{citation source-one | note:"Cox 1995"}</code>. Notes do not replace reader labels. Import <code>describeCitation</code> and <code>annotateMarkers</code> from <code>citation-inator/tools</code> in Node, or copy the self-contained <code>citation-tools.mjs</code> into a browser editor. JSON CLI operations <code>--describe --json</code>, <code>--annotate --json</code> and <code>--check-notes --json</code> let other build systems use the same API.</p>
+      <p>Version 0.2.0 adds editor-only notes such as <code>{citation source-one | note:"Cox 1995"}</code>. Notes do not replace reader labels. Import <code>describeCitation</code> and <code>annotateMarkers</code> from <code>cite-inator/tools</code> in Node, or copy the self-contained <code>citation-tools.mjs</code> into a browser editor. JSON CLI operations <code>--describe --json</code>, <code>--annotate --json</code> and <code>--check-notes --json</code> let other build systems use the same API.</p>
       <p>The compiler returns actual <code>occurrences</code>. Join them to page routes with <code>createSiteOccurrenceIndex</code>, then supply <code>siteOccurrences</code> when compiling the shared bibliography. Its cross-page return links work without JavaScript; the inspector shows <strong>Cited on this site</strong>.</p>
       <p>Records accept <code>tags</code>; configure <code>tagCatalogue</code> for labels and same-origin masked icons. Use <code>listItemTags</code> for article-specific roles, <code>listFilters: true</code> for browser checkboxes, and notation such as <code>{citation list source-one; source-two | tags:theory,praxis | tag-mode:all}</code> for build-time filtering. <code>inlineTags: true</code> adds tags beside in-text citations.</p>
       <p>Editors can contribute tags at each mention: <code>{citation source-one | note:"Cox 1995" | tags:theory,praxis}</code>. <code>collectMarkerTags(sources, cache, { includeDiagnostics: true })</code> counts contributions while reporting skipped/malformed input; the host validates topics and applies curator overrides. The browser bundle and <code>--collect-tags --json</code> expose the same function. <code>inlineTags: "marker"</code> displays only that mention's tags; record topics remain in the panel. Try the collector in the editor example.</p>
@@ -346,7 +346,7 @@ initializeCitationInspector(element, {...options, cache: result.cache});</code><
       <p>For curated reference text, put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
       <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. Set <code>hiddenAccessProviders</code> to hide services in the panel and endnotes. The application can reuse its own preference settings.</p>
       <p>Use <code>originalIssued: [1912]</code> and <code>issued: [1995]</code> to store both dates for a translated or reprinted work. Try the Durkheim citation in the reading room with Chicago and APA selected.</p>
-      <p>The <a href="https://github.com/randal-cox/citation.inator/blob/main/docs/integration.md">integration guide</a> shows how to find ISBN candidates by title and author and review them before updating a cache.</p>
+      <p>The <a href="https://github.com/randal-cox/cite.inator/blob/main/docs/integration.md">integration guide</a> shows how to find ISBN candidates by title and author and review them before updating a cache.</p>
     </section>
   </article>`
 }));
@@ -358,7 +358,7 @@ await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
   cp("CITATION.cff", portable + "CITATION.cff"),
-  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "i18n.md"].map(name => cp("docs/" + name, portable + name)),
+  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "i18n.md", "naming-migration.md"].map(name => cp("docs/" + name, portable + name)),
   cp("scripts/static-server.mjs", portable + "server.mjs"),
   writeFile(portable + "package.json", json({name:"citation-inator-standalone",private:true,type:"module",version,scripts:{start:"node server.mjs"}})),
   writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),

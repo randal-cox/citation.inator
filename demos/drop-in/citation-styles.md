@@ -15,7 +15,7 @@ Formatting presets below exist in 0.2.0 and later. Import recognition/reference 
 | `vancouver` | Numeric references | Common books/journal articles | Experimental bracketed numbers/ranges; common compact journal bylines and year/volume/page tails; bounded explicit DOI line-wrap recovery |
 | `default` | Original compatibility format | Existing generic behavior | Not an import style |
 
-Named presets are purpose-built formatters, not a CSL engine or a promise of exhaustive conformity to a published manual. Formatting a citation and recognizing an existing citation are different capabilities. Chapters, legislation, webpages, software, datasets and media need source-specific scrutiny; see [media coverage](media-support.md). Curated reference text/parts can preserve a required house form where automatic formatting is insufficient. Existing citation.inator endnotes are reference lists, not an implementation of Chicago shortened notes, ibid. or legal citation conventions.
+Named presets are purpose-built formatters, not a CSL engine or a promise of exhaustive conformity to a published manual. Formatting a citation and recognizing an existing citation are different capabilities. Chapters, legislation, webpages, software, datasets and media need source-specific scrutiny; see [media coverage](media-support.md). Curated reference text/parts can preserve a required house form where automatic formatting is insufficient. Existing cite.inator endnotes are reference lists, not an implementation of Chicago shortened notes, ibid. or legal citation conventions.
 
 ## Systems and variants
 
@@ -27,9 +27,9 @@ Named presets are purpose-built formatters, not a CSL engine or a promise of exh
 
 ## Named-style inventory
 
-The following edition/variant labels and family classifications were read from the official [CSL style repository](https://github.com/citation-style-language/styles) on 20 November 2026. They describe those external style definitions, not editions certified by citation.inator. Linked definitions may evolve. The complete repository, including its dependent journal/publisher variants, is the maintained broad catalogue; this table highlights common choices for migration planning.
+The following edition/variant labels and family classifications were read from the official [CSL style repository](https://github.com/citation-style-language/styles) on 20 November 2026. They describe those external style definitions, not editions certified by cite.inator. Linked definitions may evolve. The complete repository, including its dependent journal/publisher variants, is the maintained broad catalogue; this table highlights common choices for migration planning.
 
-| External style definition | CSL family | citation.inator status |
+| External style definition | CSL family | cite.inator status |
 | --- | --- | --- |
 | [APA Style 7th edition](https://raw.githubusercontent.com/citation-style-language/styles/master/apa.csl) | author-date | Related named preset; exact edition/variant compliance not certified |
 | [Chicago Manual of Style 18th edition (author-date)](https://raw.githubusercontent.com/citation-style-language/styles/master/chicago-author-date.csl) | author-date | Related named preset; exact edition/variant compliance not certified |
