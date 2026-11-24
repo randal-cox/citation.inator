@@ -7,6 +7,7 @@
 - Add distinct saved-metadata/live import hosts, rights-cleared native sample files, actual cross-page links and a worked integration using pinned, unmodified draft editor files with their license. Fixture exports retain explicit example provenance.
 - Add shared English/Spanish UI messages for compiler, inspector and access settings, with configurable labels, plural categories, locale formatting and English fallback. Authored metadata and citation-style conventions remain separate.
 - Avoid an extra Chicago period after a final author initial. Browser checks now default to a dedicated Playwright test browser; system Chrome requires an explicit path.
+- Update the test-only Playwright driver and pin the CI runner instead of relying on a drifting Ubuntu image; retain strict keyboard focus assertions and document the older Chromium 140 gap.
 - Public deployment, full independent milestone review, whole-site download and adopter tutorial acceptance remain pending in the milestone checklist.
 
 ## 0.4.0 — 23 November 2026

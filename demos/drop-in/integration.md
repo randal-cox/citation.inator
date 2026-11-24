@@ -309,6 +309,8 @@ To support a library resolver, assign `element.institutionalURL = record => "htt
 
 ### Use the inspector in a host dialog
 
+Validate keyboard behavior in the browsers your host supports. The 0.5.0 verification harness uses a maintained, dedicated Chromium build. The previously bundled Chromium 140 was observed to skip forward focus from the panel menu; it is not included in keyboard acceptance. Static reference/endnote links remain a separate fallback. Platform-specific verification and remaining gaps are recorded in the milestone evidence.
+
 In version 0.1.4, mount the inspector inside its owning dialog and pass the actual endnote element. Provide `focusFallback` for a trigger that can disappear during an update. An Escape from the active inspector or its trigger dismisses it first. An Escape from a host dialog above it remains available to the host. The **Map details** demo exercises nested dismissal and focus return. Desktop opens an anchored popover when supported. Compact viewports and browsers without popover support use the modal presentation.
 
 Set `--citation-*` tokens on the inspector or a containing element to match a local theme. The demo’s dark switch changes the preview section and its inspector independently of the rest of the page. In version 0.1.4, `--citation-panel-font` sets the panel’s body font family, `--citation-sheet-radius` sets the compact modal’s border radius, and `--citation-panel-backdrop` sets the modal backdrop background. The anchored panel still uses `--citation-panel-radius`.

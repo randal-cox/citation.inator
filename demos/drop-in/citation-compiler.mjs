@@ -402,7 +402,7 @@ var package_default = {
     "axe-core": "4.14.0",
     dompurify: "3.5.0",
     esbuild: "0.25.12",
-    "playwright-core": "1.55.0"
+    "playwright-core": "1.65.1"
   },
   dependencies: {
     "@noble/hashes": "2.4.0",
