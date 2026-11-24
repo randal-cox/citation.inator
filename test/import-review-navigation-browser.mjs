@@ -18,8 +18,11 @@ export async function checkReviewNavigation(browser,origin){
   await page.locator('#lookup-pending-number').click();await page.locator('#review-group-2').waitFor({state:'visible'});await page.keyboard.press('Escape');
   await page.locator('#lookup-review-number').click();await page.locator('#review-group-0').waitFor({state:'visible'});assert.equal(await page.locator('#resolve-citations').getAttribute('open'),'');
   await open(1);await page.keyboard.press('ArrowRight');await page.locator('#review-group-3').waitFor({state:'visible'});await page.keyboard.press('ArrowLeft');await page.locator('#review-group-1').waitFor({state:'visible'});
-  await page.keyboard.press('Escape');await page.locator('#example').click();phase='exact';release();await page.waitForFunction(()=>document.querySelector('[data-review-group="2"]').dataset.reviewState==='selected');
-  assert.ok(await page.locator('#example').evaluate(node=>node===document.activeElement));await page.keyboard.press('ArrowDown');await page.keyboard.press('Escape');assert.equal(await page.locator('#example').inputValue(),'apa');
+  await page.keyboard.press('Escape');await page.locator('#example').click();const exampleControl=await page.locator('#example').elementHandle();phase='exact';release();await page.waitForFunction(()=>document.querySelector('[data-review-group="2"]').dataset.reviewState==='selected');
+  assert.ok(await exampleControl.evaluate(node=>node.isConnected&&node===document.querySelector('#example')&&node===document.activeElement));
+  // Native select Arrow/Escape commitment differs by platform. Keep the focus/identity
+  // assertion above, then choose explicitly so later checks use the same document.
+  await page.keyboard.press('Escape');await page.locator('#example').selectOption('apa');assert.equal(await page.locator('#example').inputValue(),'apa');await page.waitForFunction(()=>document.querySelector('[data-review-group="2"]')?.dataset.reviewState==='selected');
   assert.equal(await page.locator('#lookup-count').textContent(),'Looking up: 0');assert.equal(await page.locator('#lookup-activity').textContent(),'Needs review: 3');assert.equal(await page.locator('#lookup-pending-number').getAttribute('aria-disabled'),'true');
   await open(1);await page.keyboard.press('ArrowRight');await page.locator('#review-group-3').waitFor({state:'visible'});await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#review-group-3').isHidden(),true);
   phase='choices';await page.locator('#input-details>summary').click();await page.locator('#source').fill(documentExamples.apa.replace('309(3)','309(4)'));

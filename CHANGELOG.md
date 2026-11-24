@@ -8,6 +8,7 @@
 - Add shared English/Spanish UI messages for compiler, inspector and access settings, with configurable labels, plural categories, locale formatting and English fallback. Authored metadata and citation-style conventions remain separate.
 - Avoid an extra Chicago period after a final author initial. Browser checks now default to a dedicated Playwright test browser; system Chrome requires an explicit path.
 - Update the test-only Playwright driver and pin the CI runner instead of relying on a drifting Ubuntu image; retain strict keyboard focus assertions and document the older Chromium 140 gap.
+- Make the selector regression test independent of platform-specific native menu Arrow/Escape behavior while checking element identity and focus during background completion.
 - Public deployment, full independent milestone review, whole-site download and adopter tutorial acceptance remain pending in the milestone checklist.
 
 ## 0.4.0 — 23 November 2026
