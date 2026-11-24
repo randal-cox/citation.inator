@@ -10,7 +10,7 @@
 - Update the test-only Playwright driver and pin the CI runner instead of relying on a drifting Ubuntu image; retain strict keyboard focus assertions and document the older Chromium 140 gap.
 - Make the selector regression test independent of platform-specific native menu Arrow/Escape behavior while checking element identity and focus during background completion.
 - Write learning-test screenshots to the operating system's temporary directory.
-- Public deployment, full independent milestone review, whole-site download and adopter tutorial acceptance remain pending in the milestone checklist.
+- Publish and verify the GitHub Pages learning preview, including all 82 public assets and clean downloaded projects. Independent reviews and clean milestone/CI checks pass; adopter tutorial acceptance and final library publication remain pending in the milestone checklist.
 
 ## 0.4.0 — 23 November 2026
 

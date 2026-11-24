@@ -8,7 +8,7 @@ A small citation library. Write citations in plain text, compile them into linke
 
 ## Load and initialize
 
-The active 0.5.0 preview adds an editable learning playground and shared [UI language configuration](docs/i18n.md). From this checkout, run `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). The published stable release above remains 0.4.0. The preview's [milestone checklist](docs/milestones/0.5.0.md) distinguishes delivered work from pending publication.
+Try the [live learning playground](https://randal-cox.github.io/citation.inator/): 20 editable examples, annotated tutorials, import review, a worked editor integration and downloadable starter projects. The active 0.5.0 preview also adds shared [UI language configuration](docs/i18n.md). To run it locally, use `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). The stable library release remains 0.4.0; see the preview's [milestone checklist](docs/milestones/0.5.0.md) for acceptance and release status.
 
 To serve the demos from the checkout, run `npm start` from the repository root.
 
