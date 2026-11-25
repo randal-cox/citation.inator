@@ -20,7 +20,8 @@ for(const lesson of lessons){
  thumbnail.innerHTML=DOMPurify.sanitize(sample?.innerHTML||'References',{ALLOWED_TAGS:['span','em','strong','i','b','br'],ALLOWED_ATTR:['class','data-citation-part']});
  if(lesson.id==='filters')thumbnail.innerHTML='<span class="sample-tag">Methods</span> <span class="sample-tag">Data</span> <span class="sample-tag">Software</span>';
 
- const name=document.createElement('strong');name.textContent=lesson.title;button.append(thumbnail,name);
+ const excerpt=document.createElement('span');excerpt.className='example-preview';excerpt.append(...thumbnail.childNodes,document.createTextNode(' …'));thumbnail.append(excerpt);
+ const name=document.createElement('strong');name.textContent=lesson.title;button.append(name,thumbnail);
  button.addEventListener('click',()=>{selected=lesson.id;load();});$('example-gallery').append(button);
 }
 const requested=new URL(location.href).searchParams.get('example');

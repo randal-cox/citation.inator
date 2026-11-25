@@ -1,6 +1,6 @@
 # Moving to cite.inator in 0.5.0
 
-The public project, GitHub repository and physical project folder are renamed from **citation.inator** to **cite.inator**. The Codex project name and folder attachment are also verified as `cite.inator`. Activation and verification are recorded in the [milestone](https://github.com/randal-cox/cite.inator/blob/codex/citation-0.5-learning/docs/milestones/0.5.0.md). The migration does not rewrite released tags or archives.
+The public project, GitHub repository and physical project folder are renamed from **citation.inator** to **cite.inator**. The Codex project name and folder attachment are also verified as `cite.inator`. Activation and verification are recorded in the [milestone](https://github.com/randal-cox/cite.inator/blob/main/docs/milestones/0.5.0.md). The migration does not rewrite released tags or archives.
 
 ## Current names
 
@@ -22,7 +22,7 @@ Earlier archives keep their original `citation-inator` package name and filename
 ```json
 {
   "dependencies": {
-    "citation-inator": "file:./cite-inator-0.5.0-preview.2.tgz"
+    "citation-inator": "file:./cite-inator-0.5.0.tgz"
   }
 }
 ```
@@ -31,7 +31,7 @@ Install from that project folder with `npm install`, using the actual tarball fi
 
 ## Browser and stored-data compatibility
 
-The rename preserves the `citation-inspector` custom element, `initializeCitationInspector` and the `citation-inspector.mjs`, `citation-inspector.css`, `citation-compiler.mjs` and `citation-tools.mjs` asset names. Default `citation-*` classes, configurable keywords/class prefixes, `data-citation-part` hooks, events, cache schemas and existing storage keys retain their meaning. Existing `{cite ...}` and `{citation ...}` source requires no rewrite.
+The rename preserves the `citation-inspector` custom element, `initializeCitationInspector` and the `citation-inspector.mjs`, `citation-inspector.css`, `citation-compiler.mjs`, `citation-tools.mjs`, `citation-import.mjs`, `citation-import-files.mjs` and `citation-pdf.worker.mjs` asset names. The cache schema remains `citation-inator.cache.v1`. Default `citation-*` classes, configurable keywords/class prefixes, `data-citation-part` hooks, events, cache schemas and existing storage keys retain their meaning. Existing `{cite ...}` and `{citation ...}` source requires no rewrite.
 
 These names describe citation functions and remain integration contracts. The default panel branding and software citation change to cite.inator. A host's explicitly configured title/icon still takes precedence. Pinned upstream teaching files and historical release evidence retain their original bytes and names.
 

@@ -33,8 +33,16 @@ try{
   const origin=`http://127.0.0.1:${server.address().port}/cite.inator/`;
   await page.goto(origin);
   assert.equal(await page.locator('main>h1').innerText(),'Playground');
+  assert(await page.locator('#example-gallery>button').first().evaluate(node=>node.firstElementChild.tagName==='STRONG'&&node.querySelector('.example-preview').textContent.endsWith(' …')));
   const layout=await page.locator('.playground-layout').evaluate(node=>{const a=node.querySelector('.examples').getBoundingClientRect(),b=node.querySelector('.example-detail').getBoundingClientRect();return {galleryRight:a.right,detailLeft:b.left,galleryTop:a.top,detailTop:b.top};});
   assert(layout.detailLeft>=layout.galleryRight);assert(Math.abs(layout.galleryTop-layout.detailTop)<4);
+  assert(await page.locator('#source-panel').evaluate(node=>node.open));
+  assert(await page.locator('#result-panel').evaluate(node=>node.open));
+  await page.locator('#result-panel>summary').click();await page.locator('#style').selectOption('apa');
+  assert.equal(await page.locator('#result-panel').evaluate(node=>node.open),false);
+  await page.locator('#result-panel>summary').click();await page.locator('#source-panel>summary').click();await page.locator('#style').selectOption('chicago-author-date');
+  assert.equal(await page.locator('#source-panel').evaluate(node=>node.open),false);await page.locator('#source-panel>summary').click();
+  assert(await page.evaluate(()=>{const a=document.getElementById('metadata-panel'),b=document.getElementById('configuration-panel'),c=document.getElementById('diagnostics-panel');return !(a.closest('.workbench')||b.closest('.workbench'))&&Boolean(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING)&&Boolean(b.compareDocumentPosition(c)&Node.DOCUMENT_POSITION_FOLLOWING)}));
   await page.locator('#result [data-ci-record]').first().click();
   await page.waitForFunction(()=>document.querySelector('citation-inspector').hasAttribute('open'));
   const firstPanel=page.getByRole('dialog',{name:'cite.inator',exact:true});
@@ -136,6 +144,17 @@ try{
   await page.screenshot({path:join(tmpdir(),'citation-learning-phone.png'),fullPage:true});
   await page.goto(origin+'guide.html');
   assert(await page.getByRole('heading',{name:'Load, compile, initialize',exact:true}).count());
+  await page.locator('header .brand').click();assert(page.url().endsWith('/about.html'));
+  assert(await page.getByRole('heading',{name:'References readers can use',exact:true}).isVisible());
+  assert.match(await page.locator('main').innerText(),/MIT license/);
+  assert.match(await page.locator('header .github-link #version').innerText(),/^0\.5\.0/);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+  await page.screenshot({path:join(tmpdir(),'cite-overview-phone.png'),fullPage:true});
+  await page.setViewportSize({width:1400,height:1000});
+  const headerPositions=await page.locator('header').evaluate(node=>({nav:node.querySelector('nav').getBoundingClientRect().right,github:node.querySelector('.github-link').getBoundingClientRect().left}));assert(headerPositions.github>headerPositions.nav);
+  await page.screenshot({path:join(tmpdir(),'cite-overview-desktop.png'),fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+
   await page.goto(origin+'?example=site');
   await page.locator('#result [data-citation-part="site-returns"] a').first().click();
   assert.match(page.url(),/examples\/article-one\.html#/);
@@ -156,8 +175,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('[data-review-group]').length===2&&document.getElementById('document-preview').textContent.includes('Ioannidis'));
     assert.equal(await page.locator('#errors').innerText(),'');
   }
-  for(const route of ['guide.html','notation.html','reference/integration.html','import/','tools/editor-tools.html','host/']){
-    await page.goto(origin+route);assert.deepEqual(await page.locator('header nav[aria-label="Learning"] a').allTextContents(),['Playground','Import','GitHub','Guide']);
+  for(const route of ['about.html','guide.html','notation.html','reference/integration.html','import/','tools/editor-tools.html','host/']){
+    await page.goto(origin+route);assert.deepEqual(await page.locator('header nav[aria-label="Learning"] a').allTextContents(),['Playground','Import','Guide']);
   }
   await page.emulateMedia({colorScheme:'dark'});
   await page.goto(origin+'import/');assert.match(await page.locator('.intro').innerText(),/Turn citations in an existing document/);

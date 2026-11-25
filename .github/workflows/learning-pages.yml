@@ -1,7 +1,7 @@
 name: Learning site
 on:
   push:
-    branches: [main, codex/citation-0.5-learning]
+    branches: [main]
   workflow_dispatch:
 
 permissions:

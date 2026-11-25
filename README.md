@@ -8,9 +8,9 @@ A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
 {citation endnote}
 ```
 
-The optional `note:` helps editors reading the source; it does not appear in the reader's citation. A build or import step resolves bibliographic metadata and keeps a generated cache. Authors normally write identifiers, rather than reference JSON. Curated records remain useful for sources without identifiers and for site-specific metadata. [Load and initialize](#load-and-initialize) · [Try the examples](https://randal-cox.github.io/cite.inator/).
+The optional `note:` is a generated work label for editors; tools may replace it, and it does not appear in the reader’s citation. A build or import step resolves bibliographic metadata and keeps a generated cache. Authors normally write identifiers, rather than reference JSON. Curated records remain useful for sources without identifiers and for site-specific metadata. [Load and initialize](#load-and-initialize) · [Overview](https://randal-cox.github.io/cite.inator/about.html) · [Try the examples](https://randal-cox.github.io/cite.inator/).
 
-**Release 0.4.0 — Reviewed citation import.** [Release and downloads](https://github.com/randal-cox/cite.inator/releases/tag/v0.4.0). Includes the browser/Node import API, native extraction and browser compiler alongside the reader and editor tools.
+**Release 0.5.0 — Developer learning and live demos.** [Release and downloads](https://github.com/randal-cox/cite.inator/releases/tag/v0.5.0) · [Live playground and Guide](https://randal-cox.github.io/cite.inator/). Includes 21 editable examples, copied-file/npm/offline starters, a worked draft.inator editor integration, UI language configuration and the established compiler/import/reader tools.
 
 **Article tooling, introduced in 0.2.0.** Editor notes, a site-wide bibliography and tag filters are included. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/cite.inator/releases).
 
@@ -18,13 +18,13 @@ The 0.5.0 project name is **cite.inator**; released 0.4.0 archives retain their 
 
 ## Load and initialize
 
-Try the [live learning playground](https://randal-cox.github.io/cite.inator/): 21 editable examples, annotated tutorials, import review, a worked editor integration and downloadable starter projects. The active 0.5.0 preview also adds shared [UI language configuration](docs/i18n.md). To run it locally, use `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). The stable library release remains 0.4.0; see the preview's [milestone checklist](docs/milestones/0.5.0.md) for acceptance and release status.
+Try the [live learning playground](https://randal-cox.github.io/cite.inator/): 21 editable examples, annotated tutorials, import review, a worked editor integration and downloadable starter projects. Version 0.5.0 also adds shared [UI language configuration](docs/i18n.md). To run it locally, use `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). See the [milestone record](docs/milestones/0.5.0.md) for acceptance and release evidence.
 
 To serve the demos from the checkout, run `npm start` from the repository root.
 
 **Without npm.** Start with [the standalone demo](https://github.com/randal-cox/cite.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
-**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball whose filename `npm pack` prints into your project, then pass that file to `npm install`. Its version follows the checkout; use tag `v0.4.0` to reproduce the stable release. The same browser assets are in `node_modules/cite-inator/dist/`. Import the compiler from `cite-inator`.
+**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball whose filename `npm pack` prints into your project, then pass that file to `npm install`. Its version follows the checkout; use tag `v0.5.0` to reproduce this release. The same browser assets are in `node_modules/cite-inator/dist/`. Import the compiler from `cite-inator`.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">

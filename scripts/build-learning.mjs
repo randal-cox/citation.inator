@@ -95,6 +95,7 @@ for(const name of referenceNames){
 const tutorialHTML=`<h2>Worked examples</h2><p>Start with a DOI or ISBN marker, then explore formatting, reading lists and other source types.</p><ul>${lessons.map(lesson=>`<li><a href="#${lesson.id}">${escapeHTML(lesson.title)}</a></li>`).join('')}</ul>`+lessons.map(lesson=>`<section id="${lesson.id}"><h2>${escapeHTML(lesson.title)}</h2><p>${escapeHTML(lesson.text)}</p><p><a href="./?example=${lesson.id}">Open working example</a></p><pre><code>${escapeHTML(lesson.source)}</code></pre>${Object.keys(lesson.options).length?`<h3>Configuration</h3><pre><code>${escapeHTML(JSON.stringify(lesson.options,null,2))}</code></pre>`:''}</section>`).join('')+`<h2 id="api-reference">API reference</h2><ul>${referenceNames.map(name=>`<li><a href="./reference/${name}.html">${name.replaceAll('-',' ')}</a></li>`).join('')}</ul><p><a href="./tools/editor-tools.html">Try the editor-note and tag tools</a> · <a href="./tools/bibliography.html">Try the shared bibliography</a></p>`;
 const combinedGuide=await readFile('site/guide.html','utf8');
 await writeFile('site/guide.html',combinedGuide.replace('</main>',`<section id="examples">${tutorialHTML}</section></main>`));
+await writeFile('site/about.html',page('About cite.inator',learningMarkdown(await readFile('learn/about.md','utf8'))).replaceAll('href="../','href="./').replace('class="guide"','class="guide overview"'));
 await writeFile('site/tutorials.html',`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./guide.html#examples"><title>Guide · cite.inator</title></head><body><a href="./guide.html#examples">Open the Guide</a></body></html>`);
 await mkdir('site/host',{recursive:true});
 for(const file of ['editor.js','importer.js','forms.js','citation.js','editor.css','SOURCE.json'])await copyFile('learn/vendor/draft-inator/'+file,'site/host/'+file);
@@ -114,7 +115,7 @@ const downloadFiles={},routes=JSON.parse(await readFile('learn/generated-routes.
 // One navigation shell across every learning route; local links remain in the body.
 for(const route of routes.filter(path=>path.endsWith('.html'))){
  const prefix=route.includes('/')?'../':'./';
- const header=`<header><a class="brand" href="${prefix}">${brandIconMarkup}cite.inator</a><nav aria-label="Learning"><a href="${prefix}#playground">Playground</a><a href="${prefix}import/">Import</a><a href="https://github.com/randal-cox/cite.inator">GitHub</a><a href="${prefix}guide.html">Guide</a></nav><span id="version">${version}</span></header>`;
+ const header=`<header><a class="brand" href="${prefix}about.html">${brandIconMarkup}cite.inator</a><nav aria-label="Learning"><a href="${prefix}#playground">Playground</a><a href="${prefix}import/">Import</a><a href="${prefix}guide.html">Guide</a></nav><a class="github-link" href="https://github.com/randal-cox/cite.inator"><span>GitHub</span><span id="version">${version}</span></a></header>`;
  let html=await readFile('site/'+route,'utf8');
  if(html.includes('<header>'))html=html.replace(/<header>[\s\S]*?<\/header>/,header);else html=html.replace(/(<body[^>]*>)/,'$1'+header);
  if(!html.includes('href="'+prefix+'learning.css"'))html=html.replace('</head>',`<link rel="stylesheet" href="${prefix}learning.css"></head>`);

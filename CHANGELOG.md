@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 — Developer learning and live demos · 25 November 2026
+
+- Add a concise masthead overview, group Playground/Import/Guide navigation and place GitHub with its version at the far right.
+- Publish a static learning site with 21 editable examples, a visual Playground gallery, default Hover, five citation-format presets and component-scoped CSS choices.
+- Provide a coherent starter-first Guide, complete notation/API references, copied-file and npm starters, and a downloadable offline learning site.
+- Demonstrate real draft.inator editor integration, reviewed imports, tags/filters, shared bibliographies, reader access, media/provenance and failure cases.
+- Add shared English/Spanish UI messages, locale-aware values and configurable translations.
+- Rename the project/repository/package to cite.inator/cite-inator while preserving citation markup, browser assets, CSS/data contracts, schemas and the old CLI alias.
+- Keep direct reading/PDF actions visible, clarify optional access services, add leading endnote-icon examples and pill-shaped tags, and unify the learning/import appearance.
+- Correct Markdown endnote placement and save only staged references still used by the final editor document, including after Undo.
+- Document generated note replacement, provider-metadata review, identifier evidence and host-owned revision/persistence boundaries. The structured occurrence planner remains a Node/build-time API requiring a namespace.
+
+Earlier previews and their evidence remain below; published 0.4.0 artifacts are unchanged.
+
 ## 0.5.0-preview.3 — In development
 
 - Save only still-referenced staged editor additions alongside the existing site library, including after Undo or later deletion.

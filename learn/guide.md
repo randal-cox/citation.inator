@@ -14,7 +14,7 @@ The DOI identifies the work. `note:` is a generated work label, hidden from read
 
 ## Load, compile, initialize
 
-This Guide documents `0.5.0-preview.3`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
+This Guide documents `0.5.0`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
 
 ### Without a package installation
 
@@ -36,6 +36,8 @@ npm start
 ```
 
 Use Node 22.13.0 or later. `npm install` uses the pinned library tarball included in the download and installs its dependencies. The library does not need to be published in the npm registry. `npm start` builds the article and serves it at `http://127.0.0.1:4188/`.
+
+The rename keeps the cache schema `citation-inator.cache.v1`, `citation-*.mjs` asset filenames, `<citation-inspector>` and default `citation-*` classes. Use those documented names; they are compatibility contracts.
 
 ### Project files
 
@@ -101,7 +103,7 @@ npm run resolve
 npm start
 ```
 
-Run these commands inside the extracted npm starter after `npm install`. The resolver runs in Node, not in the browser. It sends the new identifiers to Crossref or Open Library. It keeps existing metadata and saves the file only after every missing identifier resolves. A failed lookup leaves the existing metadata file in place; check the identifier or use [import review](./import/) to investigate it.
+Run these commands inside the extracted npm starter after `npm install`. The resolver runs in Node, not in the browser. It sends the new identifiers to Crossref or Open Library. It keeps existing metadata and saves the file only after every missing identifier resolves. A failed lookup leaves the existing metadata file in place and discards the other results from that run. Remove or fix the failing marker, then rerun; use [import review](./import/) to investigate it.
 
 The included `resolve.mjs` is the complete script:
 
@@ -133,7 +135,7 @@ await writeFile('citations.json',JSON.stringify(cache,null,2)+'\n');
 console.log('Saved bibliographic metadata. Run npm start to build and view the article.');
 ```
 
-This example resolves explicit DOI/ISBN markers. Archival sources, unsupported identifier types and incomplete provider records require import review or curated metadata. It does not guess missing identifiers. For the copied-file starter, download the npm starter too: copy your `article.md`, `configuration.json` and `citations.json` into it, run `npm install` and `npm run resolve`, then copy the updated `citations.json` back. You need Node and npm for that metadata step; serving the copied-file site still needs no package installation. Seeded existing records keep their curated IDs; newly resolved records receive provider-generated IDs. The DOI/ISBN marker remains the stable lookup key. See [resolver configuration](./reference/integration.html#network-and-host-behavior) for persistence and refresh options.
+This example resolves explicit DOI/ISBN markers. Archival sources, unsupported identifier types and incomplete provider records require import review or curated metadata. It does not guess missing identifiers. Review each new record in `citations.json` before publishing; ISBN records are often partial, with literal author names, sentence-case titles or missing original publication dates. For the copied-file starter, download the npm starter too: copy your `article.md`, `configuration.json` and `citations.json` into it, run `npm install` and `npm run resolve`, then copy the updated `citations.json` back. You need Node and npm for that metadata step; serving the copied-file site still needs no package installation. Seeded existing records keep their curated IDs; newly resolved records receive provider-generated IDs. The DOI/ISBN marker remains the stable lookup key. See [resolver configuration](./reference/integration.html#network-and-host-behavior) for persistence and refresh options.
 
 ### When to supply reference records
 
@@ -180,7 +182,7 @@ Evidence and credit remain hoverable when ordinary references use click. Click, 
 {citation doi:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f; doi:10.5281/zenodo.3960218}
 ```
 
-Locators can name pages, chapters, sections or timestamps. A locator adds citation text; it does not by itself link to a particular page or timestamp. The selected citation style determines the surrounding punctuation. Use `compileHTML` to compile within existing authored HTML, or `compileMarkdown` for Markdown; code blocks and excluded interactive elements are skipped. Structured editors can import `planCitationOccurrences` from `cite-inator` and call `planCitationOccurrences(occurrences, cache, options)` with stable occurrence IDs instead of splicing compiled HTML by position; see the [structured occurrence contract](./reference/integration.html). Browser applications import the same export from `citation-compiler.mjs`.
+Locators can name pages, chapters, sections or timestamps. A locator adds citation text; it does not by itself link to a particular page or timestamp. The selected citation style determines the surrounding punctuation. Use `compileHTML` to compile within existing authored HTML, or `compileMarkdown` for Markdown; code blocks and excluded interactive elements are skipped. Structured editors can import `planCitationOccurrences` from `cite-inator` and call `planCitationOccurrences(occurrences, cache, options)` with stable occurrence IDs instead of splicing compiled HTML by position; see the [structured occurrence contract](./reference/integration.html). `planCitationOccurrences` is a Node/build-time API and requires a document `namespace`, for example `{namespace:"essay-one"}`. It is not exported by the copied browser compiler bundle.
 
 Record `citationParts` retain italics, bold text and safe links in authored reference formatting. Keep source bibliographic data in structured fields when you want presets to format it automatically. `originalIssued` and `issued` distinguish original publication from the cited edition. `reprintYear` chooses `both`, `original` or `edition`. Year letters normally belong to one reference list. Use `suffixScope:'cache'` only for one work split across pages sharing a bibliography, not independent essays.
 
@@ -200,9 +202,10 @@ Editor notes are invisible to readers:
 {citation doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005" | tags:methods,reliability}
 ```
 
-Import editor tools from `cite-inator/tools`, or copy `dist/citation-tools.mjs` from the same version for browser use; the minimal copied-file starter does not include this optional bundle.
+Import editor tools from `cite-inator/tools`, or copy `dist/citation-tools.mjs` from the same version for browser use; the minimal copied-file starter does not include this optional bundle. After installing the npm starter, find it at `node_modules/cite-inator/dist/citation-tools.mjs`.
 
 ```js
+// Node build script: source, cache and options are read as in build.mjs above.
 import {markerKind, describeCitation, annotateMarkers, collectMarkerTags,
   createSiteOccurrenceIndex} from 'cite-inator/tools';
 const kind = markerKind(`{${options.citationKeyword ?? 'citation'} endnote}`, options);
