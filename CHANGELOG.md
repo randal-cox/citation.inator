@@ -49,6 +49,10 @@ Earlier previews and their evidence remain below; published 0.4.0 artifacts are 
 - Write learning-test screenshots to the operating system's temporary directory.
 - Publish and verify the GitHub Pages learning preview, including all 82 public assets and clean downloaded projects. Independent reviews and clean milestone/CI checks pass; adopter tutorial acceptance and final library publication remain pending in the milestone checklist.
 
+## Project metadata — 24 November 2026
+
+- Rename the GitHub project to cite.inator; at that point the default branch retained 0.4.0. Released 0.4.0 tags and archives remain unchanged.
+
 ## 0.4.0 — 23 November 2026
 
 - Recover supported explicit DOI line wraps with source evidence; withhold ambiguous numeric/metadata/prose continuations and prevent autolinks from restoring partial IDs. Keep recovered proposals out of canonical identifiers/cache/Ready until accepted metadata. Public regression sample now accounts for all 27 publisher DOI values (15 exact, 12 recovered proposals) without extras.

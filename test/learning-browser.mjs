@@ -83,6 +83,8 @@ try{
   const leading=await page.locator('#result li').first().evaluate(node=>node.firstElementChild.hasAttribute('data-ci-inspect-icon'));assert(leading);
   assert.equal(await page.locator('#result [data-citation-part="endnotes"]>h2').evaluate(node=>getComputedStyle(node).borderBottomStyle),'none');
   await page.locator('[data-example="filters"]').click();
+  const thumbnailTags=page.locator('[data-example="filters"] [data-citation-part~="tag"]');assert.equal(await thumbnailTags.count(),3);assert(await thumbnailTags.first().evaluate(node=>parseFloat(getComputedStyle(node).borderRadius)>100));
+
   await page.locator('#result').getByRole('checkbox',{name:'Methods',exact:true}).waitFor({state:'visible'});
   assert(await page.locator('#result [data-citation-part="tag"]').first().evaluate(node=>parseFloat(getComputedStyle(node).borderRadius)>=8));
   await page.locator('[data-example="access"]').click();

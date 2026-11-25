@@ -18,7 +18,7 @@ for(const lesson of lessons){
  const preview=document.createElement('div');preview.innerHTML=DOMPurify.sanitize(compileMarkdown(lesson.source,{...data,records:records.map(record=>({...record,...lesson.recordOverrides?.[record.id]}))},lesson.options).html);
  const sample=[...preview.querySelectorAll('p,li')].find(node=>node.textContent.trim());
  thumbnail.innerHTML=DOMPurify.sanitize(sample?.innerHTML||'References',{ALLOWED_TAGS:['span','em','strong','i','b','br'],ALLOWED_ATTR:['class','data-citation-part']});
- if(lesson.id==='filters')thumbnail.innerHTML='<span class="sample-tag">Methods</span> <span class="sample-tag">Data</span> <span class="sample-tag">Software</span>';
+ if(lesson.id==='filters'){const tags=new Map([...preview.querySelectorAll('[data-citation-part~="tag"]')].map(tag=>[tag.dataset.ciTag,tag]));thumbnail.innerHTML=DOMPurify.sanitize([...tags.values()].map(tag=>tag.outerHTML).join(' '),{ALLOWED_TAGS:['span'],ALLOWED_ATTR:['data-citation-part','data-ci-tag']});}
 
  const excerpt=document.createElement('span');excerpt.className='example-preview';excerpt.append(...thumbnail.childNodes,document.createTextNode(' …'));thumbnail.append(excerpt);
  const name=document.createElement('strong');name.textContent=lesson.title;button.append(name,thumbnail);
