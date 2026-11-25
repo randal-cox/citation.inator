@@ -1,4 +1,4 @@
-/*! cite-inator tools v0.5.1-preview.2 | MIT | See LICENSE */
+/*! cite-inator tools v0.5.1-preview.3 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -9612,7 +9612,7 @@ function applyAuthorFields(blocks, index, { suffixScope }) {
   for (const token of blocks.flat()) for (const item of token.items || []) {
     if (!item.authorFields) continue;
     const record = item.identifier.scheme === "local" ? index.byId.get(item.identifier.value) : index.byIdentifier.get(canonicalIdentifierKey(item.identifier));
-    if (!record) throw new TypeError(`Resolve ${canonicalIdentifierKey(item.identifier)} before adding reference details.`);
+    if (!record) continue;
     const fields = assertions.get(record.id) || {};
     for (const [key, value] of Object.entries(item.authorFields)) {
       if (Object.hasOwn(fields, key) && fields[key] !== value) throw new TypeError(`Conflicting ${key} declarations for ${record.id}. Use one value throughout the document.`);
@@ -9676,7 +9676,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.5.1-preview.2",
+  version: "0.5.1-preview.3",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1-preview.3 — In development
+
+- Keep new identifier markers with author fields available to metadata resolution before their record exists.
+
 ## 0.5.1-preview.2 — In development
 
 - Put article-specific year, formatted-reference, artwork and reading-copy details in cite notation, with document-wide consistency, safe formatting and author provenance.

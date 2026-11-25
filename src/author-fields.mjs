@@ -24,7 +24,8 @@ export function applyAuthorFields(blocks,index,{suffixScope}){
   for(const token of blocks.flat())for(const item of token.items || []){
     if(!item.authorFields)continue;
     const record=item.identifier.scheme==='local'?index.byId.get(item.identifier.value):index.byIdentifier.get(canonicalIdentifierKey(item.identifier));
-    if(!record)throw new TypeError(`Resolve ${canonicalIdentifierKey(item.identifier)} before adding reference details.`);
+    // Leave unresolved citations available to the resolver/import workflow.
+    if(!record)continue;
     const fields=assertions.get(record.id)||{};
     for(const [key,value] of Object.entries(item.authorFields)){
       if(Object.hasOwn(fields,key)&&fields[key]!==value)throw new TypeError(`Conflicting ${key} declarations for ${record.id}. Use one value throughout the document.`);

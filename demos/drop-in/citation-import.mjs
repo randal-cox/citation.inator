@@ -1,4 +1,4 @@
-/*! cite-inator import v0.5.1-preview.2 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator import v0.5.1-preview.3 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -8149,7 +8149,7 @@ function parseFragment(fragmentContext, html, options) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.5.1-preview.2",
+  version: "0.5.1-preview.3",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9222,7 +9222,7 @@ function applyAuthorFields(blocks2, index, { suffixScope }) {
   for (const token of blocks2.flat()) for (const item of token.items || []) {
     if (!item.authorFields) continue;
     const record = item.identifier.scheme === "local" ? index.byId.get(item.identifier.value) : index.byIdentifier.get(canonicalIdentifierKey(item.identifier));
-    if (!record) throw new TypeError(`Resolve ${canonicalIdentifierKey(item.identifier)} before adding reference details.`);
+    if (!record) continue;
     const fields = assertions.get(record.id) || {};
     for (const [key, value] of Object.entries(item.authorFields)) {
       if (Object.hasOwn(fields, key) && fields[key] !== value) throw new TypeError(`Conflicting ${key} declarations for ${record.id}. Use one value throughout the document.`);

@@ -62,3 +62,8 @@ test('date assertions cannot retain stale literal dates or bypass cache-wide con
  assert.throws(()=>compileCitations('{cite work | display-date:"1996"}',cache(),{suffixScope:'cache'}),/shared date/);
  assert.throws(()=>compileCitations('{cite work | edition-year:1996 | display-date:"1997"}',cache()),/disagrees/);
 });
+
+test('new identifiers with author fields remain resolvable before metadata exists',()=>{
+ const result=compileMarkdown('{cite doi:10.1234/new-work | original-year:1912}',makeCache([]));
+ assert.ok(result.diagnostics.some(d=>d.code==='citation-unresolved'&&d.identifier==='doi:10.1234/new-work'));
+});
