@@ -29,7 +29,7 @@ const searchKind=source=>source.type==='book'?'isbn':source.type==='document'?'b
 const identifierMatches=count=>count+(count===1?' identifier match':' identifier matches');
 const completionLabel=entry=>identityNeedsReview(entry)?'Identifier needs review':entry?.kept?'Kept without identifier':entry?.accepted?(entry.automatic?'DOI matched automatically':'Identifier selected'):entry?.label || 'Identifier needed';
 function selectedRecordIds(){return new Set([...$('groups').children].filter(group=>group.dataset.action!=='reject').flatMap(group=>selectedTargets(group).filter(target=>target?.recordId).map(target=>target.recordId)));}
-function selectedCompletionKeys(){return new Set([...$('groups').children].filter(group=>group.dataset.action!=='reject').flatMap(group=>selectedTargets(group).filter(Boolean).map(target=>target.recordId || 'manual:'+target.identifier)));}
+function selectedCompletionKeys(){return new Set([...$('groups').children].filter(group=>group.dataset.action!=='reject').flatMap(group=>selectedTargets(group).filter(target=>target?.recordId || target?.identifier).map(target=>target.recordId || 'manual:'+target.identifier)));}
 function clearLookups(){clearTimeout(manualLookupTimer);lookupEpoch++;lookup.cancel();completionStates.clear();}
 function completionData(){return [...completionStates].filter(([,entry])=>entry.accepted).map(([recordId,entry])=>({recordId:recordId.startsWith('manual:')?undefined:recordId,record:entry.accepted}));}
 function invalidateOutput(){version++;output=null;for(const id of ['use-output','download','download-records'])$(id).disabled=true;clearTimeout(conversionTimer);if($('converted-document').open || $('reading-details').open){$('conversion-progress').hidden=false;conversionTimer=setTimeout(()=>void convertDocument(),200);}}
@@ -111,7 +111,7 @@ function startManualLookups(){
 function currentReviewProgress(){
  const groups=[...$('groups').children].map(group=>{
   const targets=selectedTargets(group);
-  return {index:Number(group.dataset.group),skipped:group.dataset.action==='reject',sourceReview:group.dataset.needsSpan==='true'||group.dataset.action==='defer'&&targets.every(target=>target?.recordId || target?.identifier),items:targets.map(target=>{
+  return {index:Number(group.dataset.group),skipped:group.dataset.action==='reject',sourceReview:targets.some(target=>target?.placeholder)||group.dataset.needsSpan==='true'||group.dataset.action==='defer'&&targets.every(target=>target?.recordId || target?.identifier),items:targets.map(target=>{
    const key=target?.recordId || (target?.identifier?'manual:'+target.identifier:null),source=referenceRecords.find(record=>record.id===target?.recordId);
    return {key,selected:Boolean(key),lookupEligible:!target?.identifier||Boolean(enrichmentIdentifier(target.identifier)),invalid:Boolean(target?.identifier&&!normalizeImportIdentifier(target.identifier)),bibliographyMatched:Boolean(target?.recordId),known:Boolean(target?.identifier&&normalizeImportIdentifier(target.identifier)||knownReferenceIdentifier(source)),metadata:completionStates.get(key)};
   })};
@@ -209,6 +209,7 @@ function selectedTargets(group) {
   const radio=fieldset.querySelector('input[type="radio"]:checked');
   if(!radio)return null;
   if(radio.dataset.skip!==undefined)return {skip:true};
+  if(radio.dataset.placeholder!==undefined)return {placeholder:true};
   return radio.dataset.manual!==undefined ? {identifier:fieldset.querySelector('input[type="text"]').value.trim()} : {recordId:radio.value};
  });
 }
@@ -219,8 +220,8 @@ function updateReviewAppearance(group) {
  const identityReview=entries.some(identityNeedsReview);
  const invalidManual=targets.some(target=>target?.identifier&&!normalizeImportIdentifier(target.identifier));
  const unmatched=group.dataset.action==='defer'&&review.matches[Number(group.dataset.group)].items.some(item=>item.state==='unmatched');
- const state=group.dataset.action==='reject'?'kept':group.dataset.needsSpan==='true'||invalidManual||identityReview?'needs-review':group.dataset.action==='accept'?(ready?'selected':'completing'):unmatched?'unmatched':'needs-review';
- for(const [itemIndex,target] of targets.entries()){const badge=group.querySelector('[data-item-state="'+itemIndex+'"]');if(!badge)continue;const entry=entries[itemIndex],source=referenceRecords.find(record=>record.id===target?.recordId),known=Boolean(target?.identifier&&normalizeImportIdentifier(target.identifier)||knownReferenceIdentifier(source));badge.textContent=group.dataset.action==='reject'?'Left unchanged':identityNeedsReview(entry)?'Needs review':!target?'Choose reference':identifierReady(entry,known)?'Ready':entry?.pending?'Looking up…':completionLabel(entry);}
+ const state=group.dataset.action==='reject'?'kept':targets.some(target=>target?.placeholder)||group.dataset.needsSpan==='true'||invalidManual||identityReview?'needs-review':group.dataset.action==='accept'?(ready?'selected':'completing'):unmatched?'unmatched':'needs-review';
+ for(const [itemIndex,target] of targets.entries()){const badge=group.querySelector('[data-item-state="'+itemIndex+'"]');if(!badge)continue;const entry=entries[itemIndex],source=referenceRecords.find(record=>record.id===target?.recordId),known=Boolean(target?.identifier&&normalizeImportIdentifier(target.identifier)||knownReferenceIdentifier(source));badge.textContent=group.dataset.action==='reject'?'Left unchanged':target?.placeholder?'Unresolved':identityNeedsReview(entry)?'Needs review':!target?'Choose reference':identifierReady(entry,known)?'Ready':entry?.pending?'Looking up…':completionLabel(entry);}
  anchor.dataset.reviewState=state;
  const description=state==='selected'?'Reference ready':state==='completing'?entries.map(completionLabel).join('; '):state==='kept'?'Left unchanged':state==='unmatched'?'Unmatched':'Needs review';
  anchor.setAttribute('aria-label',`Review citation ${Number(group.dataset.group)+1}: ${anchor.textContent} (${description.toLowerCase()})`);anchor.title=description;
@@ -266,6 +267,7 @@ function renderGroups() {
     text.append(el('small',[byline,record?.issued?.[0] || (record?.undated?'n.d.':''),record?.containerTitle || record?.publisher].filter(Boolean).join(' · ')));
     const identifiers=(record?.identifiers || []).map(id=>id.scheme.toUpperCase()+': '+id.value);if(identifiers.length){const ids=el('small',identifiers.join(' · '));ids.className='reference-identifiers';text.append(ids);}label.append(radio,text);fieldset.append(label);
    }
+   if(proposal.state==='unmatched'){const label=el('label');label.className='target-choice';const radio=el('input');radio.type='radio';radio.name=`target-${index}-${itemIndex}`;radio.dataset.placeholder='';label.append(radio,el('span','Keep as unresolved'));fieldset.append(label);}
    const manualLabel=el('label');manualLabel.className='target-choice';const manual=el('input');manual.type='radio';manual.name=`target-${index}-${itemIndex}`;manual.dataset.manual='';manual.id=`manual-${index}-${itemIndex}`;
    manualLabel.append(manual,el('span','Use an identifier'));fieldset.append(manualLabel);
    const input=el('input');input.type='text';input.id=`identifier-${index}-${itemIndex}`;input.maxLength=2048;input.placeholder='Paste DOI, ISBN or URL';input.setAttribute('aria-label',`Identifier for ${workLabel}`);
@@ -279,8 +281,8 @@ function renderGroups() {
    if(review!==activeReview)return;
    version++;output=null;$('use-output').disabled=true;$('download').disabled=true;$('download-records').disabled=true;$('errors').textContent='';group.dataset.automatic='false';
    const targets=selectedTargets(group);
-   group.dataset.action=targets.some(target=>target?.skip)?'reject':targets.every(target=>target && (target.recordId || target.identifier))?'accept':'defer';
-   state.textContent=group.dataset.action==='reject'?"Won’t change":group.dataset.action==='accept'?(group.dataset.needsSpan==='true'?'Author span needs review':''):'Choose a target';
+   group.dataset.action=targets.some(target=>target?.skip)?'reject':targets.every(target=>target && (target.recordId || target.identifier || target.placeholder))?'accept':'defer';
+   state.textContent=group.dataset.action==='reject'?"Won’t change":group.dataset.action==='accept'?(group.dataset.needsSpan==='true'?'Author span needs review':targets.some(target=>target?.placeholder)?'Unresolved reference':''):'Choose a target';
    for(const [key,entry] of completionStates)if(!selectedCompletionKeys().has(key)&&entry.pending){entry.run++;entry.pending=false;entry.state='paused';entry.label='Lookup paused';}
    refreshCompletions();startSelectedLookups();clearTimeout(manualLookupTimer);manualLookupTimer=setTimeout(startManualLookups,500);$('preview').setAttribute('aria-disabled',String(formatChoiceRequired));$('status').textContent='';
    clearTimeout(conversionTimer);if($('converted-document').open || $('reading-details').open){$('conversion-progress').hidden=false;conversionTimer=setTimeout(()=>{if($('converted-document').open || $('reading-details').open)void convertDocument();},200);}

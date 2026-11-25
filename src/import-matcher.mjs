@@ -85,7 +85,13 @@ export function parseInTextCitations(text, options = {}) {
     if (protectedRanges.some(item => start < item.end && end > item.start)) continue;
     if (/\n\s*\n/.test(match[1])) continue;
     const parts = match[1].split(';');
-    const grouped=parts.map(parentheticalItem);
+    let partOffset=1;
+    const grouped=parts.map(part=>{
+      const parsed=parentheticalItem(part),rawText=part.trim();
+      const rawStart=partOffset+(part.length-part.trimStart().length);
+      partOffset+=part.length+1;
+      return parsed?.length===1 ? [{...parsed[0],rawText,rawRange:{start:rawStart,end:rawStart+rawText.length}}] : parsed;
+    });
     let items = grouped.every(Boolean)?grouped.flat():[null];
     let form = 'parenthetical';
     if (items.some(item => !item)) {

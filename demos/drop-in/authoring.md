@@ -70,3 +70,11 @@ A `tags` block assigns topics to a work and gives each topic its reader-facing l
 The list's `filters:true` enables checkboxes for that list even when site defaults disable them or impose a length threshold. `filters:false` disables them for that list. Existing `tags:` and `tag-mode:` list options select a subset at compile time; they are different from assigning topics.
 
 Site `tagCatalogue` and `listItemTags` configuration remain available for shared vocabularies and icons. Author labels must agree with any configured label for the same ID. Declared topics are retained in the effective records with author provenance; labels remain in the document's declarations. `collectMarkerTags` counts topics on citation mentions, not these non-citing declarations.
+
+## A citation whose reference is still missing
+
+```text
+{cite pending-rivera unresolved:"(Rivera, 2020)"}
+```
+
+Use `unresolved:` to retain original wording visibly while its reference is missing. Supply the punctuation you want displayed: a single fallback is verbatim. The compiler reports `citation-unresolved-placeholder`, including when no cache record exists. Import review can create the local unresolved record automatically with **Keep as unresolved**. The marker remains flagged for missing/partial metadata; completing the same record as resolved restores normal citation formatting without editing the marker. See [placeholder import decisions](import-api.md#unmatched-citations-as-unresolved-placeholders-051-development) for grouped and unsafe-span cases.

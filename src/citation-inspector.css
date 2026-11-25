@@ -350,3 +350,5 @@ citation-inspector { display: contents; }
 [data-citation-part~="backlinks"] a{flex-direction:row-reverse;width:auto;min-width:2.35rem;padding-inline:.3rem;gap:.15rem}[data-citation-part~="backlink-separator"]{margin-inline:.25rem;color:var(--citation-ink,#172848)}
 
 [data-citation-part~="reference-list"] > li { overflow-wrap: anywhere; }
+
+[data-citation-part~="cite"][data-ci-state="unresolved-placeholder"] { color: var(--citation-unresolved-ink, #a12635); background:var(--citation-unresolved-paper, #fff0f2); text-decoration:underline dashed; text-underline-offset:.2em; border-radius:.15em; padding-inline:.12em; }

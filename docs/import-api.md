@@ -197,3 +197,33 @@ New local identifiers use the shortest safe form by default: `{cite bell-1992-ri
 `formatRecordId(id, { citationKeyword, identifierForm })` is exported from both import entries (Node and browser) and the tools entries. Use it when creating or retargeting local markers; pass a cache record ID, not an already prefixed identifier. See [the shared writing rule](article-tools.md#write-local-record-ids-040-preview) for validation and grammar compatibility.
 
 Narrative groups can contain multiple narrative items, such as `{cite bell-1992 | form:narrative; bell-1997 | form:narrative}`. Each item retains its own identity, affixes and narrative form. The compiler renders them as separate narrative references joined by a semicolon, without an outer pair of parentheses. Mixed narrative/parenthetical groups remain malformed. Import preview re-scans the encoded group before returning any edit.
+
+## Unmatched citations as unresolved placeholders (0.5.1 development)
+
+Preserve an unmatched citation as a flagged marker instead of leaving it as untracked prose. For a wholly unmatched group, submit:
+
+```js
+const result = processImportRequest({
+  ...request,
+  action: 'preview', review: analysis.review, reviewId: analysis.review.reviewId,
+  decisions: [{citationIndex: 0, action: 'placeholder'}]
+});
+```
+
+For a mixed group, use `action:'accept'` and one explicit target per item, for example `targets:[{placeholder:true},{recordId:'the-selected-candidate'}]`. Placeholders are allowed only for unmatched items. No candidate is silently chosen for the other works in a group.
+
+Output contains a local marker such as:
+
+```text
+{cite pending-261a03336653006d0720 unresolved:"(Rivera, 2020)"}
+```
+
+The fallback is literal original citation wording, including its punctuation for a single-item group. It is escaped text, not HTML or a permanent `label:` override. While the record is missing, unresolved or partial, the reader displays that wording with `data-ci-state="unresolved-placeholder"`, dashed underlining and an unresolved endnote status. Compiler and description/annotation tools report `citation-unresolved-placeholder`. `collectMarkerTags(..., cache, {includeDiagnostics:true})` reports it even when the marker has no topic tags; it does not invent counts. Annotation leaves the unresolved marker unchanged.
+
+The result cache includes a `state:'unresolved'` placeholder with no invented title, authors, year or identifiers; its `unresolvedText` retains the original wording. Its ID appears in `newRecordIds` and the outcome's `placeholderRecordIds`. An accepted placeholder outcome has `state:'accepted'` and `code:'import-unresolved-placeholder'`. Keep source and cache in the same host transaction. Standard site allocation, `recordId`/`recordIds`, limits, stale-review and exact-span guards apply. Equal author/year wording does not merge placeholders automatically.
+
+Complete that same record with reviewed metadata and `state:'resolved'`, retaining its ID. Recompilation then ignores the fallback and formats the reference normally; the warning disappears. Alternatively retarget the marker to a verified work. Never mark the record resolved just to silence the diagnostic.
+
+Ordinary semicolon-separated mixed groups retain parser-owned item text. Expanded shared-author year lists, numeric ranges, uncertain author boundaries, multiline fallbacks and decoded/noncontiguous source spans can require manual span review. Such cases return `accepted-needs-span`/`accepted-needs-adapter`, leave the whole group unchanged, and create no orphan placeholders. Inspect outcomes; conversion success alone is not a claim that every requested group changed.
+
+Low-level hosts using `planImportEdits` directly must include its hashed `placeholderRecords` in the same source/cache transaction and supply all known `existingRecordIds` for collision avoidance. `processImportRequest` handles that allocation and reservation automatically.

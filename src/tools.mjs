@@ -186,11 +186,12 @@ export function collectMarkerTags(sources, cache, options = {}) {
       if (marker.token?.malformed) issues.push({ state: 'malformed', code: 'citation-malformed', start: range.start + marker.start });
       if (marker.token?.type !== 'citation') continue;
       for (const item of marker.token.items) {
-        if (!item.markerTags?.length) continue;
         const key = canonicalIdentifierKey(item.identifier);
         const record = item.identifier.scheme === 'local' ? index?.byId.get(item.identifier.value) : index?.byIdentifier.get(key);
         const id = record?.id || (item.identifier.scheme === 'local' ? item.identifier.value : key);
-        if (index && (!record || record.state === 'unresolved')) issues.push({ state: 'unresolved', code: 'citation-unresolved', identifier: key });
+        if (item.unresolvedText && (!record || record.state!=='resolved') || record && record.state!=='resolved' && record.unresolvedText)issues.push({state:'unresolved',code:'citation-unresolved-placeholder',identifier:key,original:item.unresolvedText || record.unresolvedText});
+        else if(index && (!record || record.state==='unresolved'))issues.push({state:'unresolved',code:'citation-unresolved',identifier:key});
+        if (!item.markerTags?.length) continue;
         if (!counts.has(id)) counts.set(id, new Map());
         for (const tag of item.markerTags) counts.get(id).set(tag, (counts.get(id).get(tag) || 0) + 1);
       }

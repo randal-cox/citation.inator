@@ -1,4 +1,4 @@
-/*! cite-inator v0.5.1-preview.4 | MIT | See LICENSE */
+/*! cite-inator v0.5.1-preview.5 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {
@@ -429,7 +429,7 @@ function normalizeRecord(input) {
   const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
   const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
-  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
+  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "unresolvedText", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
   return {
     id: input.id.trim(),
     type: kinds.has(input.type) ? input.type : "document",
@@ -668,6 +668,7 @@ function parseItem(text) {
   let label = "";
   let hint = "";
   let editorNote;
+  let unresolvedText;
   let markerTags;
   const affixes = {};
   const authored = {};
@@ -687,6 +688,11 @@ function parseItem(text) {
       if (label || !match) return null;
       label = unescape(match[1]).trim();
       if (!label) return null;
+    } else if (option.startsWith("unresolved:")) {
+      const match = /^unresolved:\s*"((?:\\.|[^"\\])+)"$/.exec(option);
+      if (unresolvedText !== void 0 || !match) return null;
+      unresolvedText = unescape(match[1]);
+      if (!unresolvedText.trim()) return null;
     } else if (option.startsWith("note:")) {
       const match = /^note:\s*"((?:\\.|[^"\\])*)"$/.exec(option);
       if (editorNote !== void 0 || !match) return null;
@@ -713,7 +719,7 @@ function parseItem(text) {
     } else if (option && !hint) hint = unescape(option);
     else return null;
   }
-  return { identifier, form, label, hint, ...Object.keys(authored).length && { authorFields: authored }, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
+  return { identifier, form, label, hint, ...unresolvedText !== void 0 && { unresolvedText }, ...Object.keys(authored).length && { authorFields: authored }, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
 }
 function validateKeyword(citationKeyword) {
   if (typeof citationKeyword !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(citationKeyword)) {

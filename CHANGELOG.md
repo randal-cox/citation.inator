@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.1-preview.5 — In development
+
+- Preserve unmatched citations as explicit unresolved placeholders, with original wording, collision-safe IDs, host allocation and an atomic source/cache result.
+- Add unresolved fallback text and a dedicated compiler/tools diagnostic that remains until the reference is resolved.
+- Offer Keep as unresolved in import review; unsafe expanded/noncontiguous groups remain for span review.
+
 ## 0.5.1-preview.4 — In development
 
 - Allow whitespace between named fields; pipes remain optional visual separators, including mixed notation and safe editor-note updates.

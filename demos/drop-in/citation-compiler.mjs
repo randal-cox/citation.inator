@@ -1,4 +1,4 @@
-/*! cite-inator compiler v0.5.1-preview.4 | MIT | See LICENSE */
+/*! cite-inator compiler v0.5.1-preview.5 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -518,7 +518,7 @@ function normalizeRecord(input) {
   const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
   const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
-  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
+  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "unresolvedText", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
   return {
     id: input.id.trim(),
     type: kinds.has(input.type) ? input.type : "document",
@@ -729,7 +729,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.5.1-preview.4",
+  version: "0.5.1-preview.5",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -942,6 +942,7 @@ function parseItem(text) {
   let label = "";
   let hint = "";
   let editorNote;
+  let unresolvedText;
   let markerTags;
   const affixes = {};
   const authored = {};
@@ -961,6 +962,11 @@ function parseItem(text) {
       if (label || !match) return null;
       label = unescape(match[1]).trim();
       if (!label) return null;
+    } else if (option.startsWith("unresolved:")) {
+      const match = /^unresolved:\s*"((?:\\.|[^"\\])+)"$/.exec(option);
+      if (unresolvedText !== void 0 || !match) return null;
+      unresolvedText = unescape(match[1]);
+      if (!unresolvedText.trim()) return null;
     } else if (option.startsWith("note:")) {
       const match = /^note:\s*"((?:\\.|[^"\\])*)"$/.exec(option);
       if (editorNote !== void 0 || !match) return null;
@@ -987,7 +993,7 @@ function parseItem(text) {
     } else if (option && !hint) hint = unescape(option);
     else return null;
   }
-  return { identifier, form, label, hint, ...Object.keys(authored).length && { authorFields: authored }, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
+  return { identifier, form, label, hint, ...unresolvedText !== void 0 && { unresolvedText }, ...Object.keys(authored).length && { authorFields: authored }, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
 }
 function validateKeyword(citationKeyword) {
   if (typeof citationKeyword !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(citationKeyword)) {
@@ -1339,6 +1345,7 @@ function pageLocator(item, style) {
   return location ? `, ${location}` : "";
 }
 function inlineText({ record, suffix, number, titleLabel, chicagoAuthor }, item, style, reprintYear, messages = createCitationMessages()) {
+  if (record.state !== "resolved" && (item.unresolvedText || record.unresolvedText)) return item.unresolvedText || record.unresolvedText;
   if (item.label) return item.label;
   const qualify = (text) => `${item.prefix ? item.prefix + " " : ""}${text}`;
   if (style === "vancouver") return qualify(`${number}${pageLocator(item, style)}`);
@@ -1559,15 +1566,16 @@ function compileBlocks(blocks, cache, {
             while (index.byId.has(id) || [...missing.values()].some((candidate) => candidate.id === id)) id = `${base}-${++collision}`;
             missing.set(key, normalizeRecord({
               id,
-              original: key,
+              original: item.unresolvedText || key,
               state: "unresolved",
+              ...item.unresolvedText && { unresolvedText: item.unresolvedText },
               identifiers: [identifier],
               note: "No matching record."
             }));
           }
           record = missing.get(key);
         }
-        if (record.state === "unresolved") diagnostics.push({ state: "unresolved", code: "citation-unresolved", identifier: key });
+        if (record.state === "unresolved" || record.state !== "resolved" && (item.unresolvedText || record.unresolvedText)) diagnostics.push({ state: "unresolved", code: item.unresolvedText || record.unresolvedText ? "citation-unresolved-placeholder" : "citation-unresolved", identifier: key, ...item.unresolvedText || record.unresolvedText ? { recordId: record.id, original: item.unresolvedText || record.unresolvedText } : {} });
         if (!used.has(record.id)) used.set(record.id, { record, occurrences: [], suffix: "" });
         const entry = used.get(record.id);
         item.entry = entry;
@@ -1692,8 +1700,8 @@ function compileBlocks(blocks, cache, {
     items: token.items.map((item) => ({
       recordId: item.entry.record.id,
       identifier: canonicalIdentifierKey(item.identifier),
-      state: item.entry.record.state,
-      text: inlineText(item.entry, { form: "parenthetical" }, citationStyle, reprintYear, messages).replace(/\s+/g, " ").trim(),
+      state: item.entry.record.state !== "resolved" && (item.unresolvedText || item.entry.record.unresolvedText) ? "unresolved" : item.entry.record.state,
+      text: item.entry.record.state !== "resolved" && (item.unresolvedText || item.entry.record.unresolvedText) ? item.unresolvedText || item.entry.record.unresolvedText : inlineText(item.entry, { form: "parenthetical" }, citationStyle, reprintYear, messages).replace(/\s+/g, " ").trim(),
       anchorId: item.occurrence,
       context: item.entry.occurrences.find((value) => value.id === item.occurrence)?.context || ""
     }))
@@ -1737,7 +1745,9 @@ function compileBlocks(blocks, cache, {
     const metadata = (tags.length ? ` data-ci-tags="${escapeHTML(JSON.stringify(tags))}"` : "") + (usage.length ? ` data-ci-site-occurrences="${escapeHTML(JSON.stringify(usage))}"` : "") + (siteOrigin ? ` data-ci-site-origin="${escapeHTML(siteOrigin)}"` : "");
     const fallback = isolatedHref && safeFallback(isolatedHref.replaceAll("{id}", encodeURIComponent(record.id))) || record.identifiers.map(identifierURL).find(Boolean) || record.locations[0]?.url;
     const href = item.occurrence ? "#" + noteID(record, item.scope) : fallback;
-    return `<a ${part("cite")}${item.occurrence ? ` id="${item.occurrence}"` : ""}${href ? ` href="${escapeHTML(href)}"` : ""} data-ci-record="${record.id}"${inspectLabel ? ` data-ci-inspect-label="${escapeHTML(inspectLabel)}" aria-label="${escapeHTML(inspectLabel)}"` : ""} data-ci-bibliography="${escapeHTML(text)}"${formatting}${metadata} dir="auto">${escapeHTML(label)}</a>${inlineTags && !inspectLabel ? tagsHTML(visibleTags) : ""}`;
+    const placeholder = record.state !== "resolved" && Boolean(item.unresolvedText || record.unresolvedText);
+    const unresolvedAttributes = placeholder ? ` data-ci-state="unresolved-placeholder" aria-description="${escapeHTML(messages.text("ui.unresolvedBadge"))}"` : "";
+    return `<a ${part("cite")}${unresolvedAttributes}${item.occurrence ? ` id="${item.occurrence}"` : ""}${href ? ` href="${escapeHTML(href)}"` : ""} data-ci-record="${record.id}"${inspectLabel ? ` data-ci-inspect-label="${escapeHTML(inspectLabel)}" aria-label="${escapeHTML(inspectLabel)}"` : ""} data-ci-bibliography="${escapeHTML(text)}"${formatting}${metadata} dir="auto">${escapeHTML(label)}</a>${inlineTags && !inspectLabel ? tagsHTML(visibleTags) : ""}`;
   };
   function titleOffset(parts, record, suffix) {
     const title = record.apaTitle && citationStyle === "apa" ? record.apaTitle : titleFor(record);
@@ -1767,7 +1777,7 @@ function compileBlocks(blocks, cache, {
       const text = formatted.map((value) => renderBibliographyPart(value, record)).join("");
       const title2 = titleOffset(formatted, record, item.entry.suffix);
       const titleAttributes = title2 ? ` data-ci-title-start="${title2.start}" data-ci-title-length="${title2.length}"` : "";
-      const status = [record.state === "unresolved" ? messages.text("ui.unresolvedBadge") : "", record.integrity?.state].filter(Boolean).join(" \xB7 ");
+      const status = [record.state === "unresolved" || record.state !== "resolved" && record.unresolvedText ? messages.text("ui.unresolvedBadge") : "", record.integrity?.state].filter(Boolean).join(" \xB7 ");
       const links = destinations(record, part, messages);
       const backlinks = (local?.get(record.id) || []).map(({ id, context }, index2) => {
         const letter = suffixAt(index2);
@@ -1855,7 +1865,8 @@ function compileBlocks(blocks, cache, {
         return separator + trigger(item, label2);
       }).join("");
       const { label, form } = token.items[0];
-      const parenthetical = token.items.length > 1 && form !== "narrative" || !label && (citationStyle === "vancouver" || parentheticalForms.has(form));
+      const verbatimPlaceholder = token.items.length === 1 && token.items[0].entry.record.state !== "resolved" && (token.items[0].unresolvedText || token.items[0].entry.record.unresolvedText);
+      const parenthetical = !verbatimPlaceholder && (token.items.length > 1 && form !== "narrative" || !label && (citationStyle === "vancouver" || parentheticalForms.has(form)));
       return parenthetical ? `<span ${part("cluster")}>(${citations})</span>` : citations;
     }).join("");
     return markup || !content.trim() ? content : `<p>${content}</p>`;

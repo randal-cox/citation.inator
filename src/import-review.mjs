@@ -1,6 +1,6 @@
 // Revision-bound review/edit protocol shared by Node and browser hosts. Acceptance is supplied explicitly by the host.
 import {importHash} from './import-hash.mjs';
-import { normalizeIdentifier } from './records.mjs';
+import { normalizeIdentifier,normalizeRecord } from './records.mjs';
 import { scanCitationMarkers, formatRecordId } from './compiler.mjs';
 const hash=importHash;
 const quote = value => '"'+String(value).replace(/[\\"{};|]/g,character=>'\\'+character)+'"';
@@ -15,38 +15,61 @@ export function createImportReview(source, matched) {
 }
 
 /** Plan whole-group edits. Rejected, deferred, absent and unsafe decisions preserve source. */
-export function planImportEdits(source,review,{reviewId,decisions=[],citationKeyword='cite',identifierForm='minimal'}={}) {
+export function planImportEdits(source,review,{reviewId,decisions=[],citationKeyword='cite',identifierForm='minimal',existingRecordIds=[]}={}) {
   if (typeof source !== 'string' || review?.schema !== 'citation-inator.import-review.v1' || review.sourceHash !== hash(source) || review.sourceLength !== source.length) throw new Error('The source revision has changed; review again.');
   if (reviewId !== review.reviewId || review.reviewId !== digest(review.sourceHash,review.matches)) throw new Error('Review decisions belong to a different or changed snapshot.');
   scanCitationMarkers('',{citationKeyword});
   if (!['minimal','explicit'].includes(identifierForm)) throw new TypeError('Use minimal or explicit identifierForm.');
   if (!Array.isArray(decisions)) throw new TypeError('Supply review decisions.');
-  const edits=[], outcomes=[], seen=new Set();
+  if(!Array.isArray(existingRecordIds) || existingRecordIds.some(id=>normalizeIdentifier('local:'+id)?.value!==id))throw new TypeError('Supply valid existing record IDs.');
+  const taken=new Set([...existingRecordIds,...review.matches.flatMap(match=>match.items.flatMap(item=>item.candidates.map(candidate=>candidate.recordId)))]);
+  const edits=[], outcomes=[], seen=new Set(),placeholderRecords=[];
   for (const decision of decisions) {
     const index=decision?.citationIndex;
     if (!Number.isInteger(index) || index<0 || index>=review.matches.length || seen.has(index)) throw new TypeError('Each decision must address one distinct citation group.');
     seen.add(index);
-    if (!['accept','reject','defer'].includes(decision.action)) throw new TypeError('Choose accept, reject or defer.');
+    if (!['accept','placeholder','reject','defer'].includes(decision.action)) throw new TypeError('Choose accept, placeholder, reject or defer.');
     const match=review.matches[index], citation=match.citation;
-    if (decision.action !== 'accept') { outcomes.push({citationIndex:index,state:decision.action}); continue; }
-    const targets=decision.targets ?? decision.recordIds?.map(recordId=>({recordId}));
+    if (!['accept','placeholder'].includes(decision.action)) { outcomes.push({citationIndex:index,state:decision.action}); continue; }
+    const targets=decision.targets ?? decision.recordIds?.map(recordId=>({recordId})) ?? (decision.action==='placeholder'?match.items.map(()=>({placeholder:true})):undefined);
+    const pending=[];
     if (!Array.isArray(targets) || targets.length !== match.items.length) throw new TypeError('Accept a target for every item in the citation group.');
+    if(decision.action==='placeholder' && targets.some(target=>target?.placeholder!==true))throw new TypeError('Use accept with explicit targets for mixed citation groups.');
     const identities=targets.map((target,itemIndex)=>{
-      if(target && typeof target.recordId==='string' && target.identifier===undefined) {
+      if(target?.placeholder===true){
+        if(target.identifier!==undefined || match.items[itemIndex].state!=='unmatched')throw new TypeError('Use placeholders only for unmatched citation items.');
+        const base='pending-'+hash(review.sourceHash+':'+index+':'+itemIndex).slice(0,20);
+        let id=target.recordId ?? base;
+        if(target.recordId===undefined){let counter=0;while(taken.has(id))id=base+'-'+(++counter);}
+        if(typeof id!=='string' || normalizeIdentifier('local:'+id)?.value!==id || taken.has(id))throw new TypeError('Placeholder IDs must be valid and distinct from existing records.');
+        taken.add(id);
+        const item=match.items[itemIndex].item;
+        const rawRange=item.rawRange;
+        const original=match.items.length===1?citation.raw:rawRange && Number.isInteger(rawRange.start) && Number.isInteger(rawRange.end) && rawRange.start>=0 && rawRange.end>rawRange.start && citation.raw.slice(rawRange.start,rawRange.end)===item.rawText ? item.rawText : null;
+        pending.push({id,original,itemIndex});
+        return {scheme:'local',value:id,placeholder:true,original};
+      }
+      if(target && typeof target.recordId==='string' && target.identifier===undefined && target.placeholder===undefined) {
         const id=target.recordId, identifier=normalizeIdentifier(id);
         if(identifier?.scheme!=='local' || identifier.value!==id || !match.items[itemIndex].candidates.some(candidate=>candidate.recordId===id)) throw new TypeError('Choose a supplied candidate record ID for each item.');
         return {scheme:'local',value:id};
       }
-      if(!target || typeof target.identifier!=='string' || target.recordId!==undefined) throw new TypeError('Choose a candidate or supply an identifier for each item.');
+      if(!target || typeof target.identifier!=='string' || target.recordId!==undefined || target.placeholder!==undefined) throw new TypeError('Choose a candidate or supply an identifier for each item.');
       const raw=target.identifier.trim(), identifier=normalizeIdentifier(/^[\dXx\s-]{10,30}$/.test(raw)?'isbn:'+raw:raw);
       if(!identifier || !['doi','isbn','url','pmid','pmcid','arxiv'].includes(identifier.scheme)) throw new TypeError('Enter a valid DOI, ISBN, URL, PMID, PMCID or arXiv identifier.');
       return identifier;
     });
-    const selection=decision.targets ? {targets:identities.map(id=>id.scheme==='local'?{recordId:id.value}:{identifier:id.scheme+':'+id.value})} : {recordIds:[...decision.recordIds]};
+    const selection=decision.targets || decision.action==='placeholder' ? {targets:identities.map(id=>id.placeholder?{placeholder:true,recordId:id.value}:id.scheme==='local'?{recordId:id.value}:{identifier:id.scheme+':'+id.value})} : {recordIds:[...decision.recordIds]};
+    if(pending.some(item=>item.original===null)){
+      outcomes.push({citationIndex:index,state:'accepted-needs-span',...selection,code:'import-placeholder-span-review-required'});continue;
+    }
+    if(pending.some(item=>/[\r\n]/.test(item.original))){
+      outcomes.push({citationIndex:index,state:'accepted-needs-adapter',...selection,code:'import-placeholder-linebreak-review-required'});continue;
+    }
     const items=match.items.map((proposal,itemIndex)=>{
       const identifier=identities[itemIndex], item=proposal.item;
       // Escape identifiers so punctuation cannot become notation options or extra items.
-      return (identifier.scheme==='local'?formatRecordId(identifier.value,{citationKeyword,identifierForm}):(identifier.scheme+':'+identifier.value).replace(/[\\"{};|]/g,character=>'\\'+character)) + (item.prefix ? ' | prefix:'+quote(item.prefix) : '') + (item.locator ? ' | locator:'+quote(item.locator) : '') +
+      return (identifier.scheme==='local'?formatRecordId(identifier.value,{citationKeyword,identifierForm}):(identifier.scheme+':'+identifier.value).replace(/[\\"{};|]/g,character=>'\\'+character)) + (identifier.placeholder ? ' | unresolved:'+quote(identifier.original) : '') + (item.prefix ? ' | prefix:'+quote(item.prefix) : '') + (item.locator ? ' | locator:'+quote(item.locator) : '') +
         (citation.form === 'narrative' ? ' | form:narrative' : '');
     });
     if (match.items.some(proposal=>proposal.item.boundaryUncertain)) {
@@ -64,13 +87,14 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
     const text=`{${citationKeyword} ${items.join('; ')}}`;
     const token=scanCitationMarkers(text,{citationKeyword})[0]?.token;
     if (token?.type !== 'citation' || token.items.length !== identities.length || token.items.some((item,index)=>item.identifier.scheme !== identities[index].scheme || item.identifier.value !== identities[index].value)) throw new Error('Could not encode accepted record identities.');
+    placeholderRecords.push(...pending.map(item=>normalizeRecord({id:item.id,state:'unresolved',original:item.original,unresolvedText:item.original,provenance:[{provider:'Import review',note:'Unmatched citation retained for editorial completion; no bibliographic identity has been inferred.'}]})));
     edits.push({start,end,before:source.slice(start,end),text,citationIndex:index,...selection});
-    outcomes.push({citationIndex:index,state:'accepted',...selection});
+    outcomes.push({citationIndex:index,state:'accepted',...selection,...(pending.length && {placeholderRecordIds:pending.map(item=>item.id),code:'import-unresolved-placeholder'})});
   }
   for (let index=0;index<review.matches.length;index++) if (!seen.has(index)) outcomes.push({citationIndex:index,state:'pending'});
   edits.sort((a,b)=>a.start-b.start);
   for (let index=1;index<edits.length;index++) if (edits[index].start<edits[index-1].end) throw new Error('Citation edits overlap; review source boundaries again.');
-  const plan={schema:'citation-inator.import-edit-plan.v1',sourceHash:review.sourceHash,reviewId:review.reviewId,edits,outcomes};
+  const plan={schema:'citation-inator.import-edit-plan.v1',sourceHash:review.sourceHash,reviewId:review.reviewId,edits,outcomes,placeholderRecords};
   return {...plan,planHash:hash(JSON.stringify(plan))};
 }
 
