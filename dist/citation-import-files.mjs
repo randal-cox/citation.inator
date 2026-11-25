@@ -1,4 +1,4 @@
-/*! cite-inator native import v0.5.1-preview.6 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator native import v0.6.0-preview.0 | MIT | See THIRD_PARTY_LICENSES.txt */
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -32,9 +32,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// node_modules/@xmldom/xmldom/lib/conventions.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/conventions.js
 var require_conventions = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/conventions.js"(exports) {
+  "../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/conventions.js"(exports) {
     "use strict";
     function find(list, predicate, ac) {
       if (ac === void 0) {
@@ -241,9 +241,9 @@ var require_conventions = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/errors.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/errors.js
 var require_errors = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/errors.js"(exports) {
+  "../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/errors.js"(exports) {
     "use strict";
     var conventions = require_conventions();
     function extendError(constructor, writableName) {
@@ -400,9 +400,9 @@ var require_errors = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/grammar.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/grammar.js
 var require_grammar = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/grammar.js"(exports) {
+  "../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/grammar.js"(exports) {
     "use strict";
     function detectUnicodeSupport(RegExpImpl) {
       try {
@@ -607,9 +607,9 @@ var require_grammar = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/dom.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/dom.js
 var require_dom = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/dom.js"(exports) {
+  "../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/dom.js"(exports) {
     "use strict";
     var conventions = require_conventions();
     var find = conventions.find;
@@ -3274,9 +3274,9 @@ var require_dom = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/entities.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/entities.js
 var require_entities = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/entities.js"(exports) {
+  "../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/entities.js"(exports) {
     "use strict";
     var freeze = require_conventions().freeze;
     exports.XML_ENTITIES = freeze({
@@ -5417,9 +5417,9 @@ var require_entities = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/sax.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/sax.js
 var require_sax = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/sax.js"(exports) {
+  "../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/sax.js"(exports) {
     "use strict";
     var conventions = require_conventions();
     var g = require_grammar();
@@ -6199,9 +6199,9 @@ var require_sax = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/dom-parser.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/dom-parser.js
 var require_dom_parser = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/dom-parser.js"(exports) {
+  "../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/dom-parser.js"(exports) {
     "use strict";
     var conventions = require_conventions();
     var dom = require_dom();
@@ -6467,9 +6467,9 @@ var require_dom_parser = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/index.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/index.js
 var require_lib = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/index.js"(exports) {
+  "../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@xmldom/xmldom/lib/index.js"(exports) {
     "use strict";
     var conventions = require_conventions();
     exports.assign = conventions.assign;
@@ -6511,7 +6511,7 @@ var require_lib = __commonJS({
   }
 });
 
-// node_modules/pdfjs-dist/legacy/build/pdf.mjs
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/pdfjs-dist/legacy/build/pdf.mjs
 var pdf_exports = {};
 __export(pdf_exports, {
   AbortException: () => AbortException,
@@ -8309,7 +8309,7 @@ function percentage(value) {
 }
 var __webpack_modules__, __webpack_module_cache__, a_callable_namespaceFn, a_possible_prototype_namespaceFn, a_set_namespaceFn, a_string_namespaceFn, a_weak_key_namespaceFn, a_weak_map_namespaceFn, add_to_unscopables_namespaceFn, an_instance_namespaceFn, an_object_or_undefined_namespaceFn, an_object_namespaceFn, an_uint8_array_namespaceFn, array_buffer_basic_detection_namespaceFn, array_buffer_byte_length_namespaceFn, array_buffer_is_detached_namespaceFn, array_buffer_not_detached_namespaceFn, array_buffer_view_core_namespaceFn, array_from_constructor_and_list_namespaceFn, array_includes_namespaceFn, array_set_length_namespaceFn, array_slice_namespaceFn, base64_map_namespaceFn, call_with_safe_iteration_closing_namespaceFn, classof_raw_namespaceFn, classof_namespaceFn, copy_constructor_properties_namespaceFn, correct_prototype_getter_namespaceFn, create_iter_result_object_namespaceFn, create_non_enumerable_property_namespaceFn, create_property_descriptor_namespaceFn, create_property_namespaceFn, define_built_in_accessor_namespaceFn, define_built_in_namespaceFn, define_built_ins_namespaceFn, define_global_property_namespaceFn, descriptors_namespaceFn, document_create_element_namespaceFn, does_not_exceed_safe_integer_namespaceFn, dom_exception_constants_namespaceFn, enum_bug_keys_namespaceFn, environment_user_agent_namespaceFn, environment_v8_version_namespaceFn, error_stack_clear_namespaceFn, export_namespaceFn, fails_namespaceFn, function_apply_namespaceFn, function_bind_context_namespaceFn, function_bind_native_namespaceFn, function_call_namespaceFn, function_name_namespaceFn, function_uncurry_this_accessor_namespaceFn, function_uncurry_this_clause_namespaceFn, function_uncurry_this_namespaceFn, get_alphabet_option_namespaceFn, get_built_in_namespaceFn, get_iterator_direct_namespaceFn, get_iterator_flattenable_namespaceFn, get_iterator_internal_namespaceFn, get_iterator_method_internal_namespaceFn, get_method_namespaceFn, get_set_record_namespaceFn, global_this_namespaceFn, has_own_property_namespaceFn, hidden_keys_namespaceFn, html_namespaceFn, ie8_dom_define_namespaceFn, indexed_object_namespaceFn, inherit_if_required_namespaceFn, inspect_source_namespaceFn, internal_state_namespaceFn, is_array_iterator_method_namespaceFn, is_array_namespaceFn, is_big_int_array_namespaceFn, is_callable_namespaceFn, is_forced_namespaceFn, is_null_or_undefined_namespaceFn, is_object_namespaceFn, is_possible_prototype_namespaceFn, is_pure_namespaceFn, is_raw_json_namespaceFn, is_symbol_namespaceFn, iterate_simple_namespaceFn, iterate_namespaceFn, iterator_cleanup_state_namespaceFn, iterator_close_all_namespaceFn, iterator_close_namespaceFn, iterator_create_proxy_namespaceFn, iterator_helper_throws_on_invalid_iterator_namespaceFn, iterator_helper_without_closing_on_early_error_namespaceFn, iterators_core_namespaceFn, iterators_namespaceFn, length_of_array_like_namespaceFn, make_built_in_namespaceFn, map_helpers_namespaceFn, native_raw_json_namespaceFn, new_promise_capability_namespaceFn, normalize_string_argument_namespaceFn, not_a_nan_namespaceFn, object_create_namespaceFn, object_define_properties_namespaceFn, object_define_property_namespaceFn, object_get_own_property_descriptor_namespaceFn, object_get_own_property_names_namespaceFn, object_get_own_property_symbols_namespaceFn, object_get_prototype_of_namespaceFn, object_is_prototype_of_namespaceFn, object_keys_internal_namespaceFn, object_keys_namespaceFn, object_property_is_enumerable_namespaceFn, object_set_prototype_of_namespaceFn, ordinary_to_primitive_namespaceFn, own_keys_namespaceFn, parse_json_string_namespaceFn, perform_namespaceFn, promise_resolve_namespaceFn, require_object_coercible_namespaceFn, set_clone_namespaceFn, set_difference_namespaceFn, set_helpers_namespaceFn, set_intersection_namespaceFn, set_is_disjoint_from_namespaceFn, set_is_subset_of_namespaceFn, set_is_superset_of_namespaceFn, set_iterate_namespaceFn, set_method_accept_set_like_namespaceFn, set_method_get_keys_before_cloning_detection_namespaceFn, set_size_namespaceFn, set_symmetric_difference_namespaceFn, set_union_namespaceFn, shared_key_namespaceFn, shared_store_namespaceFn, shared_namespaceFn, symbol_constructor_detection_namespaceFn, this_number_value_namespaceFn, to_absolute_index_namespaceFn, to_big_int_namespaceFn, to_indexed_object_namespaceFn, to_integer_or_infinity_namespaceFn, to_length_namespaceFn, to_object_namespaceFn, to_positive_integer_namespaceFn, to_primitive_namespaceFn, to_property_key_namespaceFn, to_string_tag_support_namespaceFn, to_string_namespaceFn, try_to_string_namespaceFn, uid_namespaceFn, uint8_from_base64_namespaceFn, uint8_from_hex_namespaceFn, url_constructor_detection_namespaceFn, use_symbol_as_uid_namespaceFn, v8_prototype_define_bug_namespaceFn, validate_arguments_length_namespaceFn, weak_map_basic_detection_namespaceFn, weak_map_helpers_namespaceFn, well_known_symbol_namespaceFn, es_array_includes_namespaceFn, es_array_push_namespaceFn, es_iterator_constructor_namespaceFn, es_iterator_drop_namespaceFn, es_iterator_every_namespaceFn, es_iterator_filter_namespaceFn, es_iterator_find_namespaceFn, es_iterator_flat_map_namespaceFn, es_iterator_for_each_namespaceFn, es_iterator_map_namespaceFn, es_iterator_some_namespaceFn, es_iterator_take_namespaceFn, es_iterator_to_array_namespaceFn, es_json_parse_namespaceFn, es_json_stringify_namespaceFn, es_map_get_or_insert_computed_namespaceFn, es_map_get_or_insert_namespaceFn, es_math_sum_precise_namespaceFn, es_promise_try_namespaceFn, es_set_difference_v2_namespaceFn, es_set_intersection_v2_namespaceFn, es_set_is_disjoint_from_v2_namespaceFn, es_set_is_subset_of_v2_namespaceFn, es_set_is_superset_of_v2_namespaceFn, es_set_symmetric_difference_v2_namespaceFn, es_set_union_v2_namespaceFn, es_typed_array_with_namespaceFn, es_uint8_array_from_base64_namespaceFn, es_uint8_array_set_from_base64_namespaceFn, es_uint8_array_set_from_hex_namespaceFn, es_uint8_array_to_base64_namespaceFn, es_uint8_array_to_hex_namespaceFn, es_weak_map_get_or_insert_computed_namespaceFn, es_weak_map_get_or_insert_namespaceFn, web_dom_exception_stack_namespaceFn, web_url_parse_namespaceFn, isNodeJS, BBOX_INIT, F32_BBOX_INIT, FONT_IDENTITY_MATRIX, SVG_NS, RenderingIntentFlag, AnnotationMode, AnnotationPrefix, AnnotationEditorPrefix, AnnotationEditorType, AnnotationEditorParamsType, PermissionFlag, TextRenderingMode, ImageKind, AnnotationType, AnnotationBorderStyleType, VerbosityLevel, OPS, DrawOPS, PasswordResponses, verbosity, BaseException, PasswordException, UnknownErrorException, InvalidPDFException, ResponseException, FormatError, AbortException, FeatureTest, Util, NormalizeRegex, NormalizationMap, makeArr, makeMap, makeObj, makeSet, PixelsPerInch, RenderingCancelledException, OutputScale, contrastCache, PageViewport, XfaText, disallowedRichTextStyleRegExp, disallowedEventHandlerAttrRegExp, XfaLayer, PDFDateString, SupportedImageMimeTypes, ColorScheme, CSSConstants, EditorToolbar, FloatingToolbar, INTERNAL_EVT, internalOpt, CurrentPointers, IdManager, ImageManager, CommandManager, KeyboardManager, ColorManager, AnnotationEditorUIManager, AltText, Comment, MIN_TOUCH_SPAN, TouchManager, AnnotationEditor, FakeEditor, SEED, MASK_HIGH, MASK_LOW, MurmurHash3_64, SerializableEmpty, AnnotationStorage, PrintAnnotationStorage, isRefProxy, isNameProxy, isValidExplicitDest, LoopbackPort, StatTimer, MESH_WGSL, WebGPU, _webGPU, CallbackKind, StreamKind, MessageHandler, BaseBinaryDataFactory, DOMBinaryDataFactory, BaseCanvasFactory, BaseFilterFactory, NodeFilterFactory, NodeCanvasFactory, NodeBinaryDataFactory, FORCED_DEPENDENCY_LABEL, canvas_dependency_tracker_floor, ceil, EMPTY_BBOX, BBoxReader, ensureDebugMetadata, CanvasBBoxTracker, CanvasDependencyTracker, CanvasNestedDependencyTracker, Dependencies, CanvasImagesTracker, PathType, BaseShadingPattern, RadialAxialShadingPattern, MeshShadingPattern, DummyShadingPattern, PaintType, TilingPattern, MIN_FONT_SIZE, MAX_FONT_SIZE, EXECUTION_TIME, EXECUTION_STEPS, FULL_CHUNK_HEIGHT, XY, CanvasExtraState, TransferMapsFallback, LINE_CAP_STYLES, LINE_JOIN_STYLES, NORMAL_CLIP, EO_CLIP, CanvasGraphics, DOMCanvasFactory, DOMFilterFactory, CONTROL_CHAR_REGEXP, FontLoader, FontFaceObject, BasePDFStream, BasePDFStreamReader, BasePDFStreamRangeReader, PDFFetchStream, PDFFetchStreamReader, PDFFetchStreamRangeReader, PDFDataTransportStream, PDFDataTransportStreamReader, PDFDataTransportStreamRangeReader, OK_RESPONSE, PARTIAL_CONTENT_RESPONSE, PDFNetworkStream, PDFNetworkStreamReader, PDFNetworkStreamRangeReader, PDFNodeStream, PDFNodeStreamReader, PDFNodeStreamRangeReader, GlobalWorkerOptions, Metadata, CSS_FONT_INFO, SYSTEM_FONT_INFO, FONT_INFO, PATTERN_INFO, InfoUtils, CssFontInfo, SystemFontInfo, FontInfo, PatternInfo, FontPathInfo, INITIAL_DATA, dataObj, PDFObjects, ObjectHandler, INTERNAL, OptionalContentGroup, OptionalContentConfig, PagesMapper, PORT_CONNECTION_TIMEOUT, WorkerRenderTask, RendererWorker, MAX_TEXT_DIVS_TO_RENDER, DEFAULT_FONT_SIZE, TextLayer, RENDERING_CANCELLED_TIMEOUT, PDFDocumentLoadingTask, PDFDataRangeTransport, PDFDocumentProxy, PDFPageProxy, PDFWorker, WorkerTransport, RenderTask, InternalRenderTask, api_version, build, ColorPicker, BasicColorPicker, ColorConverters, BaseSVGFactory, DOMSVGFactory, annotation_layer_DEFAULT_FONT_SIZE, GetElementsByNameSet, TIMEZONE_OFFSET, AnnotationElementFactory, AnnotationElement, EditorAnnotationElement, LinkAnnotationElement, TextAnnotationElement, WidgetAnnotationElement, TextWidgetAnnotationElement, SignatureWidgetAnnotationElement, CheckboxWidgetAnnotationElement, RadioButtonWidgetAnnotationElement, PushButtonWidgetAnnotationElement, ChoiceWidgetAnnotationElement, PopupAnnotationElement, PopupElement, FreeTextAnnotationElement, LineAnnotationElement, SquareAnnotationElement, CircleAnnotationElement, PolylineAnnotationElement, PolygonAnnotationElement, CaretAnnotationElement, InkAnnotationElement, HighlightAnnotationElement, UnderlineAnnotationElement, SquigglyAnnotationElement, StrikeOutAnnotationElement, StampAnnotationElement, FileAttachmentAnnotationElement, MediaAnnotationElement, AnnotationLayer, EOL_PATTERN, FreeTextEditor, DrawingOptions, DrawingEditor, Outline, FreeDrawOutliner, FreeDrawOutline, HighlightOutliner, HighlightOutline, FreeHighlightOutliner, FreeHighlightDrawer, FreeHighlightOutline, HighlightDrawingOptions, HighlightEditor, InputSmoother, InkDrawOutliner, InkDrawOutline, InkDrawingOptions, InkEditor, ContourDrawOutline, BASE_HEADER_LENGTH, POINTS_PROPERTIES_NUMBER, SignatureExtractor, SignatureOptions, DrawnSignatureOptions, SignatureEditor, StampEditor, AnnotationEditorLayer, DrawLayer, TextLayerImages;
 var init_pdf = __esm({
-  "node_modules/pdfjs-dist/legacy/build/pdf.mjs"() {
+  "../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/pdfjs-dist/legacy/build/pdf.mjs"() {
     __webpack_modules__ = {
       /***/
       463(module) {
@@ -39581,7 +39581,7 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4<f32> {
   }
 });
 
-// node_modules/fflate/esm/browser.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/fflate/esm/browser.js
 var u8 = Uint8Array;
 var u16 = Uint16Array;
 var i32 = Int32Array;
@@ -40066,7 +40066,7 @@ function normalizeImportLimits(overrides = {}) {
   return Object.freeze({ ...IMPORT_LIMITS, ...overrides });
 }
 
-// node_modules/@noble/hashes/_u64.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@noble/hashes/_u64.js
 var fromNumH = (n) => n / 2 ** 32 | 0;
 var fromNumL = (n) => n >>> 0;
 function setU64FromNum(view, byteOffset, n, isLE) {
@@ -40076,7 +40076,7 @@ function setU64FromNum(view, byteOffset, n, isLE) {
   view.setUint32(byteOffset + 4, isLE ? h : l, isLE);
 }
 
-// node_modules/@noble/hashes/utils.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@noble/hashes/utils.js
 function isBytes(a) {
   return a instanceof Uint8Array || ArrayBuffer.isView(a) && a.constructor.name === "Uint8Array" && "BYTES_PER_ELEMENT" in a && a.BYTES_PER_ELEMENT === 1;
 }
@@ -40188,7 +40188,7 @@ var oidNist = (suffix) => ({
   oid: Uint8Array.from([6, 9, 96, 134, 72, 1, 101, 3, 4, 2, suffix])
 });
 
-// node_modules/@noble/hashes/_md.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@noble/hashes/_md.js
 function Chi(a, b, c) {
   return a & b ^ ~a & c;
 }
@@ -40301,7 +40301,7 @@ var SHA256_IV = /* @__PURE__ */ Uint32Array.from([
   1541459225
 ]);
 
-// node_modules/@noble/hashes/sha2.js
+// ../../../Users/randal/Documents/Projects/inators/cite.inator/node_modules/@noble/hashes/sha2.js
 var SHA256_K = /* @__PURE__ */ Uint32Array.from([
   1116352408,
   1899447441,

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0-preview.0 — Isolated follow-up
+
+- Allow explicitly requested unresolved placeholders for matched and ambiguous citations, preserving typed candidate references as unverified provenance without inferring identity.
+- This source/browser candidate is separate from the accepted 0.5.1 release; Zotero and quote notation remain planned.
+
 ## 0.5.1-preview.6 — In development
 
 - Update the learning host to draft teaching pin b86ed43, including its static module dependencies; verify current automatic review, bibliography replacement, staged export and Undo.

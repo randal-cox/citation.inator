@@ -15,13 +15,18 @@ export function createImportReview(source, matched) {
 }
 
 /** Plan whole-group edits. Rejected, deferred, absent and unsafe decisions preserve source. */
-export function planImportEdits(source,review,{reviewId,decisions=[],citationKeyword='cite',identifierForm='minimal',existingRecordIds=[]}={}) {
+export function planImportEdits(source,review,{reviewId,decisions=[],citationKeyword='cite',identifierForm='minimal',existingRecordIds=[],referenceEntries=[]}={}) {
   if (typeof source !== 'string' || review?.schema !== 'citation-inator.import-review.v1' || review.sourceHash !== hash(source) || review.sourceLength !== source.length) throw new Error('The source revision has changed; review again.');
   if (reviewId !== review.reviewId || review.reviewId !== digest(review.sourceHash,review.matches)) throw new Error('Review decisions belong to a different or changed snapshot.');
   scanCitationMarkers('',{citationKeyword});
   if (!['minimal','explicit'].includes(identifierForm)) throw new TypeError('Use minimal or explicit identifierForm.');
   if (!Array.isArray(decisions)) throw new TypeError('Supply review decisions.');
   if(!Array.isArray(existingRecordIds) || existingRecordIds.some(id=>normalizeIdentifier('local:'+id)?.value!==id))throw new TypeError('Supply valid existing record IDs.');
+  if(!Array.isArray(referenceEntries))throw new TypeError('Supply source reference entries.');
+  const references=new Map(referenceEntries.map(entry=>{
+    if(typeof entry?.id!=='string' || !Number.isInteger(entry.start) || !Number.isInteger(entry.end) || entry.start<0 || entry.end<=entry.start || entry.end>source.length)throw new TypeError('Supply source reference entries with valid ranges.');
+    return [entry.id,source.slice(entry.start,entry.end).trim()];
+  }));
   const taken=new Set([...existingRecordIds,...review.matches.flatMap(match=>match.items.flatMap(item=>item.candidates.map(candidate=>candidate.recordId)))]);
   const edits=[], outcomes=[], seen=new Set(),placeholderRecords=[];
   for (const decision of decisions) {
@@ -37,7 +42,7 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
     if(decision.action==='placeholder' && targets.some(target=>target?.placeholder!==true))throw new TypeError('Use accept with explicit targets for mixed citation groups.');
     const identities=targets.map((target,itemIndex)=>{
       if(target?.placeholder===true){
-        if(target.identifier!==undefined || match.items[itemIndex].state!=='unmatched')throw new TypeError('Use placeholders only for unmatched citation items.');
+        if(target.identifier!==undefined)throw new TypeError('A placeholder cannot also select an identifier.');
         const base='pending-'+hash(review.sourceHash+':'+index+':'+itemIndex).slice(0,20);
         let id=target.recordId ?? base;
         if(target.recordId===undefined){let counter=0;while(taken.has(id))id=base+'-'+(++counter);}
@@ -46,7 +51,8 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
         const item=match.items[itemIndex].item;
         const rawRange=item.rawRange;
         const original=match.items.length===1?citation.raw:rawRange && Number.isInteger(rawRange.start) && Number.isInteger(rawRange.end) && rawRange.start>=0 && rawRange.end>rawRange.start && citation.raw.slice(rawRange.start,rawRange.end)===item.rawText ? item.rawText : null;
-        pending.push({id,original,itemIndex});
+        const referenceTexts=[...new Set(match.items[itemIndex].candidates.map(candidate=>references.get(candidate.recordId)).filter(Boolean))];
+        pending.push({id,original,itemIndex,referenceTexts});
         return {scheme:'local',value:id,placeholder:true,original};
       }
       if(target && typeof target.recordId==='string' && target.identifier===undefined && target.placeholder===undefined) {
@@ -87,7 +93,7 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
     const text=`{${citationKeyword} ${items.join('; ')}}`;
     const token=scanCitationMarkers(text,{citationKeyword})[0]?.token;
     if (token?.type !== 'citation' || token.items.length !== identities.length || token.items.some((item,index)=>item.identifier.scheme !== identities[index].scheme || item.identifier.value !== identities[index].value)) throw new Error('Could not encode accepted record identities.');
-    placeholderRecords.push(...pending.map(item=>normalizeRecord({id:item.id,state:'unresolved',original:item.original,unresolvedText:item.original,provenance:[{provider:'Import review',note:'Unmatched citation retained for editorial completion; no bibliographic identity has been inferred.'}]})));
+    placeholderRecords.push(...pending.map(item=>normalizeRecord({id:item.id,state:'unresolved',original:item.referenceTexts.length===1?item.referenceTexts[0]:item.original,unresolvedText:item.original,provenance:[{provider:'Import review',note:'Citation retained for editorial completion; no bibliographic identity has been inferred.'},...item.referenceTexts.map(text=>({provider:'Import review',note:'Unverified candidate reference; not an accepted identity: '+text}))]})));
     edits.push({start,end,before:source.slice(start,end),text,citationIndex:index,...selection});
     outcomes.push({citationIndex:index,state:'accepted',...selection,...(pending.length && {placeholderRecordIds:pending.map(item=>item.id),code:'import-unresolved-placeholder'})});
   }
