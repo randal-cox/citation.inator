@@ -2,6 +2,8 @@
 
 ## 0.5.1-preview.6 — In development
 
+- Update the learning host to draft teaching pin b86ed43, including its static module dependencies; verify current automatic review, bibliography replacement, staged export and Undo.
+
 - Correct export documentation: per-record CSL conversion exists; complete bibliography downloads and BibTeX/RIS exporters remain planned for 0.6.0.
 
 - Report incomplete markers under the configured keyword while retaining escaped examples and other marker namespaces as ordinary text.

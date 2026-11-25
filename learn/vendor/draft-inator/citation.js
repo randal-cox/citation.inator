@@ -1,6 +1,6 @@
 /* draft.inator: the Cite block. In the text editor, a "Citation" button opens a form:
    one or more works, each with an optional page, prefix, form, and reference topics. It writes a citation.inator
-   marker, {citation id | note:"Bell 1992" | locator:12 | tags:ritual-theory; other-id}, with each note taken from
+   marker, {cite id | note:"Bell 1992" | locator:12 | tags:ritual-theory; other-id}, with each note taken from
    citation.inator's description of the work (window.DRAFT_WORKS, written by the host site's build; see docs/data-contract.md). Existing markers open in the same form;
    any option the form doesn't show (a label, fallback words) is kept as it was. */
 (function () {
@@ -16,6 +16,8 @@
   index();
   var FORMS = ['parenthetical', 'narrative', 'author-only', 'suppress-author', 'suppress-year'];
   var SHOWN = ['note', 'locator', 'prefix', 'form', 'tags'];
+  // The one keyword this site writes and reads (cite.inator 0.5.1: one configured keyword, default cite; #33).
+  var KEYWORD = /^[a-z][a-z-]*$/.test(window.DRAFT_CITATION_KEYWORD || '') ? window.DRAFT_CITATION_KEYWORD : 'cite';
 
   // Split on a separator outside quotes, honouring backslash escapes (citation.inator's notation).
   function split(s, sep) {
@@ -29,6 +31,27 @@
     }
     out.push(cur);
     return out.map(function (x) { return x.trim(); });
+  }
+  // One work's text, split into its id and fields, keeping each separator exactly as written: a pipe (with any spaces
+  // around it), or, since cite.inator 0.5.1, plain whitespace before the next field name. Quotes and escapes are
+  // honoured, so a quoted value may hold anything.
+  function splitParts(s) {
+    var parts = [], seps = [], cur = '', q = false, i = 0, m;
+    s = s.trim();
+    while (i < s.length) {
+      var c = s[i];
+      if (c === '\\' && i + 1 < s.length) { cur += c + s[i + 1]; i += 2; continue; }
+      if (c === '"') q = !q;
+      if (!q) {
+        m = /^\s*\|\s*/.exec(s.slice(i));
+        if (m && m[0].length) { parts.push(cur); seps.push(m[0]); cur = ''; i += m[0].length; continue; }
+        m = /^\s+(?=[a-z][a-z-]*:)/.exec(s.slice(i));
+        if (m && cur) { parts.push(cur); seps.push(m[0]); cur = ''; i += m[0].length; continue; }
+      }
+      cur += c; i++;
+    }
+    parts.push(cur);
+    return { parts: parts.map(function (x) { return x.trim(); }), seps: seps };
   }
   function unquote(v) {
     v = v.trim();
@@ -45,7 +68,7 @@
   // A work's id is written bare (bell-1992-ritual) or explicitly local (local:bell-1992-ritual); citation.inator reads
   // both as the same record. The block works with the bare id and remembers how it was written, so an unchanged work
   // goes back exactly as it was. A newly chosen work is written bare, unless the bare id would read as a directive.
-  var DIRECTIVES = ['endnote', 'list', 'nocite', 'evidence', 'credit'];
+  var DIRECTIVES = ['endnote', 'list', 'nocite', 'evidence', 'credit', 'tags'];
   function bareId(written) { return /^local:/.test(written) ? written.slice(6) : written; }
   function writeId(it) {
     if (it.written && bareId(it.written) === it.work) return it.written;
@@ -54,7 +77,8 @@
 
   function parse(body) {
     return split(body, ';').filter(Boolean).map(function (part) {
-      var bits = split(part, '|'), item = { work: bareId(bits[0]), written: bits[0], locator: '', prefix: '', form: '', tags: [], extra: [], order: [] };
+      var sp = splitParts(part), bits = sp.parts;
+      var item = { work: bareId(bits[0]), written: bits[0], locator: '', prefix: '', form: '', tags: [], extra: [], order: [], seps: sp.seps.join('\u0000') };
       bits.slice(1).forEach(function (b) {
         var m = /^([a-z-]+):([\s\S]*)$/.exec(b);
         if (m && SHOWN.indexOf(m[1]) >= 0) {
@@ -69,8 +93,8 @@
     });
   }
 
-  function build(items) {
-    return '{citation ' + (items || []).filter(function (it) { return it && it.work; }).map(function (it) {
+  function build(items, keyword) {
+    return '{' + (keyword || KEYWORD) + ' ' + (items || []).filter(function (it) { return it && it.work; }).map(function (it) {
       var was = (it.order || '').split(',').filter(Boolean);
       function q(k, v) { return was.indexOf(k + '"') >= 0 ? quoteAlways(v) : quote(v); }
       var tags = it.tags || [], parts = {
@@ -82,7 +106,7 @@
       };
       // Unknown options go back where each one was. If the writer changed "Other options" so they no longer match
       // one for one, they all go where the first one was.
-      var extras = it.extra ? split(it.extra, '|').filter(Boolean) : [];
+      var extras = it.extra ? splitParts(it.extra).parts.filter(Boolean) : [];
       var slots = was.filter(function (k) { return k === 'extra'; }).length, next = 0;
       var out = [], seen = {};
       was.forEach(function (k) {
@@ -101,7 +125,14 @@
         var at = out.findIndex ? out.findIndex(function (o) { return o && o.key === 'note'; }) : -1;
         if (at > 0) out.unshift(out.splice(at, 1)[0]);
       }
-      return [writeId(it)].concat(out.map(function (o) { return typeof o === 'string' ? o : o.text; })).join(' | ');
+      // Separators: the marker's own, exactly, when it has the same number of parts as before (a refreshed note, say);
+      // otherwise its own style throughout: plain spaces if it used only spaces, else pipes.
+      var all = [writeId(it)].concat(out.map(function (o) { return typeof o === 'string' ? o : o.text; }));
+      var seps = it.seps ? String(it.seps).split('\u0000') : [];
+      var spaced = seps.length && seps.every(function (x) { return x.indexOf('|') < 0; });
+      return all.reduce(function (acc, p, k) {
+        return k === 0 ? p : acc + (seps.length === all.length - 1 ? seps[k - 1] : spaced ? ' ' : ' | ') + p;
+      }, '');
     }).join('; ') + '}';
   }
 
@@ -111,7 +142,7 @@
     index();
   }
 
-  window.DRAFT_CITATION = { parse: parse, build: build, addWorks: addWorks, writeId: writeId };
+  window.DRAFT_CITATION = { parse: parse, build: build, addWorks: addWorks, writeId: writeId, keyword: KEYWORD };
 
   CMS.registerEditorComponent({
     id: 'citation',
@@ -134,9 +165,9 @@
       ]
     }],
     // Directives are not citations of a work; leave them alone. Matches citation.inator 0.2.0's own test exactly
-    // ({citation endnote}, {citation endnote | …}, {citation list …}, {citation nocite …}, {citation evidence},
-    // {citation credit}), so a work whose id merely starts with one of those words (list-2001) still opens.
-    pattern: /\{citation (?!\s*(?:endnote\s*[|}]|(?:list|nocite)[ \t]|(?:evidence|credit)\s*\}))((?:[^{}\\]|\\.)*)\}/,
+    // ({cite endnote}, {cite endnote | …}, {cite list …}, {cite nocite …}, {cite evidence},
+    // {cite credit}), so a work whose id merely starts with one of those words (list-2001) still opens.
+    pattern: new RegExp('\\{' + KEYWORD + ' (?!\\s*(?:endnote(?:[\\s|}])|(?:list|nocite|tags)[ \\t]|(?:evidence|credit)(?:[\\s|}])))((?:[^{}\\\\]|\\\\.)*)\\}'),
     fromBlock: function (match) { return { items: parse(match[1]) }; },
     toBlock: function (data) { return build(data.items); },
     toPreview: function (data) {

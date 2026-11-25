@@ -1,6 +1,6 @@
 # Mount the editor and citation tools
 
-This working example uses unmodified draft.inator editor files from its accepted cite.inator 0.4.0 integration at commit `36c79b1`. Its [source manifest](./SOURCE.json) records exact Git blob identities and its [license](./DRAFT_LICENSE.txt) accompanies the files. It demonstrates the real `mountEditor` API, not a replacement editor invented for this tutorial. See draft's [accepted recipe](https://github.com/randal-cox/draft.inator/blob/36c79b1/docs/editor.md) and [integration example](https://github.com/randal-cox/draft.inator/blob/36c79b1/demo/editor/editor.mjs).
+This working example uses unmodified draft.inator editor files from its cite.inator 0.5.1 migration at commit `b86ed43`. Its [source manifest](./SOURCE.json) records exact Git blob identities and its [license](./DRAFT_LICENSE.txt) accompanies the files. It demonstrates the real `mountEditor` API, not a replacement editor invented for this tutorial. See draft's [editor recipe](https://github.com/randal-cox/draft.inator/blob/b86ed43/docs/editor.md) and [integration example](https://github.com/randal-cox/draft.inator/blob/b86ed43/demo/editor/editor.mjs).
 
 Load the editor CSS, forms, works data and Cite block first. Then import your initialization module:
 

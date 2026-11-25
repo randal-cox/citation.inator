@@ -8,8 +8,13 @@
        save: async text => 'Pull request opened',   // optional: where Save sends the text
      });
 
+   With `fields` (or `collection`), the editor takes the whole file: front matter in a Details panel drawn from the
+   collection's fields, the body in the text box; `save` and `text` then carry the whole file.
+
    Load src/editor/forms.js, the works list, and the blocks (src/blocks/*.js) first, as classic scripts. Plain
    browser JavaScript, no dependencies, no inline handlers, so it runs under a strict Content Security Policy. */
+import { splitFrontMatter } from './frontmatter.js';
+import { drawDetails, checkDetails } from './details.js';
 
 const LAYOUTS = [
   { id: 'split', label: 'Side by side' },
@@ -66,7 +71,7 @@ export function bodyKind(body) {
 
 /**
  * The article as readers see it: Markdown through the site's renderer, with figures laid out as their tags say and
- * citations shown by their notes, plus a list of the works cited (at {citation endnote}, or at the end).
+ * citations shown by their notes, plus a list of the works cited (at {cite endnote}, or at the end).
  * @param {string} text  Markdown with draft.inator blocks.
  * @param {object} [options]
  * @param {(markdown: string) => string} [options.render]  The site's Markdown renderer (it must escape raw HTML).
@@ -104,18 +109,19 @@ export function renderArticle(text, options = {}) {
   }
   out += text.slice(last);
   let placed = false;
-  out = out.replace(/\{citation endnote(?:\s*\|[^}\n]*)?\}/g, (m, at) => (found.inCode(at) ? m : (placed = true, compiler ? hold(esc(m)) : 'DRAFTENDNOTES')));
+  const kw = window.DRAFT_CITATION?.keyword || window.DRAFT_CITATION_KEYWORD || 'cite';
+  out = out.replace(new RegExp(`\\{${kw} endnote(?:[\\s|][^}\\n]*)?\\}`, 'g'), (m, at) => (found.inCode(at) ? m : (placed = true, compiler ? hold(esc(m)) : 'DRAFTENDNOTES')));
   const endnotes = cited.length ? `<section class="endnotes"><h2>Works cited</h2><ol>${cited.map(id => { const w = WORKS[id];
     return `<li id="di-ref-${esc(id)}">${esc(w?.note || id)}${w?.title ? `. <cite>${esc(w.title)}</cite>.` : ' <span class="unresolved">(not yet found)</span>'}</li>`; }).join('')}</ol></section>` : '';
   const md = options.render || (m => m.split(/\n{2,}/).map(p => `<p>${esc(p)}</p>`).join(''));
-  if (compiler && !placed && cited.length) out += '\n\n' + hold('{citation endnote}');
+  if (compiler && !placed && cited.length) out += '\n\n' + hold(`{${kw} endnote}`);
   let html = md(out + (compiler || placed || !cited.length ? '' : '\n\nDRAFTENDNOTES'))
     .replace(/<p>DRAFTENDNOTES<\/p>|DRAFTENDNOTES/g, endnotes)
     .replace(/<p>DRAFTPH(\d+)X<\/p>/g, (m, n) => parts[n]).replace(/DRAFTPH(\d+)X/g, (m, n) => parts[n]);
   let formatted = false, diagnostics = [];
   if (compiler) {
     try {
-      const r = compiler.compileHTML(html, compiler.cache, { citationStyle: compiler.citationStyle || 'chicago-author-date', namespace: 'di-preview' });
+      const r = compiler.compileHTML(html, compiler.cache, { citationStyle: compiler.citationStyle || 'chicago-author-date', citationKeyword: kw, namespace: 'di-preview' });
       html = r.html; formatted = true; diagnostics = r.diagnostics || [];
     } catch (e) {
       // The compiler stopped: show the notes instead, and say why, rather than a blank preview.
@@ -160,6 +166,12 @@ export function recoveryChoice(given, kept) {
  * @param {string} [options.previewClass]  The site's own class for article text, so the preview looks like the site.
  * @param {boolean} [options.fullWindow]  Fill the window instead of a box.
  * @param {string[]} [options.blocks]  Only these blocks (such as ['citation']); default: every block the page loaded.
+ * @param {Array<object>} [options.fields]  The page's collection fields (Sveltia's format). With them, `text` is the
+ *   whole file, and its front matter is edited in a Details panel; without, `text` is the body alone, as before.
+ * @param {string} [options.collection]  Or: a collection name to find in `window.DRAFT_COLLECTIONS`.
+ * @param {string} [options.slug]  The page's slug, so it isn't listed among its collection's other entries.
+ * @param {Record<string, Array<object>>} [options.entries]  Entries for relation fields, by collection
+ *   (default `window.DRAFT_ENTRIES`).
  * @param {{ compileHTML: Function, cache: object, citationStyle?: string }} [options.citations]  Formatted citations
  *   and endnotes in the preview: citation.inator's browser compiler (citation-compiler.mjs) and the site's citation
  *   cache. Without it the preview shows each work's note.
@@ -178,6 +190,10 @@ export function mountEditor(root, options = {}) {
     if (!F.imageSources.some(s => s.path === img.path)) F.imageSources.push({ label: img.label, path: img.path });
     if (img.url) F.assets[img.path] = img.url;
   }
+  const collection = o.collection && (window.DRAFT_COLLECTIONS || []).find(c => c.name === o.collection);
+  if (o.collection && !collection && !o.fields) throw new Error(`No collection "${o.collection}" in window.DRAFT_COLLECTIONS.`);
+  const fields = o.fields || collection?.fields || null;
+  const entries = o.entries || window.DRAFT_ENTRIES || {};
   const SAMPLES = new Set((o.images || []).map(i => i.path));
 
   const store = {
@@ -230,15 +246,46 @@ export function mountEditor(root, options = {}) {
   const recover = el('div', { class: 'di-recover', role: 'region', 'aria-label': 'Unsaved changes', hidden: true },
     [recoverText, el('span', { class: 'di-recover-actions' }, [recoverButton, discardButton])]);
 
+  // Citations typed by hand (not yet markers): a banner that can't be missed, and Save waits (importer.handTyped).
+  const typedPolicy = o.importer ? (o.importer.handTyped || 'block') : 'off';
+  const typedText = el('span', { class: 'di-typed-text' });
+  const typedReview = el('button', { type: 'button', class: 'di-primary', text: 'Import citations' });
+  const typedAnyway = el('button', { type: 'button', class: 'di-quiet', text: 'Allow saving with typed citations', hidden: true });
+  const typedBar = el('div', { class: 'di-typed', role: 'region', 'aria-label': 'Citations typed by hand', hidden: true },
+    [el('span', { class: 'di-typed-icon', 'aria-hidden': 'true', text: '!' }), typedText, el('span', { class: 'di-typed-actions' }, [typedReview, typedAnyway])]);
+
+  // What an import did, where a sighted writer sees it, with Undo (a phone has no Ctrl+Z).
+  const doneText = el('span');
+  const doneUndo = el('button', { type: 'button', class: 'di-quiet', text: 'Undo' });
+  const doneClose = el('button', { type: 'button', class: 'di-quiet di-done-close', 'aria-label': 'Dismiss', text: '×' });
+  const doneBar = el('div', { class: 'di-done', role: 'region', 'aria-label': 'Import result', hidden: true }, [doneText, el('span', { class: 'di-typed-actions' }, [doneUndo, doneClose])]);
+
   const dTitle = el('h2', { text: 'Citation' }), dFields = el('div'), dOut = el('output', { class: 'di-code' });
   const dError = el('p', { class: 'di-error', role: 'alert' });
   const dCancel = el('button', { type: 'button', class: 'di-quiet', text: 'Cancel' }), dSave = el('button', { type: 'submit', class: 'di-primary', text: 'Insert' });
   const dForm = el('form', { method: 'dialog' }, [dTitle, dFields, el('h3', { text: 'What it writes' }), dOut, dError, el('div', { class: 'di-actions' }, [dCancel, dSave])]);
   const dialog = el('dialog', { class: 'di-dialog' }, [dForm]);
   dialog.setAttribute('aria-label', 'Block');
-  root.append(head, recover, toolbar, panes, status, exitPlain, dialog);
+  const detailsHost = el('div', { class: 'di-details-body' });
+  // Open, except on a narrow screen, where the text comes first and Details is a tap away.
+  const details = fields && el('details', { class: 'di-details', open: !window.matchMedia?.('(max-width: 40rem)').matches }, [el('summary', { text: 'Details' }), detailsHost]);
+  root.append(...[head, recover, typedBar, doneBar, details, toolbar, panes, status, exitPlain, dialog].filter(Boolean));
 
   const announce = msg => { live.textContent = ''; setTimeout(() => { live.textContent = msg; }, 30); };
+
+  // ---------- The whole file: front matter (the Details panel) and body (the text box) ----------
+  // Without `fields` there is no front matter here: the text box holds everything given, as before 0.5.
+  let frontMatter = '', panel = null;
+  const whole = () => frontMatter + source.value;
+  // Take a whole file: draw its front matter into the panel; return the body for the text box.
+  function load(text) {
+    if (!fields) return text;
+    const parts = splitFrontMatter(text);
+    frontMatter = parts.frontMatter;
+    panel = drawDetails(detailsHost, { fields, frontMatter, entries, images: o.images || [], collection: collection?.name || o.collection || null, slug: o.slug || null,
+      change: fm => { frontMatter = fm; changed(); } });
+    return parts.body;
+  }
 
   // ---------- Blocks in the text, and the preview ----------
   const blocks = text => findBlocks(text, cite, figure);
@@ -250,7 +297,7 @@ export function mountEditor(root, options = {}) {
     preview.innerHTML = r.html;
     note.hidden = r.formatted;
     if (r.compileError) { note.hidden = false; note.textContent = 'Citations show each work\'s note: the citation compiler stopped (' + r.compileError + ').'; }
-    title.textContent = r.title;
+    title.textContent = (panel && typeof panel.values().title === 'string' && panel.values().title) || r.title;
     counts.textContent = `${r.words} words · ${r.citations} citations · ${r.figures} figures`;
   }
 
@@ -292,8 +339,13 @@ export function mountEditor(root, options = {}) {
     figure: () => openBlock('figure'),
     edit: () => { const b = blockAt(source.value, source.selectionStart); if (b) openBlock(b.kind, b); },
     import: async () => {
+      typed.reviewed = true;
       const { openImport } = await import('./importer.js');
-      openImport({ el, root, getText: () => source.value, replace, announce, focus: () => source.focus(),
+      openImport({ el, root, getText: () => source.value, replace, announce, focus: () => source.focus(), memory: importMemory,
+        recheck: () => checkTyped(),
+        // Citations the writer chose to leave as typed count as permission to save with them.
+        leftAsTyped: n => { typed.acceptedLeft = n; },
+        report: msg => { doneText.textContent = msg; doneBar.hidden = false; },
         addWorks: (works, records) => {
           window.DRAFT_CITATION?.addWorks(works);
           // New works join the records the preview compiles with, so their citations are formatted at once.
@@ -417,18 +469,30 @@ export function mountEditor(root, options = {}) {
   if (saveButton) saveButton.addEventListener('click', async () => {
     saveButton.disabled = true; saved.textContent = 'Saving…';
     try {
-      const text = source.value, msg = await o.save(text);
+      await checkTyped();
+      if (typedPolicy === 'block' && typed.count && !typed.override) {
+        typedBar.hidden = false; typedReview.focus();
+        throw new Error(`${typed.count} citation${typed.count === 1 ? ' is' : 's are'} typed by hand. Import ${typed.count === 1 ? 'it' : 'them'}, or allow saving with ${typed.count === 1 ? 'it' : 'them'} as typed.`);
+      }
+      if (panel) {
+        const problems = checkDetails(fields, panel.values());
+        if (problems.length) {
+          details.open = true; panel.show(problems);
+          throw new Error(problems.length === 1 ? problems[0].message : `${problems.length} details need attention: ${problems.map(p => p.label).join(', ')}.`);
+        }
+      }
+      const text = whole(), msg = await o.save(text);
       base = text; forgetDraft();   // saved: the kept copy has done its job
       saved.textContent = msg || 'Saved'; announce(saved.textContent);
     }
     catch (error) { saved.textContent = 'Not saved: ' + (error?.message || error); announce(saved.textContent); }
     finally { saveButton.disabled = false; }
   });
-  if (doneButton) doneButton.addEventListener('click', () => o.done(source.value));
+  if (doneButton) doneButton.addEventListener('click', () => o.done(whole()));
   if (resetButton) resetButton.addEventListener('click', async () => {
     const text = await o.reset();
     base = text;
-    replace(0, source.value.length, text);
+    replace(0, source.value.length, load(text));
     source.setSelectionRange(0, 0); source.scrollTop = 0;
     announce('Back to the sample article.');
   });
@@ -479,40 +543,89 @@ export function mountEditor(root, options = {}) {
     recover.hidden = false;
     recover.classList.toggle('di-recover-changed', changed);
     const done = msg => { recover.hidden = true; announce(msg); source.focus(); };
-    recoverButton.onclick = () => { restoreUploads(kept.text); replace(0, source.value.length, kept.text); done('Your kept changes are back. Undo returns to the page as it was.'); };
+    recoverButton.onclick = () => { restoreUploads(kept.text); replace(0, source.value.length, load(kept.text)); done(fields ? 'Your kept changes are back. Reload the page to see it as it was.' : 'Your kept changes are back. Undo returns to the page as it was.'); };
     discardButton.onclick = () => { forgetDraft(); done('Kept changes discarded.'); };
     announce(recoverText.textContent);
   }
 
+  // ---------- Citations typed by hand ----------
+  const typed = { count: 0, examples: [], reviewed: false, override: false, acceptedLeft: 0 };
+  const importMemory = new Map();   // the writer's choices in the import review, kept while the page is open
+  doneUndo.addEventListener('click', () => { source.focus(); document.execCommand && document.execCommand('undo'); doneBar.hidden = true; changed(); checkTyped(); announce('Import undone.'); });
+  doneClose.addEventListener('click', () => { doneBar.hidden = true; source.focus(); });
+  let typedTimer;
+  async function checkTyped() {
+    if (typedPolicy === 'off') return;
+    const { findHandTyped } = await import('./importer.js');
+    const found = findHandTyped(source.value, o.importer.process);
+    if (found.count > typed.count && found.count > typed.acceptedLeft) typed.override = false;   // new ones aren't covered
+    Object.assign(typed, found);
+    if (typed.acceptedLeft && typed.count <= typed.acceptedLeft) typed.override = true;
+    const n = typed.count;
+    typedBar.hidden = !n;
+    if (!n) { showSaveBlocked(); return; }
+    const one = n === 1, ex = typed.examples;
+    const list = ex.length > 2 ? ex.slice(0, -1).join(', ') + ', and ' + ex[ex.length - 1] : ex.join(' and ');
+    typedText.textContent = (one ? `1 citation is typed by hand: ${list}. It isn't linked to a work, so readers won't get a real citation or endnote.`
+      : `${n} citations are typed by hand, such as ${list}. They aren't linked to works, so readers won't get real citations or endnotes.`) +
+      (typedPolicy !== 'block' ? ` Import ${one ? 'it' : 'them'} to fix this.` : typed.override ? ` You've allowed saving with ${one ? 'it' : 'them'} as typed.` : ` Import ${one ? 'it' : 'them'} before saving.`);
+    typedAnyway.hidden = typedPolicy !== 'block' || typed.override;
+    showSaveBlocked();
+  }
+  // While Save would refuse, it looks unavailable, but stays focusable so pressing it still says why.
+  function showSaveBlocked() {
+    if (!saveButton) return;
+    const blocked = typedPolicy === 'block' && typed.count > 0 && !typed.override;
+    if (blocked) { saveButton.setAttribute('aria-disabled', 'true'); saveButton.title = 'Import the citations typed by hand first'; }
+    else {
+      saveButton.removeAttribute('aria-disabled'); saveButton.removeAttribute('title');
+      if (/^Not saved: .*typed by hand/.test(saved.textContent)) saved.textContent = '';   // no stale refusal beside a working Save
+    }
+  }
+  const checkTypedSoon = () => { clearTimeout(typedTimer); typedTimer = setTimeout(checkTyped, 600); };
+  typedReview.addEventListener('click', () => COMMANDS.import());
+  typedAnyway.addEventListener('click', () => { typed.override = true; checkTyped(); announce(`Saving is allowed with ${typed.count === 1 ? 'this citation' : 'these citations'} as typed, unlinked.`); (saveButton || source).focus(); });
+  // Pasting is when hand-typed citations usually arrive: say so at once.
+  source.addEventListener('paste', () => setTimeout(async () => { const before = typed.count; await checkTyped();
+    if (typed.count > before) announce(`${typed.count - before} citation${typed.count - before === 1 ? '' : 's'} typed by hand pasted in. Review and import them.`); }, 0));
+
   // ---------- Start ----------
   let timer;
-  source.addEventListener('input', () => {
-    render(); updateEditButton();
+  function changed() {
+    render(); updateEditButton(); checkTypedSoon();
     if (!o.storageKey) return;
     clearTimeout(timer);
     timer = setTimeout(() => {
-      if (source.value === base) { forgetDraft(); saved.textContent = ''; return; }
-      saved.textContent = keepDraft(source.value) ? 'Draft kept in this browser' : 'Draft not kept: browser storage is off';
+      if (whole() === base) { forgetDraft(); saved.textContent = ''; return; }
+      saved.textContent = keepDraft(whole()) ? 'Draft kept in this browser' : 'Draft not kept: browser storage is off';
     }, 400);
-  });
+  }
+  source.addEventListener('input', changed);
   for (const ev of ['click', 'keyup', 'select']) source.addEventListener(ev, updateEditButton);
 
   const ready = (async () => {
     const given = typeof o.text === 'function' ? await o.text() : o.text || '';
-    source.value = base = given;
+    base = given;
+    source.value = load(given);
     restoreUploads(given);
     setLayout(store.get('layout') || o.layout || 'split', true);
     setToolbar(store.get('toolbar') !== '0', true);
-    const kept = readDraft(), choice = recoveryChoice(given, kept);
+    let kept = readDraft();
+    // A body kept before the panel was turned on would replace the front matter with nothing: never offered.
+    if (fields && kept?.text != null && splitFrontMatter(given).frontMatter && !splitFrontMatter(kept.text).frontMatter) kept = null;
+    const choice = recoveryChoice(given, kept);
     if (choice === 'same') forgetDraft();
     if (choice === 'offer' || choice === 'offer-changed') offerDraft(kept, choice === 'offer-changed');
     render(); updateEditButton();
+    await checkTyped();
   })();
 
   return {
     ready,
-    get text() { return source.value; },
-    set text(v) { source.value = base = v; render(); updateEditButton(); },
+    get text() { return whole(); },
+    /** Citations still typed by hand: { count, examples }. */
+    get handTyped() { return { count: typed.count, examples: typed.examples.slice() }; },
+    set text(v) { base = v; source.value = load(v); render(); updateEditButton(); },
     focus() { source.focus(); },
     setLayout
   };

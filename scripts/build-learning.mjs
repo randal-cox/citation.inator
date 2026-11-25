@@ -118,7 +118,7 @@ await copyFile('learn/about.mjs','site/about.mjs');
 await writeFile('site/about.html',page('About cite.inator',learningMarkdown(await readFile('learn/about.md','utf8'))).replaceAll('href="../','href="./').replace('class="guide"','class="guide overview"').replace('<div id="overview-example"></div>',overviewExample).replace('</body>','<script type="module" src="./about.mjs"></script></body>'));
 await writeFile('site/tutorials.html',`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./guide.html#examples"><title>Guide · cite.inator</title></head><body><a href="./guide.html#examples">Open the Guide</a></body></html>`);
 await mkdir('site/host',{recursive:true});
-for(const file of ['editor.js','importer.js','forms.js','citation.js','editor.css','SOURCE.json'])await copyFile('learn/vendor/draft-inator/'+file,'site/host/'+file);
+for(const file of ['editor.js','importer.js','forms.js','citation.js','editor.css','frontmatter.js','details.js','yaml.js','picker.js','SOURCE.json'])await copyFile('learn/vendor/draft-inator/'+file,'site/host/'+file);
 await copyFile('learn/vendor/draft-inator/LICENSE','site/host/DRAFT_LICENSE.txt');
 for(const file of ['index.html','host.css','article.md','bootstrap.mjs'])await copyFile('learn/host/'+file,'site/host/'+file);
 await copyFile('learn/host/integration.mjs','site/host/integration-source.mjs');

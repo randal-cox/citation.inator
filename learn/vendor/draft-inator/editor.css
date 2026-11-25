@@ -3,7 +3,7 @@
    site's own article class (the previewClass option) wins. */
 .di-editor {
   --di-bg: #fbfaf7; --di-surface: #ffffff; --di-ink: #1d1b18; --di-muted: #5d5850; --di-line: #d9d4ca;
-  --di-accent: #7a2e1f; --di-accent-ink: #ffffff; --di-focus: #1f5fbf; --di-mark: #fff1b8;
+  --di-accent: #7a2e1f; --di-accent-ink: #ffffff; --di-focus: #1f5fbf; --di-mark: #fff1b8; --di-error: #b3261e; --di-warn-bg: #fff4d6; --di-warn-ink: #6b3d00; --di-warn-line: #c27a00;
   --di-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --di-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --di-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
@@ -16,12 +16,12 @@
 @media (prefers-color-scheme: dark) {
   .di-editor:not([data-di-theme="light"]) {
     --di-bg: #171614; --di-surface: #201f1c; --di-ink: #ece8e1; --di-muted: #a8a196; --di-line: #3a3732;
-    --di-accent: #e39a7f; --di-accent-ink: #1b1210; --di-focus: #8ab4ff; --di-mark: #5a4a12; color-scheme: dark;
+    --di-accent: #e39a7f; --di-accent-ink: #1b1210; --di-focus: #8ab4ff; --di-mark: #5a4a12; --di-error: #ffb4ab; --di-warn-bg: #3a2a08; --di-warn-ink: #ffd88a; --di-warn-line: #e0a030; color-scheme: dark;
   }
 }
 .di-editor[data-di-theme="dark"] {
   --di-bg: #171614; --di-surface: #201f1c; --di-ink: #ece8e1; --di-muted: #a8a196; --di-line: #3a3732;
-  --di-accent: #e39a7f; --di-accent-ink: #1b1210; --di-focus: #8ab4ff; --di-mark: #5a4a12; color-scheme: dark;
+  --di-accent: #e39a7f; --di-accent-ink: #1b1210; --di-focus: #8ab4ff; --di-mark: #5a4a12; --di-error: #ffb4ab; --di-warn-bg: #3a2a08; --di-warn-ink: #ffd88a; --di-warn-line: #e0a030; color-scheme: dark;
 }
 /* A site hides the box with the hidden attribute; that must win over display: flex above. */
 .di-editor[hidden] { display: none !important; }
@@ -177,6 +177,90 @@
 .di-recover-actions { display: flex; gap: .4rem; }
 .di-recover.di-recover-changed { border-left: 4px solid #b3261e; }
 
+/* The Details panel: a page's front matter, as a document's properties (0.5). */
+.di-details { position: relative; z-index: 5; border-bottom: 1px solid var(--di-line); background: var(--di-surface); }
+.di-details > summary { cursor: pointer; padding: .4rem .9rem; font-weight: 600; font-size: .85rem; color: var(--di-muted); }
+.di-details > summary:focus-visible { outline: 3px solid var(--di-focus); outline-offset: -3px; }
+.di-details-body { padding: 0 .9rem .7rem; }
+.di-fields { display: flex; flex-direction: column; gap: .5rem; max-width: 80rem; }
+.di-hint, .di-kept, .di-none { margin: 0; font-size: .8rem; color: var(--di-muted); }
+.di-none { font-style: italic; }
+.di-req { font-weight: 400; color: var(--di-muted); }
+.di-field-error { margin: .1rem 0 0; font-size: .8rem; font-weight: 600; color: var(--di-error); }
+.di-field-error[hidden], .di-fields [hidden] { display: none; }
+.di-fields input, .di-fields textarea, .di-fields button { font: inherit; color: var(--di-ink); }
+.di-fields input[type=text], .di-fields input[type=number], .di-fields input[type=date], .di-fields input[type=datetime-local], .di-fields textarea {
+  font-size: .9rem; background: var(--di-bg); border: 1px solid var(--di-line); border-radius: 6px; padding: .3rem .5rem; width: 100%; box-sizing: border-box; }
+.di-fields :focus-visible { outline: 3px solid var(--di-focus); outline-offset: 1px; }
+
+/* Title and subtitle: the page's own words, large and full width, without boxes until focused. */
+.di-top { display: flex; flex-direction: column; gap: .15rem; }
+.di-top-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.di-fields input.di-lead, .di-fields input.di-sub { border-color: transparent; background: transparent; padding: .15rem .4rem; margin-left: -.4rem; }
+.di-fields input.di-lead:hover, .di-fields input.di-sub:hover { border-color: var(--di-line); }
+.di-fields input.di-lead { font: 600 1.45rem/1.25 var(--di-serif); }
+.di-fields input.di-sub { font: 400 1.05rem/1.3 var(--di-serif); color: var(--di-muted); }
+
+/* A summary: one line until opened. */
+.di-text { margin: .1rem 0 .2rem; }
+.di-editor .di-disclose { display: flex; align-items: baseline; gap: .6rem; width: 100%; text-align: left; background: none; border: 0;
+  padding: .2rem 0; cursor: pointer; min-width: 0; }
+.di-disclose::before { content: "▸"; color: var(--di-muted); font-size: .75rem; }
+.di-disclose[aria-expanded=true]::before { content: "▾"; }
+.di-disclose-label, .di-prop-label { font-size: .8rem; font-weight: 600; color: var(--di-muted); white-space: nowrap; }
+.di-peek { font-size: .9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.di-text textarea { margin-top: .25rem; resize: vertical; }
+
+/* The rest: label beside value, two columns where there's room. */
+.di-props { display: grid; grid-template-columns: 1fr; gap: .1rem 2rem; border-top: 1px solid var(--di-line); padding-top: .45rem; }
+@media (min-width: 52rem) { .di-props { grid-template-columns: 1fr 1fr; } }
+.di-prop { position: relative; display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); align-items: start; gap: .2rem .75rem; padding: .2rem 0; }
+.di-prop-label { padding-top: .3rem; white-space: normal; }
+.di-prop-value { min-width: 0; display: flex; flex-direction: column; gap: .2rem; }
+.di-prop-value .di-short { width: auto; max-width: 12rem; }
+.di-prop-kept .di-kept { padding-top: .3rem; }
+.di-extra { padding-top: .2rem; }
+.di-switch input { width: 1.1rem; height: 1.1rem; margin: .35rem 0 0; accent-color: var(--di-accent); }
+
+/* The chooser (picker.js). */
+.di-pick { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .4rem; }
+.di-chips { display: contents; list-style: none; }
+.di-chips > li { list-style: none; }
+.di-chip { display: inline-flex; align-items: center; gap: .25rem; background: var(--di-bg); border: 1px solid var(--di-line);
+  border-radius: 999px; padding: .05rem .15rem .05rem .6rem; font-size: .85rem; max-width: 100%; }
+.di-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.di-chip img { width: 1.2rem; height: 1.2rem; object-fit: cover; border-radius: 50%; }
+.di-chip-unknown { border-style: dashed; }
+.di-editor .di-chip-x { background: none; border: 0; border-radius: 50%; width: 1.4rem; height: 1.4rem; line-height: 1; cursor: pointer; color: var(--di-muted); padding: 0; font-size: 1rem; }
+.di-editor .di-chip-x:hover { background: var(--di-line); color: var(--di-ink); }
+.di-pick-value { display: inline-flex; align-items: center; gap: .5rem; font-size: .9rem; min-width: 0; }
+.di-pick-thumb { width: 4.5rem; height: 3rem; object-fit: cover; border-radius: 6px; border: 1px solid var(--di-line); }
+.di-pick-hint { font-size: .8rem; color: var(--di-muted); }
+.di-pick-actions { display: inline-flex; gap: .3rem; }
+.di-editor .di-pick-open, .di-editor .di-pick-clear { background: none; border: 1px dashed var(--di-line); border-radius: 999px; padding: .1rem .65rem;
+  font-size: .82rem; font-weight: 500; color: var(--di-accent); cursor: pointer; }
+.di-editor .di-pick-open:hover, .di-editor .di-pick-clear:hover { border-style: solid; border-color: var(--di-accent); }
+.di-pop { position: absolute; z-index: 20; top: 100%; left: 0; margin-top: .1rem; width: min(24rem, 100%); background: var(--di-surface);
+  border: 1px solid var(--di-line); border-radius: 10px; box-shadow: 0 8px 28px rgb(0 0 0 / .18); padding: .5rem; }
+.di-pick-thumbs .di-pop { width: min(30rem, 100%); }
+.di-pop input[type=text] { width: 100%; }
+.di-pop [role=listbox] { list-style: none; margin: .4rem 0 0; padding: 0; max-height: 15rem; overflow: auto; }
+.di-pop [role=option] { display: flex; align-items: center; gap: .5rem; padding: .3rem .5rem; border-radius: 6px; cursor: pointer; font-size: .9rem; }
+.di-pop [role=option] > span:first-of-type { flex: 1; min-width: 0; }
+.di-pop [role=option][aria-selected=true]::after { content: "✓"; color: var(--di-accent); font-weight: 700; }
+.di-pop [role=option].di-active { background: var(--di-mark); }
+.di-pop [role=option]:hover { background: var(--di-bg); }
+.di-pop [role=option].di-active:hover { background: var(--di-mark); }
+.di-pop .di-made { font-style: italic; }
+.di-pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: .4rem; }
+.di-pick-grid [role=option] { flex-direction: column; align-items: stretch; gap: .2rem; padding: .3rem; font-size: .8rem; border: 1px solid var(--di-line); }
+.di-pick-grid [role=option] img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 4px; }
+.di-pick-grid [role=option][aria-selected=true] { border-color: var(--di-accent); box-shadow: 0 0 0 2px var(--di-accent); }
+.di-pick-grid [role=option][aria-selected=true]::after { content: none; }
+.di-pick-more { margin: .3rem .2rem 0; font-size: .8rem; color: var(--di-muted); }
+.di-pick-more:empty { display: none; }
+.di-plain .di-details { display: none; }
+
 /* citation.inator's compiled citations and endnotes in the preview (a site's own styles win through previewClass). */
 .di-article .citation-cite { text-decoration: none; color: var(--di-accent); }
 .di-article .citation-cite:hover { text-decoration: underline; }
@@ -186,3 +270,56 @@
 .di-article .citation-note-actions { display: inline; margin-left: .35rem; }
 .di-article .citation-icon { font-size: .75em; vertical-align: super; text-decoration: none; margin-right: .2rem; }
 .di-article .citation-note-status { font-weight: 600; font-size: .85em; color: var(--di-muted); }
+
+/* Citations typed by hand: meant to be impossible to miss (Randal, 25 Nov 2026). */
+.di-typed { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; padding: .7rem .9rem;
+  background: var(--di-warn-bg); color: var(--di-warn-ink); border-bottom: 2px solid var(--di-warn-line); font-weight: 600; }
+.di-typed[hidden] { display: none; }
+.di-typed-icon { display: inline-grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; flex: none;
+  background: var(--di-warn-line); color: var(--di-warn-bg); font-weight: 800; }
+.di-typed-text { flex: 1 1 22rem; font-weight: 500; }
+.di-typed-actions { display: flex; gap: .4rem; flex-wrap: wrap; }
+
+/* Import review: sections, and actions that stay in view. */
+.di-editor .di-import { padding-bottom: 0; }
+.di-import-section { margin: .75rem 0 0; border: 1px solid var(--di-line); border-radius: 10px; padding: 0 .75rem; background: var(--di-surface); }
+.di-import-section[hidden] { display: none; }
+.di-import-section > summary { cursor: pointer; padding: .55rem 0; font-weight: 700; font-size: 1rem; display: flex; align-items: baseline; gap: .5rem; list-style: none; }
+.di-import-section > summary::-webkit-details-marker { display: none; }
+.di-import-section > summary::before { content: "▸"; font-size: .8em; color: var(--di-muted); width: 1em; flex: none; }
+.di-import-section[open] > summary::before { content: "▾"; }
+.di-import-section > summary .di-import-count { margin-left: auto; text-align: right; }
+.di-import-section > summary:focus-visible { outline: 3px solid var(--di-focus); outline-offset: 2px; border-radius: 6px; }
+.di-import-count { font-weight: 500; color: var(--di-muted); }
+.di-import-todo { border-color: var(--di-warn-line); border-left-width: 5px; }
+.di-import-todo > summary .di-import-count { color: var(--di-warn-ink); font-weight: 700; }
+.di-import-section > .hint { margin: 0 0 .5rem; }
+.di-import-section-body { padding-bottom: .75rem; }
+.di-editor .di-import .di-actions { position: sticky; bottom: 0; z-index: 1; margin: .75rem -1.25rem 0; padding: .7rem 1.25rem;
+  background: var(--di-bg); border-top: 1px solid var(--di-line); box-shadow: 0 -6px 12px -10px rgb(0 0 0 / .35); }
+
+/* Radios and checkboxes drawn the same everywhere, in light and dark (Safari otherwise varies them). */
+.di-editor input[type=radio], .di-editor input[type=checkbox] { accent-color: var(--di-accent); width: 1rem; height: 1rem; margin: 0; flex: none; }
+.di-import-choice { align-items: center; }
+
+/* A button that would refuse (Save while citations are typed by hand): looks unavailable, still explains itself. */
+.di-editor button[aria-disabled=true] { opacity: .45; cursor: not-allowed; }
+.di-editor button[aria-disabled=true]:hover { border-color: var(--di-line); }
+
+/* What each citation becomes, and the reference list. */
+.di-import-writes { margin: .35rem 0 0; font-size: .85rem; color: var(--di-muted); }
+.di-import-writes code { font: .8rem/1.4 var(--di-mono); color: var(--di-ink); background: var(--di-bg); border: 1px solid var(--di-line);
+  border-radius: 4px; padding: .05rem .3rem; word-break: break-word; }
+.di-import-writes-none { font-style: italic; }
+.di-import-refs-list { margin: 0 0 .5rem; padding-left: 1.2rem; font: .9rem/1.45 var(--di-serif); }
+.di-import-unused { color: var(--di-warn-ink); }
+.di-import-unused-note { font-family: var(--di-sans); }
+
+/* What an import did, with Undo. */
+.di-done { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; padding: .55rem .9rem; background: var(--di-surface);
+  border-bottom: 2px solid var(--di-accent); font-weight: 500; }
+.di-done[hidden] { display: none; }
+.di-done > span:first-child { flex: 1 1 22rem; }
+.di-editor .di-done-close { padding: .2rem .55rem; }
+/* A focused control is never hidden behind the dialog's sticky footer. */
+.di-editor .di-import { scroll-padding-bottom: 5.5rem; }

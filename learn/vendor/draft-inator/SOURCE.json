@@ -1,18 +1,18 @@
 {
   "repository": "https://github.com/randal-cox/draft.inator",
-  "ref": "36c79b1",
+  "ref": "b86ed43c8c9fb70767dccb4d5419db28899e57cf",
   "license": "MIT",
   "purpose": "Unmodified accepted editor files for the worked integration lesson.",
   "files": [
     {
       "name": "editor.js",
       "path": "src/editor/editor.js",
-      "blob": "0164a91fcf25fbcc858dc552102f7a014db82440"
+      "blob": "64b188cc40aad9661cc9c025c4b95e36ebbc80a3"
     },
     {
       "name": "importer.js",
       "path": "src/editor/importer.js",
-      "blob": "a3f466f29cdd9b838bf796afa986f35ce5516a83"
+      "blob": "7a98470a2406f8c21445d9bb8eeec0387f4cc505"
     },
     {
       "name": "forms.js",
@@ -22,17 +22,37 @@
     {
       "name": "citation.js",
       "path": "src/blocks/citation.js",
-      "blob": "f43407ecef0306335238ceea3f63a1af03ec00fc"
+      "blob": "b816b3f712ce666e8b6f775601e048cb9383bd61"
     },
     {
       "name": "editor.css",
       "path": "src/editor/editor.css",
-      "blob": "9c54d89ce59d2f9838c7456358f095072ab5c0a2"
+      "blob": "e3b6382e14a293d3e1a21249d8bdf4798cfbe9de"
     },
     {
       "name": "LICENSE",
       "path": "LICENSE",
       "blob": "4357a3335e829b15bfce25e30bcfc2eb00de6e86"
+    },
+    {
+      "name": "frontmatter.js",
+      "path": "src/editor/frontmatter.js",
+      "blob": "b1e3a5ee6d72e28476076c53c26e58ea945aafc6"
+    },
+    {
+      "name": "details.js",
+      "path": "src/editor/details.js",
+      "blob": "e3a8726b014049903bf68032765a02a1d150cbfa"
+    },
+    {
+      "name": "yaml.js",
+      "path": "src/editor/yaml.js",
+      "blob": "0fcd209cd1c15d5728e176438ae12d8d743bb539"
+    },
+    {
+      "name": "picker.js",
+      "path": "src/editor/picker.js",
+      "blob": "c05a21a0cb07dc33fa4c0de6dc4df14924c026c2"
     }
   ]
 }
