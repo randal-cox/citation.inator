@@ -9,7 +9,7 @@ export async function checkInspectIcons(browser, origin, evidence) {
   page.setDefaultTimeout(5000);
   const violations = [];
   const cache = makeCache([{ id: "work", type: "book", title: "A reading", authors: [{ family: "Author" }], issued: [2020], state: "resolved" }]);
-  const { html } = compileCitations("{citation list work}\n\n{citation list work}", cache, {
+  const { html } = compileCitations("{cite list work}\n\n{cite list work}", cache, {
     namespace: "inspect", inspectAppearance: "icon", inspectPlacement: "before", inspectIcon: "/mask-book.svg", inspectIconMode: "mask"
   });
   try {

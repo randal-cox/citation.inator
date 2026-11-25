@@ -21,8 +21,10 @@ export async function checkReaderAccess(browser, origin, evidence) {
     const panel = reader.getByRole("dialog", { name: "Source and access" });
     await panel.waitFor();
     await panel.getByRole("link", { name: "Download PDF" }).waitFor();
+    assert.equal(await panel.locator('[data-citation-part="access-more"]').count(),0);
+    await reader.evaluate(element=>element.configureAccess({accessCollapseAfter:0}));
     const more = panel.locator('[data-citation-part="access-more"]');
-    assert.equal(await more.locator("summary").textContent(), "Other sources (2)");
+    assert.equal(await more.locator("summary").textContent(), "More options (2)");
     await panel.getByRole("button", { name: /Choose your library or reading services/ }).click();
     const settings = reader.getByRole("dialog", { name: "Where you can read" });
     if (evidence) await page.screenshot({ path: join(evidence, "reader-access-settings.png") });
@@ -31,7 +33,7 @@ export async function checkReaderAccess(browser, origin, evidence) {
     await settings.getByRole("button", { name: "Save", exact: true }).click();
     await settings.waitFor({ state: "detached" });
     await panel.getByRole("link", { name: "Find at JSTOR", exact: true }).waitFor();
-    assert.equal(await panel.locator('[data-citation-part="access-more"] summary').textContent(), "Other source (1)");
+    assert.equal(await panel.locator('[data-citation-part="access-more"] summary').textContent(), "More options (1)");
     assert.equal(await page.locator("#access-profile-state").textContent(), "jstor");
     await panel.getByRole("button", { name: "Copy citation" }).click();
     assert(!(await page.evaluate(() => navigator.clipboard.readText())).includes("jstor-handbook"));
@@ -63,7 +65,7 @@ export async function checkReaderAccess(browser, origin, evidence) {
       const { initializeCitationInspector, setAccessProfile } = await import("/dist/citation-inspector.mjs");
       const inspector = document.querySelector("#access-demo-reader");
       initializeCitationInspector(inspector, {
-        accessSettings: "host", strings: {
+        accessSettings: "host", accessCollapseAfter:0, strings: {
           "access.help.unknown": "Choose access", "access.more": { one: "{count} other place", other: "{count} other places" }
         }
       });
@@ -111,7 +113,7 @@ export async function checkReaderAccess(browser, origin, evidence) {
       authors: [{ literal: "Nature" }], issued: [2020], containerTitle: "Journal",
       locations: [{ kind: "full-text", provider: "Perlego", service: "perlego", access: "subscription", url: "https://example.org/preferred" }]
     }]);
-    const fixture = compileCitations("{citation two-copies; nature}", fixtureCache, { namespace: "fixture", citationStyle: "chicago-author-date" });
+    const fixture = compileCitations("{cite two-copies; nature}", fixtureCache, { namespace: "fixture", citationStyle: "chicago-author-date" });
     await page.route(origin + "/access-fixture.html", route => route.fulfill({
       contentType: "text/html",
       body: `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Access fixture</title>

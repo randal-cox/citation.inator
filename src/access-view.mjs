@@ -138,7 +138,7 @@ export class AccessView {
       link.dataset.accessService = item.service;
       link.dataset.accessState = item.access || "unknown";
       if (item.verifiedAt) {
-        const date = new Intl.DateTimeFormat(this.#options.locale, { dateStyle: "medium" }).format(new Date(item.verifiedAt));
+        const date = new Date(item.verifiedAt).toISOString().slice(0, 10);
         const checked = this.text("access.checked", { date });
         link.title += "\n" + checked;
         if (containerIsPanel(list)) {
@@ -181,7 +181,7 @@ export class AccessView {
       if (!entries.length) continue;
       const doc = container.ownerDocument;
       if (key === "other") {
-        const visible = this.#options.accessCollapseAfter ?? 0;
+        const visible = this.#options.accessCollapseAfter ?? 3;
         for (const { link } of entries.slice(0, visible)) this.#appendLink(container, link);
         if (entries.length > visible) {
           const more = node(doc, "details", "", "access-more");

@@ -320,7 +320,7 @@ citation-inspector { display: contents; }
 @media print {
   [data-citation-part~="access-settings"], [data-citation-part~="access-help"] { display: none !important; }
 }
-[data-citation-part~="access-destination"] { display: inline-flex; align-items: center; gap: .35rem; }
+[data-citation-part~="access-destination"] { display: inline-flex; flex-direction: column; align-items: flex-start; gap: .35rem; }
 [data-citation-part~="access-checked"] { font-size: .75em; max-width: 16rem; }
 
 :is([data-citation-part~="tags"]) { display: inline-flex; flex-wrap: wrap; gap: .35em; margin: .3em .4em; vertical-align: middle; font: 500 .8rem/1.4 var(--citation-panel-font, system-ui, sans-serif); }
@@ -343,3 +343,5 @@ citation-inspector { display: contents; }
 
 [data-citation-part~="access"] a[data-access-labeled]{display:inline-flex;gap:.5rem;align-items:center;width:auto;height:auto;min-height:2.35rem;padding:.5rem .75rem;font:600 .95rem/1.4 system-ui,sans-serif;text-decoration:none}
 [data-citation-part~="access"] a[data-access-labeled] svg{flex:none}
+
+[data-citation-part~="backlinks"] a{flex-direction:row-reverse;width:auto;min-width:2.35rem;padding-inline:.3rem;gap:.15rem}[data-citation-part~="backlink-separator"]{margin-inline:.25rem;color:var(--citation-ink,#172848)}

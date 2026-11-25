@@ -8,6 +8,7 @@ import {unzipSync,strFromU8} from 'fflate';
 import {chromium} from 'playwright-core';
 import {checkLearning} from '../scripts/check-learning.mjs';
 
+const {version}=JSON.parse(await readFile(new URL('../package.json',import.meta.url),'utf8'));
 const unexpected=new URL('../site/__unexpected-learning-test.txt',import.meta.url);
 await writeFile(unexpected,'not a public build input',{flag:'wx'});
 try{await assert.rejects(()=>checkLearning(),/Unexpected learning output/);}
@@ -33,6 +34,7 @@ try{
   const origin=`http://127.0.0.1:${server.address().port}/cite.inator/`;
   await page.goto(origin);
   assert.equal(await page.locator('main>h1').innerText(),'Playground');
+  assert.equal(await page.locator('[data-example="html"] .example-preview strong').evaluate(node=>getComputedStyle(node).paddingInlineStart),'0px');
   assert(await page.locator('#example-gallery>button').first().evaluate(node=>node.firstElementChild.tagName==='STRONG'&&node.querySelector('.example-preview').textContent.endsWith(' …')));
   const layout=await page.locator('.playground-layout').evaluate(node=>{const a=node.querySelector('.examples').getBoundingClientRect(),b=node.querySelector('.example-detail').getBoundingClientRect();return {galleryRight:a.right,detailLeft:b.left,galleryTop:a.top,detailTop:b.top};});
   assert(layout.detailLeft>=layout.galleryRight);assert(Math.abs(layout.galleryTop-layout.detailTop)<4);
@@ -50,6 +52,7 @@ try{
   assert(await firstPanel.getByRole('link',{name:'Download PDF',exact:true}).isVisible());
   assert.match(await firstPanel.getByRole('link',{name:'Read online',exact:true}).innerText(),/Read online/);
   assert.match(await firstPanel.getByRole('link',{name:'Download PDF',exact:true}).innerText(),/Download PDF/);
+  const checked=await firstPanel.getByRole('link',{name:'Download PDF',exact:true}).evaluate(node=>{const label=node.parentElement.querySelector('small');return {text:label.textContent,below:label.getBoundingClientRect().top>=node.getBoundingClientRect().bottom};});assert.match(checked.text,/2026-11-24/);assert(checked.below);
   assert.match(await firstPanel.getByRole('button',{name:'Choose your library or reading services',exact:true}).innerText(),/library/);
   await page.keyboard.press('Escape');
   await page.waitForFunction(()=>!document.querySelector('citation-inspector').hasAttribute('open'));
@@ -67,7 +70,7 @@ try{
   assert(await page.locator('#download-cache').isDisabled());
   await page.locator('#reset').click();
   assert(!(await page.locator('#download-cache').isDisabled()));
-  await page.locator('#source').fill('<img src=x onerror="window.bad=1"><style>body{display:none}</style><script>window.bad=2</script><p style="position:fixed;inset:0">Unsafe styling</p>\n\n{citation ioannidis-2005}\n\n{citation endnote}');
+  await page.locator('#source').fill('<img src=x onerror="window.bad=1"><style>body{display:none}</style><script>window.bad=2</script><p style="position:fixed;inset:0">Unsafe styling</p>\n\n{cite ioannidis-2005}\n\n{cite endnote}');
   await page.waitForFunction(()=>!document.getElementById('result').hasAttribute('data-stale'));
   assert.equal(await page.evaluate(()=>window.bad),undefined);
   assert.equal(await page.locator('#result script,#result style,#result [onerror],#result [style]').count(),0);
@@ -79,6 +82,11 @@ try{
     assert(await page.locator('#error').isHidden(),value);
     assert(await page.locator('#result [data-ci-record]').count(),value);
   }
+  await page.locator('[data-example="reference-parts"]').click();assert(await page.locator('#javascript-panel').evaluate(node=>node.open));assert.match(await page.locator('#initialization').innerText(),/citationParts/);
+  assert.equal(await page.locator('#html-panel').evaluate(node=>node.open),false);
+  assert.equal(await page.locator('.downloads .download-button').count(),5);
+  for(const control of await page.locator('.downloads .download-button').all())assert.equal(await control.locator('span[aria-hidden="true"]').innerText(),'↓');
+  assert.equal(await page.getByRole('heading',{name:'Advanced',exact:true}).count(),1);
   await page.locator('[data-example="leading"]').click();
   const leading=await page.locator('#result li').first().evaluate(node=>node.firstElementChild.hasAttribute('data-ci-inspect-icon'));assert(leading);
   assert.equal(await page.locator('#result [data-citation-part="endnotes"]>h2').evaluate(node=>getComputedStyle(node).borderBottomStyle),'none');
@@ -91,7 +99,11 @@ try{
   await page.locator('#source').fill((await page.locator('#source').inputValue())+'\nAfter the references.');
   await page.waitForFunction(()=>!document.getElementById('result').hasAttribute('data-stale'));
   const order=await page.locator('#result').evaluate(node=>({text:node.textContent,html:node.innerHTML}));
-  assert(!order.text.includes('{citation endnote}'));assert(order.html.indexOf('data-citation-part="endnotes"')<order.html.indexOf('After the references.'));
+  assert(!order.text.includes('{cite endnote}'));assert(order.html.indexOf('data-citation-part="endnotes"')<order.html.indexOf('After the references.'));
+  assert.equal(await page.locator('#result [data-citation-part="access-more"]').count(),0);
+  await page.locator('#configuration-panel').evaluate(node=>node.open=true);
+  await page.locator('#configuration').fill(JSON.stringify({...JSON.parse(await page.locator('#configuration').inputValue()),accessCollapseAfter:0}));
+  await page.waitForFunction(()=>!document.getElementById('result').hasAttribute('data-stale'));
   const alternatives=page.locator('#result [data-citation-part="access-more"]');await alternatives.locator('summary').click();
   assert.match(await alternatives.innerText(),/JSTOR/);assert.match(await alternatives.innerText(),/WorldCat/);
   assert.equal(await alternatives.locator('[data-citation-part="backlinks"]').count(),0);
@@ -106,25 +118,25 @@ try{
   await page.waitForFunction(()=>document.getElementById('result').textContent.includes('Notas finales'));
   await page.locator('#result [data-ci-record]').first().click();
   await page.waitForFunction(()=>document.querySelector('citation-inspector').hasAttribute('open'));
-  assert.equal(await page.locator('citation-inspector').evaluate(e=>e.shadowRoot.querySelector('[data-citation-part~="panel-placement"]').getAttribute('aria-label')),'Mover panel de cita');
+  assert.equal(await page.locator('#result citation-inspector').evaluate(e=>e.shadowRoot.querySelector('[data-citation-part~="panel-placement"]').getAttribute('aria-label')),'Mover panel de cita');
   await page.keyboard.press('Escape');
   await page.locator('#reset').click();
   await page.locator('[data-example="first"]').click();
   const trigger=page.locator('#result [data-ci-record]').first();
   await page.waitForFunction(()=>document.querySelector('#result [data-ci-record]')?.getAttribute('role')==='button');
-  await page.locator('citation-inspector').evaluate(e=>e.configureAccess({locale:'es'}));
+  await page.locator('#result citation-inspector').evaluate(e=>e.configureAccess({locale:'es'}));
   assert.match(await trigger.getAttribute('aria-label'),/^Consultar cita:/);
   await trigger.click();
   await page.waitForFunction(()=>document.querySelector('citation-inspector').hasAttribute('open'));
-  await page.locator('citation-inspector [data-citation-part~="panel-menu"] > summary').click();
+  await page.locator('#result citation-inspector [data-citation-part~="panel-menu"] > summary').click();
   await page.getByRole('button',{name:'Dónde puedes leer',exact:true}).click();
-  const sheet=page.locator('citation-inspector [data-citation-part="access-settings"]');
+  const sheet=page.locator('#result citation-inspector [data-citation-part="access-settings"]');
   await sheet.locator('input[name="service"]').first().check();
   await sheet.locator('[name="libraryKind"]').selectOption('proxy');
   await sheet.locator('[name="libraryAddress"]').fill('http://example.org/library');
   await sheet.getByRole('button',{name:'Guardar',exact:true}).click();
   assert.match(await sheet.getByRole('alert').innerText(),/Revisa/);
-  await page.locator('citation-inspector').evaluate(e=>e.configureAccess({locale:'en'}));
+  await page.locator('#result citation-inspector').evaluate(e=>e.configureAccess({locale:'en'}));
   assert(await sheet.locator('input[name="service"]').first().isChecked());
   assert.equal(await sheet.getAttribute('lang'),'en');
   assert(await sheet.getByRole('button',{name:'Save',exact:true}).count());
@@ -147,13 +159,21 @@ try{
   await page.goto(origin+'guide.html');
   assert(await page.getByRole('heading',{name:'Load, compile, initialize',exact:true}).count());
   await page.locator('header .brand').click();assert(page.url().endsWith('/about.html'));
-  assert(await page.getByRole('heading',{name:'References readers can use',exact:true}).isVisible());
+  assert(await page.getByRole('heading',{name:'References for websites',exact:true}).isVisible());
   assert.match(await page.locator('main').innerText(),/MIT license/);
-  assert.match(await page.locator('header .github-link #version').innerText(),/^0\.5\.0/);
+  assert.equal(await page.getByRole('tab',{name:'Citation',exact:true}).getAttribute('aria-selected'),'true');
+  await page.getByRole('tab',{name:'JavaScript',exact:true}).click();assert.match(await page.getByRole('tabpanel').innerText(),/citationStyle/);
+  await page.keyboard.press('ArrowRight');assert.equal(await page.getByRole('tab',{name:'HTML',exact:true}).getAttribute('aria-selected'),'true');
+  await page.keyboard.press('Home');assert.equal(await page.getByRole('tab',{name:'Citation',exact:true}).getAttribute('aria-selected'),'true');
+  const footer=page.locator('body>.learning-credit');assert.equal(await footer.count(),1);
+  await footer.locator('[data-ci-panel="credit"]').hover();
+  const creditDialog=page.getByRole('dialog',{name:'How to cite',exact:true});await creditDialog.waitFor();assert.match(await creditDialog.innerText(),/How to cite this software/);assert.match(await creditDialog.innerText(),/Cox, R/);await page.keyboard.press('Escape');
+
+  assert.equal(await page.locator('header .github-link #version').innerText(),version);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.screenshot({path:join(tmpdir(),'cite-overview-phone.png'),fullPage:true});
   await page.setViewportSize({width:1400,height:1000});
-  const headerPositions=await page.locator('header').evaluate(node=>({nav:node.querySelector('nav').getBoundingClientRect().right,github:node.querySelector('.github-link').getBoundingClientRect().left}));assert(headerPositions.github>headerPositions.nav);
+  const headerPositions=await page.locator('body>header').evaluate(node=>({nav:node.querySelector('nav').getBoundingClientRect().right,github:node.querySelector('.github-link').getBoundingClientRect().left}));assert(headerPositions.github>headerPositions.nav);
   await page.screenshot({path:join(tmpdir(),'cite-overview-desktop.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
 
@@ -178,8 +198,8 @@ try{
     assert.equal(await page.locator('#errors').innerText(),'');
   }
   for(const route of ['about.html','guide.html','notation.html','reference/integration.html','import/','tools/editor-tools.html','host/']){
-    await page.goto(origin+route);assert.deepEqual(await page.locator('header nav[aria-label="Learning"] a').allTextContents(),['Playground','Import','Guide']);
-    await page.locator('header nav').getByRole('link',{name:'Playground',exact:true}).click();assert.equal(new URL(page.url()).hash,'');assert((await page.locator('header').boundingBox()).y>=0);
+    await page.goto(origin+route);assert.equal(await page.locator('body>.learning-credit').count(),1);assert.match(await page.locator('body>.learning-credit').innerText(),/Randal Cox/);assert.deepEqual(await page.locator('header nav[aria-label="Learning"] a').allTextContents(),['Playground','Import','Guide']);
+    await page.locator('header nav').getByRole('link',{name:'Playground',exact:true}).click();assert.equal(new URL(page.url()).hash,'');assert((await page.locator('body>header').boundingBox()).y>=0);
   }
   await page.emulateMedia({colorScheme:'dark'});
   await page.goto(origin+'import/');assert.match(await page.locator('.intro').innerText(),/Turn citations in an existing document/);
@@ -199,7 +219,7 @@ try{
   await page.getByRole('button',{name:'Import citations',exact:true}).click();
   await page.getByRole('button',{name:'Find citations',exact:true}).click();
   await page.getByRole('button',{name:'Convert 2 citations',exact:true}).click();
-  assert.match(await editorSource.inputValue(),/\{citation bell-1992-ritual/);
+  assert.match(await editorSource.inputValue(),/\{cite bell-1992-ritual/);
   assert.match(await page.locator('#record-count').innerText(),/1 staged/);
   const bundleDownload=page.waitForEvent('download');
   await page.locator('#download-bundle').click();
@@ -220,11 +240,11 @@ try{
   const undone=await savedHostBundle();
   assert.equal(undone.source,original);assert.equal(undone.cache.records.length,2);
   assert(!undone.cache.records.some(record=>record.id==='turner-1969-ritual'));
-  for(const marker of ['{citation turner-1969-ritual}','{cite local:turner-1969-ritual}']){
+  for(const marker of ['{cite turner-1969-ritual}','{cite local:turner-1969-ritual}']){
     await editorSource.fill(marker);
     assert((await savedHostBundle()).cache.records.some(record=>record.id==='turner-1969-ritual'));
   }
-  await editorSource.fill('`{citation turner-1969-ritual}`');
+  await editorSource.fill('`{cite turner-1969-ritual}`');
   assert.equal((await savedHostBundle()).cache.records.length,2);
   await editorSource.fill(original);
   await page.screenshot({path:join(tmpdir(),'citation-learning-host.png'),fullPage:true});
@@ -256,7 +276,7 @@ try{
     await page.goto(url);
     await page.locator('[data-ci-record]').first().click();
     await page.waitForFunction(()=>document.querySelector('citation-inspector').hasAttribute('open'));
-    assert.match(await page.locator('citation-inspector').innerText(),/Ioannidis/);
+    assert.match(await page.locator('citation-inspector').first().innerText(),/Ioannidis/);
   }finally{if(child&&!child.killed){child.kill();await new Promise(resolve=>child.once('exit',resolve));}await rm(directory,{recursive:true,force:true});}
   const offlineDirectory=await mkdtemp(join(tmpdir(),'citation-offline-learning-'));
   let offlineServer;

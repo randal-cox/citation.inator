@@ -1,25 +1,25 @@
-Open this journal article citation {citation doi:10.1017/S0003055419000534} to see links to the publisher’s version and the author’s preprint.
+Open this journal article citation {cite doi:10.1017/S0003055419000534} to see links to the publisher’s version and the author’s preprint.
 
-The narrative form puts {citation isbn:9780593656433 | form:narrative} directly in the sentence. That citation links to a hardcover edition. The next citation points to a dissertation PDF in a university repository {citation frost-2020-modern-not-meaningless}.
+The narrative form puts {cite isbn:9780593656433 | form:narrative} directly in the sentence. That citation links to a hardcover edition. The next citation points to a dissertation PDF in a university repository {cite frost-2020-modern-not-meaningless}.
 
-A reading list can hold several kinds of evidence side by side {citation doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}.
+A reading list can hold several kinds of evidence side by side {cite doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}.
 
-Try a page locator on Molly Farneth’s print edition {citation isbn:9780691198927 | locator:34}. Open the citation to see two library services for the print edition.
+Try a page locator on Molly Farneth’s print edition {cite isbn:9780691198927 | locator:34}. Open the citation to see two library services for the print edition.
 
-Related reading can share the same parentheses {citation isbn:9780691198927; isbn:9780593656433 | prefix:see also | locator:"p. 34"}. The lettered links in Farneth’s endnote return to each mention.
+Related reading can share the same parentheses {cite isbn:9780691198927; isbn:9780593656433 | prefix:see also | locator:"p. 34"}. The lettered links in Farneth’s endnote return to each mention.
 
-For an explicit parenthetical citation, use Farneth’s book {citation isbn:9780691198927 | form:parenthetical}. If you have already written Farneth’s name, you can show just the year {citation isbn:9780691198927 | form:suppress-author}.
+For an explicit parenthetical citation, use Farneth’s book {cite isbn:9780691198927 | form:parenthetical}. If you have already written Farneth’s name, you can show just the year {cite isbn:9780691198927 | form:suppress-author}.
 
-{citation isbn:9780691198927 | form:author-only} can also appear by name alone in a sentence. A parenthetical aside can give just the name {citation isbn:9780691198927 | form:suppress-year}.
+{cite isbn:9780691198927 | form:author-only} can also appear by name alone in a sentence. A parenthetical aside can give just the name {cite isbn:9780691198927 | form:suppress-year}.
 
-Here is a marker displayed as literal text: \{citation endnote\}. In the source, a backslash before each brace keeps it from inserting endnotes. A custom label can point to {citation doi:10.1017/S0003055419000534 | label:"the study | journal article; preprint available"}. An unresolved reference can display its supplied fallback {citation local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}.
+Here is a marker displayed as literal text: \{cite endnote\}. In the source, a backslash before each brace keeps it from inserting endnotes. A custom label can point to {cite doi:10.1017/S0003055419000534 | label:"the study | journal article; preprint available"}. An unresolved reference can display its supplied fallback {cite local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}.
 
-PubMed {citation pmid:16060722} and PubMed Central {citation pmcid:PMC1182327} lead to the same article. Its bare DOI {citation 10.1371/journal.pmed.0020124} and DOI URL {citation https://doi.org/10.1371/journal.pmed.0020124} share the same endnote.
+PubMed {cite pmid:16060722} and PubMed Central {cite pmcid:PMC1182327} lead to the same article. Its bare DOI {cite 10.1371/journal.pmed.0020124} and DOI URL {cite https://doi.org/10.1371/journal.pmed.0020124} share the same endnote.
 
-Other sources can use an arXiv ID {citation arxiv:1706.03762}, a dataset DOI {citation dataset:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f}, a software DOI {citation software:10.5281/zenodo.3960218}, or a URL {citation url:https://zenodo.org/records/3960218}.
+Other sources can use an arXiv ID {cite arxiv:1706.03762}, a dataset DOI {cite dataset:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f}, a software DOI {cite software:10.5281/zenodo.3960218}, or a URL {cite url:https://zenodo.org/records/3960218}.
 
-This edition carries both its original publication date and the year of the translation {citation isbn:9780029079379}.
+This edition carries both its original publication date and the year of the translation {cite isbn:9780029079379}.
 
-{citation endnote}
+{cite endnote}
 
-{citation evidence} · {citation credit}
+{cite evidence} · {cite credit}

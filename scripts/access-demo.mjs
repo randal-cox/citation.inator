@@ -28,10 +28,10 @@ const cache = makeCache([{
   ] }]
 }]);
 
-const main = compileCitations(`Open the handbook {citation harbor-handbook} to compare an explicitly open PDF with subscription and library destinations. The collection index {citation harbor-index} has no matching service.
+const main = compileCitations(`Open the handbook {cite harbor-handbook} to compare an explicitly open PDF with subscription and library destinations. The collection index {cite harbor-index} has no matching service.
 
-{citation endnote}`, cache, { namespace: "access-example", citationStyle: "chicago-author-date", endnotesHeading: "Access references" });
-const media = compileCitations("{citation list harbor-artwork}", cache, {
+{cite endnote}`, cache, { namespace: "access-example", citationStyle: "chicago-author-date", endnotesHeading: "Access references" });
+const media = compileCitations("{cite list harbor-artwork}", cache, {
   namespace: "media-example", citationStyle: "chicago-author-date", inspectAppearance: "icon", inspectPlacement: "before"
 });
 export const accessDemo = `<section id="access-preview" aria-labelledby="access-preview-title">

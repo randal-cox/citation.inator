@@ -64,16 +64,16 @@ test("the configured keyword applies to citations, endnotes, evidence and softwa
   assert.equal(output.html.match(/id="custom-evidence"/g).length, 1);
   assert.equal(output.html.match(/href="#custom-evidence"/g).length, 2);
   assert.match(output.html, /Cox, R\..*Computer software/);
-  assert.equal(compiler.parse("{citation credit}")[0].type, "text");
+  assert.equal(compiler.parse("{cite credit}")[0].type, "text");
   assert.equal(compiler.parse(String.raw`\{ref credit\}`).some(token => token.type === "annotation"), false);
-  assert.equal(compiler.parse("{cite local-work}")[0].type, "citation");
+  assert.equal(compiler.parse("{cite local-work}")[0].type, "text");
   assert.throws(() => createCitationCompiler({ citationKeyword: "Bad keyword" }), /lowercase citation keyword/);
   assert.throws(() => createCitationCompiler({ citationKeyword: null }), /lowercase citation keyword/);
   assert.throws(() => parseDirectives("", { citationKeyword: ["ref"] }), /lowercase citation keyword/);
 });
 
 test("a custom class prefix applies to every generated part without changing anchors", () => {
-  const source = `{citation ${key}} {citation credit}\n\n{citation endnote}`;
+  const source = `{cite ${key}} {cite credit}\n\n{cite endnote}`;
   const built = compileCitations(source, cache);
   const custom = createCitationCompiler({ classPrefix: "my-site" }).compile(source, cache);
   assert.match(built.html, /class="citation-cite"/);

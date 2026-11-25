@@ -46,7 +46,7 @@ Add catalogue entries with `id`, `label` and `kind`. Relabel an entry with `{ id
 
 `access` accepts `open`, `subscription`, `purchase`, `loan`, or `unknown`. Missing values become `unknown`. A PDF, full-text location, or free catalogue entry needs `access: "open"` on the location to enter **Read free**. PDF and preprint locations require a verification timestamp.
 
-The grouped layout shows open copies first, selected services next, and remaining destinations behind a count disclosure. `accessCollapseAfter` sets how many remaining destinations appear before the disclosure, with a default of zero. `accessLayout: "flat"` keeps links visible. `access-layout` is the corresponding element attribute. Existing hidden-provider preferences apply.
+The grouped layout shows open copies first, selected services next, and remaining destinations visible up to the configured limit, then behind a count disclosure. `accessCollapseAfter` sets how many remaining destinations appear before the disclosure, with a default of three. Small sets stay visible; a count disclosure is used only for additional destinations. `accessLayout: "flat"` keeps links visible. `access-layout` is the corresponding element attribute. Existing hidden-provider preferences apply.
 
 ## Profile and events
 
@@ -118,3 +118,5 @@ OpenURL field mapping follows the [OCLC reference](https://help.oclc.org/Resourc
 ## Once-per-list access prompts (0.3.0)
 
 When the reader has not configured an access profile, the 0.3.0 browser build shows one settings prompt after each owned reading/reference list, rather than repeating it in every item. Each inspector panel keeps its settings prompt. The list prompt is outside the numbered items, so filtering items does not hide the only prompt or change reference numbering. Lists outside the component are never modified; standalone reference items retain local help. Saving/clearing settings updates these controls and restores focus when a replacement helper survives. Disabling access settings removes the prompts; it does not guarantee a surviving prompt to focus.
+
+Checked dates in source panels appear below their reading buttons in compact YYYY-MM-DD format. Endnote return controls include a return arrow plus their mention letter, separated from reading destinations by a small divider.

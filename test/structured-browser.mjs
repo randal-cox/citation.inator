@@ -12,7 +12,7 @@ export async function checkStructuredBrowser({ page, directory, origin }) {
   const first = planCitationOccurrences([{ occurrenceId: "detail-occurrence-caption", recordId: "atlas", label: "Atlas source" }], cache, { namespace: "map" });
   const updated = planCitationOccurrences([{ occurrenceId: "detail-occurrence-caption", recordId: "survey", label: "Survey source" }], cache, { namespace: "map" });
   const second = planCitationOccurrences([{ occurrenceId: "caption", recordId: "survey", label: "Survey source" }], cache, { namespace: "map-occurrence-detail" });
-  const legacy = compileCitations("{citation atlas}", cache, { namespace: "citation-3-map" });
+  const legacy = compileCitations("{cite atlas}", cache, { namespace: "citation-3-map" });
   await writeFile(join(directory, "structured.html"), `<!doctype html><html lang="en">
     <head><meta charset="utf-8"><title>Structured citations</title><link rel="stylesheet" href="/citation-inspector.css">
     <script type="module" src="/structured-fixture.mjs"></script></head><body>

@@ -27,7 +27,7 @@ test("independent i18n: plural categories use the selected locale", () => {
 test("independent i18n: incomplete plural overrides fall back per category", () => {
   const messages = createCitationMessages({ strings: { "access.more": { one: "One remaining" } } });
   assert.equal(messages.text("access.more", { count: 1 }), "One remaining");
-  assert.equal(messages.text("access.more", { count: 2 }), "Other sources (2)");
+  assert.equal(messages.text("access.more", { count: 2 }), "More options (2)");
 });
 
 test("independent i18n: instances snapshot overrides and do not contaminate defaults", () => {
@@ -39,7 +39,7 @@ test("independent i18n: instances snapshot overrides and do not contaminate defa
   assert.equal(first.text("access.save"), "Keep");
   assert.equal(first.text("access.more", { count: 1 }), "single");
   assert.equal(second.text("access.save"), "Save");
-  assert.equal(second.text("access.more", { count: 1 }), "Other source (1)");
+  assert.equal(second.text("access.more", { count: 1 }), "More options (1)");
   assert(Object.isFrozen(first));
   assert(Object.isFrozen(citationLocales));
   assert(Object.isFrozen(citationLocales.en));
@@ -83,7 +83,7 @@ test("independent i18n: malformed configuration fails with TypeError", () => {
 const translationCache = makeCache([{ id: "field", title: "Original English Title", authors: [{ family: "Mori" }], issued: [2001], state: "resolved", identifiers: [{ scheme: "doi", value: "10.1234/field" }], locations: [{ provider: "Example repository", kind: "pdf", verifiedAt: "2026-11-23", url: "https://example.org/field.pdf" }] }]);
 
 test("independent i18n: compiled static labels translate without changing metadata or citation style", () => {
-  const source = "{citation field}\n\n{citation endnote}\n\n{citation evidence} {citation credit}";
+  const source = "{cite field}\n\n{cite endnote}\n\n{cite evidence} {cite credit}";
   const spanish = compileCitations(source, translationCache, { locale: "es", citationStyle: "chicago-author-date", inspectAppearance: "icon" }).html;
   const english = compileCitations(source, translationCache, { citationStyle: "chicago-author-date" }).html;
   assert.match(spanish, />Notas finales<\/h2>/);
@@ -102,7 +102,7 @@ test("independent i18n: compiled static labels translate without changing metada
 test("independent i18n: hostile overrides are escaped at compiler text and attribute sinks", () => {
   const attack = '\"><img src=x onerror="alert(1)"><script>alert(2)</script>';
   const strings = Object.fromEntries(Object.keys(citationLocales.en).map(key => [key, attack]));
-  const html = compileCitations("{citation field}\n\n{citation endnote}\n\n{citation evidence} {citation credit}", translationCache, { strings, inspectAppearance: "icon" }).html;
+  const html = compileCitations("{cite field}\n\n{cite endnote}\n\n{cite evidence} {cite credit}", translationCache, { strings, inspectAppearance: "icon" }).html;
   assert.match(html, /&lt;img src=x onerror=/);
   assert.doesNotMatch(html, /<img src=x|<script>alert/);
   assert.match(html, /data-ci-inspect-icon/);
@@ -111,13 +111,13 @@ test("independent i18n: hostile overrides are escaped at compiler text and attri
 test("independent i18n: built-in counts format locally while custom counts retain numeric plural context", () => {
   const messages = createCitationMessages({ locale: "ar" });
   const count = 1234;
-  assert.equal(messages.text("access.more", { count }), `Other sources (${new Intl.NumberFormat("ar").format(count)})`);
+  assert.equal(messages.text("access.more", { count }), `More options (${new Intl.NumberFormat("ar").format(count)})`);
   const custom = createCitationMessages({ locale: "ar", strings: { "access.more": { two: "raw {count}; display {countLabel}", other: "other" } } });
   assert.equal(custom.text("access.more", { count: 2 }), `raw 2; display ${new Intl.NumberFormat("ar").format(2)}`);
 });
 
 test("independent i18n: unresolved inline fallback follows UI locale", () => {
-  const html = compileCitations("{citation missing}\n\n{citation endnote}", makeCache([]), { locale: "es" }).html;
+  const html = compileCitations("{cite missing}\n\n{cite endnote}", makeCache([]), { locale: "es" }).html;
   assert.match(html, />Cita sin resolver<\/a>/);
   assert.doesNotMatch(html, /Unresolved citation/);
 });

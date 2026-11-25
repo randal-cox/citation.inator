@@ -35,7 +35,7 @@ test('narrative multi-year groups preview and re-scan every identity without enc
  const ids=items(a).map(i=>i.candidates[0].recordId);
  const p=processImportRequest({...ctx,action:'preview',review:a.review,reviewId:a.review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:ids.map(recordId=>({recordId}))}]});
  assert.equal(p.edits.length,1);
- const marker=scanCitationMarkers(p.edits[0].text)[0].token;
+ const marker=scanCitationMarkers(p.edits[0].text,{citationKeyword:ctx.citationKeyword})[0].token;
  assert.equal(marker.type,'citation');assert.deepEqual(marker.items.map(i=>i.identifier.value),ids);assert.ok(marker.items.every(i=>i.form==='narrative'));
  assert.match(p.html,/Bell \(1992\)/);assert.match(p.html,/Bell \(1997\)/);
  assert.doesNotMatch(p.html,/<span class="citation-cluster">\(/);

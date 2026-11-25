@@ -33,3 +33,11 @@ Set the repository's Pages source to GitHub Actions. Push to `main`, or dispatch
 `npm run test:learn` rebuilds the learning output and runs a browser flow under a project subdirectory. Set `CITATION_CHROME` only when intentionally selecting another test executable. The flow exercises source/configuration/reset, invalid JSON, sanitizer negatives, missing assets, shared bibliography anchors, saved import, native intake, real editor cancellation/import/staging/undo and a downloaded copied-file starter. Full baseline tests and clean npm/minimum-Node checks remain part of the milestone procedure.
 
 Native examples are prebuilt public assets, so ordinary site builds need only npm. To regenerate them, use `scripts/make-learning-documents.py` with python-docx/reportlab and export `learn/documents/sample.md` through Pandoc to ODT. Re-render and visually inspect every native artifact after changes. Their checksums are generated from the delivered bytes.
+
+## Overview and shared credits
+
+The overview explains website citation maintenance and headline features, then exposes the minimal article, JavaScript and HTML in keyboard-accessible tabs. Every generated page uses one shared footer: author/ORCID on the left, MIT license and the library's own software-credit hover on the right. Footer credits are compiled with the same configured marker grammar as the examples.
+
+## Recipe mechanisms
+
+Each card introduction names the mechanism and where to inspect it: marker fields in Source, metadata/configuration/tools in JavaScript, or generated structure in HTML. JavaScript and pretty-printed HTML sit side by side before the download buttons; relevant disclosures open on example selection and retain the reader’s choice during edits. Metadata-driven recipes include complete cited records, with the demonstrated fields first. Everyday examples precede the Advanced group.

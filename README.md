@@ -5,7 +5,7 @@ Write DOI or ISBN markers in your article and turn them into linked references, 
 ```text
 A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
 
-{citation endnote}
+{cite endnote}
 ```
 
 The optional `note:` is a generated work label for editors; tools may replace it, and it does not appear in the reader’s citation. A build or import step resolves bibliographic metadata and keeps a generated cache. Authors normally write identifiers, rather than reference JSON. Curated records remain useful for sources without identifiers and for site-specific metadata. [Load and initialize](#load-and-initialize) · [Overview](https://randal-cox.github.io/cite.inator/about.html) · [Try the examples](https://randal-cox.github.io/cite.inator/).
@@ -15,6 +15,8 @@ The optional `note:` is a generated work label for editors; tools may replace it
 **Article tooling, introduced in 0.2.0.** Editor notes, a site-wide bibliography and tag filters are included. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/cite.inator/releases).
 
 The 0.5.0 project name is **cite.inator**; released 0.4.0 archives retain their original `citation-inator` package name. Existing browser assets, markup and stored-data contracts remain compatible; see [the naming migration](docs/naming-migration.md).
+
+**Development 0.5.1 preview:** the default marker is `cite` for both works and directives; there are no automatic aliases. [Migration instructions](docs/notation-migration.md). Final release awaits draft approval.
 
 ## Load and initialize
 
@@ -37,7 +39,7 @@ To serve the demos from the checkout, run `npm start` from the repository root.
 </citation-inspector>
 ```
 
-To write `{ref …}` instead of `{citation …}` and emit classes such as `essay-cite`, set `citationKeyword: "ref"` and `classPrefix: "essay"` when compiling. Match the browser’s `class-prefix` to the compiler’s setting. The browser initializer also accepts `classPrefix`, `panelTitle`, `panelIcon`, `evidenceTitle`, `evidenceIcon`, `creditTitle` and `creditIcon`. [Configuration examples](docs/integration.md#load-and-initialize)
+To write `{ref …}` instead of `{cite …}` and emit classes such as `essay-cite`, set `citationKeyword: "ref"` and `classPrefix: "essay"` when compiling. Match the browser’s `class-prefix` to the compiler’s setting. The browser initializer also accepts `classPrefix`, `panelTitle`, `panelIcon`, `evidenceTitle`, `evidenceIcon`, `creditTitle` and `creditIcon`. [Configuration examples](docs/integration.md#load-and-initialize)
 
 ## Try programmatic citations
 
@@ -62,11 +64,11 @@ Artwork and image records support creator attribution, literal date ranges, righ
 ## Write a citation
 
 ```text
-Empathic concern can deepen partisan polarization {citation doi:10.1017/S0003055419000534}.
+Empathic concern can deepen partisan polarization {cite doi:10.1017/S0003055419000534}.
 
-{citation evidence} · {citation credit}
+{cite evidence} · {cite credit}
 
-{citation endnote}
+{cite endnote}
 ```
 
 ![An open citation window beside the reading and its linked endnotes](docs/citation-example.png)
@@ -86,7 +88,7 @@ For Chicago author–date, use the same `authors[].id` on variant spellings of o
 
 Keep the default `suffixScope: "fragment"` for articles with their own reference lists. Use `suffixScope: "cache"` for a work split across pages that share a bibliography. [Year-letter options](docs/integration.md#shared-excerpts-scoped-endnotes-and-reading-lists)
 
-Write `{citation isbn:9780593656433 | prefix:see also | locator:34}` for an affix and locator. Use `citationParts` for editorial italics or bold. Use `originalIssued` and `issued` for the original and edition dates. Use `library` and `full-text` locations for access links. Apply reader preferences with `accessProviders` and `hiddenAccessProviders`. The panel exposes an `open` attribute while visible.
+Write `{cite isbn:9780593656433 | prefix:see also | locator:34}` for an affix and locator. Use `citationParts` for editorial italics or bold. Use `originalIssued` and `issued` for the original and edition dates. Use `library` and `full-text` locations for access links. Apply reader preferences with `accessProviders` and `hiddenAccessProviders`. The panel exposes an `open` attribute while visible.
 
 See the [citation-style catalogue and support matrix](docs/citation-styles.md). Version 0.3.0 also includes the host reference-prefix hook and once-per-list access help, documented in the integration guide.
 

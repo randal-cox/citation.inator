@@ -14,7 +14,7 @@ For a static editor preview, copy `dist/citation-compiler.mjs` and `dist/THIRD_P
 ```js
 import { compileMarkdown } from './citation-compiler.mjs';
 const result = compileMarkdown(
-  'Practice comes first {citation bell-1992-ritual | locator:12}.\n\n{citation endnote}',
+  'Practice comes first {cite bell-1992-ritual | locator:12}.\n\n{cite endnote}',
   cache,
   { citationStyle: 'chicago-author-date', namespace: 'editor-preview' }
 );
@@ -29,13 +29,13 @@ The 0.3.0 release adds `markerKind` to `cite-inator/tools`, the self-contained `
 
 ```js
 import { markerKind } from './citation-tools.mjs'; // also citation-inspector.mjs
-markerKind('{citation list-2001}'); // "citation"
-markerKind('{citation list alpha}'); // "list"
-markerKind('{citation evidence}'); // "annotation"
+markerKind('{cite list-2001}'); // "citation"
+markerKind('{cite list alpha}'); // "list"
+markerKind('{cite evidence}'); // "annotation"
 markerKind('{ref endnote}', { citationKeyword: 'ref' }); // "endnote"
 ```
 
-The result is `citation`, `endnote`, `list`, `nocite`, `annotation`, or `malformed`. It delegates to the compiler grammar and classifies exactly one complete trimmed marker, without a cache or network. Leading/trailing prose, multiple markers, escaped literal examples and malformed options are `malformed`; invalid configuration or non-string input throws. Legacy `{cite …}` and `{endnotes}` follow their actual compiler meanings, so callers need no duplicate reserved-word regex. For example `{cite evidence}` is a work citation, whereas `{citation evidence}` is an annotation directive. `local:` explicitly addresses record IDs that collide with directive names.
+The result is `citation`, `endnote`, `list`, `nocite`, `annotation`, or `malformed`. It delegates to the compiler grammar and classifies exactly one complete trimmed marker, without a cache or network. Leading/trailing prose, multiple markers, escaped literal examples and malformed options are `malformed`; invalid configuration or non-string input throws. Legacy `{cite …}` and `{endnotes}` follow their actual compiler meanings, so callers need no duplicate reserved-word regex. For example `{cite evidence}` is a work citation, whereas `{cite evidence}` is an annotation directive. `local:` explicitly addresses record IDs that collide with directive names.
 
 For a works picker whose descriptions come from `describeCitation`, keep editor/build notes in the same context:
 
@@ -94,8 +94,8 @@ Run `npm start` in the repository and open [the shared bibliography example](htt
 ## Editor-only notes
 
 ```text
-{citation source-one | note:"Cox 1995"}
-{citation source-one | note:"Cox 1995a"; source-two | note:"Cox 1995b"}
+{cite source-one | note:"Cox 1995"}
+{cite source-one | note:"Cox 1995a"; source-two | note:"Cox 1995b"}
 ```
 
 A quoted `note:` belongs to one cited item. A group can have one per item. It does not change reader HTML, accessible names, return-link context, diagnostics or returned bibliographic records, even when the work is unresolved. It is different from `label:` (which changes reader text), the legacy unresolved display hint, and a bibliographic record's `note` field. Empty notes are accepted; duplicate/malformed note options follow the usual malformed-notation diagnostics. Notes are not supported on list/endnote/evidence/credit directives.
@@ -147,7 +147,7 @@ A description request is `{ "citation": "source-one", "cache": CACHE, "options":
 ## Tags contributed by citation markers
 
 ```text
-{citation source-one | note:"Cox 1995" | tags:ritual-theory,consent-ethics}
+{cite source-one | note:"Cox 1995" | tags:ritual-theory,consent-ethics}
 ```
 
 `tags:` is per cited item, like `note:`. It contributes metadata without changing reader output or diagnostics by default; `annotateMarkers` retains it when refreshing notes. IDs follow the same syntax as record tags. Repeated IDs within one item count once. Invalid or duplicate `tags:` options make the marker malformed under the normal notation rules. List-directive `tags:` continues to mean build-time filtering, not a contribution.
@@ -186,7 +186,7 @@ const siteOccurrences = createSiteOccurrenceIndex([
   { href: '/essays/one/', label: 'Essay one', occurrences: first.occurrences },
   { href: '/essays/two/', label: 'Essay two', occurrences: second.occurrences }
 ]);
-const bibliography = compileCitations('{citation list source-one; source-two}', cache, {
+const bibliography = compileCitations('{cite list source-one; source-two}', cache, {
   namespace: 'site-bibliography', siteOccurrences
 });
 ```
@@ -231,7 +231,7 @@ const tagCatalogue = [
   { id: 'praxis', label: 'Praxis' }
 ];
 const options = { tagCatalogue, listFilters: true };
-const result = compileCitations('{citation list source-one; source-two}', cache, options);
+const result = compileCitations('{cite list source-one; source-two}', cache, options);
 ```
 
 Tag IDs are 1–64 lowercase ASCII letters/digits/hyphens, starting with a letter or digit. Record normalization drops invalid IDs and removes duplicates. The catalogue needs unique valid IDs and nonempty labels. Unknown record tags fall back to their IDs as text and produce `unknown-tag` diagnostics. Invalid icon URLs fall back to text with `invalid-tag-icon` diagnostics. Mask icons use `currentColor`; labels remain visible if a file fails to load, CSP blocks the image, or forced colours hide the icon. No inline SVG/HTML catalogue input is accepted. Include icon assets in `img-src` under your CSP. Absolute icon URLs need a matching `siteOrigin`; relative same-origin paths work directly.
@@ -247,9 +247,9 @@ Each tag has `data-ci-tag="theory"` (using its own ID), in static HTML and panel
 Build-time filters apply only to the explicitly named list:
 
 ```text
-{citation list source-one; source-two | tags:theory}
-{citation list source-one; source-two | tags:theory,praxis | tag-mode:any}
-{citation list source-one; source-two | tags:theory,praxis | tag-mode:all | sort:author}
+{cite list source-one; source-two | tags:theory}
+{cite list source-one; source-two | tags:theory,praxis | tag-mode:any}
+{cite list source-one; source-two | tags:theory,praxis | tag-mode:all | sort:author}
 ```
 
 The default is any-of. `tag-mode:all` requires every listed tag. Filtering happens before record-use and year-letter planning. An empty selection has an explicit empty-result message. It does not pull additional records out of the cache or change other citations/endnotes. Browser hiding after compilation preserves the already-compiled reference labels.

@@ -40,7 +40,7 @@ test("the five named styles format books and journal articles and Vancouver numb
     vancouver: [["1, p. 34", "2", "1"], /Lerman D, Iwata B\. An example study\. Example J\. 1985;4\(2\):12–34\./]
   };
   for (const [citationStyle, [expected, bibliography]] of Object.entries(styles)) {
-    const { html } = compileCitations("{citation ostrom | locator:34}. {citation study}. {citation ostrom}.", cache, { citationStyle });
+    const { html } = compileCitations("{cite ostrom | locator:34}. {cite study}. {cite ostrom}.", cache, { citationStyle });
     assert.deepEqual(labels(html), expected, citationStyle);
     assert.match(html, bibliography, citationStyle);
     assert.equal(html.indexOf('id="cit-note-ostrom"') < html.indexOf('id="cit-note-study"'), citationStyle === "vancouver");
@@ -52,7 +52,7 @@ test("MLA keeps distinguishing titles when the author is already in the sentence
   const first = { ...book, title: "Common title: First subtitle" };
   const second = { ...book, id: "other", identifiers: [], title: "Common title: Second subtitle" };
   const { html } = compileCitations(
-    "{citation ostrom | locator:34}. Ostrom {citation other | form:suppress-author | locator:34}. {citation other | form:narrative | locator:34}.",
+    "{cite ostrom | locator:34}. Ostrom {cite other | form:suppress-author | locator:34}. {cite other | form:narrative | locator:34}.",
     makeCache([first, second]), { citationStyle: "mla" });
   assert.deepEqual(labels(html), [
     "Ostrom, Common title: First subtitle 34", "Common title: Second subtitle 34",
@@ -62,7 +62,7 @@ test("MLA keeps distinguishing titles when the author is already in the sentence
 
 test("MLA distinguishes identical titles when the records have separate edition identifiers", () => {
   const digital = { ...book, id: "digital", identifiers: [{ scheme: "doi", value: "10.1000/example" }] };
-  const { html, diagnostics } = compileCitations("{citation ostrom | locator:34}; {citation digital | locator:34}.",
+  const { html, diagnostics } = compileCitations("{cite ostrom | locator:34}; {cite digital | locator:34}.",
     makeCache([book, digital]), { citationStyle: "mla" });
   assert.deepEqual(labels(html), [
     "Ostrom, Governing the Commons, ISBN 9780521405997 34", "Ostrom, Governing the Commons, DOI 10.1000/example 34"
@@ -72,16 +72,16 @@ test("MLA distinguishes identical titles when the records have separate edition 
 
 test("MLA asks for editorial labels only where identical titles still need them", () => {
   const local = makeCache([{ ...book, identifiers: [] }, { ...book, id: "other", identifiers: [] }]);
-  const result = compileCitations('{citation ostrom | label:"Print copy"}. {citation other | label:"Local archive copy"}.',
+  const result = compileCitations('{cite ostrom | label:"Print copy"}. {cite other | label:"Local archive copy"}.',
     local, { citationStyle: "mla" });
   assert.deepEqual(labels(result.html), ["Print copy", "Local archive copy"]);
   assert.deepEqual(result.diagnostics, []);
-  assert.equal(compileCitations("{citation ostrom; other}", local, { citationStyle: "mla" }).diagnostics.length, 2);
+  assert.equal(compileCitations("{cite ostrom; other}", local, { citationStyle: "mla" }).diagnostics.length, 2);
 });
 
 test("equivalent ISBN forms share an endnote and conflicting records cannot claim the same edition", () => {
   const isbn10 = { scheme: "isbn", value: "0521405998" };
-  const { html, diagnostics } = compileCitations("{citation isbn:0521405998}. {citation isbn:9780521405997}.", cache);
+  const { html, diagnostics } = compileCitations("{cite isbn:0521405998}. {cite isbn:9780521405997}.", cache);
   assert.deepEqual(labels(html), ["Ostrom, 1990", "Ostrom, 1990"]);
   assert.equal(nodes(html, node => node.tagName === "li" && attribute(node, "id")).length, 1);
   assert.deepEqual(diagnostics, []);
@@ -110,45 +110,45 @@ test("Chicago integration preserves formatted text, adds year suffixes and suppo
 });
 
 test("HTML compilation preserves author markup, skips non-prose, and places supplements inside the body", () => {
-  const source = '<!doctype html><html><head><title>{citation study}</title></head><body><p class=lead>Some <em>text</em> &amp; {citation ostrom}. <a href="#legacy">{citation study}</a></p><pre>{citation study}</pre><!--{citation study}--><p>{citation endnote}</p><p>{citation credit}</p></body></html>';
+  const source = '<!doctype html><html><head><title>{cite study}</title></head><body><p class=lead>Some <em>text</em> &amp; {cite ostrom}. <a href="#legacy">{cite study}</a></p><pre>{cite study}</pre><!--{cite study}--><p>{cite endnote}</p><p>{cite credit}</p></body></html>';
   const { html, cache: subset } = compileHTML(source, cache, { namespace: "body-copy" });
   assert.deepEqual(labels(html), ["Ostrom, 1990"]);
   assert.deepEqual(subset.records.map(record => record.id), ["ostrom"]);
   assert.match(html, /<p class=lead>Some <em>text<\/em> &amp; /);
-  assert.match(html, /<a href="#legacy">{citation study}<\/a><\/p><pre>{citation study}<\/pre><!--{citation study}--><section/);
+  assert.match(html, /<a href="#legacy">{cite study}<\/a><\/p><pre>{cite study}<\/pre><!--{cite study}--><section/);
   assert.match(html, /id="body-copy-credit"[\s\S]*<\/section><\/body><\/html>$/);
 });
 
 test("HTML keeps notation literal in native and ARIA controls", () => {
-  const source = '<label>{citation study}</label><details><summary>{citation study}</summary><p>{citation ostrom}</p></details><span role="button" tabindex="0">{citation study}</span><div contenteditable>{citation study}</div>';
+  const source = '<label>{cite study}</label><details><summary>{cite study}</summary><p>{cite ostrom}</p></details><span role="button" tabindex="0">{cite study}</span><div contenteditable>{cite study}</div>';
   const { html } = compileHTML(source, cache);
   assert.deepEqual(labels(html), ["Ostrom, 1990"]);
-  assert.ok(html.includes('<label>{citation study}</label>'));
-  assert.ok(html.includes('<summary>{citation study}</summary>'));
-  assert.ok(html.includes('<span role="button" tabindex="0">{citation study}</span>'));
+  assert.ok(html.includes('<label>{cite study}</label>'));
+  assert.ok(html.includes('<summary>{cite study}</summary>'));
+  assert.ok(html.includes('<span role="button" tabindex="0">{cite study}</span>'));
 });
 
 test("APA inserts a hyphen before suffixes on undated entries", () => {
   const first = { ...book, issued: null, citationParts: [{ text: "Ostrom, E. (n.d.). " }, { text: book.title, emphasis: "italic" }] };
   const second = { ...first, id: "other", identifiers: [], title: "Second work", citationParts: [] };
-  const { html } = compileCitations("{citation ostrom; other}", makeCache([first, second]), { citationStyle: "apa" });
+  const { html } = compileCitations("{cite ostrom; other}", makeCache([first, second]), { citationStyle: "apa" });
   assert.deepEqual(labels(html), ["Ostrom, n.d.-a", "Ostrom, n.d.-b"]);
   assert.match(html, /\(n\.d\.-a\)\. <em>Governing the Commons<\/em>/);
 });
 
 test("Markdown preserves author emphasis, skips code, and protects escapes and directive punctuation", () => {
-  const { html } = compileMarkdown('An *italic* claim {citation ostrom | prefix:"see *also*"} and `{citation study}`.\n\n\\{citation study}', cache);
+  const { html } = compileMarkdown('An *italic* claim {cite ostrom | prefix:"see *also*"} and `{cite study}`.\n\n\\{cite study}', cache);
   assert.deepEqual(labels(html), ["see *also* Ostrom, 1990"]);
   assert.match(html, /<em>italic<\/em>/);
-  assert.match(html, /<code>{citation study}<\/code>/);
-  assert.match(html, /<p>{citation study}<\/p>/);
+  assert.match(html, /<code>{cite study}<\/code>/);
+  assert.match(html, /<p>{cite study}<\/p>/);
 });
 
 test("return link context crosses inline markup without changing the author HTML", () => {
-  const input = "<p>First claim <span>{citation ostrom}</span>. Later <em>claim</em> <span>{citation ostrom}</span>.</p>";
+  const input = "<p>First claim <span>{cite ostrom}</span>. Later <em>claim</em> <span>{cite ostrom}</span>.</p>";
   for (const { html } of [
     compileHTML(input, cache),
-    compileMarkdown("First claim *{citation ostrom}*. Later *claim* *{citation ostrom}*.", cache)
+    compileMarkdown("First claim *{cite ostrom}*. Later *claim* *{cite ostrom}*.", cache)
   ]) {
     const back = nodes(html, node => attribute(node, "aria-label")?.includes("occurrence"));
     assert.match(attribute(back[0], "title"), /First claim.*occurrence a/);
@@ -158,7 +158,7 @@ test("return link context crosses inline markup without changing the author HTML
 });
 
 test("fragment rebasing updates generated targets and references and catches collisions", () => {
-  const { html } = compileCitations("Text {citation ostrom}. {citation evidence}", cache, { namespace: "original" });
+  const { html } = compileCitations("Text {cite ostrom}. {cite evidence}", cache, { namespace: "original" });
   const rebased = rebaseCitationFragment('<p id="original-note-host">original stays.</p>' + html, "original", "copy");
   assert.match(rebased, /id="original-note-host"/);
   assert.doesNotMatch(rebased, /(?:id|href|aria-labelledby)="#?original-(?:cite-ostrom|note-ostrom|evidence|endnotes)/);
@@ -216,14 +216,14 @@ test("reprint records preserve both dates and styles disambiguate their displaye
   assert.deepEqual(normalized.originalIssued, [1912]);
   assert.deepEqual(toCSL(normalized)["original-date"], { "date-parts": [[1912]] });
   assert.deepEqual(toCSL(normalized).issued, { "date-parts": [[1995]] });
-  const chicago = compileCitations("{citation durkheim}", makeCache([reprint]), { citationStyle: "chicago-author-date" });
+  const chicago = compileCitations("{cite durkheim}", makeCache([reprint]), { citationStyle: "chicago-author-date" });
   assert.deepEqual(labels(chicago.html), ["Durkheim [1912] 1995"]);
   assert.match(chicago.html, /Durkheim, Émile\. \(1912\) 1995\./);
-  const apa = compileCitations("{citation durkheim}", makeCache([reprint]), { citationStyle: "apa" });
+  const apa = compileCitations("{cite durkheim}", makeCache([reprint]), { citationStyle: "apa" });
   assert.deepEqual(labels(apa.html), ["Durkheim, 1912/1995"]);
   assert.match(apa.html, /Original work published 1912/);
   const another = { ...reprint, id: "another-original", originalIssued: [1900] };
-  const distinct = compileCitations("{citation durkheim; another-original}", makeCache([reprint, another]), { citationStyle: "chicago-author-date" });
+  const distinct = compileCitations("{cite durkheim; another-original}", makeCache([reprint, another]), { citationStyle: "chicago-author-date" });
   assert.deepEqual(labels(distinct.html), ["Durkheim [1912] 1995", "[1900] 1995"]);
 });
 
@@ -268,22 +268,22 @@ test("ISBN search returns edition-level proposals, coalesces requests and preser
 });
 
 test("isolated citations can be copied and never enter the enclosing endnotes", () => {
-  const copy = compileCitations("Term {citation ostrom}. {citation credit}", cache, {
+  const copy = compileCitations("Term {cite ostrom}. {cite credit}", cache, {
     references: "isolated", isolatedHref: "/references#{id}", citationStyle: "chicago-author-date"
   });
   assert.doesNotMatch(copy.html, /\bid=|data-ci-panel|citation-endnotes/);
   assert.match(copy.html, /href="\/references#ostrom"/);
   assert.deepEqual(copy.cache.records.map(record => record.id), ["ostrom"]);
-  const mixed = compileCitations("{citation ostrom | isolated} and {citation study}", cache);
+  const mixed = compileCitations("{cite ostrom | isolated} and {cite study}", cache);
   assert.doesNotMatch(mixed.html, /cit-note-ostrom|cit-cite-ostrom/);
   assert.match(mixed.html, /cit-note-study/);
-  assert.throws(() => compileCitations("{citation ostrom}", cache, { isolatedHref: "//example.org/" }), /relative path/);
+  assert.throws(() => compileCitations("{cite ostrom}", cache, { isolatedHref: "//example.org/" }), /relative path/);
 });
 
 test("scoped endnotes use local backlinks and a shared suffix table", () => {
   const edition = { ...book, id: "ostrom-other", title: "Another work", identifiers: [] };
-  const source = "<section><p>{citation ostrom}</p><p>{citation endnote | scope:since-last}</p></section>" +
-    "<section><p>{citation ostrom; ostrom-other}</p><p>{citation endnote | scope:since-last}</p></section>";
+  const source = "<section><p>{cite ostrom}</p><p>{cite endnote | scope:since-last}</p></section>" +
+    "<section><p>{cite ostrom; ostrom-other}</p><p>{cite endnote | scope:since-last}</p></section>";
   const result = compileHTML(source, makeCache([book, edition]), { namespace: "terms", citationStyle: "chicago-author-date" });
   assert.deepEqual(labels(result.html), ["Ostrom 1990b", "Ostrom 1990b", "1990a"]);
   assert.match(result.html, /id="terms-note-ostrom"[^]*href="#terms-cite-ostrom-1"/);
@@ -299,7 +299,7 @@ test("reading lists and nocite share formatting without creating inline citation
     { text: "paper", href: "https://example.org/paper" },
     { text: " unsafe link", href: "http://example.org/old" }
   ] };
-  const result = compileMarkdown("{citation list ostrom; study | sort:year}\n\n{citation nocite ostrom}", makeCache([book, linked]), {
+  const result = compileMarkdown("{cite list ostrom; study | sort:year}\n\n{cite nocite ostrom}", makeCache([book, linked]), {
     citationStyle: "chicago-author-date"
   });
   assert.match(result.html, /<ol class="citation-reference-list"/);
@@ -319,15 +319,15 @@ test("Chicago uses reprint house styles, organization short forms and surname in
   const reprint = { ...victor, id: "reprint", issued: [1995], originalIssued: [1912], authors: [{ given: "Émile", family: "Durkheim" }] };
   const options = { citationStyle: "chicago-author-date", reprintYear: "original" };
   const data = makeCache([law, org, victor, edith, reprint]);
-  const result = compileCitations("{citation law; agency; victor; edith; reprint}. {citation victor | form:suppress-author; edith | form:suppress-author}.", data, options);
+  const result = compileCitations("{cite law; agency; victor; edith; reprint}. {cite victor | form:suppress-author; edith | form:suppress-author}.", data, options);
   assert.deepEqual(labels(result.html), ["NIH Revitalization Act 1993", "ODNI 2015", "V. Turner 1969", "E. Turner 2012", "Durkheim 1912", "1969", "2012"]);
   assert.match(result.html, /NIH Revitalization Act\. 1993\. Pub\. L\. No\. 103-43, 107 Stat\. 122/);
   assert.match(result.html, /Office of the Director of National Intelligence\. 2015/);
   assert.match(result.html, /Durkheim, Émile\. \(1912\) 1995\./);
-  assert.deepEqual(labels(compileCitations("{citation victor}", data, options).html), ["Turner 1969"]);
-  assert.deepEqual(labels(compileCitations("{citation reprint}", data, { ...options, reprintYear: "edition" }).html), ["Durkheim 1995"]);
+  assert.deepEqual(labels(compileCitations("{cite victor}", data, options).html), ["Turner 1969"]);
+  assert.deepEqual(labels(compileCitations("{cite reprint}", data, { ...options, reprintYear: "edition" }).html), ["Durkheim 1995"]);
   const other = { ...reprint, id: "other-ref", title: "Earlier in the alphabet", issued: [2001] };
-  const collision = compileCitations("{citation other-ref; reprint}", makeCache([other, reprint]), options);
+  const collision = compileCitations("{cite other-ref; reprint}", makeCache([other, reprint]), options);
   assert.deepEqual(labels(collision.html), ["Durkheim 1912a", "1912b"]);
   assert.match(collision.html, /\(1912\) 2001a\./);
   assert.match(collision.html, /\(1912\) 1995b\./);
@@ -339,8 +339,8 @@ test("cross-fragment CLI report finds duplicate ISBNs, unused records and confli
   const input = {
     cache: { ...cache, records: [...cache.records, duplicate] },
     fragments: [
-      { name: "article.html", format: "html", source: "<p>{citation ostrom}</p><pre>{citation study}</pre>" },
-      { name: "terms.md", format: "markdown", source: "Unknown {citation missing}." }
+      { name: "article.html", format: "html", source: "<p>{cite ostrom}</p><pre>{cite study}</pre>" },
+      { name: "terms.md", format: "markdown", source: "Unknown {cite missing}." }
     ]
   };
   const run = spawnSync(process.execPath, ["scripts/compile.mjs", "--report", "--json"], { input: JSON.stringify(input), encoding: "utf8" });
@@ -360,13 +360,13 @@ test("Chicago distinguishes competing bylines without treating a work's hidden c
   const dennis = { ...meadows, id: "dennis", authors: [meadows.authors[1]] };
   const cache = makeCache([meadows, dennis]);
   const options = { citationStyle: "chicago-author-date" };
-  const alone = compileCitations("{citation limits}", cache, options);
+  const alone = compileCitations("{cite limits}", cache, options);
   assert.deepEqual(labels(alone.html), ["Meadows et al. 1972"]);
   assert.match(alone.html, /William W\. Behrens III/);
-  assert.deepEqual(labels(compileCitations("{citation limits; dennis}", cache, options).html),
+  assert.deepEqual(labels(compileCitations("{cite limits; dennis}", cache, options).html),
     ["D. H. Meadows et al. 1972", "D. L. Meadows 1972"]);
   const behrens = { ...book, id: "behrens", identifiers: [], authors: [meadows.authors[3]] };
-  const sorted = compileCitations("{citation list ostrom; behrens | sort:author}", makeCache([book, behrens]), options).html;
+  const sorted = compileCitations("{cite list ostrom; behrens | sort:author}", makeCache([book, behrens]), options).html;
   assert.ok(sorted.indexOf('data-ci-list-record="behrens"') < sorted.indexOf('data-ci-list-record="ostrom"'));
   assert.match(sorted, /Behrens, William W\., III/);
   assert.equal(toCSL(makeCache([behrens]).records[0]).author[0].suffix, "III");
@@ -379,10 +379,10 @@ test("Chicago uses personal author IDs to identify variant bylines", () => {
   const other = { ...first, id: "other", issued: [2020], authors: [{ family: "Wrangham", given: "Alice", id: "person:alice-wrangham" }] };
   const cache = makeCache([first, second, other]);
   const options = { citationStyle: "chicago-author-date" };
-  const result = compileCitations("{citation first; second}\n\n{citation endnote}", cache, options);
+  const result = compileCitations("{cite first; second}\n\n{cite endnote}", cache, options);
   assert.deepEqual(labels(result.html), ["Wrangham 2009", "2019"]);
   assert.match(result.html, /Wrangham, Richard W\./);
-  assert.deepEqual(labels(compileCitations("{citation first; other}", cache, options).html),
+  assert.deepEqual(labels(compileCitations("{cite first; other}", cache, options).html),
     ["R. Wrangham 2009", "A. Wrangham 2020"]);
   assert.equal(cache.records[0].authors[0].id, author.id);
   assert.deepEqual(toCSL(cache.records[0]).author, [{ family: "Wrangham", given: "Richard" }]);
@@ -390,12 +390,12 @@ test("Chicago uses personal author IDs to identify variant bylines", () => {
 
 test("scoped notes stay inside definition, list and table entries with local headings and diagnose misplaced markers", () => {
   const source = `<dl>
-    <dt>First</dt><dd><p>{citation ostrom}</p><p>{citation endnote | scope:since-last | heading:"Sources" | level:4}</p></dd>
-    <dt>Second</dt><dd><p>{citation ostrom}</p><p>{citation endnote | scope:since-last | heading:none}</p></dd>
+    <dt>First</dt><dd><p>{cite ostrom}</p><p>{cite endnote | scope:since-last | heading:"Sources" | level:4}</p></dd>
+    <dt>Second</dt><dd><p>{cite ostrom}</p><p>{cite endnote | scope:since-last | heading:none}</p></dd>
   </dl>
-  <ul><li>{citation study}<p>{citation endnote | scope:since-last}</p></li></ul>
-  <table><tr><td>{citation study}<p>{citation endnote | scope:since-last}</p></td></tr></table>
-  <p>Inline <em>{citation endnote | scope:since-last}</em> and {citation list ostrom} stay as text.</p>`;
+  <ul><li>{cite study}<p>{cite endnote | scope:since-last}</p></li></ul>
+  <table><tr><td>{cite study}<p>{cite endnote | scope:since-last}</p></td></tr></table>
+  <p>Inline <em>{cite endnote | scope:since-last}</em> and {cite list ostrom} stay as text.</p>`;
   const result = compileHTML(source, cache, { namespace: "lex", endnotesHeading: "References" });
   const sections = nodes(result.html, node => attribute(node, "data-citation-part") === "endnotes");
   assert.deepEqual(sections.map(node => node.parentNode.tagName), ["dd", "dd", "li", "td"]);
@@ -413,8 +413,8 @@ test("cache-wide suffixes survive different citation subsets without expanding t
   const other = { ...book, id: "ostrom-other", identifiers: [], title: "Another work" };
   const data = makeCache([book, other]);
   const options = { citationStyle: "chicago-author-date", suffixScope: "cache" };
-  const one = compileCitations("{citation ostrom}", data, options);
-  const both = compileCitations("{citation ostrom; ostrom-other}", data, options);
+  const one = compileCitations("{cite ostrom}", data, options);
+  const both = compileCitations("{cite ostrom; ostrom-other}", data, options);
   assert.deepEqual(labels(one.html), ["Ostrom 1990b"]);
   assert.deepEqual(labels(both.html), ["Ostrom 1990b", "1990a"]);
   assert.deepEqual(one.cache.records.map(record => record.id), ["ostrom"]);
@@ -424,9 +424,9 @@ test("cache-wide suffixes survive different citation subsets without expanding t
     { state: "cache-suffix-missing-companions", records: ["ostrom"], missingRecords: ["ostrom-other"] }
   ]);
   assert.deepEqual(both.diagnostics, []);
-  assert.deepEqual(compileCitations("{citation ostrom}\n\n{citation nocite ostrom-other}", data, options).diagnostics, []);
-  assert.equal(compileCitations("{citation ostrom}\n\n{citation list ostrom-other}", data, options).diagnostics.length, 1);
-  const fragment = compileCitations("{citation ostrom}", data, { ...options, suffixScope: "fragment" });
+  assert.deepEqual(compileCitations("{cite ostrom}\n\n{cite nocite ostrom-other}", data, options).diagnostics, []);
+  assert.equal(compileCitations("{cite ostrom}\n\n{cite list ostrom-other}", data, options).diagnostics.length, 1);
+  const fragment = compileCitations("{cite ostrom}", data, { ...options, suffixScope: "fragment" });
   assert.deepEqual(labels(fragment.html), ["Ostrom 1990"]);
   assert.deepEqual(fragment.diagnostics, []);
 });
@@ -436,7 +436,7 @@ test("reading list annotations stay with each record and are absent from endnote
     { ...book, listAnnotationParts: [{ text: "First summary", emphasis: "italic" }] },
     { ...article, listAnnotationParts: [{ text: "<Second summary>", href: "https://example.org/summary" }] }
   ]);
-  const { html } = compileCitations("{citation list ostrom; study}\n\n{citation nocite study}", data);
+  const { html } = compileCitations("{cite list ostrom; study}\n\n{cite nocite study}", data);
   assert.match(html.split('<li data-ci-list-record="study"')[0], /data-ci-list-record="ostrom"[^]*<em>First summary<\/em><\/p>/);
   assert.match(html, /data-ci-list-record="study"[^]*href="https:\/\/example.org\/summary"[^>]*>&lt;Second summary&gt;<\/a>/);
   const notes = html.slice(html.indexOf('<section class="citation-endnotes"'));
@@ -444,13 +444,14 @@ test("reading list annotations stay with each record and are absent from endnote
 });
 
 test('Markdown endnote lines keep their position without a following blank line',()=>{
-  for(const marker of ['{citation endnote}','{endnotes}','{ref endnote}']){
-    const result=compileMarkdown('Before {cite ostrom}.\n'+marker+'\nAfter the references.',cache,marker.startsWith('{ref ')?{citationKeyword:'ref'}:{});
+  for(const marker of ['{cite endnote}','{ref endnote}']){
+    const keyword=marker.startsWith('{ref ')?'ref':'cite';
+    const result=compileMarkdown('Before {'+keyword+' ostrom}.\n'+marker+'\nAfter the references.',cache,{citationKeyword:keyword});
     assert(!result.html.includes(marker));
     assert(result.html.indexOf('data-citation-part="endnotes"')<result.html.indexOf('After the references.'));
     assert(!result.diagnostics.some(item=>item.state==='misplaced-directive'));
   }
   const code=compileMarkdown('```text\n{cite endnote}\n```',cache);
   assert(code.html.includes('{cite endnote}'));
-  assert.match(compileMarkdown('    {citation endnote}',cache).html,/<pre><code>\{citation endnote\}/);
+  assert.match(compileMarkdown('    {cite endnote}',cache).html,/<pre><code>\{cite endnote\}/);
 });

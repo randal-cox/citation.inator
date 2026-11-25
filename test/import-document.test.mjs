@@ -33,7 +33,7 @@ test('numeric labels are source-derived, out of order and renumbering never uses
 test('accepted body edits preserve full CRLF bibliography and produce an offline usable cache',()=>{
  const source='😀 A claim (Avery, 2021, p. 4).\r\n\r\n## References\r\n\r\nAvery, J. (2021). A book. Press.\r\n';const result=analyze(source),id=result.referenceRecords[0].id;
  const output=preview(source,result,[{citationIndex:0,action:'accept',recordIds:[id]}]);assert.equal(output.source,'😀 A claim {cite '+id+' | locator:"p. 4"}.\r\n\r\n## References\r\n\r\nAvery, J. (2021). A book. Press.\r\n');
- const cache=JSON.parse(JSON.stringify(output.cache));readCache(cache);const clean=compileCitations(output.source+'\n{citation endnote}',cache);assert.ok(clean.html.includes('A book'));assert.ok(!clean.diagnostics.some(item=>item.code==='citation-unresolved'));
+ const cache=JSON.parse(JSON.stringify(output.cache));readCache(cache);const clean=compileCitations(output.source+'\n{cite endnote}',cache);assert.ok(clean.html.includes('A book'));assert.ok(!clean.diagnostics.some(item=>item.code==='citation-unresolved'));
 });
 test('headings in Markdown code, HTML and quotes cannot become bibliography boundaries',()=>{
  for(const fragment of ['<div>\nReferences\n</div>','```txt\n```not-a-close\nReferences\nAvery, J. (2021). Fake.\n```','> References','    References','`multiline\nReferences\nexample`']){
@@ -77,7 +77,7 @@ test('plain reference headings need no blank line after them and retain the firs
 });
 
 test('unparsed numeric references export usable raw citations without invented title or date fields',()=>{
- const source='Two sources [2, 7].\n\nReferences\n\n7. Bennett S. Raw seventh entry. 2019.\n\n2. Avery J. Raw second entry. 2021.';const result=analyze(source),ids=result.review.matches[0].items.map(item=>item.candidates[0].recordId);const output=preview(source,result,[{citationIndex:0,action:'accept',recordIds:ids}]);assert.ok(output.cache.records.every(record=>record.title===''&&record.issued===null&&record.state==='partial'));const clean=compileCitations(output.source+'\n{citation endnote}',JSON.parse(JSON.stringify(output.cache)),{citationStyle:'vancouver'});assert.ok(clean.html.includes('Raw seventh entry'));assert.ok(clean.html.includes('Raw second entry'));assert.ok(!clean.diagnostics.some(item=>item.code==='citation-unresolved'));
+ const source='Two sources [2, 7].\n\nReferences\n\n7. Bennett S. Raw seventh entry. 2019.\n\n2. Avery J. Raw second entry. 2021.';const result=analyze(source),ids=result.review.matches[0].items.map(item=>item.candidates[0].recordId);const output=preview(source,result,[{citationIndex:0,action:'accept',recordIds:ids}]);assert.ok(output.cache.records.every(record=>record.title===''&&record.issued===null&&record.state==='partial'));const clean=compileCitations(output.source+'\n{cite endnote}',JSON.parse(JSON.stringify(output.cache)),{citationStyle:'vancouver'});assert.ok(clean.html.includes('Raw seventh entry'));assert.ok(clean.html.includes('Raw second entry'));assert.ok(!clean.diagnostics.some(item=>item.code==='citation-unresolved'));
 });
 
 test('explicit Anonymous byline and original year match without inventing a person',()=>{

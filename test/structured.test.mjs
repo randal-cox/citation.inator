@@ -48,7 +48,7 @@ test("different structured namespaces cannot overlap by containing an ID delimit
 
 test("structured endnotes coexist with legacy compiled notes using a neighboring namespace", () => {
   const plan = planCitationOccurrences([{ occurrenceId: "caption", recordId: "first-edition" }], cache, { namespace: "map" });
-  const legacy = compileCitations("{citation first-edition}", cache, { namespace: "citation-3-map" });
+  const legacy = compileCitations("{cite first-edition}", cache, { namespace: "citation-3-map" });
   const legacyIds = new Set([...legacy.html.matchAll(/ id="([^"]+)"/g)].map(match => match[1]));
   assert(legacyIds.has("citation-3-map-note-first-edition"));
   for (const id of [plan.occurrences[0].anchorId, plan.endnotes[0].id]) assert(!legacyIds.has(id), id);

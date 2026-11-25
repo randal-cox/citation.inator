@@ -89,7 +89,7 @@ async function resolution(url) {
   }
   const use = identifier.scheme === "local" ? identifier.value : key;
   const escaped = use.replace(/[\\{};|"]/g, "\\$&");
-  const compiled = compileDemoStyles(`Inspect the current citation {citation ${escaped}}.\n\n{citation evidence} · {citation credit}\n\n{citation endnote}`, makeCache(data.record ? [data.record] : []), "live");
+  const compiled = compileDemoStyles(`Inspect the current citation {cite ${escaped}}.\n\n{cite evidence} · {cite credit}\n\n{cite endnote}`, makeCache(data.record ? [data.record] : []), "live");
   return { ...data, mode, ...compiled };
 }
 

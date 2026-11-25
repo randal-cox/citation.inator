@@ -7,14 +7,14 @@ Write a source identifier directly in your article:
 ```text
 A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
 
-{citation endnote}
+{cite endnote}
 ```
 
-The DOI identifies the work. `note:` is a generated work label, hidden from readers; `annotateMarkers` and editor tools replace it when refreshing notes. Keep personal reminders in your article comments, outside the marker. The formatted author/year text comes from the work’s bibliographic metadata. Use `isbn:` for a particular book edition. The endnote marker places the reference list at that point in the article. `cite` is the work-only short form; directives such as `endnote` use the configured keyword (`citation` by default). Use `{cite identifier}` for a work and `{citation endnote}` for its reference list; `{citation identifier}` is also supported. Without an endnote directive, the list is appended to the article.
+The DOI identifies the work. `note:` is a generated work label, hidden from readers; `annotateMarkers` and editor tools replace it when refreshing notes. Keep personal reminders in your article comments, outside the marker. The formatted author/year text comes from the work’s bibliographic metadata. Use `isbn:` for a particular book edition. The endnote marker places the reference list at that point in the article. Use the same keyword for every marker: `{cite identifier}` cites a work and `{cite endnote}` places its reference list. The default keyword is `cite`; `citationKeyword` configures a different keyword for both works and directives. Without an endnote directive, the list is appended to the article.
 
 ## Load, compile, initialize
 
-This Guide documents `0.5.0`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
+This Guide documents `0.5.1-preview.0`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
 
 ### Without a package installation
 
@@ -87,9 +87,9 @@ The [complete notation reference](./notation.html) covers every marker option, d
 [Open the playground](./index.html#playground), select **First citation**, and edit its sentence. Write a DOI or ISBN in the marker; you do not need to invent a local record ID or type a JSON reference. The examples include saved metadata so they work offline.
 
 ```text
-A claim {citation doi:10.1371/journal.pmed.0020124}.
+A claim {cite doi:10.1371/journal.pmed.0020124}.
 
-{citation endnote}
+{cite endnote}
 ```
 
 The endnote marker becomes a formatted reference list. It is literal source notation in this code block; the playground's Result shows the processed version. Metadata supplies the author, title and publication details. Resolve identifiers once in your build or import workflow, then retain the generated metadata for reliable rendering. Compilation itself does not make network requests.
@@ -162,7 +162,7 @@ In either starter, edit `configuration.json`. The compiler and inspector both re
 }
 ```
 
-With `citationKeyword:'reference'`, write `{reference doi:10.1371/journal.pmed.0020124}` and `{reference endnote}`. `classPrefix` changes generated class names; `data-citation-part` remains the stable styling hook. Pass the same configuration to compile, initialization and editor tools so style, locale and class names agree. With different prefixes, class-based host styling can miss generated elements; stable parts remain available. Changing the keyword leaves old `{citation …}` markers as ordinary text without a diagnostic; `{cite …}` work markers keep working. Misspelled keywords are also ordinary text. Give separate article fragments separate namespaces so citation/endnote IDs cannot collide.
+With `citationKeyword:'reference'`, write `{reference doi:10.1371/journal.pmed.0020124}` and `{reference endnote}`. `classPrefix` changes generated class names; `data-citation-part` remains the stable styling hook. Pass the same configuration to compile, initialization and editor tools so style, locale and class names agree. With different prefixes, class-based host styling can miss generated elements; stable parts remain available. Changing the keyword leaves other marker spellings as ordinary text without a diagnostic; there is no always-on short-form alias. Misspelled keywords are also ordinary text. Give separate article fragments separate namespaces so citation/endnote IDs cannot collide.
 
 ```css
 /* Keep host styling confined to the component. */
@@ -177,9 +177,9 @@ Evidence and credit remain hoverable when ordinary references use click. Click, 
 ## Locators, groups and source formatting
 
 ```text
-{citation isbn:9780029079379 | prefix:"see also" | locator:"p. 34"}
-{citation arxiv:1706.03762 | locator:"§ 3" | form:narrative}
-{citation doi:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f; doi:10.5281/zenodo.3960218}
+{cite isbn:9780029079379 | prefix:"see also" | locator:"p. 34"}
+{cite arxiv:1706.03762 | locator:"§ 3" | form:narrative}
+{cite doi:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f; doi:10.5281/zenodo.3960218}
 ```
 
 Locators can name pages, chapters, sections or timestamps. A locator adds citation text; it does not by itself link to a particular page or timestamp. The selected citation style determines the surrounding punctuation. Use `compileHTML` to compile within existing authored HTML, or `compileMarkdown` for Markdown; code blocks and excluded interactive elements are skipped. Structured editors can import `planCitationOccurrences` from `cite-inator` and call `planCitationOccurrences(occurrences, cache, options)` with stable occurrence IDs instead of splicing compiled HTML by position; see the [structured occurrence contract](./reference/integration.html). `planCitationOccurrences` is a Node/build-time API and requires a document `namespace`, for example `{namespace:"essay-one"}`. It is not exported by the copied browser compiler bundle.
@@ -192,14 +192,14 @@ Record `locations` distinguish publisher, PDF, repository, library and full-text
 
 Use `accessSettings:'host'` to hand settings off to your own panel. Reader choices stay in the configured site's browser storage, with an in-memory fallback if storage fails. See [the access guide](./reference/reader-access.html) for profile state, events, hidden-provider settings, proxies and OpenURL. The playground uses its own storage key.
 
-Artwork records can retain uncertain creators, literal dates, medium, institution/accession, rights and separate source/served-copy checksums. These fields do not justify inferring a photographer from an uploader. Chicago has specific artwork formatting; the other presets preserve these fields generically. Inspect source provenance through `{citation evidence}`. `{citation credit}` identifies the software, author, license and citation.
+Artwork records can retain uncertain creators, literal dates, medium, institution/accession, rights and separate source/served-copy checksums. These fields do not justify inferring a photographer from an uploader. Chicago has specific artwork formatting; the other presets preserve these fields generically. Inspect source provenance through `{cite evidence}`. `{cite credit}` identifies the software, author, license and citation.
 
 ## Notes, tags and shared bibliographies
 
 Editor notes are invisible to readers:
 
 ```text
-{citation doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005" | tags:methods,reliability}
+{cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005" | tags:methods,reliability}
 ```
 
 Import editor tools from `cite-inator/tools`, or copy `dist/citation-tools.mjs` from the same version for browser use; the minimal copied-file starter does not include this optional bundle. After installing the npm starter, find it at `node_modules/cite-inator/dist/citation-tools.mjs`.
@@ -208,7 +208,7 @@ Import editor tools from `cite-inator/tools`, or copy `dist/citation-tools.mjs` 
 // Node build script: source, cache and options are read as in build.mjs above.
 import {markerKind, describeCitation, annotateMarkers, collectMarkerTags,
   createSiteOccurrenceIndex} from 'cite-inator/tools';
-const kind = markerKind(`{${options.citationKeyword ?? 'citation'} endnote}`, options);
+const kind = markerKind(`{${options.citationKeyword ?? 'cite'} endnote}`, options);
 const label = describeCitation('doi:10.1371/journal.pmed.0020124', cache, options).text;
 const updated = annotateMarkers(source, cache, {...options, format:'markdown', noteContext:'work'});
 const counts = collectMarkerTags([{source, format:'markdown'}], cache, options);

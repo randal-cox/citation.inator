@@ -29,9 +29,9 @@ An identifier names what it actually identifies. An ISBN selects an edition, an 
 ## Per-work options
 
 ```text
-{citation isbn:9780029079379 | prefix:"see also" | locator:"p. 34"}
-{citation doi:10.1371/journal.pmed.0020124 | form:narrative}
-{citation doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005" | tags:methods,reliability}
+{cite isbn:9780029079379 | prefix:"see also" | locator:"p. 34"}
+{cite doi:10.1371/journal.pmed.0020124 | form:narrative}
+{cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005" | tags:methods,reliability}
 ```
 
 | Option | Effect |
@@ -57,8 +57,8 @@ Tags use lowercase letters/digits/hyphens, start with a letter or digit and cont
 Quote values containing notation separators. Escape a literal backslash, brace, semicolon, pipe or double quote with a backslash.
 
 ```text
-{citation doi:10.1371/journal.pmed.0020124 | label:"A label with \"quotes\" and a \; separator"}
-\{citation doi:10.1371/journal.pmed.0020124\}
+{cite doi:10.1371/journal.pmed.0020124 | label:"A label with \"quotes\" and a \; separator"}
+\{cite doi:10.1371/journal.pmed.0020124\}
 ```
 
 The second line displays literal braces rather than a processed citation. Labels require nonempty double-quoted text. Prefixes/locators can be unquoted when they contain no separators. Do not put newlines inside a marker. Duplicate or invalid options can make the marker malformed; inspect diagnostic codes and retain the original source when uncertain.
@@ -68,9 +68,9 @@ Markdown code spans/fences and excluded HTML/interactive regions remain literal 
 ## Endnotes and scopes
 
 ```text
-{citation endnote}
-{citation endnote | heading:"References" | level:3}
-{citation endnote | scope:since-last | heading:none}
+{cite endnote}
+{cite endnote | heading:"References" | level:3}
+{cite endnote | scope:since-last | heading:none}
 ```
 
 Place endnote directives on their own line or paragraph. In Markdown prose, the following text does not need a separating blank line. Inside a list item, put a blank line before and after the directive and indent it to match the item’s text; an inline directive remains literal with a diagnostic. `heading` overrides the configured `endnotesHeading`; `heading:none` keeps an accessible section without a visible heading. `level` accepts 1 through 6. `scope:since-last` closes the current local reference scope, useful for separate entries on one page. A trailing unclosed scope receives its final list. Running-prose placement is diagnosed rather than guessed.
@@ -80,9 +80,9 @@ Repeated mentions share one work entry in their scope, with contextual lettered 
 ## Reading lists and uncited works
 
 ```text
-{citation list doi:10.1371/journal.pmed.0020124; isbn:9780029079379 | sort:author}
-{citation list doi:10.1371/journal.pmed.0020124; doi:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f | tags:methods,data | tag-mode:any}
-{citation nocite isbn:9780029079379}
+{cite list doi:10.1371/journal.pmed.0020124; isbn:9780029079379 | sort:author}
+{cite list doi:10.1371/journal.pmed.0020124; doi:10.6073/pasta/98b16d7d563f265cb52372c8ca99e60f | tags:methods,data | tag-mode:any}
+{cite nocite isbn:9780029079379}
 ```
 
 `list` emits the supplied works as a reading list without inventing in-text mentions. `sort` accepts `author` or `year`. `tags` filters the supplied list by curated effective tags; `tag-mode` is `any` or `all`. Runtime `listFilters` adds reader checkboxes separately from this build-time selection.
@@ -92,8 +92,8 @@ Repeated mentions share one work entry in their scope, with contextual lettered 
 ## Evidence and credit
 
 ```text
-{citation evidence}
-{citation credit}
+{cite evidence}
+{cite credit}
 ```
 
 Evidence shows source metadata and provenance; credit identifies the software and how to cite it. Both remain hoverable when ordinary citations use click. Their titles/icons can be configured separately. In isolated-reference output, supplementary interactive annotations are omitted.
@@ -102,4 +102,4 @@ Evidence shows source metadata and provenance; credit identifies the software an
 
 Set `citationKeyword:'ref'` on the compiler, then write `{ref doi:10.1371/journal.pmed.0020124}`, `{ref endnote}`, `{ref list ...}`, `{ref evidence}` and `{ref credit}`. This changes notation, independently of `classPrefix` for CSS and `panelTitle` for reader branding.
 
-`{cite doi:…}` is the short work-citation form; `{endnotes}` is an alternate endnote directive. Short-form citations do not imply that `{cite evidence}` is an annotation under the default keyword. Use the configured keyword for directives. `markerKind` is the authoritative classifier; editors should not copy a list of reserved words or infer kind from an ID's prefix. For example, `list-2001` is a work ID, not a list directive.
+Every marker uses the configured keyword, `cite` by default. With `citationKeyword:"reference"`, write `{reference doi:…}` and `{reference endnote}`. Other spellings, including unconfigured `citation` and legacy `{endnotes}`, are ordinary text. `markerKind` classifies the configured grammar; editors should not copy a list of reserved words or infer kind from an ID’s prefix. For example, `list-2001` is a work ID, not a list directive.

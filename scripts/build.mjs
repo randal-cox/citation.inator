@@ -18,29 +18,24 @@ const article = compileDemoStyles(prose, cache, "reading");
 const json = value => JSON.stringify(value, null, 2) + "\n";
 const simas = "doi:10.1017/s0003055419000534";
 const book = "isbn:9780593656433";
-const seed = compileDemoStyles(`Open this book from the bundled cache {citation ${book}}. The ISBN is already filled in above.
+const seed = compileDemoStyles(`Open this book from the bundled cache {cite ${book}}. The ISBN is already filled in above.
 
-{citation evidence} · {citation credit}
+{cite evidence} · {cite credit}
 
-{citation endnote}`, cache, "live");
+{cite endnote}`, cache, "live");
 
-const alternateSource = String.raw`Custom keyword {ref isbn:9780593656433} and short citation {cite isbn:9780593656433}. Escaped characters can appear in a label {ref isbn:9780593656433 | label:"book\; edition\| \"hardcover\" \{example\} \\"}.
+const alternateSource = String.raw`Custom keyword {ref isbn:9780593656433} and another reference {ref isbn:9780593656433}. Escaped characters can appear in a label {ref isbn:9780593656433 | label:"book\; edition\| \"hardcover\" \{example\} \\"}.
 
 {ref evidence} · {ref credit}
 
 {ref endnote}`;
-const legacyEndnotesSource = "{cite isbn:9780593656433}\n\n{endnotes}";
 const alternateOptions = { citationKeyword: "ref", classPrefix: "notation-example" };
 const alternate = compileCitations(alternateSource, article.cache, { ...alternateOptions, namespace: "alternate" });
-const legacyEndnotes = compileCitations(legacyEndnotesSource, article.cache, { ...alternateOptions, namespace: "legacy" });
 const notationExamples = `<details class="notation-examples">
-  <summary>Custom keyword and short forms</summary>
+  <summary>Custom keyword</summary>
   <h3>Custom keyword</h3>
   <pre><code>${escapeHTML(alternateSource)}</code></pre>
   <section aria-label="Rendered custom keyword example">${alternate.html}</section>
-  <h3>Alternate endnotes marker</h3>
-  <pre><code>${escapeHTML(legacyEndnotesSource)}</code></pre>
-  <section aria-label="Rendered alternate endnotes example">${legacyEndnotes.html}</section>
 </details>`;
 
 await mkdir("dist", { recursive: true });
@@ -198,19 +193,19 @@ await writeFile("demos/dynamic/citations.json", json(seed.cache));
 await writeFile("demos/dynamic/styles.json", json(seed.styles));
 
 const notation = [
-  ["{citation doi:10.1017/S0003055419000534}", "An inline citation with a DOI."],
-  ["{citation isbn:9780593656433 | form:narrative}", "A cached ISBN with the author in the sentence and the year in parentheses."],
-  ["{citation doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}", "Group citations. A semicolon separates items."],
-  ['{citation isbn:9780691198927; isbn:9780593656433 | prefix:see also | locator:"p. 34"}', "Add a prefix and a locator to one item in a group. A bare page number adapts to the selected style."],
-  ['{citation doi:10.1017/S0003055419000534 | label:"the study | journal article; preprint available"}', "Choose the visible label. Quotes protect literal pipes and semicolons."],
-  ["{citation local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}", "Supply a fallback to display for an unresolved record."],
-  ["{citation isbn:9780691198927 | form:parenthetical}", "Put the author and year in parentheses. This is the default."],
-  ["{citation isbn:9780691198927 | form:author-only}", "Show only the author, without parentheses."],
-  ["{citation isbn:9780691198927 | form:suppress-author}", "Show only the year, in parentheses."],
-  ["{citation isbn:9780691198927 | form:suppress-year}", "Show only the author, in parentheses."],
-  ["{citation endnote}", "Place the endnotes on their own paragraph. The compiler appends them when the marker is absent."],
-  ["{citation evidence}", "Show cited source metadata or the Resolution bench’s provider evidence."],
-  ["{citation credit}", "Show the software credit, license and suggested citation."]
+  ["{cite doi:10.1017/S0003055419000534}", "An inline citation with a DOI."],
+  ["{cite isbn:9780593656433 | form:narrative}", "A cached ISBN with the author in the sentence and the year in parentheses."],
+  ["{cite doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}", "Group citations. A semicolon separates items."],
+  ['{cite isbn:9780691198927; isbn:9780593656433 | prefix:see also | locator:"p. 34"}', "Add a prefix and a locator to one item in a group. A bare page number adapts to the selected style."],
+  ['{cite doi:10.1017/S0003055419000534 | label:"the study | journal article; preprint available"}', "Choose the visible label. Quotes protect literal pipes and semicolons."],
+  ["{cite local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}", "Supply a fallback to display for an unresolved record."],
+  ["{cite isbn:9780691198927 | form:parenthetical}", "Put the author and year in parentheses. This is the default."],
+  ["{cite isbn:9780691198927 | form:author-only}", "Show only the author, without parentheses."],
+  ["{cite isbn:9780691198927 | form:suppress-author}", "Show only the year, in parentheses."],
+  ["{cite isbn:9780691198927 | form:suppress-year}", "Show only the author, in parentheses."],
+  ["{cite endnote}", "Place the endnotes on their own paragraph. The compiler appends them when the marker is absent."],
+  ["{cite evidence}", "Show cited source metadata or the Resolution bench’s provider evidence."],
+  ["{cite credit}", "Show the software credit, license and suggested citation."]
 ];
 
 if (notation.some(([syntax]) => !prose.includes(syntax))) throw new Error("Each notation example must appear in the shared reading.");
@@ -258,7 +253,7 @@ const checkoutCompile = `node scripts/compile.mjs --style chicago-author-date --
 const markupExample = `import { compileHTML, compileMarkdown, rebaseCitationFragment } from "cite-inator/markup";
 
 const options = { namespace: "essay", citationStyle: "chicago-author-date", endnotesHeading: "References" };
-const result = compileHTML("<p><em>Consent</em> has a history {citation local:consent}.</p>", cache, options);
+const result = compileHTML("<p><em>Consent</em> has a history {cite local:consent}.</p>", cache, options);
 const anotherCopy = rebaseCitationFragment(result.html, "essay", "essay-copy");
 // For Markdown sources, call compileMarkdown(source, cache, options).`;
 
@@ -302,7 +297,7 @@ initializeCitationInspector(element, {...options, cache: result.cache});</code><
       <h2 id="guide-notation">Complete notation</h2>
       <dl>${notation.map(([syntax, explanation]) => `<dt><code>${escapeHTML(syntax)}</code></dt><dd>${explanation}</dd>`).join("")}</dl>
       <p>The reading also demonstrates <code>doi:</code>, <code>isbn:</code>, <code>pmid:</code>, <code>pmcid:</code>, <code>arxiv:</code>, <code>url:</code>, <code>dataset:</code>, <code>software:</code>, a recognized HTTPS URL or an ID from the local cache. Bare DOIs also work. A missing record is marked unresolved.</p>
-      <p>Keep each directive on one line. To display <code>{citation endnote}</code> as literal text, put <code>\\{citation endnote\\}</code> in the source. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. The short work-citation form <code>{cite …}</code> and alternate endnote marker <code>{endnotes}</code> also work. Expand <strong>Custom keyword and short forms</strong> below the reading in either demo to see both rendered alongside their source.</p>
+      <p>Keep each directive on one line. To display <code>{cite endnote}</code> as literal text, put <code>\\{cite endnote\\}</code> in the source. Inside a directive, a backslash escapes a semicolon, pipe, quote, brace or backslash. The default keyword is <code>cite</code> for every marker; a custom keyword replaces it for both references and directives. Expand <strong>Custom keyword</strong> below the reading in either demo to see the configured notation rendered alongside its source.</p>
       <h3>Set your keyword</h3>
       <p>With <code>citationKeyword: "ref"</code>, write <code>{ref DOI}</code>, <code>{ref endnote}</code>, <code>{ref evidence}</code>, and <code>{ref credit}</code>. The keyword and class prefix accept 1–32 lowercase ASCII letters, digits or hyphens, starting with a letter. Use the same class prefix in the browser if you initialize it separately.</p>
       <pre><code>${escapeHTML(compileExample)}</code></pre>
@@ -325,10 +320,10 @@ initializeCitationInspector(element, {...options, cache: result.cache});</code><
     </section>
     <section aria-labelledby="guide-article-tools">
       <h2 id="guide-article-tools">Article editors, shared bibliographies and tags</h2>
-      <p>Version 0.2.0 adds editor-only notes such as <code>{citation source-one | note:"Cox 1995"}</code>. Notes do not replace reader labels. Import <code>describeCitation</code> and <code>annotateMarkers</code> from <code>cite-inator/tools</code> in Node, or copy the self-contained <code>citation-tools.mjs</code> into a browser editor. JSON CLI operations <code>--describe --json</code>, <code>--annotate --json</code> and <code>--check-notes --json</code> let other build systems use the same API.</p>
+      <p>Version 0.2.0 adds editor-only notes such as <code>{cite source-one | note:"Cox 1995"}</code>. Notes do not replace reader labels. Import <code>describeCitation</code> and <code>annotateMarkers</code> from <code>cite-inator/tools</code> in Node, or copy the self-contained <code>citation-tools.mjs</code> into a browser editor. JSON CLI operations <code>--describe --json</code>, <code>--annotate --json</code> and <code>--check-notes --json</code> let other build systems use the same API.</p>
       <p>The compiler returns actual <code>occurrences</code>. Join them to page routes with <code>createSiteOccurrenceIndex</code>, then supply <code>siteOccurrences</code> when compiling the shared bibliography. Its cross-page return links work without JavaScript; the inspector shows <strong>Cited on this site</strong>.</p>
-      <p>Records accept <code>tags</code>; configure <code>tagCatalogue</code> for labels and same-origin masked icons. Use <code>listItemTags</code> for article-specific roles, <code>listFilters: true</code> for browser checkboxes, and notation such as <code>{citation list source-one; source-two | tags:theory,praxis | tag-mode:all}</code> for build-time filtering. <code>inlineTags: true</code> adds tags beside in-text citations.</p>
-      <p>Editors can contribute tags at each mention: <code>{citation source-one | note:"Cox 1995" | tags:theory,praxis}</code>. <code>collectMarkerTags(sources, cache, { includeDiagnostics: true })</code> counts contributions while reporting skipped/malformed input; the host validates topics and applies curator overrides. The browser bundle and <code>--collect-tags --json</code> expose the same function. <code>inlineTags: "marker"</code> displays only that mention's tags; record topics remain in the panel. Try the collector in the editor example.</p>
+      <p>Records accept <code>tags</code>; configure <code>tagCatalogue</code> for labels and same-origin masked icons. Use <code>listItemTags</code> for article-specific roles, <code>listFilters: true</code> for browser checkboxes, and notation such as <code>{cite list source-one; source-two | tags:theory,praxis | tag-mode:all}</code> for build-time filtering. <code>inlineTags: true</code> adds tags beside in-text citations.</p>
+      <p>Editors can contribute tags at each mention: <code>{cite source-one | note:"Cox 1995" | tags:theory,praxis}</code>. <code>collectMarkerTags(sources, cache, { includeDiagnostics: true })</code> counts contributions while reporting skipped/malformed input; the host validates topics and applies curator overrides. The browser bundle and <code>--collect-tags --json</code> expose the same function. <code>inlineTags: "marker"</code> displays only that mention's tags; record topics remain in the panel. Try the collector in the editor example.</p>
       <p>Use <code>listFilters: { minItems: 6, minTags: 2 }</code> for longer multi-topic lists. Style individual badges with <code>data-ci-tag</code>; panel badges also expose tag-specific CSS parts. Listing-only <code>nocite</code> uses get <strong>Listed in</strong> returns. Unresolved/malformed diagnostics add stable <code>citation-unresolved</code> / <code>citation-malformed</code> codes.</p>
       <p>The import preview proposes fields from common numbered journal references and recovers supported explicit DOI line wraps. Unsupported fields and ambiguous continuations remain reviewable; original source is preserved. Read the <a href="../drop-in/import-api.md">import support details</a>.</p>
       <p>To write a local identifier, use <code>formatRecordId</code> from the tools or import bundle. New markers use bare IDs when safe, with <code>identifierForm: 'explicit'</code> available for explicit <code>local:</code> spelling. Note refresh keeps existing spelling. See the <a href="../drop-in/article-tools.md#write-local-record-ids-040-preview">shared writing rule</a>.</p>
@@ -358,7 +353,7 @@ await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
   cp("CITATION.cff", portable + "CITATION.cff"),
-  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "i18n.md", "naming-migration.md"].map(name => cp("docs/" + name, portable + name)),
+  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "i18n.md", "naming-migration.md", "notation-migration.md"].map(name => cp("docs/" + name, portable + name)),
   cp("scripts/static-server.mjs", portable + "server.mjs"),
   writeFile(portable + "package.json", json({name:"citation-inator-standalone",private:true,type:"module",version,scripts:{start:"node server.mjs"}})),
   writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),
@@ -406,9 +401,9 @@ Repeated as a group {cite synthetic-long; synthetic-related}. In narrative form,
 
 A malformed directive stays readable {cite pmid:zero}.
 
-{citation evidence}
+{cite evidence}
 
-{endnotes}`, makeCache([longRecord, related]), { namespace: "adversary" });
+{cite endnote}`, makeCache([longRecord, related]), { namespace: "adversary" });
 await writeFile("demos/static/adversaries.json", json(hard.cache));
 await writeFile("demos/static/adversaries.html", document({
   title: "Hostile host assay.",

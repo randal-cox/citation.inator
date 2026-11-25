@@ -94,10 +94,10 @@ function parseEndnotes(body, raw) {
 
 function directivePattern(citationKeyword) {
   validateKeyword(citationKeyword);
-  return new RegExp(String.raw`\\[\\{}]|\{endnotes\}|\{(${citationKeyword}|cite)[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
+  return new RegExp(String.raw`\\[\\{}]|\{(${citationKeyword})[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
 }
 
-export function scanCitationMarkers(source, { citationKeyword = "citation" } = {}) {
+export function scanCitationMarkers(source, { citationKeyword = "cite" } = {}) {
   if (typeof source !== "string") throw new TypeError("Supply source text.");
   return [...source.matchAll(directivePattern(citationKeyword))].filter(match => match[0].startsWith("{"))
     .map(match => ({ start: match.index, end: match.index + match[0].length, raw: match[0],
@@ -115,7 +115,7 @@ export function markerKind(raw, options = {}) {
 }
 
 /** Encode a local record ID for a new marker; existing marker spelling is not rewritten. */
-export function formatRecordId(id, { citationKeyword = 'citation', identifierForm = 'minimal' } = {}) {
+export function formatRecordId(id, { citationKeyword = 'cite', identifierForm = 'minimal' } = {}) {
   validateKeyword(citationKeyword);
   if (!['minimal', 'explicit'].includes(identifierForm)) throw new TypeError('Use minimal or explicit identifierForm.');
   const identifier = typeof id === 'string' && normalizeIdentifier('local:' + id);
@@ -129,7 +129,7 @@ export function formatRecordId(id, { citationKeyword = 'citation', identifierFor
   return identifierForm === 'minimal' && unambiguous && !reserved ? escaped : 'local:' + escaped;
 }
 
-export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
+export function parseDirectives(source, { citationKeyword = "cite" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];
   let cursor = 0;
@@ -138,7 +138,6 @@ export function parseDirectives(source, { citationKeyword = "citation" } = {}) {
     const raw = match[0];
     cursor = match.index + raw.length;
     if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
-    else if (raw === "{endnotes}") tokens.push({ type: "endnotes", raw });
     else if (match[1] === citationKeyword && /^endnote(?:\s*\||$)/.test(match[2].trim())) {
       tokens.push(parseEndnotes(match[2], raw));
     } else if (match[1] === citationKeyword && /^(?:list|nocite)[ \t]/.test(match[2].trim())) {
@@ -489,7 +488,7 @@ function inlineText({ record, suffix, number, titleLabel, chicagoAuthor }, item,
 }
 
 function iconLink(part, url, label, icon, title = label, attributes = "", text = "") {
-  return `<a ${part("icon")} href="${escapeHTML(url)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(title)}"${attributes}>${icon ? iconMarkup(icon) : escapeHTML(text)}</a>`;
+  return `<a ${part("icon")} href="${escapeHTML(url)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(title)}"${attributes}>${escapeHTML(text)}${icon ? iconMarkup(icon) : ""}</a>`;
 }
 
 function destinationEntries(record, messages = createCitationMessages()) {
@@ -560,7 +559,7 @@ function annotationContent(name, namespace, records, part, messages) {
   return `<section ${part("annotation-content")} id="${namespace}-${name}" tabindex="-1" aria-label="${escapeHTML(annotationTitle)}"><h2>${escapeHTML(annotationTitle)}</h2><div data-ci-annotation-body>${content}</div></section>`;
 }
 
-export function createCitationCompiler({ citationKeyword = "citation", classPrefix = defaultClassPrefix, ...defaults } = {}) {
+export function createCitationCompiler({ citationKeyword = "cite", classPrefix = defaultClassPrefix, ...defaults } = {}) {
   validateKeyword(citationKeyword);
   validateClassPrefix(classPrefix);
   return {
@@ -921,7 +920,7 @@ function compileBlocks(blocks, cache, {
       const backlinks = (local?.get(record.id) || []).map(({ id, context }, index) => {
         const letter = suffixAt(index);
         const label = messages.text('ui.return',{context,letter});
-        return iconLink(part, `#${id}`, label, "", label, "", letter);
+        return iconLink(part, `#${id}`, label, "back", label, "", letter);
       }).join("");
       let inspect = list || inspectAppearance === "icon" || inspectPlacement === "before"
         ? trigger({ ...item, list }, messages.text('ui.inspect'), messages.text('ui.inspectReference',{title:titleFor(record)})) : "";
@@ -939,7 +938,7 @@ function compileBlocks(blocks, cache, {
       const leading = inspectPlacement === "before" ? inspect : "";
       const trailing = inspectPlacement === "after" ? inspect : "";
       const controls = list ? trailing + links
-        : trailing + links + (backlinks ? `<span ${part("backlinks")}>${backlinks}</span>` : "");
+        : trailing + links + (backlinks ? `<span ${part("backlinks")}><span aria-hidden="true" ${part("backlink-separator")}>·</span>${backlinks}</span>` : "");
       const annotation = list && record.listAnnotationParts?.length
         ? `<p ${part("list-annotation")}>${record.listAnnotationParts.map(value => renderBibliographyPart(value)).join("")}</p>` : "";
       const attrs = list ? ` data-ci-list-record="${record.id}"` : ` id="${noteID(record, scope)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;

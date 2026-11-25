@@ -31,7 +31,7 @@ Install from that project folder with `npm install`, using the actual tarball fi
 
 ## Browser and stored-data compatibility
 
-The rename preserves the `citation-inspector` custom element, `initializeCitationInspector` and the `citation-inspector.mjs`, `citation-inspector.css`, `citation-compiler.mjs`, `citation-tools.mjs`, `citation-import.mjs`, `citation-import-files.mjs` and `citation-pdf.worker.mjs` asset names. The cache schema remains `citation-inator.cache.v1`. Default `citation-*` classes, configurable keywords/class prefixes, `data-citation-part` hooks, events, cache schemas and existing storage keys retain their meaning. Existing `{cite ...}` and `{citation ...}` source requires no rewrite.
+The rename preserves the `citation-inspector` custom element, `initializeCitationInspector` and the `citation-inspector.mjs`, `citation-inspector.css`, `citation-compiler.mjs`, `citation-tools.mjs`, `citation-import.mjs`, `citation-import-files.mjs` and `citation-pdf.worker.mjs` asset names. The cache schema remains `citation-inator.cache.v1`. Default `citation-*` classes, configurable keywords/class prefixes, `data-citation-part` hooks, events, cache schemas and existing storage keys retain their meaning. The0.5.0 rename preserved existing notation. The separate0.5.1 keyword correction requires an explicit [source migration](notation-migration.md).
 
 These names describe citation functions and remain integration contracts. The default panel branding and software citation change to cite.inator. A host's explicitly configured title/icon still takes precedence. Pinned upstream teaching files and historical release evidence retain their original bytes and names.
 

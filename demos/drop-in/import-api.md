@@ -192,8 +192,8 @@ The optional shared match-to-actions helper and structured pending-format previe
 
 ## Identifier spelling and narrative groups
 
-New local identifiers use the shortest safe form by default: `{citation bell-1992-ritual}`. Set `identifierForm: 'explicit'` on `processImportRequest` or `planImportEdits` to write `{citation local:bell-1992-ritual}` instead. Reserved directive names stay explicit in either mode. Other identifier schemes keep their prefix. Existing source markers are left alone.
+New local identifiers use the shortest safe form by default: `{cite bell-1992-ritual}`. Set `identifierForm: 'explicit'` on `processImportRequest` or `planImportEdits` to write `{cite local:bell-1992-ritual}` instead. Reserved directive names stay explicit in either mode. Other identifier schemes keep their prefix. Existing source markers are left alone.
 
 `formatRecordId(id, { citationKeyword, identifierForm })` is exported from both import entries (Node and browser) and the tools entries. Use it when creating or retargeting local markers; pass a cache record ID, not an already prefixed identifier. See [the shared writing rule](article-tools.md#write-local-record-ids-040-preview) for validation and grammar compatibility.
 
-Narrative groups can contain multiple narrative items, such as `{citation bell-1992 | form:narrative; bell-1997 | form:narrative}`. Each item retains its own identity, affixes and narrative form. The compiler renders them as separate narrative references joined by a semicolon, without an outer pair of parentheses. Mixed narrative/parenthetical groups remain malformed. Import preview re-scans the encoded group before returning any edit.
+Narrative groups can contain multiple narrative items, such as `{cite bell-1992 | form:narrative; bell-1997 | form:narrative}`. Each item retains its own identity, affixes and narrative form. The compiler renders them as separate narrative references joined by a semicolon, without an outer pair of parentheses. Mixed narrative/parenthetical groups remain malformed. Import preview re-scans the encoded group before returning any edit.

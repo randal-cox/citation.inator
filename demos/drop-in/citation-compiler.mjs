@@ -1,4 +1,4 @@
-/*! cite-inator compiler v0.5.0 | MIT | See LICENSE */
+/*! cite-inator compiler v0.5.1-preview.0 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -97,7 +97,7 @@ var en = {
   "access.free": "Read free",
   "access.selected": "Through your services",
   "access.other": "Other places to look",
-  "access.more": { one: "Other source ({count})", other: "Other sources ({count})" },
+  "access.more": { one: "More options ({count})", other: "More options ({count})" },
   "access.help.unknown": "Choose your library or reading services",
   "access.help.none": "Edit your library or reading services",
   "access.help.match": "Change reading services",
@@ -138,7 +138,7 @@ var es = {
   "access.free": "Leer gratis",
   "access.selected": "A trav\xE9s de tus servicios",
   "access.other": "Otros lugares donde buscar",
-  "access.more": { one: "Otra fuente ({count})", other: "Otras fuentes ({count})" },
+  "access.more": { one: "M\xE1s opciones ({count})", other: "M\xE1s opciones ({count})" },
   "access.services": "Servicios disponibles",
   "access.preferred": "Abrir t\xEDtulos en",
   "access.noPreference": "Sin preferencia",
@@ -329,7 +329,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.5.0",
+  version: "0.5.1-preview.0",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -870,9 +870,9 @@ function parseEndnotes(body, raw) {
 }
 function directivePattern(citationKeyword) {
   validateKeyword(citationKeyword);
-  return new RegExp(String.raw`\\[\\{}]|\{endnotes\}|\{(${citationKeyword}|cite)[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
+  return new RegExp(String.raw`\\[\\{}]|\{(${citationKeyword})[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
 }
-function parseDirectives(source, { citationKeyword = "citation" } = {}) {
+function parseDirectives(source, { citationKeyword = "cite" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];
   let cursor = 0;
@@ -881,7 +881,6 @@ function parseDirectives(source, { citationKeyword = "citation" } = {}) {
     const raw = match[0];
     cursor = match.index + raw.length;
     if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
-    else if (raw === "{endnotes}") tokens.push({ type: "endnotes", raw });
     else if (match[1] === citationKeyword && /^endnote(?:\s*\||$)/.test(match[2].trim())) {
       tokens.push(parseEndnotes(match[2], raw));
     } else if (match[1] === citationKeyword && /^(?:list|nocite)[ \t]/.test(match[2].trim())) {
@@ -1209,7 +1208,7 @@ function inlineText({ record, suffix, number, titleLabel, chicagoAuthor }, item,
   return qualify(`${author}${separator}${year}${locator}`);
 }
 function iconLink(part, url, label, icon, title = label, attributes = "", text = "") {
-  return `<a ${part("icon")} href="${escapeHTML(url)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(title)}"${attributes}>${icon ? iconMarkup(icon) : escapeHTML(text)}</a>`;
+  return `<a ${part("icon")} href="${escapeHTML(url)}" aria-label="${escapeHTML(label)}" title="${escapeHTML(title)}"${attributes}>${escapeHTML(text)}${icon ? iconMarkup(icon) : ""}</a>`;
 }
 function destinationEntries(record, messages = createCitationMessages()) {
   const links = /* @__PURE__ */ new Map();
@@ -1619,7 +1618,7 @@ function compileBlocks(blocks, cache, {
       const backlinks = (local?.get(record.id) || []).map(({ id, context }, index2) => {
         const letter = suffixAt(index2);
         const label2 = messages.text("ui.return", { context, letter });
-        return iconLink(part, `#${id}`, label2, "", label2, "", letter);
+        return iconLink(part, `#${id}`, label2, "back", label2, "", letter);
       }).join("");
       let inspect = list || inspectAppearance === "icon" || inspectPlacement === "before" ? trigger({ ...item, list }, messages.text("ui.inspect"), messages.text("ui.inspectReference", { title: titleFor(record) })) : "";
       if (inspect && inspectAppearance === "icon") {
@@ -1633,7 +1632,7 @@ function compileBlocks(blocks, cache, {
       }
       const leading = inspectPlacement === "before" ? inspect : "";
       const trailing = inspectPlacement === "after" ? inspect : "";
-      const controls = list ? trailing + links : trailing + links + (backlinks ? `<span ${part("backlinks")}>${backlinks}</span>` : "");
+      const controls = list ? trailing + links : trailing + links + (backlinks ? `<span ${part("backlinks")}><span aria-hidden="true" ${part("backlink-separator")}>\xB7</span>${backlinks}</span>` : "");
       const annotation = list && record.listAnnotationParts?.length ? `<p ${part("list-annotation")}>${record.listAnnotationParts.map((value) => renderBibliographyPart(value)).join("")}</p>` : "";
       const attrs = list ? ` data-ci-list-record="${record.id}"` : ` id="${noteID(record, scope2)}" tabindex="-1"${citationStyle === "vancouver" && scoped ? ` value="${item.entry.number}"` : ""}`;
       const actions = controls ? `<div ${part("note-actions")} data-ci-note-record="${record.id}">${controls}</div>` : "";
@@ -10868,15 +10867,15 @@ function compileHTML(source, cache, options = {}) {
 }
 function compileMarkdown(source, cache, options = {}) {
   if (typeof source !== "string") throw new TypeError("Supply Markdown as a string.");
-  const keyword = options.citationKeyword ?? "citation";
+  const keyword = options.citationKeyword ?? "cite";
   parseDirectives("", options);
-  const starts = new RegExp(String.raw`\\[{}\\]|\{(?:endnotes\}|(?:cite|${keyword})[ \t])`);
+  const starts = new RegExp(String.raw`\\[{}\\]|\{(?:${keyword})[ \t]`);
   const markdown = new B({
     extensions: [{
       name: "citationBlockDirective",
       level: "block",
       start(input) {
-        const match = new RegExp(String.raw`\n {0,3}\{(?:endnotes\}|(?:cite|${keyword})[ \t]+(?:endnotes?|list)(?=[ \t|}]))`).exec(input);
+        const match = new RegExp(String.raw`\n {0,3}\{(?:${keyword})[ \t]+(?:endnote|list)(?=[ \t|}])`).exec(input);
         return match ? match.index + 1 : void 0;
       },
       tokenizer(input) {

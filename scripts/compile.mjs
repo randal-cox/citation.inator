@@ -89,7 +89,7 @@ try {
       (source, cache, options, format) => compile(source, cache, { ...options, ...overrides }, format));
     process.stdout.write(JSON.stringify(result, null, 2) + "\n");
   } else {
-    const [sourcePath, cachePath, outputPath, namespace = "cit", citationKeyword = "citation", classPrefix = "citation"] = positionals;
+    const [sourcePath, cachePath, outputPath, namespace = "cit", citationKeyword = "cite", classPrefix = "citation"] = positionals;
     if (!outputPath || positionals.length > 6) {
       throw new TypeError("Usage: cite-inator [--format text|html|markdown] [--style default|chicago-author-date|apa|mla|harvard|vancouver] [--endnotes-heading HEADING] SOURCE CACHE OUTPUT [NAMESPACE] [KEYWORD] [CLASS-PREFIX], or cite-inator --json, or cite-inator --find-isbns --json");
     }

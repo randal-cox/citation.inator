@@ -11,13 +11,14 @@ On 21 November 2026 the maintainer separated stable editor integration from the 
 | [0.3.0](docs/milestones/0.3.0.md) | Shared marker classification, stable work notes, reference-prefix hook, once-per-list help and usage docs/tests | Released 21 November 2026; tagged-artifact adoption reported by draft in issue 8 |
 | [0.4.0](docs/milestones/0.4.0.md) | Reviewed import: PDF/paste/text/Markdown/native document adapters, recognition, reference parsing, review UI, revision-bound edits and measurement | Shared API/native extraction and review fixes implemented; headless host boundary agreed; Released 23 November 2026; final release files verified by draft (91 tests); technical sign-off complete |
 | [0.5.0](docs/milestones/0.5.0.md) | Comprehensive developer documentation, annotated/live demos, worked draft.inator integration and translation/i18n | Released 25 November 2026; adopter conditions met, final checks/deployment and all published downloads verified |
+| [0.5.1](docs/milestones/0.5.1.md) | One configured cite keyword, adopter migration and learning-page polish | In progress; requires Claude/draft approval before release |
 | [0.6.0](docs/milestones/0.6.0.md) | Zotero/other managers, interchange formats and source maintenance | Planned after learning milestone |
 
 The current release is [0.5.0](https://github.com/randal-cox/cite.inator/releases/tag/v0.5.0), published 25 November 2026. The previous release is [0.4.0](https://github.com/randal-cox/cite.inator/releases/tag/v0.4.0), published 23 November 2026. Older 0.3.0 packages do not include import. The import branch keeps the work already built; its document-first review prototype is a 0.4.0 experiment. Version changes and publication follow the check-in/review procedure.
 
 Version 0.4.0 is released and its final files are verified by draft.inator with 91 passing tests. Its PR merge and remaining issue closure belong to draft. [The adopter receipt](docs/milestones/0.4.0.md#adopter-receipt) records exactly what was checked.
 
-Milestone [0.5.0 — Developer learning and live demos](docs/milestones/0.5.0.md) is complete: public examples/Guide, clean downloads, worked editor integration and UI translation. The [feature/example matrix](docs/learning-coverage.md) maps the delivered features. The next agreed milestone is [0.6.0](docs/milestones/0.6.0.md), bibliography-manager integration and source maintenance; it is planned, not started. Stable 0.4.0 artifacts remain unchanged.
+Milestone [0.5.0 — Developer learning and live demos](docs/milestones/0.5.0.md) is complete: public examples/Guide, clean downloads, worked editor integration and UI translation. The [feature/example matrix](docs/learning-coverage.md) maps the delivered features. The 0.5.1 correction is in progress with its own [acceptance gate](docs/milestones/0.5.1.md). The next larger agreed milestone is [0.6.0](docs/milestones/0.6.0.md), bibliography-manager integration and source maintenance; it is planned, not started. Stable 0.4.0 artifacts remain unchanged.
 
 ## Completed milestone 0.2.0 — Article tooling
 

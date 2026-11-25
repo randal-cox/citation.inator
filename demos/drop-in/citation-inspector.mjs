@@ -1,4 +1,4 @@
-/*! cite-inator v0.5.0 | MIT | See LICENSE */
+/*! cite-inator v0.5.1-preview.0 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {
@@ -13,7 +13,7 @@ var en = {
   "access.free": "Read free",
   "access.selected": "Through your services",
   "access.other": "Other places to look",
-  "access.more": { one: "Other source ({count})", other: "Other sources ({count})" },
+  "access.more": { one: "More options ({count})", other: "More options ({count})" },
   "access.help.unknown": "Choose your library or reading services",
   "access.help.none": "Edit your library or reading services",
   "access.help.match": "Change reading services",
@@ -54,7 +54,7 @@ var es = {
   "access.free": "Leer gratis",
   "access.selected": "A trav\xE9s de tus servicios",
   "access.other": "Otros lugares donde buscar",
-  "access.more": { one: "Otra fuente ({count})", other: "Otras fuentes ({count})" },
+  "access.more": { one: "M\xE1s opciones ({count})", other: "M\xE1s opciones ({count})" },
   "access.services": "Servicios disponibles",
   "access.preferred": "Abrir t\xEDtulos en",
   "access.noPreference": "Sin preferencia",
@@ -687,9 +687,9 @@ function parseEndnotes(body, raw) {
 }
 function directivePattern(citationKeyword) {
   validateKeyword(citationKeyword);
-  return new RegExp(String.raw`\\[\\{}]|\{endnotes\}|\{(${citationKeyword}|cite)[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
+  return new RegExp(String.raw`\\[\\{}]|\{(${citationKeyword})[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
 }
-function scanCitationMarkers(source, { citationKeyword = "citation" } = {}) {
+function scanCitationMarkers(source, { citationKeyword = "cite" } = {}) {
   if (typeof source !== "string") throw new TypeError("Supply source text.");
   return [...source.matchAll(directivePattern(citationKeyword))].filter((match) => match[0].startsWith("{")).map((match) => ({
     start: match.index,
@@ -706,7 +706,7 @@ function markerKind(raw, options = {}) {
   const token = markers[0].token;
   return token?.type === "endnotes" ? "endnote" : ["citation", "list", "nocite", "annotation"].includes(token?.type) ? token.type : "malformed";
 }
-function parseDirectives(source, { citationKeyword = "citation" } = {}) {
+function parseDirectives(source, { citationKeyword = "cite" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];
   let cursor = 0;
@@ -715,7 +715,6 @@ function parseDirectives(source, { citationKeyword = "citation" } = {}) {
     const raw = match[0];
     cursor = match.index + raw.length;
     if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
-    else if (raw === "{endnotes}") tokens.push({ type: "endnotes", raw });
     else if (match[1] === citationKeyword && /^endnote(?:\s*\||$)/.test(match[2].trim())) {
       tokens.push(parseEndnotes(match[2], raw));
     } else if (match[1] === citationKeyword && /^(?:list|nocite)[ \t]/.test(match[2].trim())) {
@@ -1295,7 +1294,7 @@ var AccessView = class {
       link.dataset.accessService = item.service;
       link.dataset.accessState = item.access || "unknown";
       if (item.verifiedAt) {
-        const date = new Intl.DateTimeFormat(this.#options.locale, { dateStyle: "medium" }).format(new Date(item.verifiedAt));
+        const date = new Date(item.verifiedAt).toISOString().slice(0, 10);
         const checked = this.text("access.checked", { date });
         link.title += "\n" + checked;
         if (containerIsPanel(list)) {
@@ -1344,7 +1343,7 @@ var AccessView = class {
       if (!entries.length) continue;
       const doc = container.ownerDocument;
       if (key === "other") {
-        const visible = this.#options.accessCollapseAfter ?? 0;
+        const visible = this.#options.accessCollapseAfter ?? 3;
         for (const { link } of entries.slice(0, visible)) this.#appendLink(container, link);
         if (entries.length > visible) {
           const more = node(doc, "details", "", "access-more");

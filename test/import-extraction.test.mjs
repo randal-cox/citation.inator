@@ -135,7 +135,7 @@ test('original notation protection survives Markdown transformations and custom 
 });
 
 test('encoded marker delimiters remain protected before Markdown inline transformations',()=>{
- const source='&#123;citation alpha | note:"before `code` Avery (2021)"&#125; After (Bennett, 2020).';
+ const source='&#123;cite alpha | note:"before `code` Avery (2021)"&#125; After (Bennett, 2020).';
  assert.deepEqual(detectExtractedCitations(extractImportText(source,{format:'markdown'})).citations.map(c=>c.raw),['(Bennett, 2020)']);
 });
 

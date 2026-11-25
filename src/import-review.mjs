@@ -15,7 +15,7 @@ export function createImportReview(source, matched) {
 }
 
 /** Plan whole-group edits. Rejected, deferred, absent and unsafe decisions preserve source. */
-export function planImportEdits(source,review,{reviewId,decisions=[],citationKeyword='citation',identifierForm='minimal'}={}) {
+export function planImportEdits(source,review,{reviewId,decisions=[],citationKeyword='cite',identifierForm='minimal'}={}) {
   if (typeof source !== 'string' || review?.schema !== 'citation-inator.import-review.v1' || review.sourceHash !== hash(source) || review.sourceLength !== source.length) throw new Error('The source revision has changed; review again.');
   if (reviewId !== review.reviewId || review.reviewId !== digest(review.sourceHash,review.matches)) throw new Error('Review decisions belong to a different or changed snapshot.');
   scanCitationMarkers('',{citationKeyword});

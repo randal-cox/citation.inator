@@ -73,13 +73,13 @@ Run the site’s build and preview the changed pages over HTTP before rolling ou
 
 ## Write citations
 
-Write `{citation doi:10.1017/S0003055419000534}` for an inline author–year reference. The compiler accepts DOI, ISBN, PMID, PMCID, arXiv, dataset, software and HTTPS URL identifiers, plus bare DOIs and stable local record IDs. It normalizes recognized resolver URLs to their identifier.
+Write `{cite doi:10.1017/S0003055419000534}` for an inline author–year reference. The compiler accepts DOI, ISBN, PMID, PMCID, arXiv, dataset, software and HTTPS URL identifiers, plus bare DOIs and stable local record IDs. It normalizes recognized resolver URLs to their identifier.
 
 | Syntax | Effect |
 | --- | --- |
-| `{citation DOI; ISBN}` | Group parenthetical citations. Substitute real identifiers for DOI and ISBN. |
-| `{citation DOI \| label:"the original study"}` | Choose the visible citation text. |
-| `{citation DOI \| fallback words}` | Supply the visible citation text if the record is unresolved. |
+| `{cite DOI; ISBN}` | Group parenthetical citations. Substitute real identifiers for DOI and ISBN. |
+| `{cite DOI \| label:"the original study"}` | Choose the visible citation text. |
+| `{cite DOI \| fallback words}` | Supply the visible citation text if the record is unresolved. |
 | `prefix:see also` | Add words before the citation inside its parentheses. |
 | `locator:34` | Add a page or other location. Write `locator:"pp. 34–36"` to include a label. |
 | `form:parenthetical` | Show author and year in parentheses. This is the default. |
@@ -87,16 +87,16 @@ Write `{citation doi:10.1017/S0003055419000534}` for an inline author–year ref
 | `form:author-only` | Show only the author, without parentheses. |
 | `form:suppress-author` | Show the year in parentheses. |
 | `form:suppress-year` | Show the author in parentheses. |
-| `{citation endnote}` | Place the endnotes in their own paragraph. With no marker, the compiler appends them. |
-| `{citation evidence}` | Show source metadata. An application can add the provider response and merge decisions for a lookup. |
-| `{citation credit}` | Show the software credit and suggested citation. |
+| `{cite endnote}` | Place the endnotes in their own paragraph. With no marker, the compiler appends them. |
+| `{cite evidence}` | Show source metadata. An application can add the provider response and merge decisions for a lookup. |
+| `{cite credit}` | Show the software credit and suggested citation. |
 
-Keep each directive on one line. A pipe introduces an option, such as `{citation isbn:9780593656433 | form:narrative}`. Quoted labels can include pipes and semicolons. Write `\{` and `\}` for literal braces. Inside a directive, backslashes can escape braces, semicolons, pipes, quotes and backslashes. Use `{cite …}` as the short work-citation form and `{endnotes}` as an alternate endnote directive.
+Keep each directive on one line. A pipe introduces an option, such as `{cite isbn:9780593656433 | form:narrative}`. Quoted labels can include pipes and semicolons. Write `\{` and `\}` for literal braces. Inside a directive, backslashes can escape braces, semicolons, pipes, quotes and backslashes. The default keyword is `cite` for works and directives. Set `citationKeyword` to choose another keyword consistently; there are no implicit alternate spellings.
 
 Set the keyword while compiling. The browser element stays `<citation-inspector>`. This Chicago example keeps the author in the sentence and adds a second work to the same group.
 
 ```text
-Schechner {citation local:schechner1979 | form:suppress-author; local:schechner1985 | prefix:see also}.
+Schechner {cite local:schechner1979 | form:suppress-author; local:schechner1985 | prefix:see also}.
 ```
 
 Provide both local IDs in your cache to render “Schechner (1979; see also Schechner 1985).” A literal `label` overrides the generated citation text, including affixes.
@@ -138,13 +138,13 @@ Use `locator:34` for a page or `locator:"34–36"` for a range. APA, Harvard and
 
 Compile a reusable card with `references: "isolated"`, or mark individual items with `| isolated`. These citations retain their configured style and inspector metadata. They emit no citation IDs, backlinks, or endnotes. Set `isolatedHref: "/references#{id}"` to link each citation to a host-provided fallback target. Without a template, cite.inator uses a known identifier URL or source location when available. Isolated fragments omit interactive evidence and credit links. Multiple inspectors with the same-origin `data-cache` URL share one fetch per page.
 
-Place `{citation endnote | scope:since-last}` on its own line or paragraph at the end of each entry. Its list and backlinks belong to that entry. When scoped markers are used, each endnote marker closes a scope and any trailing citations get a final list. The compiler assigns author-year suffixes across the fragment. A standalone marker works inside definition entries, list items, table cells and other prose containers. A marker left in running prose produces a `misplaced-directive` diagnostic. Use `{citation endnote | scope:since-last | heading:"Sources" | level:4}` for a local heading, or `heading:none` to omit it. Heading levels run from 1 through 6.
+Place `{cite endnote | scope:since-last}` on its own line or paragraph at the end of each entry. Its list and backlinks belong to that entry. When scoped markers are used, each endnote marker closes a scope and any trailing citations get a final list. The compiler assigns author-year suffixes across the fragment. A standalone marker works inside definition entries, list items, table cells and other prose containers. A marker left in running prose produces a `misplaced-directive` diagnostic. Use `{cite endnote | scope:since-last | heading:"Sources" | level:4}` for a local heading, or `heading:none` to omit it. Heading levels run from 1 through 6.
 
 Keep the default `suffixScope: "fragment"` for separate articles or essays with their own reference lists, even if they share a source cache. Each compiled article gets year letters based on its own works.
 
 Use `suffixScope: "cache"` for a single work published across pages that share one bibliography, such as the chapters of an online book. Compile each page with the same complete input cache and style options. The cache returned for an individual page contains that page’s records. If a work in the page’s endnotes has a cache-wide year letter and a companion work is absent from those endnotes, the compiler returns a `cache-suffix-missing-companions` diagnostic. Its `records` and `missingRecords` fields list the record IDs present and absent, respectively. The diagnostic leaves the year letters intact, which is useful when the companions are listed in the shared bibliography elsewhere.
 
-Place `{citation list id1; id2; id3}` on its own line or paragraph to render a reading list. The list uses the chosen style, reference formatting, access links, and an **Inspect** action for each record. It preserves input order unless you add `| sort:author` or `| sort:year`. A list leaves the endnotes alone. Set `listAnnotationParts` on a record to show a summary under its reference. Parts use the same `text`, `emphasis`, and HTTPS `href` fields as `citationParts`. Each reading-list item has a `data-ci-list-record` attribute with its record ID so the site can attach its own tags. Use `{citation nocite id1}` to add a source to the current endnotes without an inline citation.
+Place `{cite list id1; id2; id3}` on its own line or paragraph to render a reading list. The list uses the chosen style, reference formatting, access links, and an **Inspect** action for each record. It preserves input order unless you add `| sort:author` or `| sort:year`. A list leaves the endnotes alone. Set `listAnnotationParts` on a record to show a summary under its reference. Parts use the same `text`, `emphasis`, and HTTPS `href` fields as `citationParts`. Each reading-list item has a `data-ci-list-record` attribute with its record ID so the site can attach its own tags. Use `{cite nocite id1}` to add a source to the current endnotes without an inline citation.
 
 ### Chicago names, groups, and legislation
 
@@ -164,8 +164,8 @@ With npm dependencies installed, use these Node imports. From a source checkout,
 import { compileHTML, compileMarkdown, rebaseCitationFragment } from "cite-inator/markup";
 
 const options = { namespace: "consent-essay", citationStyle: "chicago-author-date", endnotesHeading: "References" };
-const result = compileHTML('<p><em>Consent</em> has a history {citation local:consent}.</p><p>{citation endnote}</p>', cache, options);
-const markdownResult = compileMarkdown('*Consent* has a history {citation local:consent}.', cache, options);
+const result = compileHTML('<p><em>Consent</em> has a history {cite local:consent}.</p><p>{cite endnote}</p>', cache, options);
+const markdownResult = compileMarkdown('*Consent* has a history {cite local:consent}.', cache, options);
 const secondCopy = rebaseCitationFragment(result.html, "consent-essay", "consent-excerpt");
 ```
 
@@ -184,7 +184,7 @@ from pathlib import Path
 
 cache = json.loads(Path("demos/drop-in/citations.json").read_text(encoding="utf-8"))
 request = {
-    "paragraphs": ["{citation isbn:9780593656433 | locator:34}", "{citation endnote}"],
+    "paragraphs": ["{cite isbn:9780593656433 | locator:34}", "{cite endnote}"],
     "cache": cache,
     "options": {
         "namespace": "example-page",

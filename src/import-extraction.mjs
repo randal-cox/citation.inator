@@ -43,7 +43,7 @@ function protectedMarkers(source,citationKeyword) {
  * Links contribute visible text; their targets are opaque provenance only.
  * HTML/CSS rendering is not simulated: external CSS visibility is unknown.
  */
-export function extractImportText(source, { format = 'text', citationKeyword = 'citation', includeURLLabels=false } = {}) {
+export function extractImportText(source, { format = 'text', citationKeyword = 'cite', includeURLLabels=false } = {}) {
   if (typeof source !== 'string') throw new TypeError('Supply source text.');
   if (!['text','html','markdown'].includes(format)) throw new TypeError('Experimental extraction supports text, html and markdown.');
   const result = { schema:'citation-inator.import-extraction.v1', format, citationKeyword, excludedSourceRanges:protectedMarkers(source,citationKeyword), text:'', segments:[], links:[], diagnostics:[] };

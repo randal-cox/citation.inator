@@ -25,7 +25,7 @@ test('Chicago suffixes, reprints and narrative forms remain explicit',()=>{
 });
 
 test('existing notation, noncitations and out-of-range reference lists are left alone',()=>{
- const text='A date (2021), a rate (p = 0.04), and a marker {citation alpha | note:"Avery (2021)"}. Real (Bennett, 2019).\n\nReferences\nAvery (2021) Bibliography.';
+ const text='A date (2021), a rate (p = 0.04), and a marker {cite alpha | note:"Avery (2021)"}. Real (Bennett, 2019).\n\nReferences\nAvery (2021) Bibliography.';
  const result=parseInTextCitations(text,{range:{start:0,end:text.indexOf('\n\nReferences')}});
  assert.deepEqual(result.citations.map(c=>c.raw),['(Bennett, 2019)']);
  assert.throws(()=>parseInTextCitations(text,{style:'unknown'}),/Initial detection/);
@@ -139,7 +139,7 @@ test('numeric malformed groups are not partially imported and expansion is bound
 });
 
 test('numeric notation and bibliography boundaries remain protected',()=>{
- const text='{citation alpha | note:"[1]"} Body [2].\nReferences\n[3] Book';
+ const text='{cite alpha | note:"[1]"} Body [2].\nReferences\n[3] Book';
  const result=parseInTextCitations(text,{style:'vancouver',range:{start:0,end:text.indexOf('\nReferences')}});
  assert.deepEqual(result.citations.map(c=>c.raw),['[2]']);
 });

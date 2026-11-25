@@ -1,18 +1,23 @@
-# References readers can use
+# References for websites
 
-Write a DOI or ISBN in your article. cite.inator turns it into a formatted citation, linked endnotes and a source panel, so readers can find the work without losing their place.
+Maintaining citations on a website is tedious: formatting references, keeping repeated sources consistent, maintaining reading links and fitting everything into your site’s design.
 
-```text
-A claim {cite doi:10.1371/journal.pmed.0020124}.
+cite.inator’s goal is to make that work easy, configurable, powerful and inspectable. Write a short marker; let the library turn source metadata into citations your readers can use.
 
-{citation endnote}
-```
+- **Consistent references.** Choose Chicago, APA, MLA, Harvard or Vancouver; generate citations and endnotes from the same source records.
+- **Your site’s look and behavior.** Configure styles, class names, panel titles, icons and hover or click behavior.
+- **Useful reading links.** Offer publisher, PDF and library routes, with reader preferences for the services they use.
+- **Evidence you can inspect.** Open the metadata behind a reference and review proposed identifiers before accepting them.
+- **Help with existing documents.** Import a manuscript, review its references and export citation markers and bibliographic metadata.
+- **Free to use and make your own.** The [MIT license](https://github.com/randal-cox/cite.inator/blob/main/LICENSE) permits use, modification and redistribution, including commercial use. No account or subscription is required.
 
-Choose Chicago, APA, MLA, Harvard or Vancouver. Add links to available reading copies, your library services and shared bibliographies. Keep your own site's appearance.
+## Start with one citation
 
-## Start with a working page
+The citation goes in your article. JavaScript compiles it using saved bibliographic metadata and initializes the source panels; HTML supplies the place to display it.
 
-Download a starter, edit its article, and follow the Guide to resolve the source metadata and publish. Use npm or copy the browser files into your site; no framework is required.
+<div id="overview-example"></div>
+
+Download a starter for these files and the example’s metadata, then follow the Guide to add your own sources. Use npm or copy the browser assets into your site; no framework is required.
 
 <div class="overview-actions"><a href="./guide.html#load-compile-initialize">Get started</a><a href="./">Try the Playground</a></div>
 
@@ -21,7 +26,3 @@ Download a starter, edit its article, and follow the Guide to resolve the source
 Import a PDF, Word or OpenDocument file, Markdown, or pasted text. Review the suggested references and identifiers, then download the converted document and its bibliography. Your original stays intact.
 
 [Try Import](./import/)
-
-## Free to use and make your own
-
-We give cite.inator away under the [MIT license](https://github.com/randal-cox/cite.inator/blob/main/LICENSE). Use it, modify it and redistribute it, including in commercial projects. No account or subscription is required.

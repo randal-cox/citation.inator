@@ -23,7 +23,7 @@ for (const style of ["default", "apa"]) {
     }]);
     const text = `${organization}. (2024). Field notes from the coast. ${publisherURL}`;
     assert.equal(bibliographyText(cache.records[0], "", style), text);
-    const { html } = compileCitations("{citation field-notes}", cache, { citationStyle: style });
+    const { html } = compileCitations("{cite field-notes}", cache, { citationStyle: style });
     assert.match(html, /<em>Field notes from the coast<\/em>\. <a href="https:\/\/example\.org\/field-notes"[^>]*>https:\/\/example\.org\/field-notes<\/a>/);
     const plan = planCitationOccurrences([{ occurrenceId: "caption", recordId: webpage.id }], cache, {
       namespace: "example", citationStyle: style

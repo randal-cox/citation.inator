@@ -115,7 +115,7 @@ function analyze(source, cache, options) {
 /** Describe a marker or identifier. No network requests or cache writes. */
 export function describeCitation(identifierOrMarker, cache, options = {}) {
   if (typeof identifierOrMarker !== 'string') throw new TypeError('Supply a marker or identifier.');
-  const source = identifierOrMarker.trim().startsWith('{') ? identifierOrMarker : `{${options.citationKeyword || 'citation'} ${identifierOrMarker}}`;
+  const source = identifierOrMarker.trim().startsWith('{') ? identifierOrMarker : `{${options.citationKeyword || 'cite'} ${identifierOrMarker}}`;
   const markers = scanCitationMarkers(source, options);
   if (markers.length !== 1 || markers[0].token?.type !== 'citation' || source.trim() !== markers[0].raw) {
     return { text: '', items: [], state: 'malformed', diagnostics: [{ state: 'malformed', code: 'citation-malformed', source: identifierOrMarker }] };
@@ -148,7 +148,7 @@ export function annotateMarkers(source, cache, options = {}) {
       let noteText=description.items[i].text;
       if (noteContext === 'work') {
         const recordId=description.items[i].recordId;
-        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId,describeCitation(`{${options.citationKeyword || 'citation'} ${formatRecordId(recordId, options)}}`,cache,{...options,suffixScope:'fragment'}).text);
+        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId,describeCitation(`{${options.citationKeyword || 'cite'} ${formatRecordId(recordId, options)}}`,cache,{...options,suffixScope:'fragment'}).text);
         noteText=workDescriptions.get(recordId);
       }
       noteText=escaped(noteText);

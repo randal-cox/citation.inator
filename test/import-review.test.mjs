@@ -9,7 +9,7 @@ test('accepted text edits preserve prefixes, locators and unrelated source exact
  const source='😀 Before (see also Avery, 2021, p. 4).\r\n\r\nReferences\r\nKeep this bibliography.';
  const review=reviewFor(source);const plan=planImportEdits(source,review,{reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',recordIds:['avery']}]});
  assert.equal(plan.edits.length,1);const result=applyImportEdits(source,plan);
- assert.equal(result.source,'😀 Before {citation avery | prefix:"see also" | locator:"p. 4"}.\r\n\r\nReferences\r\nKeep this bibliography.');
+ assert.equal(result.source,'😀 Before {cite avery | prefix:"see also" | locator:"p. 4"}.\r\n\r\nReferences\r\nKeep this bibliography.');
  assert.equal(result.changed,true);
 });
 test('pending, deferred and rejected groups produce no edits or record mutation',()=>{
@@ -72,7 +72,7 @@ test('explicit identifier targets retain locators, normalize pasted IDs and cann
   assert.equal(markers.length,1);assert.equal(markers[0].token.items.length,1);assert.deepEqual(markers[0].token.items[0].identifier,{scheme,value});assert.equal(markers[0].token.items[0].locator,'p. 4');
   assert.deepEqual(plan.outcomes[0].targets,[{identifier:scheme+':'+value}]);
  }
- for(const raw of ['9780140328722','javascript:alert(1)','local:invented','avery','10.1234/x} {citation credit}']) {
+ for(const raw of ['9780140328722','javascript:alert(1)','local:invented','avery','10.1234/x} {cite credit}']) {
   assert.throws(()=>planImportEdits(source,review,{reviewId:review.reviewId,decisions:[{citationIndex:0,action:'accept',targets:[{identifier:raw}]}]}),/valid/);
  }
 });

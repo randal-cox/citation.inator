@@ -25,7 +25,7 @@ function markdownBlocks(source) {
   return block;
  });
 }
-export function partitionImportDocument(source,{startLine='auto',endLine=null,limits:overrides,citationKeyword='citation'}={}) {
+export function partitionImportDocument(source,{startLine='auto',endLine=null,limits:overrides,citationKeyword='cite'}={}) {
  const limits=normalizeImportLimits(overrides);
  if(typeof source!=='string'||source.length>limits.sourceCharacters)throw new TypeError('Use a document of at most '+limits.sourceCharacters.toLocaleString('en')+' characters.');
  const lines=sourceLines(source),blocks=markdownBlocks(source),headings=[],eligible=extractImportText(source,{format:'markdown',citationKeyword}).segments;
@@ -137,7 +137,7 @@ function bibliographyEntries(source,document,style,limits) {
   return {...parsed,...entry,line,raw,id:'ref-'+digest(raw).slice(0,20),evidence};
  });
 }
-export function analyzeImportDocument(source,{style='auto',bibliography={},limits:overrides,citationKeyword='citation'}={}) {
+export function analyzeImportDocument(source,{style='auto',bibliography={},limits:overrides,citationKeyword='cite'}={}) {
  const limits=normalizeImportLimits(overrides),document=partitionImportDocument(source,{...bibliography,limits,citationKeyword});
  const parts=document.bodyRanges.filter(range=>range.end>range.start).map(range=>{
   const extraction=extractImportText(source.slice(range.start,range.end),{format:'markdown',citationKeyword});return {range,extraction};

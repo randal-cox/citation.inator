@@ -83,5 +83,8 @@
   "tools/tag-book.svg",
   "tools/tag-tool.svg",
   "tutorials.html",
-  "version.json"
+  "version.json",
+  "about.mjs",
+  "assets/learning-footer.mjs",
+  "reference/notation-migration.html"
 ]

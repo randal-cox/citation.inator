@@ -29,7 +29,7 @@ test("media metadata preserves attribution, literal dates, rights and distinct s
   assert(!JSON.stringify(csl.author).includes("Uploader"));
   const unknown = { ...record, id: "unknown", authors: [], displayDate: "c. 1500", creatorAttribution: "" };
   assert.match(bibliographyText(unknown, "", "chicago-author-date"), /^The Prairie on Fire\. c\. 1500\./);
-  const { html } = compileCitations("{citation list painting}", makeCache([record]), { inspectAppearance: "icon", inspectPlacement: "before" });
+  const { html } = compileCitations("{cite list painting}", makeCache([record]), { inspectAppearance: "icon", inspectPlacement: "before" });
   assert(html.indexOf("data-ci-inspect-icon") < html.indexOf("<em>The Prairie on Fire"));
   assert.match(html, /aria-label="Inspect reference: The Prairie on Fire"/);
 });
@@ -41,7 +41,7 @@ test("media date suffixes agree, canonical export wins, and authored references 
     locations: [{ kind: "publisher", provider: "Museum", url: "https://museum.example/catalog" }]
   };
   const cache = makeCache([{ ...base, id: "a", title: "A work" }, { ...base, id: "b", title: "B work", identifiers: [] }]);
-  const result = compileCitations("{citation a; b}", cache, { citationStyle: "apa" });
+  const result = compileCitations("{cite a; b}", cache, { citationStyle: "apa" });
   assert.match(result.html, /\(n\.d\.-a\)\. A work/);
   assert.match(result.html, /\(n\.d\.-b\)\. B work/);
   const csl = toCSL(cache.records[0]);
@@ -57,7 +57,7 @@ test("plain and italic title offsets identify the title independently of the byl
     const cache = makeCache([{
       id: "nature", title: "Nature", authors: [{ literal: "Nature" }], type: "webpage", state: "resolved", issued: [2020]
     }]);
-    const { html } = compileCitations("{citation nature}", cache, { citationStyle });
+    const { html } = compileCitations("{cite nature}", cache, { citationStyle });
     const match = html.match(/<span dir="auto" data-ci-title-start="(\d+)" data-ci-title-length="(\d+)">([^]*?)<\/span>/);
     assert(match, citationStyle);
     const plain = match[3].replace(/<[^>]*>/g, "").replaceAll("&amp;", "&").replaceAll("&quot;", '"');
@@ -69,7 +69,7 @@ test("plain and italic title offsets identify the title independently of the byl
 
 test("leading inspect icons omit empty actions and support a colour-inheriting mask", () => {
   const cache = makeCache([{ id: "work", type: "book", title: "Work", authors: [{ family: "Author" }], issued: [2020], state: "resolved" }]);
-  const source = "{citation list work}\n\n{citation list work}";
+  const source = "{cite list work}\n\n{cite list work}";
   const options = { inspectAppearance: "icon", inspectPlacement: "before", inspectIcon: "/book.svg", namespace: "icons" };
   const image = compileCitations(source, cache, options).html;
   assert(!image.includes('data-citation-part="note-actions"'));
@@ -88,6 +88,6 @@ test("leading inspect icons omit empty actions and support a colour-inheriting m
   assert(!rebased.includes('id="icons_inspect-mask-'));
   assert.throws(() => compileCitations(source, cache, { ...options, inspectIcon: "javascript:alert(1)" }));
   assert.throws(() => compileCitations(source, cache, { ...options, inspectIconMode: "raw" }));
-  const notes = compileCitations("{citation nocite work}", cache, { ...options, inspectPlacement: "before" }).html;
+  const notes = compileCitations("{cite nocite work}", cache, { ...options, inspectPlacement: "before" }).html;
   assert(!notes.includes('data-citation-part="note-actions"'));
 });

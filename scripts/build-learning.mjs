@@ -6,7 +6,7 @@ import {learningStarter,npmLearningStarter} from './learning-starter.mjs';
 import {lessons} from '../learn/lessons.mjs';
 import {brandIconMarkup} from '../src/icons.mjs';
 import {compileMarkdown} from '../src/markup.mjs';
-import {escapeHTML} from '../src/compiler.mjs';
+import {compileCitations,escapeHTML} from '../src/compiler.mjs';
 import {createSiteOccurrenceIndex} from '../src/reference-features.mjs';
 import {learningRecords} from '../learn/example-records.mjs';
 import {createHash} from 'node:crypto';
@@ -27,8 +27,8 @@ await copyFile('node_modules/dompurify/LICENSE','site/assets/LEARNING_THIRD_PART
 const records=learningRecords(JSON.parse(await readFile('fixtures/notation-records.json','utf8')));
 const cache={schema:'citation-inator.cache.v1',records};
 const articles=[
-  {id:'article-one',label:'Article one',source:'A sourced claim {citation ioannidis-2005}. A second mention returns separately {citation ioannidis-2005}.\n\n{citation endnote}'},
-  {id:'article-two',label:'Article two',source:'Another article uses the same work {citation ioannidis-2005}. This book is included without an in-text claim {citation nocite durkheim-1995-fields}.\n\n{citation endnote}'}
+  {id:'article-one',label:'Article one',source:'A sourced claim {cite ioannidis-2005}. A second mention returns separately {cite ioannidis-2005}.\n\n{cite endnote}'},
+  {id:'article-two',label:'Article two',source:'Another article uses the same work {cite ioannidis-2005}. This book is included without an in-text claim {cite nocite durkheim-1995-fields}.\n\n{cite endnote}'}
 ].map(article=>({...article,result:compileMarkdown(article.source,cache,{namespace:'learning-'+article.id,citationStyle:'chicago-author-date'})}));
 const siteOccurrences=createSiteOccurrenceIndex(articles.map(article=>({href:'./examples/'+article.id+'.html',label:article.label,occurrences:article.result.occurrences})));
 await writeFile('site/records.json',JSON.stringify({...cache,siteOccurrences}));
@@ -79,7 +79,7 @@ for(const file of ['article-1.html','article-2.html','bibliography.html','editor
   await writeFile('site/tools/'+file,content);
 }
 await writeFile('site/tools/learning-scope.mjs',`import {initializeCitationInspector} from '../assets/citation-inspector.mjs';\nfor(const element of document.querySelectorAll('citation-inspector'))initializeCitationInspector(element,{accessStorageKey:'citation-inator-learning-access'});`);
-const referenceNames=['integration','article-tools','reader-access','media-support','citation-styles','import-api','import-demo','i18n','draft-integration','naming-migration'];
+const referenceNames=['integration','article-tools','reader-access','media-support','citation-styles','import-api','import-demo','i18n','draft-integration','naming-migration','notation-migration'];
 const page=(title,body)=>`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHTML(title)} · cite.inator</title><link rel="stylesheet" href="../learning.css"></head><body><header><a class="brand" href="../">${brandIconMarkup}cite.inator</a><nav aria-label="Learning"><a href="../tutorials.html">Tutorials</a><a href="../import/">Import</a><a href="../guide.html">Guide</a></nav></header><main class="guide">${body}</main><footer>cite.inator ${version} · <a href="https://github.com/randal-cox/cite.inator/tree/${sourceRef}">Source</a></footer></body></html>`;
 await mkdir('site/reference',{recursive:true});
 for(const name of referenceNames){
@@ -95,7 +95,27 @@ for(const name of referenceNames){
 const tutorialHTML=`<h2>Worked examples</h2><p>Start with a DOI or ISBN marker, then explore formatting, reading lists and other source types.</p><ul>${lessons.map(lesson=>`<li><a href="#${lesson.id}">${escapeHTML(lesson.title)}</a></li>`).join('')}</ul>`+lessons.map(lesson=>`<section id="${lesson.id}"><h2>${escapeHTML(lesson.title)}</h2><p>${escapeHTML(lesson.text)}</p><p><a href="./?example=${lesson.id}">Open working example</a></p><pre><code>${escapeHTML(lesson.source)}</code></pre>${Object.keys(lesson.options).length?`<h3>Configuration</h3><pre><code>${escapeHTML(JSON.stringify(lesson.options,null,2))}</code></pre>`:''}</section>`).join('')+`<h2 id="api-reference">API reference</h2><ul>${referenceNames.map(name=>`<li><a href="./reference/${name}.html">${name.replaceAll('-',' ')}</a></li>`).join('')}</ul><p><a href="./tools/editor-tools.html">Try the editor-note and tag tools</a> · <a href="./tools/bibliography.html">Try the shared bibliography</a></p>`;
 const combinedGuide=await readFile('site/guide.html','utf8');
 await writeFile('site/guide.html',combinedGuide.replace('</main>',`<section id="examples">${tutorialHTML}</section></main>`));
-await writeFile('site/about.html',page('About cite.inator',learningMarkdown(await readFile('learn/about.md','utf8'))).replaceAll('href="../','href="./').replace('class="guide"','class="guide overview"'));
+const overviewSnippets=[
+ ['Citation','A claim {cite doi:10.1371/journal.pmed.0020124}.\n\n{cite endnote}'],
+ ['JavaScript',`import {compileMarkdown} from './citation-compiler.mjs';
+import {initializeCitationInspector} from './citation-inspector.mjs';
+
+const [source,cache]=await Promise.all([
+  fetch('./article.md').then(response=>response.text()),
+  fetch('./citations.json').then(response=>response.json())
+]);
+const options={citationStyle:'chicago-author-date',activation:'hover'};
+const result=compileMarkdown(source,cache,options);
+const article=document.querySelector('#article');
+article.innerHTML=result.html; // Trusted authored content.
+initializeCitationInspector(article,{...options,cache:result.cache});`],
+ ['HTML',`<link rel="stylesheet" href="./citation-inspector.css">
+<citation-inspector id="article"></citation-inspector>
+<script type="module" src="./article.mjs"></script>`]
+];
+const overviewExample=`<section class="overview-code" data-example-tabs><div role="tablist" aria-label="Minimal citation example">${overviewSnippets.map(([label],index)=>`<button type="button" role="tab" id="example-tab-${index}" aria-controls="example-panel-${index}" aria-selected="${index===0}" tabindex="${index===0?0:-1}">${label}</button>`).join('')}</div>${overviewSnippets.map(([,code],index)=>`<div role="tabpanel" id="example-panel-${index}" aria-labelledby="example-tab-${index}"${index===0?'':' hidden'}><pre tabindex="0"><code>${escapeHTML(code)}</code></pre></div>`).join('')}</section>`;
+await copyFile('learn/about.mjs','site/about.mjs');
+await writeFile('site/about.html',page('About cite.inator',learningMarkdown(await readFile('learn/about.md','utf8'))).replaceAll('href="../','href="./').replace('class="guide"','class="guide overview"').replace('<div id="overview-example"></div>',overviewExample).replace('</body>','<script type="module" src="./about.mjs"></script></body>'));
 await writeFile('site/tutorials.html',`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=./guide.html#examples"><title>Guide · cite.inator</title></head><body><a href="./guide.html#examples">Open the Guide</a></body></html>`);
 await mkdir('site/host',{recursive:true});
 for(const file of ['editor.js','importer.js','forms.js','citation.js','editor.css','SOURCE.json'])await copyFile('learn/vendor/draft-inator/'+file,'site/host/'+file);
@@ -112,12 +132,19 @@ await copyFile('scripts/static-server.mjs','site/server.mjs');
 await writeFile('site/package.json',JSON.stringify({name:'citation-learning-site',private:true,type:'module',version,scripts:{start:'node server.mjs'},engines:{node:'>=22.13.0'}},null,2));
 await writeFile('site/README.md',`# cite.inator learning site — ${version}\n\nRun npm start (no install required), or node server.mjs, then open http://127.0.0.1:4188/. Node 22.13.0 or later is required. Any static HTTP server also works. Use HTTP, not file://.\n\nCore compilation, saved import metadata, native sample files and the pinned draft editor run locally. Live lookup is a separate page which sends bibliographic details to Crossref/Open Library. No document storage or authentication is configured.\n\nLibrary notices are in assets/. DOMPurify's license is assets/LEARNING_THIRD_PARTY.txt. The pinned draft editor's MIT license and source manifest are in host/. The public document samples have attribution/checksums in documents/manifest.json. The npm starter contains its own pinned library tarball; npm install is needed only inside that extracted starter.\n`);
 const downloadFiles={},routes=JSON.parse(await readFile('learn/generated-routes.json','utf8'));
+const creditMarkup=compileCitations('{cite credit}',{schema:'citation-inator.cache.v1',records:[]},{namespace:'learning-footer',strings:{'ui.credit':'How to cite'}}).html;
+const commonFooter=`<footer class="learning-credit"><div>Randal Cox · <a href="https://orcid.org/0009-0002-3427-7190">ORCID</a></div><div class="footer-links"><a href="https://github.com/randal-cox/cite.inator/blob/main/LICENSE">MIT license</a><citation-inspector data-learning-credit>${creditMarkup}</citation-inspector></div></footer>`;
+await copyFile('learn/footer.mjs','site/assets/learning-footer.mjs');
 // One navigation shell across every learning route; local links remain in the body.
 for(const route of routes.filter(path=>path.endsWith('.html'))){
  const prefix=route.includes('/')?'../':'./';
  const header=`<header><a class="brand" href="${prefix}about.html">${brandIconMarkup}cite.inator</a><nav aria-label="Learning"><a href="${prefix}">Playground</a><a href="${prefix}import/">Import</a><a href="${prefix}guide.html">Guide</a></nav><a class="github-link" href="https://github.com/randal-cox/cite.inator"><span>GitHub</span><span id="version">${version}</span></a></header>`;
  let html=await readFile('site/'+route,'utf8');
  if(html.includes('<header>'))html=html.replace(/<header>[\s\S]*?<\/header>/,header);else html=html.replace(/(<body[^>]*>)/,'$1'+header);
+ if(route==='host/index.html'){const upstream=html.match(/<footer[^>]*>([\s\S]*?)<\/footer>/)?.[1];if(upstream)html=html.replace('</main>',`<aside class="upstream-credit">${upstream}</aside></main>`);}
+ html=html.replace(/<footer[^>]*>[\s\S]*?<\/footer>/g,'');
+ html=html.replace('</body>',`${commonFooter}<script type="module" src="${prefix}assets/learning-footer.mjs"></script></body>`);
+ if(!html.includes('href="'+prefix+'assets/citation-inspector.css"'))html=html.replace('</head>',`<link rel="stylesheet" href="${prefix}assets/citation-inspector.css"></head>`);
  if(!html.includes('href="'+prefix+'learning.css"'))html=html.replace('</head>',`<link rel="stylesheet" href="${prefix}learning.css"></head>`);
  if(route.startsWith('tools/')&&route.endsWith('.html'))html=html.replace('<main>','<main><nav class="local-navigation" aria-label="Bibliography examples"><a href="./article-1.html">Article one</a><a href="./article-2.html">Article two</a><a href="./bibliography.html">Shared bibliography</a><a href="./editor-tools.html">Editor tools</a></nav>');
  if(route.startsWith('examples/'))html=html.replace('<main>','<main><nav class="local-navigation" aria-label="Article examples"><a href="./article-one.html">Article one</a><a href="./article-two.html">Article two</a><a href="../?example=site">Shared bibliography</a></nav>');

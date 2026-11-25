@@ -28,9 +28,9 @@ test('local ID writer rejects invalid IDs and configuration instead of silently 
 test('refreshing notes preserves bare and explicit identifier spelling in either writer mode',()=>{
   const cache=makeCache([{id:'bell',type:'book',state:'resolved',title:'Ritual',authors:[{family:'Bell',given:'Catherine'}],issued:[1992]}]);
   for(const identifierForm of ['minimal','explicit']){
-    const source='{citation bell | note:"old"}; {citation local:bell | note:"old"}';
+    const source='{cite bell | note:"old"}; {cite local:bell | note:"old"}';
     const result=annotateMarkers(source,cache,{identifierForm,noteContext:'work',citationStyle:'chicago-author-date'});
-    assert.match(result.source,/^\{citation bell \| note:"Bell 1992"\}; \{citation local:bell \| note:"Bell 1992"\}$/);
+    assert.match(result.source,/^\{cite bell \| note:"Bell 1992"\}; \{cite local:bell \| note:"Bell 1992"\}$/);
     assert.equal(annotateMarkers(result.source,cache,{identifierForm,noteContext:'work',citationStyle:'chicago-author-date'}).changed,false);
   }
   assert.throws(()=>annotateMarkers('',cache,{identifierForm:'unknown'}),/minimal or explicit/);

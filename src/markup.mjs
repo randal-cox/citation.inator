@@ -103,14 +103,14 @@ export function compileHTML(source, cache, options = {}) {
 /** Compile trusted Markdown. Raw HTML follows the same trust model as compileHTML. */
 export function compileMarkdown(source, cache, options = {}) {
   if (typeof source !== "string") throw new TypeError("Supply Markdown as a string.");
-  const keyword = options.citationKeyword ?? "citation";
+  const keyword = options.citationKeyword ?? "cite";
   parseDirectives("", options);
-  const starts = new RegExp(String.raw`\\[{}\\]|\{(?:endnotes\}|(?:cite|${keyword})[ \t])`);
+  const starts = new RegExp(String.raw`\\[{}\\]|\{(?:${keyword})[ \t]`);
   const markdown = new Marked({
     extensions: [{
       name: "citationBlockDirective", level: "block",
       start(input) {
-        const match = new RegExp(String.raw`\n {0,3}\{(?:endnotes\}|(?:cite|${keyword})[ \t]+(?:endnotes?|list)(?=[ \t|}]))`).exec(input);
+        const match = new RegExp(String.raw`\n {0,3}\{(?:${keyword})[ \t]+(?:endnote|list)(?=[ \t|}])`).exec(input);
         return match ? match.index + 1 : undefined;
       },
       tokenizer(input) {

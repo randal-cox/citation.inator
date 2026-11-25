@@ -12,7 +12,7 @@ export async function checkWebpageBrowser({ page, directory, origin }) {
     locations: [{ kind: "publisher", provider: "Coastal Archive", url }]
   }]);
   const variants = ["default", "apa"].map(style => {
-    const { html } = compileCitations("{citation harbor}", cache, { namespace: style, citationStyle: style });
+    const { html } = compileCitations("{cite harbor}", cache, { namespace: style, citationStyle: style });
     return `<citation-inspector id="${style}" data-cache="./webpage.json">${html}</citation-inspector>`;
   });
   const plan = planCitationOccurrences([{ occurrenceId: "caption", recordId: "harbor" }], cache, {

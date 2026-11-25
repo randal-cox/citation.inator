@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1-preview.0 — In development
+
+- Use one configured marker keyword, default `cite`, for both works and directives. Remove implicit alternate spellings; this intentional notation migration requires draft approval before release.
+- Explain website citation maintenance and headline features in the overview, with tabbed citation/JavaScript/HTML setup snippets.
+- Share one footer across learning pages with author/ORCID left and MIT/license-backed software-credit hover right.
+- Place ISO checked dates beneath reading buttons and prevent card-title padding from affecting bold excerpts.
+
 ## 0.5.0 — Developer learning and live demos · 25 November 2026
 
 - Add a concise masthead overview, group Playground/Import/Guide navigation and place GitHub with its version at the far right.
