@@ -1,3 +1,5 @@
+import {applyTagDeclarations} from './tag-declarations.mjs';
+import {optionParts} from './notation-options.mjs';
 import {authorFields, validAuthorField, applyAuthorFields} from './author-fields.mjs';
 import { createCitationMessages } from "./i18n.mjs";
 import { defaultClassPrefix, partClassNames, validateClassPrefix } from "./class-names.mjs";
@@ -23,7 +25,7 @@ export const escapeHTML = value => String(value).replace(/[&<>"']/g, character =
 })[character]);
 
 function parseItem(text) {
-  const [key, ...options] = split(text, "|");
+  const [key, ...options] = optionParts(text);
   const identifier = normalizeIdentifier(unescape(key));
   if (!identifier) return null;
   let form = "parenthetical";
@@ -85,7 +87,7 @@ function validateKeyword(citationKeyword) {
 }
 
 function parseEndnotes(body, raw) {
-  const [, ...options] = split(body, "|");
+  const [, ...options] = optionParts(body);
   const token = { type: "endnotes", raw };
   for (const option of options) {
     if (option === "scope:since-last" && !token.scoped) token.scoped = true;
@@ -120,7 +122,7 @@ export function markerKind(raw, options = {}) {
   const markers=scanCitationMarkers(text,options);
   if (markers.length !== 1 || markers[0].raw !== text || markers[0].start !== 0) return 'malformed';
   const token=markers[0].token;
-  return token?.type === 'endnotes' ? 'endnote' : ['citation','list','nocite','annotation'].includes(token?.type) ? token.type : 'malformed';
+  return token?.type === 'endnotes' ? 'endnote' : ['citation','list','nocite','tags','annotation'].includes(token?.type) ? token.type : 'malformed';
 }
 
 /** Encode a local record ID for a new marker; existing marker spelling is not rewritten. */
@@ -134,7 +136,7 @@ export function formatRecordId(id, { citationKeyword = 'cite', identifierForm = 
   const unambiguous = token?.type === 'citation' && token.items.length === 1 &&
     token.items[0].identifier.scheme === 'local' && token.items[0].identifier.value === id;
   // Reserve directive names for new writers, including the two directives needing arguments.
-  const reserved = ['endnote', 'list', 'nocite', ...Object.keys(annotationNames)].includes(id);
+  const reserved = ['endnote', 'list', 'nocite', 'tags', ...Object.keys(annotationNames)].includes(id);
   return identifierForm === 'minimal' && unambiguous && !reserved ? escaped : 'local:' + escaped;
 }
 
@@ -147,26 +149,36 @@ export function parseDirectives(source, { citationKeyword = "cite" } = {}) {
     const raw = match[0];
     cursor = match.index + raw.length;
     if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
-    else if (match[1] === citationKeyword && /^endnote(?:\s*\||$)/.test(match[2].trim())) {
+    else if (match[1] === citationKeyword && /^endnote(?:[ \t]+(?=[a-z][a-z0-9-]*:)|[ \t]*\||$)/.test(match[2].trim())) {
       tokens.push(parseEndnotes(match[2], raw));
+    } else if (/^tags[ \t]/.test(match[2].trim()) && normalizeIdentifier(unescape(optionParts(match[2].trim().slice(5))[0]))) {
+      const [key,...values]=optionParts(match[2].trim().slice(5));
+      const identifier=normalizeIdentifier(unescape(key));
+      const definitions=values.map(value=>{
+        const field=/^([a-z0-9][a-z0-9-]{0,63}):\s*"((?:\\.|[^"\\])+)"$/.exec(value);
+        return field && {id:field[1],label:unescape(field[2]).trim()};
+      });
+      if(identifier && definitions.length && definitions.every(value=>value?.label) && new Set(definitions.map(value=>value.id)).size===definitions.length)tokens.push({type:'tags',items:[{identifier}],definitions,raw});
+      else tokens.push({type:'text',text:raw,malformed:true});
     } else if (match[1] === citationKeyword && /^(?:list|nocite)[ \t]/.test(match[2].trim())) {
       const [, type, body] = /^(list|nocite)\s+(.+)$/.exec(match[2].trim()) || [];
-      const [keys, ...options] = split(body || "", "|");
+      const [keys, ...options] = optionParts(body || "");
       const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
       const listOptions = {};
       let valid = true;
       for (const option of options) {
-        const match = /^(sort|tags|tag-mode):(.+)$/.exec(option);
+        const match = /^(sort|tags|tag-mode|filters):(.+)$/.exec(option);
         if (!match || Object.hasOwn(listOptions, match[1])) { valid = false; break; }
         listOptions[match[1]] = match[2];
       }
-      if (listOptions.sort && !["author", "year"].includes(listOptions.sort) ||
+      if (listOptions.filters && !['true','false'].includes(listOptions.filters) ||
+          listOptions.sort && !["author", "year"].includes(listOptions.sort) ||
           listOptions["tag-mode"] && !["any", "all"].includes(listOptions["tag-mode"]) ||
           listOptions.tags && !listOptions.tags.split(",").every(tag => /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag))) valid = false;
       const identifiers = split(keys, ";").map(key => normalizeIdentifier(unescape(key)));
       if (identifiers.every(Boolean) && valid && (type === "list" || !options.length)) {
         tokens.push({ type, items: identifiers.map(identifier => ({ identifier })), sort: listOptions.sort,
-          ...(listOptions.tags && { tags: listOptions.tags.split(",") }), ...(listOptions["tag-mode"] && { tagMode: listOptions["tag-mode"] }), raw });
+          ...(listOptions.filters && {filters:listOptions.filters==='true'}), ...(listOptions.tags && { tags: listOptions.tags.split(",") }), ...(listOptions["tag-mode"] && { tagMode: listOptions["tag-mode"] }), raw });
       } else tokens.push({ type: "text", text: raw, malformed: true });
     }
     else if (match[1] === citationKeyword && Object.hasOwn(annotationNames, match[2].trim())) {
@@ -663,7 +675,8 @@ function compileBlocks(blocks, cache, {
   applyAuthorFields(blocks,index,{suffixScope});
   const used = new Map();
   const diagnostics = [];
-  const features = prepareReferences({ siteOccurrences, occurrences, siteOrigin, tagCatalogue, listItemTags }, diagnostics);
+  const tagOptions=applyTagDeclarations(blocks,index,{tagCatalogue,listItemTags},diagnostics);
+  const features = prepareReferences({ siteOccurrences, occurrences, siteOrigin, ...tagOptions }, diagnostics);
   const missing = new Map();
   const markerFor = block => {
     const tokens = block.filter(token => token.type !== "text" || token.text.trim());
@@ -959,12 +972,14 @@ function compileBlocks(blocks, cache, {
       const prefix = prefixValue ? `<span ${part('reference-prefix')}>${escapeHTML(prefixValue)}</span>` : '';
       return `<li${attrs} data-ci-reference-record="${record.id}" data-ci-tags="${escapeHTML(JSON.stringify(tags.map(tag => tag.id)))}">${prefix}${leading}<span dir="auto"${titleAttributes}>${text}</span>${status ? ` <strong ${part("note-status")}>${escapeHTML(status)}</strong>` : ""}${tagsHTML(tags)}${actions}${annotation}${siteLinks(record.id)}</li>`;
     }).join("\n");
-    if (list && !listFilters) return `<ol ${part("reference-list")}>${rows}</ol>`;
+    const showFilters=marker.filters ?? listFilters;
+    const filterLimits=marker.filters===true?{minItems:0,minTags:1}:filterThresholds;
+    if (list && !showFilters) return `<ol ${part("reference-list")}>${rows}</ol>`;
     const level = marker.level ?? 2;
     const label = list ? `aria-label="${escapeHTML(messages.text('ui.readingList'))}"` : marker.heading === null ? `aria-label="${escapeHTML(endnotesHeading)}"` : `aria-labelledby="${heading}"`;
     const title = list || marker.heading === null ? "" : `<h${level} id="${heading}">${escapeHTML(marker.heading ?? endnotesHeading)}</h${level}>`;
     const filterTags = [...new Map(items.flatMap(item => features.tags(item.entry.record, true)).map(tag => [tag.id, tag])).values()];
-    const filters = list && listFilters && items.length >= filterThresholds.minItems && filterTags.length >= Math.max(1, filterThresholds.minTags)
+    const filters = list && showFilters && items.length >= filterLimits.minItems && filterTags.length >= Math.max(1, filterLimits.minTags)
       ? `<fieldset ${part("tag-filters")} data-ci-tag-filters hidden><legend>${escapeHTML(messages.text('ui.filterLegend'))}</legend>${filterTags.map(tag => `<label><input type="checkbox" value="${escapeHTML(tag.id)}" data-ci-tag-filter> ${escapeHTML(tag.label)}</label>`).join(" ")}<p data-ci-list-count role="status" aria-live="polite"></p></fieldset>` : "";
     return `<section ${part(list ? 'reading-list' : 'endnotes')}${list ? ' data-ci-reading-list' : ''} ${label}>${title}${filters}<ol${list ? ' ' + part('reference-list') : ''}>${rows}</ol>${filters ? `<p data-ci-list-empty hidden>${escapeHTML(messages.text('ui.noTags'))}</p>` : ''}</section>`;
 
@@ -993,12 +1008,12 @@ function compileBlocks(blocks, cache, {
         const byYear = bibliographyYear(a.record, citationStyle) - bibliographyYear(b.record, citationStyle);
         return (token.sort === "author" ? byAuthor || byYear : byYear || byAuthor) || compare(titleFor(a.record), titleFor(b.record));
       });
-      return referencesHTML(items, 0, true);
+      return referencesHTML(items, 0, true, token);
     }
     const content = tokens.map(token => {
       if (token.type === "text") return escapeHTML(token.text);
       if (token.type === "markup") return token.text;
-      if (token.type === "nocite") return "";
+      if (token.type === "nocite" || token.type === 'tags') return "";
       if (token.type === "endnotes" || token.type === "list") {
         diagnostics.push({ state: "misplaced-directive", source: token.raw });
         return escapeHTML(token.raw);

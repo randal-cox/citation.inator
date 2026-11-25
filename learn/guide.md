@@ -16,7 +16,7 @@ The DOI identifies the work. `note:` is a generated work label, hidden from read
 
 ## Load, compile, initialize
 
-This Guide documents `0.5.1-preview.3`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
+This Guide documents `0.5.1-preview.4`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
 
 ### Without a package installation
 
@@ -276,3 +276,24 @@ Artwork fields are `attribution:`, `display-date:`, `medium:`, `dimensions:`, `i
 The returned metadata records these as Document author assertions. The input cache stays unchanged. Identifier aliases share assertions. Repeat equal values freely; differing values for one work are errors. Supported years are 1000–9999, original no later than edition. A different edition year discards the old month/day.
 
 The npm starter resolver accepts PMID as well as DOI and ISBN. An exact PubMed response from Europe PMC supplies DOI/PMCID aliases automatically, preserving curated records and rejecting identity conflicts. Ordinary compilation makes no network requests. The examples use saved metadata. See the [authoring reference](./reference/authoring.html) for syntax, provenance and limitations.
+
+## Optional separators and author-defined topics
+
+Spaces separate named fields; pipes are optional visual separators. Both spellings below work. Quote values containing spaces or marker punctuation.
+
+```text
+{cite isbn:9780029079379 original-year:1912 locator:"p. 34"}
+{cite isbn:9780029079379 original-year:1912 | locator:"p. 34"}
+```
+
+Build a filterable reading list in the article without editing JavaScript:
+
+```text
+{cite tags doi:10.1371/journal.pmed.0020124 methods:"Methods"}
+
+{cite tags isbn:9780029079379 theory:"Theory"}
+
+{cite list doi:10.1371/journal.pmed.0020124; isbn:9780029079379 filters:true}
+```
+
+The tags block assigns a topic and its label to a work without citing it in the prose. Put each block in a separate paragraph. Repeated assignments accumulate; conflicting topic labels fail. `filters:true` enables this list's checkboxes; `filters:false` disables them independently of the site default. Site configuration can still provide shared topic labels and icons. These declarations do not count as citation-mention tags in `collectMarkerTags`.

@@ -21,7 +21,7 @@ const skip = node => excluded.has(node.tagName) || attr(node, "role")?.value.spl
   attr(node, "data-ci-record") || attr(node, "data-citation-part");
 export { skip as isCitationTextExcluded };
 const standalone = tokens => tokens.filter(token => token.type !== "text" || token.text.trim()).length === 1 &&
-  tokens.some(token => token.type === "endnotes" || token.type === "list");
+  tokens.some(token => token.type === "endnotes" || token.type === "list" || token.type === "tags");
 
 function visit(node, callback) {
   if (callback(node) === false) return;
@@ -82,7 +82,7 @@ export function compileHTML(source, cache, options = {}) {
       edits.push({ ...parent.sourceCodeLocation, tokens });
     } else {
       if (standalone(tokens) && !blockParents.has(parent.nodeName)) {
-        const marker = tokens.find(token => token.type === "endnotes" || token.type === "list");
+        const marker = tokens.find(token => token.type === "endnotes" || token.type === "list" || token.type === "tags");
         Object.assign(marker, { type: "text", text: marker.raw, misplaced: true });
       }
       edits.push({ ...node.sourceCodeLocation, tokens });
@@ -118,9 +118,9 @@ export function compileMarkdown(source, cache, options = {}) {
         if (/^(?: {4}|\t)/.test(line)) return;
         const tokens = parseDirectives(line, { citationKeyword: keyword });
         if (!standalone(tokens)) return;
-        return { type: "citationBlockDirective", raw: line + (input[line.length] === "\n" ? "\n" : "") };
+        return { type: "citationBlockDirective", kind:tokens.find(token=>token.type!=="text")?.type, raw: line + (input[line.length] === "\n" ? "\n" : "") };
       },
-      renderer(token) { return escapeHTML(token.raw) + "\n"; }
+      renderer(token) { return token.kind==='tags' ? `<p>${escapeHTML(token.raw.trimEnd())}</p>\n` : escapeHTML(token.raw) + "\n"; }
     }, {
       name: "citationDirective", level: "inline",
       start(input) { return starts.exec(input)?.index; },

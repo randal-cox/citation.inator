@@ -348,3 +348,5 @@ citation-inspector { display: contents; }
 [data-citation-part~="access"] a[data-access-labeled] svg{flex:none}
 
 [data-citation-part~="backlinks"] a{flex-direction:row-reverse;width:auto;min-width:2.35rem;padding-inline:.3rem;gap:.15rem}[data-citation-part~="backlink-separator"]{margin-inline:.25rem;color:var(--citation-ink,#172848)}
+
+[data-citation-part~="reference-list"] > li { overflow-wrap: anywhere; }

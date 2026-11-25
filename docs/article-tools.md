@@ -35,7 +35,7 @@ markerKind('{cite evidence}'); // "annotation"
 markerKind('{ref endnote}', { citationKeyword: 'ref' }); // "endnote"
 ```
 
-The result is `citation`, `endnote`, `list`, `nocite`, `annotation`, or `malformed`. It delegates to the compiler grammar and classifies exactly one complete trimmed marker, without a cache or network. Leading/trailing prose, multiple markers, escaped literal examples and malformed options are `malformed`; invalid configuration or non-string input throws. Legacy `{cite …}` and `{endnotes}` follow their actual compiler meanings, so callers need no duplicate reserved-word regex. For example `{cite evidence}` is a work citation, whereas `{cite evidence}` is an annotation directive. `local:` explicitly addresses record IDs that collide with directive names.
+The result is `citation`, `endnote`, `list`, `nocite`, `tags` (0.5.1 development), `annotation`, or `malformed`. It delegates to the compiler grammar and classifies exactly one complete trimmed marker, without a cache or network. Leading/trailing prose, multiple markers, escaped literal examples and malformed options are `malformed`; invalid configuration or non-string input throws. The configured keyword is used consistently, so callers need no duplicate reserved-word regex. With the default keyword, `{cite evidence}` is an annotation directive whereas `{cite local:evidence}` cites a record named evidence. `local:` explicitly addresses record IDs that collide with directive names.
 
 For a works picker whose descriptions come from `describeCitation`, keep editor/build notes in the same context:
 
@@ -278,3 +278,5 @@ const result = compileCitations(source, cache, {
 ```
 
 The callback receives `{ record, tags, namespace, number, kind }`; `kind` is `reading-list` or `endnote`. Metadata is cloned so changing it cannot mutate the cache. Return a string, `null` or `undefined`. Text is escaped and wrapped in the configurable `reference-prefix` class/part. HTML/object results are rejected. Prefix text is presentation only: it does not enter copied citations, bibliographic records, exports or source marker notes.
+
+The 0.5.1 development grammar accepts optional pipes between named fields. `annotateMarkers` recognizes existing `note:` fields with whitespace, pipes or mixed separators, updates them in place and does not duplicate them. A new `tags` marker kind identifies author topic declarations; see [authoring topics](authoring.md#author-defined-reading-list-topics). These are not citation mentions and do not contribute to `collectMarkerTags` counts.

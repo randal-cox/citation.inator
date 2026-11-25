@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1-preview.4 — In development
+
+- Allow whitespace between named fields; pipes remain optional visual separators, including mixed notation and safe editor-note updates.
+- Add author topic declarations and per-list filter controls, moving the reading-list demo out of JavaScript.
+- Style code in example intros as italic monospace and align copy-link explanations with the demonstrated source.
+- Correct the artwork attribution example to qualify its existing creator without repeating the name.
+
 ## 0.5.1-preview.3 — In development
 
 - Keep new identifier markers with author fields available to metadata resolution before their record exists.

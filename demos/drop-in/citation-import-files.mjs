@@ -1,4 +1,4 @@
-/*! cite-inator native import v0.5.1-preview.3 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator native import v0.5.1-preview.4 | MIT | See THIRD_PARTY_LICENSES.txt */
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;

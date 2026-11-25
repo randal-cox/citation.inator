@@ -1,4 +1,4 @@
-/*! cite-inator v0.5.1-preview.3 | MIT | See LICENSE */
+/*! cite-inator v0.5.1-preview.4 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {
@@ -493,6 +493,37 @@ function readCache(input) {
   return { byId, byIdentifier };
 }
 
+// src/notation-options.mjs
+function optionSpans(source) {
+  const spans = [];
+  let start = 0, quoted = false;
+  for (let i = 0; i < source.length; i++) {
+    if (source[i] === "\\") {
+      i++;
+      continue;
+    }
+    if (source[i] === '"') {
+      quoted = !quoted;
+      continue;
+    }
+    if (quoted) continue;
+    if (source[i] === "|") {
+      spans.push({ start, end: i });
+      start = i + 1;
+    } else if (/[ \t]/.test(source[i])) {
+      const following = /^[ \t]+(?=[a-z0-9][a-z0-9-]*:|isolated(?:[ \t|]|$))/.exec(source.slice(i));
+      if (following && source.slice(start, i).trim() && !source.slice(start, i).trimEnd().endsWith(";")) {
+        spans.push({ start, end: i });
+        start = i + following[0].length;
+        i = start - 1;
+      }
+    }
+  }
+  spans.push({ start, end: source.length });
+  return spans;
+}
+var optionParts = (source) => optionSpans(source).map(({ start, end }) => source.slice(start, end).trim());
+
 // src/author-fields.mjs
 var authorFields = /* @__PURE__ */ new Set(["original-year", "edition-year", "reference", "attribution", "display-date", "medium", "dimensions", "institution", "accession", "rights", "photographer", "uploader", "pdf", "read-url", "access", "checked"]);
 function validAuthorField(field, value) {
@@ -630,7 +661,7 @@ var split = (value, separator) => {
 };
 var unescape = (value) => value.replace(/\\([\\{};|"])/g, "$1");
 function parseItem(text) {
-  const [key, ...options] = split(text, "|");
+  const [key, ...options] = optionParts(text);
   const identifier = normalizeIdentifier(unescape(key));
   if (!identifier) return null;
   let form = "parenthetical";
@@ -690,7 +721,7 @@ function validateKeyword(citationKeyword) {
   }
 }
 function parseEndnotes(body, raw) {
-  const [, ...options] = split(body, "|");
+  const [, ...options] = optionParts(body);
   const token = { type: "endnotes", raw };
   for (const option of options) {
     if (option === "scope:since-last" && !token.scoped) token.scoped = true;
@@ -724,7 +755,7 @@ function markerKind(raw, options = {}) {
   const markers = scanCitationMarkers(text, options);
   if (markers.length !== 1 || markers[0].raw !== text || markers[0].start !== 0) return "malformed";
   const token = markers[0].token;
-  return token?.type === "endnotes" ? "endnote" : ["citation", "list", "nocite", "annotation"].includes(token?.type) ? token.type : "malformed";
+  return token?.type === "endnotes" ? "endnote" : ["citation", "list", "nocite", "tags", "annotation"].includes(token?.type) ? token.type : "malformed";
 }
 function parseDirectives(source, { citationKeyword = "cite" } = {}) {
   const directive = directivePattern(citationKeyword);
@@ -735,29 +766,39 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
     const raw = match[0];
     cursor = match.index + raw.length;
     if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
-    else if (match[1] === citationKeyword && /^endnote(?:\s*\||$)/.test(match[2].trim())) {
+    else if (match[1] === citationKeyword && /^endnote(?:[ \t]+(?=[a-z][a-z0-9-]*:)|[ \t]*\||$)/.test(match[2].trim())) {
       tokens.push(parseEndnotes(match[2], raw));
+    } else if (/^tags[ \t]/.test(match[2].trim()) && normalizeIdentifier(unescape(optionParts(match[2].trim().slice(5))[0]))) {
+      const [key, ...values] = optionParts(match[2].trim().slice(5));
+      const identifier = normalizeIdentifier(unescape(key));
+      const definitions = values.map((value) => {
+        const field = /^([a-z0-9][a-z0-9-]{0,63}):\s*"((?:\\.|[^"\\])+)"$/.exec(value);
+        return field && { id: field[1], label: unescape(field[2]).trim() };
+      });
+      if (identifier && definitions.length && definitions.every((value) => value?.label) && new Set(definitions.map((value) => value.id)).size === definitions.length) tokens.push({ type: "tags", items: [{ identifier }], definitions, raw });
+      else tokens.push({ type: "text", text: raw, malformed: true });
     } else if (match[1] === citationKeyword && /^(?:list|nocite)[ \t]/.test(match[2].trim())) {
       const [, type, body] = /^(list|nocite)\s+(.+)$/.exec(match[2].trim()) || [];
-      const [keys, ...options] = split(body || "", "|");
+      const [keys, ...options] = optionParts(body || "");
       const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
       const listOptions = {};
       let valid = true;
       for (const option of options) {
-        const match2 = /^(sort|tags|tag-mode):(.+)$/.exec(option);
+        const match2 = /^(sort|tags|tag-mode|filters):(.+)$/.exec(option);
         if (!match2 || Object.hasOwn(listOptions, match2[1])) {
           valid = false;
           break;
         }
         listOptions[match2[1]] = match2[2];
       }
-      if (listOptions.sort && !["author", "year"].includes(listOptions.sort) || listOptions["tag-mode"] && !["any", "all"].includes(listOptions["tag-mode"]) || listOptions.tags && !listOptions.tags.split(",").every((tag) => /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag))) valid = false;
+      if (listOptions.filters && !["true", "false"].includes(listOptions.filters) || listOptions.sort && !["author", "year"].includes(listOptions.sort) || listOptions["tag-mode"] && !["any", "all"].includes(listOptions["tag-mode"]) || listOptions.tags && !listOptions.tags.split(",").every((tag) => /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag))) valid = false;
       const identifiers = split(keys, ";").map((key) => normalizeIdentifier(unescape(key)));
       if (identifiers.every(Boolean) && valid && (type === "list" || !options.length)) {
         tokens.push({
           type,
           items: identifiers.map((identifier) => ({ identifier })),
           sort: listOptions.sort,
+          ...listOptions.filters && { filters: listOptions.filters === "true" },
           ...listOptions.tags && { tags: listOptions.tags.split(",") },
           ...listOptions["tag-mode"] && { tagMode: listOptions["tag-mode"] },
           raw

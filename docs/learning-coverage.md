@@ -45,3 +45,5 @@ This is the active feature-to-example inventory for [milestone 0.5.0](milestones
 The learning site explains the supported library and its experimental limits; it does not certify every citation manual, reconstruct arbitrary native layouts or edit native document formats. Manager connections and ongoing source maintenance remain in 0.6.0. A generic reusable import-review component is a possible host-UI follow-up, not an additional prerequisite silently added to this learning milestone.
 
 The development gallery groups examples into Everyday, Intermediate and Advanced (site configuration/integrations). Article-specific years, formatted references, artwork attribution and copy links use [author notation](authoring.md); the cards exercise these in Source.
+
+The 0.5.1 development list demo assigns and labels topics using `tags` blocks, and enables per-list checkboxes with `filters:true` in Source. Site configuration remains available for shared vocabularies/icons. Intro code spans are formatted explicitly rather than embedded as undifferentiated prose.

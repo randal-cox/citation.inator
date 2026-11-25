@@ -1,3 +1,4 @@
+import {optionSpans} from './notation-options.mjs';
 export {createCitationMessages, citationLocales} from "./i18n.mjs";
 import { parse } from 'parse5';
 import { Lexer } from 'marked';
@@ -143,7 +144,7 @@ export function annotateMarkers(source, cache, options = {}) {
     const body = marker.raw.slice(bodyStart, -1);
     for (const [i, item] of splitSpans(body, ';').entries()) {
       const text = body.slice(item.start, item.end);
-      const parts = splitSpans(text, '|');
+      const parts = optionSpans(text);
       const note = parts.slice(1).find(span => /^\s*note:/.test(text.slice(span.start, span.end)));
       let noteText=description.items[i].text;
       if (noteContext === 'work') {
