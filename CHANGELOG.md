@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1 — Release candidate
+
+- Use one configured marker keyword, default `cite`, with no implicit compatibility alias; document migration for existing sites.
+- Put edition years, custom references, artwork details, copy links and reading-list topics in author notation; allow optional pipe separators.
+- Preserve unmatched citations as flagged unresolved placeholders and diagnose incomplete configured markers.
+- Refresh the Playground, Guide, shared navigation/footer, reader access controls and worked draft editor integration.
+- Zotero integration and matched-reference placeholders remain separate follow-up work.
+
 ## 0.5.1-preview.6 — In development
 
 - Update the learning host to draft teaching pin b86ed43, including its static module dependencies; verify current automatic review, bibliography replacement, staged export and Undo.

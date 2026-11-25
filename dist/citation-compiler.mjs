@@ -1,4 +1,4 @@
-/*! cite-inator compiler v0.5.1-preview.6 | MIT | See LICENSE */
+/*! cite-inator compiler v0.5.1 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -729,7 +729,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.5.1-preview.6",
+  version: "0.5.1",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",

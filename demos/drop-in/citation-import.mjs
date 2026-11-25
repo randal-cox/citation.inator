@@ -1,4 +1,4 @@
-/*! cite-inator import v0.5.1-preview.6 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator import v0.5.1 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -8149,7 +8149,7 @@ function parseFragment(fragmentContext, html, options) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.5.1-preview.6",
+  version: "0.5.1",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",

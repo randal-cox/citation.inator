@@ -634,7 +634,7 @@ try {
   assert.ok(await page.getByRole("heading", { name: "Complete notation" }).isVisible());
   const original = await (await fetch(origin + "/demos/static/reading.txt")).text();
   assert.equal(await page.locator('#guide-source + p + pre code').textContent(), original.trim());
-  const guideExamples = await page.locator("#guide-notation + dl dt code").allTextContents();
+  const guideExamples = await page.locator('section[aria-labelledby="guide-notation"] dl dt code').allTextContents();
   assert.ok(guideExamples.length > 10);
   assert.ok(guideExamples.every(example => original.includes(example)));
   for (const demoURL of [origin + "/demos/static/", copied + "/"]) {
