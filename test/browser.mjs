@@ -644,7 +644,7 @@ try {
     assert.ok(await content.getByText("the study | journal article; preprint available", { exact: true }).isVisible());
     assert.equal(await content.locator('a[data-ci-record="ioannidis-2005"]').count(), 4);
     assert.equal(await content.locator('a[data-ci-record="palmerpenguins-2020-software"]').count(), 2);
-    await page.getByText("Custom keyword", { exact: true }).click();
+    await page.locator("details.notation-examples > summary").click();
     assert.equal(await page.getByRole("region", { name: "Rendered custom keyword example" })
       .locator("a[data-ci-record]").count(), 3);
     assert.ok(await page.getByRole("region", { name: "Rendered custom keyword example" })
