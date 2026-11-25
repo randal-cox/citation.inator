@@ -10,25 +10,25 @@ A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
 
 The optional `note:` is a generated work label for editors; tools may replace it, and it does not appear in the reader’s citation. A build or import step resolves bibliographic metadata and keeps a generated cache. Authors normally write identifiers, rather than reference JSON. Curated records remain useful for sources without identifiers and for site-specific metadata. [Load and initialize](#load-and-initialize) · [Overview](https://randal-cox.github.io/cite.inator/about.html) · [Try the examples](https://randal-cox.github.io/cite.inator/).
 
-**Release 0.5.0 — Developer learning and live demos.** [Release and downloads](https://github.com/randal-cox/cite.inator/releases/tag/v0.5.0) · [Live playground and Guide](https://randal-cox.github.io/cite.inator/). Includes 21 editable examples, copied-file/npm/offline starters, a worked draft.inator editor integration, UI language configuration and the established compiler/import/reader tools.
+**Release 0.5.1 — Author notation and learning tools.** [Release and downloads](https://github.com/randal-cox/cite.inator/releases/tag/v0.5.1) · [Live playground and Guide](https://randal-cox.github.io/cite.inator/). Includes 22 editable examples, copied-file/npm/offline starters, a worked draft.inator editor integration, UI language configuration and the established compiler/import/reader tools.
 
 **Article tooling, introduced in 0.2.0.** Editor notes, a site-wide bibliography and tag filters are included. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/cite.inator/releases).
 
 The 0.5.0 project name is **cite.inator**; released 0.4.0 archives retain their original `citation-inator` package name. Existing browser assets, markup and stored-data contracts remain compatible; see [the naming migration](docs/naming-migration.md).
 
-**Development 0.5.1 preview:** the default marker is `cite` for both works and directives; there are no automatic aliases. [Migration instructions](docs/notation-migration.md). Final release requires both Randal’s explicit approval and draft’s sign-off.
+**0.5.1 notation:** the default marker is `cite` for both works and directives; there are no automatic aliases. [Migration instructions](docs/notation-migration.md). Published with maintainer approval and draft integration sign-off.
 
 **Authoring principle:** authors describe the source and its use; site configuration controls shared behavior. The development candidate adds year, formatted-reference, artwork and copy-link fields in `{cite …}` and exact PMID-to-DOI discovery in the npm resolver. See [author notation and examples](docs/authoring.md); site-wide setup remains in JavaScript or configuration. Spaces separate named fields, with optional pipes for visual grouping. Author `tags` blocks and list `filters:true` provide topic filtering without JavaScript. Unmatched imported citations can become flagged unresolved placeholders that retain their wording until the reference is completed; see [the import contract](docs/import-api.md#unmatched-citations-as-unresolved-placeholders-051-development).
 
 ## Load and initialize
 
-Try the [live learning playground](https://randal-cox.github.io/cite.inator/): 21 editable examples, annotated tutorials, import review, a worked editor integration and downloadable starter projects. Version 0.5.0 also adds shared [UI language configuration](docs/i18n.md). To run it locally, use `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). See the [milestone record](docs/milestones/0.5.0.md) for acceptance and release evidence.
+Try the [live learning playground](https://randal-cox.github.io/cite.inator/): 22 editable examples, annotated examples, import review, a worked editor integration and downloadable starter projects. Version 0.5.0 also adds shared [UI language configuration](docs/i18n.md). To run it locally, use `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). See the [milestone record](docs/milestones/0.5.0.md) for acceptance and release evidence.
 
 To serve the demos from the checkout, run `npm start` from the repository root.
 
 **Without npm.** Start with [the standalone demo](https://github.com/randal-cox/cite.inator/tree/main/demos/drop-in), or copy `dist/citation-inspector.mjs`, `dist/citation-inspector.css`, and `dist/LICENSE` into your public assets. The browser uses the two adjacent assets and the compiled page’s JSON cache. Serve them from the same origin over HTTP or HTTPS.
 
-**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball whose filename `npm pack` prints into your project, then pass that file to `npm install`. Its version follows the checkout; use tag `v0.5.0` to reproduce this release. The same browser assets are in `node_modules/cite-inator/dist/`. Import the compiler from `cite-inator`.
+**With npm.** Run `npm ci` and `npm pack` in the downloaded checkout to build the current local tarball. Copy the tarball whose filename `npm pack` prints into your project, then pass that file to `npm install`. Its version follows the checkout; use tag `v0.5.1` to reproduce this release. The same browser assets are in `node_modules/cite-inator/dist/`. Import the compiler from `cite-inator`.
 
 ```html
 <link rel="stylesheet" href="./citation-inspector.css">

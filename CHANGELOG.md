@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.1 — Release candidate
+## 0.5.1 — Released 25 November 2026
 
 - Use one configured marker keyword, default `cite`, with no implicit compatibility alias; document migration for existing sites.
 - Put edition years, custom references, artwork details, copy links and reading-list topics in author notation; allow optional pipe separators.
