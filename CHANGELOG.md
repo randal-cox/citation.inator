@@ -2,6 +2,8 @@
 
 ## 0.5.1-preview.6 — In development
 
+- Correct export documentation: per-record CSL conversion exists; complete bibliography downloads and BibTeX/RIS exporters remain planned for 0.6.0.
+
 - Report incomplete markers under the configured keyword while retaining escaped examples and other marker namespaces as ordinary text.
 - Verify custom keywords through placeholder import, site reuse, allocation, classification and compilation; document explicit configuration propagation.
 
