@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1-preview.6 — In development
+
+- Report incomplete markers under the configured keyword while retaining escaped examples and other marker namespaces as ordinary text.
+- Verify custom keywords through placeholder import, site reuse, allocation, classification and compilation; document explicit configuration propagation.
+
 ## 0.5.1-preview.5 — In development
 
 - Preserve unmatched citations as explicit unresolved placeholders, with original wording, collision-safe IDs, host allocation and an atomic source/cache result.

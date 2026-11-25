@@ -227,3 +227,7 @@ Complete that same record with reviewed metadata and `state:'resolved'`, retaini
 Ordinary semicolon-separated mixed groups retain parser-owned item text. Expanded shared-author year lists, numeric ranges, uncertain author boundaries, multiline fallbacks and decoded/noncontiguous source spans can require manual span review. Such cases return `accepted-needs-span`/`accepted-needs-adapter`, leave the whole group unchanged, and create no orphan placeholders. Inspect outcomes; conversion success alone is not a claim that every requested group changed.
 
 Low-level hosts using `planImportEdits` directly must include its hashed `placeholderRecords` in the same source/cache transaction and supply all known `existingRecordIds` for collision avoidance. `processImportRequest` handles that allocation and reservation automatically.
+
+### Keyword configuration after import
+
+An import request's `citationKeyword` is not global state. Pass that same setting to downstream compiler and tool calls. With `citationKeyword:'citation'`, call `markerKind(marker,{citationKeyword:'citation'})` and `compileCitations(source,cache,{citationKeyword:'citation'})`. Omitting these options selects the new default `cite`, so a different spelling remains literal text. See the [complete configuration example](notation-migration.md#pass-the-same-keyword-to-every-parsing-stage).

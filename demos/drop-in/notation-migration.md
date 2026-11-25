@@ -20,3 +20,22 @@ Before 0.5.1 the default keyword was `citation`, with a work-only `cite` short f
 Unconfigured marker spellings are ordinary text, without a diagnostic; they are not silently converted. Review the rendered article and source after migration. The change is intentional in this pre1.0 patch and requires both the maintainer's explicit release approval and the current adopter's sign-off.
 
 The keyword change does not rename `citation-inator.cache.v1`, `<citation-inspector>`, `initializeCitationInspector`, browser assets, `citation-*` classes or `data-citation-part` hooks. Metadata records and compiled reference APIs retain their contracts. Old released tags and archives preserve their original behavior.
+
+## Pass the same keyword to every parsing stage
+
+The importer does not set a global keyword for the compiler or tools. If a site chooses `citation`, pass it explicitly to every call; it is a custom configuration in 0.5.1, not the default:
+
+```js
+import {compileCitations} from 'cite-inator';
+import {markerKind} from 'cite-inator/tools';
+const options = {citationKeyword:'citation'};
+const marker = '{citation local:pending unresolved:"(Rivera, 2020)"}';
+const cache = {schema:'citation-inator.cache.v1', records:[]};
+markerKind(marker, options); // citation
+compileCitations(marker, cache, options).diagnostics[0].code;
+// citation-unresolved-placeholder
+```
+
+Pass `citationKeyword:options.citationKeyword` in the import request, then use the same setting with `compileCitations`, `compileHTML`/`compileMarkdown`, `markerKind`, `describeCitation`, `annotateMarkers` and `collectMarkerTags`. Without options, these calls use `cite` independently. `markerKind` returns malformed for a string that is not a marker in its configured language; the compiler leaves other keywords as ordinary text.
+
+Incomplete markers beginning with the configured keyword (missing braces/quotes or an empty marker) report `citation-malformed`. Escaped literal examples, code/excluded elements and other keywords remain outside that diagnostic. This allows citation parsing and a separate cross-reference notation to coexist.

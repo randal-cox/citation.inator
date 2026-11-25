@@ -2,7 +2,7 @@
   "name": "citation-inator-standalone",
   "private": true,
   "type": "module",
-  "version": "0.5.1-preview.5",
+  "version": "0.5.1-preview.6",
   "scripts": {
     "start": "node server.mjs"
   }

@@ -50,7 +50,7 @@ function textRanges(source, format, diagnostics, options) {
   }
   offsets.push(source.length);
   let lexicalSource = normalized;
-  for (const marker of scanCitationMarkers(normalized, options).reverse()) {
+  for (const marker of scanCitationMarkers(normalized, options).filter(marker=>!marker.token?.incomplete).reverse()) {
     lexicalSource = lexicalSource.slice(0, marker.start) + 'x'.repeat(marker.end - marker.start) + lexicalSource.slice(marker.end);
   }
   const blocked = [];

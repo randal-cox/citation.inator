@@ -52,3 +52,16 @@ test('stale source/site and unsafe source fragments fail closed',()=>{
 test('placeholder fallback is escaped text, never executable HTML',()=>{
  const source='{cite local:pending unresolved:"(<img src=x onerror=alert(1)>)"}';const r=compileCitations(source,makeCache([]));assert.match(r.html,/&lt;img/);assert.doesNotMatch(r.html,/<img src=x/);
 });
+
+test('configured keywords survive import, site reuse, host allocation, marker classification and compilation',()=>{
+ for(const citationKeyword of ['cite','citation','reference']){
+ const input={...doc('A note with no entry (Rivera, 2020). Mixed (Bell, 1992; Rivera, 2020).'),citationKeyword,siteCache:makeCache([{id:'bell-1992-ritual',title:'Ritual theory, ritual practice',authors:[{family:'Bell',given:'C.'}],issued:[1992],state:'resolved'}])};
+ const a=processImportRequest(input),sourceId=a.review.matches[1].items[0].candidates[0].recordId;
+ const r=processImportRequest({...input,action:'preview',review:a.review,reviewId:a.review.reviewId,recordId:record=>'x-'+record.id,recordDecisions:[{recordId:sourceId,siteRecordId:'bell-1992-ritual'}],decisions:[placeholder,{citationIndex:1,action:'accept',targets:[{recordId:sourceId},{placeholder:true}]}]});
+ const options={citationKeyword,citationStyle:'apa'};assert.equal(r.edits.length,2);assert.ok(r.source.includes('bell-1992-ritual'));
+ for(const edit of r.edits)for(const marker of [edit.text,edit.text.replace(/ \| /g,' ')]){
+ assert.equal(markerKind(marker,options),'citation');const compiled=compileCitations(marker,r.cache,options);assert.ok(compiled.diagnostics.some(d=>d.code==='citation-unresolved-placeholder'));assert.doesNotMatch(compiled.html,new RegExp('\\{'+citationKeyword+' '));
+ }
+ assert.equal(compileCitations(r.source,r.cache,options).diagnostics.filter(d=>d.code==='citation-unresolved-placeholder').length,2);
+ }
+});

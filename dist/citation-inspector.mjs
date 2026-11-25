@@ -1,4 +1,4 @@
-/*! cite-inator v0.5.1-preview.5 | MIT | See LICENSE */
+/*! cite-inator v0.5.1-preview.6 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {
@@ -746,14 +746,26 @@ function directivePattern(citationKeyword) {
   validateKeyword(citationKeyword);
   return new RegExp(String.raw`\\[\\{}]|\{(${citationKeyword})[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
 }
+function malformedSpans(source, citationKeyword) {
+  const starts = new RegExp(`\\{${citationKeyword}(?=[\\s}]|$)`, "g"), spans = [];
+  for (const match of source.matchAll(starts)) {
+    if (spans.length && match.index < spans.at(-1).end) continue;
+    const tail = source.slice(match.index), boundary = /[}\r\n]/.exec(tail);
+    const end = boundary ? match.index + boundary.index + (boundary[0] === "}" ? 1 : 0) : source.length;
+    spans.push({ start: match.index, end, raw: source.slice(match.index, end) });
+  }
+  return spans;
+}
 function scanCitationMarkers(source, { citationKeyword = "cite" } = {}) {
   if (typeof source !== "string") throw new TypeError("Supply source text.");
-  return [...source.matchAll(directivePattern(citationKeyword))].filter((match) => match[0].startsWith("{")).map((match) => ({
-    start: match.index,
-    end: match.index + match[0].length,
-    raw: match[0],
-    token: parseDirectives(match[0], { citationKeyword })[0]
-  }));
+  const matches = [...source.matchAll(directivePattern(citationKeyword))], markers = [];
+  let cursor = 0;
+  for (const match of [...matches, { index: source.length, 0: "" }]) {
+    for (const span of malformedSpans(source.slice(cursor, match.index), citationKeyword)) markers.push({ ...span, start: cursor + span.start, end: cursor + span.end, token: { type: "text", text: span.raw, raw: span.raw, malformed: true, incomplete: true } });
+    if (match[0].startsWith("{")) markers.push({ start: match.index, end: match.index + match[0].length, raw: match[0], token: parseDirectives(match[0], { citationKeyword })[0] });
+    cursor = match.index + match[0].length;
+  }
+  return markers;
 }
 function markerKind(raw, options = {}) {
   if (typeof raw !== "string") throw new TypeError("Supply a marker string.");
@@ -766,9 +778,18 @@ function markerKind(raw, options = {}) {
 function parseDirectives(source, { citationKeyword = "cite" } = {}) {
   const directive = directivePattern(citationKeyword);
   const tokens = [];
+  const appendText = (value) => {
+    let at = 0;
+    for (const span of malformedSpans(value, citationKeyword)) {
+      if (span.start > at) tokens.push({ type: "text", text: value.slice(at, span.start) });
+      tokens.push({ type: "text", text: span.raw, raw: span.raw, malformed: true, incomplete: true });
+      at = span.end;
+    }
+    if (at < value.length) tokens.push({ type: "text", text: value.slice(at) });
+  };
   let cursor = 0;
   for (const match of source.matchAll(directive)) {
-    if (match.index > cursor) tokens.push({ type: "text", text: source.slice(cursor, match.index) });
+    if (match.index > cursor) appendText(source.slice(cursor, match.index));
     const raw = match[0];
     cursor = match.index + raw.length;
     if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
@@ -819,7 +840,7 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
       } else tokens.push({ type: "text", text: raw, malformed: true });
     }
   }
-  if (cursor < source.length) tokens.push({ type: "text", text: source.slice(cursor) });
+  if (cursor < source.length) appendText(source.slice(cursor));
   return tokens;
 }
 var compare = (a, b) => {
