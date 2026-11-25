@@ -179,6 +179,7 @@ try{
   }
   for(const route of ['about.html','guide.html','notation.html','reference/integration.html','import/','tools/editor-tools.html','host/']){
     await page.goto(origin+route);assert.deepEqual(await page.locator('header nav[aria-label="Learning"] a').allTextContents(),['Playground','Import','Guide']);
+    await page.locator('header nav').getByRole('link',{name:'Playground',exact:true}).click();assert.equal(new URL(page.url()).hash,'');assert((await page.locator('header').boundingBox()).y>=0);
   }
   await page.emulateMedia({colorScheme:'dark'});
   await page.goto(origin+'import/');assert.match(await page.locator('.intro').innerText(),/Turn citations in an existing document/);

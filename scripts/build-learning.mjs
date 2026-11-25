@@ -115,7 +115,7 @@ const downloadFiles={},routes=JSON.parse(await readFile('learn/generated-routes.
 // One navigation shell across every learning route; local links remain in the body.
 for(const route of routes.filter(path=>path.endsWith('.html'))){
  const prefix=route.includes('/')?'../':'./';
- const header=`<header><a class="brand" href="${prefix}about.html">${brandIconMarkup}cite.inator</a><nav aria-label="Learning"><a href="${prefix}#playground">Playground</a><a href="${prefix}import/">Import</a><a href="${prefix}guide.html">Guide</a></nav><a class="github-link" href="https://github.com/randal-cox/cite.inator"><span>GitHub</span><span id="version">${version}</span></a></header>`;
+ const header=`<header><a class="brand" href="${prefix}about.html">${brandIconMarkup}cite.inator</a><nav aria-label="Learning"><a href="${prefix}">Playground</a><a href="${prefix}import/">Import</a><a href="${prefix}guide.html">Guide</a></nav><a class="github-link" href="https://github.com/randal-cox/cite.inator"><span>GitHub</span><span id="version">${version}</span></a></header>`;
  let html=await readFile('site/'+route,'utf8');
  if(html.includes('<header>'))html=html.replace(/<header>[\s\S]*?<\/header>/,header);else html=html.replace(/(<body[^>]*>)/,'$1'+header);
  if(!html.includes('href="'+prefix+'learning.css"'))html=html.replace('</head>',`<link rel="stylesheet" href="${prefix}learning.css"></head>`);

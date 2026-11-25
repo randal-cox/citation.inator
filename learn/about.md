@@ -14,7 +14,7 @@ Choose Chicago, APA, MLA, Harvard or Vancouver. Add links to available reading c
 
 Download a starter, edit its article, and follow the Guide to resolve the source metadata and publish. Use npm or copy the browser files into your site; no framework is required.
 
-<div class="overview-actions"><a href="./guide.html#load-compile-initialize">Get started</a><a href="./#playground">Try the Playground</a></div>
+<div class="overview-actions"><a href="./guide.html#load-compile-initialize">Get started</a><a href="./">Try the Playground</a></div>
 
 ## Already have a manuscript?
 
