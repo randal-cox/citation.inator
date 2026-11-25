@@ -405,3 +405,9 @@ The [experimental import demo](https://github.com/randal-cox/cite.inator/blob/co
 The source checkout includes a text-only `referenceItemPrefix` callback for host badges before reference items; see [the callback contract](article-tools.md#030-host-prefix-hook). Unknown access-profile help now appears once per owned list while inspector help remains available. These changes are not in the published 0.2.0 artifacts.
 
 See the [style catalogue and coverage matrix](citation-styles.md) to distinguish reference formatting from experimental import recognition. Reviewed import remains source-only: [development APIs and measured limits](https://github.com/randal-cox/cite.inator/blob/codex/citation-import/docs/import-development.md).
+
+## Author details and PubMed resolution
+
+Authors describe the source and its use; site configuration controls shared behavior. Prefer the [author notation](authoring.md) for article-specific years, formatted references, artwork attribution and reading-copy links. Structured record fields remain available for integrations.
+
+`createPubMedResolver` from `cite-inator/pubmed` performs exact MED identifier lookups through Europe PMC, retaining explicit DOI/PMCID aliases and provider evidence. Resolve with `await resolver.resolve('pmid:16060722')`; check the result state before merging. `mergeResolvedRecord(cache, result.record)` from `cite-inator/records` returns a validated new cache, preserves curated identity/fields, and rejects ambiguous owners or conflicting DOI/PMID/PMCID mappings. Do not replace the cache on provider error. The npm starter's resolver implements this workflow.

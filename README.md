@@ -18,6 +18,8 @@ The 0.5.0 project name is **cite.inator**; released 0.4.0 archives retain their 
 
 **Development 0.5.1 preview:** the default marker is `cite` for both works and directives; there are no automatic aliases. [Migration instructions](docs/notation-migration.md). Final release awaits draft approval.
 
+**Authoring principle:** authors describe the source and its use; site configuration controls shared behavior. The development candidate adds year, formatted-reference, artwork and copy-link fields in `{cite …}` and exact PMID-to-DOI discovery in the npm resolver. See [author notation and examples](docs/authoring.md); site-wide setup remains in JavaScript or configuration.
+
 ## Load and initialize
 
 Try the [live learning playground](https://randal-cox.github.io/cite.inator/): 21 editable examples, annotated tutorials, import review, a worked editor integration and downloadable starter projects. Version 0.5.0 also adds shared [UI language configuration](docs/i18n.md). To run it locally, use `npm ci`, `npm run build:learn`, then `npm start` and open [the playground](http://127.0.0.1:4187/site/). See the [milestone record](docs/milestones/0.5.0.md) for acceptance and release evidence.

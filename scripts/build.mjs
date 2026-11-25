@@ -293,6 +293,10 @@ initializeCitationInspector(element, {...options, cache: result.cache});</code><
       <p>The <a href="./">Reading room</a> and <a href="../drop-in/">Plain HTML</a> render these examples from the same source. <a href="./reading.txt">Open the plain-text source</a>.</p>
       <pre><code>${escapeHTML(prose.trim())}</code></pre>
     </section>
+    <section aria-labelledby="guide-authoring">
+      <h2 id="guide-authoring">Authors and site configuration</h2>
+      <p><strong>Authors describe the source and its use; site configuration controls shared behavior.</strong> Use <code>original-year:1912</code>, <code>edition-year:1995</code> and <code>reference:"Writer. *Title*. 1995."</code> in a cite marker for article-specific reference details. Attribution, medium, institution, rights and copy links also belong in notation. JavaScript configures shared behavior and integrations. See the <a href="../../docs/authoring.md">complete authoring reference</a> for syntax, consistency checks and provenance.</p>
+    </section>
     <section aria-labelledby="guide-notation">
       <h2 id="guide-notation">Complete notation</h2>
       <dl>${notation.map(([syntax, explanation]) => `<dt><code>${escapeHTML(syntax)}</code></dt><dd>${explanation}</dd>`).join("")}</dl>
@@ -338,9 +342,9 @@ initializeCitationInspector(element, {...options, cache: result.cache});</code><
     </section>
     <section aria-labelledby="guide-cache">
       <h2 id="guide-cache">Format references and add access links</h2>
-      <p>For curated reference text, put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
+      <p>Authors can put <code>reference:"Writer. *Title*. 1995."</code> in a cite marker. Integrations can alternatively put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
       <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. Set <code>hiddenAccessProviders</code> to hide services in the panel and endnotes. The application can reuse its own preference settings.</p>
-      <p>Use <code>originalIssued: [1912]</code> and <code>issued: [1995]</code> to store both dates for a translated or reprinted work. Try the Durkheim citation in the reading room with Chicago and APA selected.</p>
+      <p>Authors can use <code>original-year:1912</code> and optional <code>edition-year:1995</code> in the marker. Integrations can alternatively use <code>originalIssued: [1912]</code> and <code>issued: [1995]</code> on a shared record. Try the Durkheim citation in the reading room with Chicago and APA selected.</p>
       <p>The <a href="https://github.com/randal-cox/cite.inator/blob/main/docs/integration.md">integration guide</a> shows how to find ISBN candidates by title and author and review them before updating a cache.</p>
     </section>
   </article>`
@@ -353,7 +357,7 @@ await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
   cp("CITATION.cff", portable + "CITATION.cff"),
-  ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "i18n.md", "naming-migration.md", "notation-migration.md"].map(name => cp("docs/" + name, portable + name)),
+  ...["authoring.md", "integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "i18n.md", "naming-migration.md", "notation-migration.md"].map(name => cp("docs/" + name, portable + name)),
   cp("scripts/static-server.mjs", portable + "server.mjs"),
   writeFile(portable + "package.json", json({name:"citation-inator-standalone",private:true,type:"module",version,scripts:{start:"node server.mjs"}})),
   writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),

@@ -291,3 +291,22 @@ export function toCSL(record) {
     URL: identifierURL(record.identifiers.find(item => item.scheme === "doi")) || id("url") || record.locations.find(item => ["publisher", "repository"].includes(item.kind))?.url
   }).filter(([, value]) => value));
 }
+
+/** Merge a provider-resolved record through exact shared identifiers, preserving curated data. */
+export function mergeResolvedRecord(cache,input){
+  const index=readCache(cache),fresh=normalizeRecord(input);
+  const owners=new Set(fresh.identifiers.map(id=>index.byIdentifier.get(canonicalIdentifierKey(id))?.id).filter(Boolean));
+  if(index.byId.has(fresh.id))owners.add(fresh.id);
+  if(owners.size>1)throw new TypeError('Identifier mapping joins existing records. Review their identities before merging.');
+  const prior=owners.size?index.byId.get([...owners][0]):null;
+  if(!prior)return makeCache([...index.byId.values(),fresh]);
+  if(!fresh.identifiers.some(id=>prior.identifiers.some(old=>canonicalIdentifierKey(old)===canonicalIdentifierKey(id))))throw new TypeError('Record ID collision without a shared identifier.');
+  for(const scheme of ['doi','pmid','pmcid']){
+    const values=new Set([...prior.identifiers,...fresh.identifiers].filter(id=>id.scheme===scheme).map(canonicalIdentifierKey));
+    if(values.size>1)throw new TypeError(`Conflicting ${scheme} identifiers; review the mapping.`);
+  }
+  const next={...fresh,...prior,identifiers:[...prior.identifiers,...fresh.identifiers],locations:[...prior.locations,...fresh.locations],provenance:[...prior.provenance,...fresh.provenance]};
+  for(const field of ['title','authors','issued','containerTitle','volume','issue','pages'])if(!prior[field] || Array.isArray(prior[field])&&!prior[field].length)next[field]=fresh[field];
+  if(prior.state==='unresolved' && fresh.state==='resolved')next.state='resolved';
+  return makeCache([...index.byId.values()].filter(record=>record.id!==prior.id).concat(next));
+}

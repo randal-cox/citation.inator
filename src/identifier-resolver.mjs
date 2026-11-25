@@ -26,6 +26,13 @@ function merge(prior, fresh, provider, fields, locationKind) {
     }
   }
   if (fresh.state === "resolved" || prior.state === "unresolved") next.state = fresh.state;
+  if(provider === 'Europe PMC'){
+    for(const scheme of ['doi','pmid','pmcid']){
+      const values=new Set([...prior.identifiers,...fresh.identifiers].filter(id=>id.scheme===scheme).map(canonicalIdentifierKey));
+      if(values.size>1)throw new Error(`Conflicting ${scheme} mapping from ${provider}.`);
+    }
+    next.identifiers=[...prior.identifiers,...fresh.identifiers];
+  }
   next.version ||= fresh.version;
   const location = fresh.locations.find(item => item.kind === locationKind);
   if (location && !prior.locations.some(item => item.kind === locationKind &&

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1-preview.2 — In development
+
+- Put article-specific year, formatted-reference, artwork and reading-copy details in cite notation, with document-wide consistency, safe formatting and author provenance.
+- Resolve exact PubMed-to-DOI/PMCID aliases through the npm starter, preserving curated identity and rejecting conflicting mappings.
+- Group 22 Playground cards as Everyday, Intermediate and Advanced; grow Source with its text.
+- Establish the author/site boundary in project instructions, Guide and adversarial review criteria.
+- Alphabetize accented names/titles with their base letters when ordering references and assigning year letters.
+
 ## 0.5.1-preview.1 — In development
 
 - Replace the long reader-settings prompt with a compact gear-and-label Reading services control, retaining localization and host settings hooks.

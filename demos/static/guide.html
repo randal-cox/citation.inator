@@ -23,7 +23,7 @@
     <article class="reading guide">
     <section aria-labelledby="guide-load">
       <h2 id="guide-load">Load and initialize</h2>
-      <p>Clone the <a href="https://github.com/randal-cox/cite.inator">repository</a> with <code>git clone https://github.com/randal-cox/cite.inator.git</code> and check out <code>v0.5.1-preview.1</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; 0.4.0 includes the editor, bibliography, compiler and import tools.</p>
+      <p>Clone the <a href="https://github.com/randal-cox/cite.inator">repository</a> with <code>git clone https://github.com/randal-cox/cite.inator.git</code> and check out <code>v0.5.1-preview.2</code> for a published release, or the exact supplied commit for an unpublished candidate. Run <code>npm start</code> from the checkout to serve the demos, then open the <a href="http://127.0.0.1:4187/demos/drop-in/">Plain HTML example</a>. Use the version named by your downloaded package; 0.4.0 includes the editor, bibliography, compiler and import tools.</p>
       <pre><code>cd cite.inator
 npm start</code></pre>
       <p>Without npm, run <code>node server.mjs</code> in the standalone folder and open <code>http://127.0.0.1:4188/</code>. You can also use any static HTTP server. See the standalone <a href="../drop-in/README.md">README</a>.</p>
@@ -96,6 +96,10 @@ This edition carries both its original publication date and the year of the tran
 
 {cite evidence} · {cite credit}</code></pre>
     </section>
+    <section aria-labelledby="guide-authoring">
+      <h2 id="guide-authoring">Authors and site configuration</h2>
+      <p><strong>Authors describe the source and its use; site configuration controls shared behavior.</strong> Use <code>original-year:1912</code>, <code>edition-year:1995</code> and <code>reference:"Writer. *Title*. 1995."</code> in a cite marker for article-specific reference details. Attribution, medium, institution, rights and copy links also belong in notation. JavaScript configures shared behavior and integrations. See the <a href="../../docs/authoring.md">complete authoring reference</a> for syntax, consistency checks and provenance.</p>
+    </section>
     <section aria-labelledby="guide-notation">
       <h2 id="guide-notation">Complete notation</h2>
       <dl><dt><code>{cite doi:10.1017/S0003055419000534}</code></dt><dd>An inline citation with a DOI.</dd><dt><code>{cite isbn:9780593656433 | form:narrative}</code></dt><dd>A cached ISBN with the author in the sentence and the year in parentheses.</dd><dt><code>{cite doi:10.1017/S0003055419000534; doi:10.1111/spc3.12501}</code></dt><dd>Group citations. A semicolon separates items.</dd><dt><code>{cite isbn:9780691198927; isbn:9780593656433 | prefix:see also | locator:&quot;p. 34&quot;}</code></dt><dd>Add a prefix and a locator to one item in a group. A bare page number adapts to the selected style.</dd><dt><code>{cite doi:10.1017/S0003055419000534 | label:&quot;the study | journal article; preprint available&quot;}</code></dt><dd>Choose the visible label. Quotes protect literal pipes and semicolons.</dd><dt><code>{cite local:unresolved-ritual-politics-reconciliation-2022 | ritual and reconciliation reference pending}</code></dt><dd>Supply a fallback to display for an unresolved record.</dd><dt><code>{cite isbn:9780691198927 | form:parenthetical}</code></dt><dd>Put the author and year in parentheses. This is the default.</dd><dt><code>{cite isbn:9780691198927 | form:author-only}</code></dt><dd>Show only the author, without parentheses.</dd><dt><code>{cite isbn:9780691198927 | form:suppress-author}</code></dt><dd>Show only the year, in parentheses.</dd><dt><code>{cite isbn:9780691198927 | form:suppress-year}</code></dt><dd>Show only the author, in parentheses.</dd><dt><code>{cite endnote}</code></dt><dd>Place the endnotes on their own paragraph. The compiler appends them when the marker is absent.</dd><dt><code>{cite evidence}</code></dt><dd>Show cited source metadata or the Resolution bench’s provider evidence.</dd><dt><code>{cite credit}</code></dt><dd>Show the software credit, license and suggested citation.</dd></dl>
@@ -156,13 +160,13 @@ const anotherCopy = rebaseCitationFragment(result.html, &quot;essay&quot;, &quot
     </section>
     <section aria-labelledby="guide-cache">
       <h2 id="guide-cache">Format references and add access links</h2>
-      <p>For curated reference text, put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
+      <p>Authors can put <code>reference:"Writer. *Title*. 1995."</code> in a cite marker. Integrations can alternatively put <code>citationParts</code> on the record. Each part has <code>text</code> and optional <code>emphasis</code> set to <code>"italic"</code> or <code>"bold"</code>. Both the inspector and endnotes display the formatting.</p>
       <p>Supply record locations with <code>kind: "library"</code> or <code>kind: "full-text"</code>, a provider name and an HTTPS URL. Pass the reader’s preferred provider names in order using <code>accessProviders</code>. Set <code>hiddenAccessProviders</code> to hide services in the panel and endnotes. The application can reuse its own preference settings.</p>
-      <p>Use <code>originalIssued: [1912]</code> and <code>issued: [1995]</code> to store both dates for a translated or reprinted work. Try the Durkheim citation in the reading room with Chicago and APA selected.</p>
+      <p>Authors can use <code>original-year:1912</code> and optional <code>edition-year:1995</code> in the marker. Integrations can alternatively use <code>originalIssued: [1912]</code> and <code>issued: [1995]</code> on a shared record. Try the Durkheim citation in the reading room with Chicago and APA selected.</p>
       <p>The <a href="https://github.com/randal-cox/cite.inator/blob/main/docs/integration.md">integration guide</a> shows how to find ISBN candidates by title and author and review them before updating a cache.</p>
     </section>
   </article>
   </main>
-  <footer class="site">cite.inator · Portable Citation Inspector 0.5.1-preview.1</footer>
+  <footer class="site">cite.inator · Portable Citation Inspector 0.5.1-preview.2</footer>
 </body>
 </html>

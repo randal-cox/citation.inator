@@ -1,6 +1,6 @@
 {
   "name": "cite-inator",
-  "version": "0.5.1-preview.1",
+  "version": "0.5.1-preview.2",
   "description": "Portable citations, endnotes, and source inspection",
   "type": "module",
   "license": "MIT",
@@ -33,7 +33,8 @@
     "./import-files": "./src/import-files.mjs",
     "./import-files-browser": "./dist/citation-import-files.mjs",
     "./compiler-browser": "./dist/citation-compiler.mjs",
-    "./i18n": "./src/i18n.mjs"
+    "./i18n": "./src/i18n.mjs",
+    "./pubmed": "./src/pubmed.mjs"
   },
   "bin": {
     "cite-inator": "./scripts/compile.mjs",

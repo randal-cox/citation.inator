@@ -108,7 +108,7 @@ function analyze(source, cache, options) {
   }
   const result = compileCitationBlocks(blocks, cache, options);
   if (markers.length !== result.citationDescriptions.length) throw new Error('Citation source ranges do not match the compilation context.');
-  return { markers, descriptions: result.citationDescriptions, diagnostics: [...diagnostics,
+  return { markers, effectiveCache:result.cache, descriptions: result.citationDescriptions, diagnostics: [...diagnostics,
     ...result.diagnostics.filter(item => !['unknown-tag', 'invalid-tag-icon', 'invalid-site-occurrence'].includes(item.state))] };
 }
 
@@ -133,7 +133,7 @@ export function annotateMarkers(source, cache, options = {}) {
   if (!['article','work'].includes(noteContext)) throw new TypeError('Use article or work noteContext.');
   // Annotation changes notes only; validate the writer option without changing existing IDs.
   formatRecordId('annotation-validation', options);
-  const { markers, descriptions, diagnostics } = analyze(source, cache, options);
+  const { markers, effectiveCache, descriptions, diagnostics } = analyze(source, cache, options);
   const workDescriptions = new Map();
   const edits = [];
   for (const [index, marker] of markers.entries()) {
@@ -148,7 +148,7 @@ export function annotateMarkers(source, cache, options = {}) {
       let noteText=description.items[i].text;
       if (noteContext === 'work') {
         const recordId=description.items[i].recordId;
-        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId,describeCitation(`{${options.citationKeyword || 'cite'} ${formatRecordId(recordId, options)}}`,cache,{...options,suffixScope:'fragment'}).text);
+        if (!workDescriptions.has(recordId)) workDescriptions.set(recordId,describeCitation(`{${options.citationKeyword || 'cite'} ${formatRecordId(recordId, options)}}`,effectiveCache,{...options,suffixScope:'fragment'}).text);
         noteText=workDescriptions.get(recordId);
       }
       noteText=escaped(noteText);

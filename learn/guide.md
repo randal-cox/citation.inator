@@ -12,9 +12,11 @@ A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
 
 The DOI identifies the work. `note:` is a generated work label, hidden from readers; `annotateMarkers` and editor tools replace it when refreshing notes. Keep personal reminders in your article comments, outside the marker. The formatted author/year text comes from the work’s bibliographic metadata. Use `isbn:` for a particular book edition. The endnote marker places the reference list at that point in the article. Use the same keyword for every marker: `{cite identifier}` cites a work and `{cite endnote}` places its reference list. The default keyword is `cite`; `citationKeyword` configures a different keyword for both works and directives. Without an endnote directive, the list is appended to the article.
 
+**Authors describe the source and its use; site configuration controls shared behavior.** Write article-specific dates, reference text, attribution and reading-copy links in the citation marker. JavaScript configures the site's shared behavior once.
+
 ## Load, compile, initialize
 
-This Guide documents `0.5.1-preview.1`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
+This Guide documents `0.5.1-preview.2`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
 
 ### Without a package installation
 
@@ -110,24 +112,25 @@ The included `resolve.mjs` is the complete script:
 ```js
 import {readFile,writeFile} from 'node:fs/promises';
 import {compileMarkdown} from 'cite-inator/markup';
-import {readCache} from 'cite-inator/records';
+import {readCache,mergeResolvedRecord} from 'cite-inator/records';
 import {createCrossrefResolver} from 'cite-inator/crossref';
 import {createOpenLibraryResolver} from 'cite-inator/openlibrary';
+import {createPubMedResolver} from 'cite-inator/pubmed';
 
 const source=await readFile('article.md','utf8');
-const cache=JSON.parse(await readFile('citations.json','utf8'));
+let cache=JSON.parse(await readFile('citations.json','utf8'));
 const options=JSON.parse(await readFile('configuration.json','utf8'));
 const missing=compileMarkdown(source,cache,options).diagnostics
   .filter(item=>item.code==='citation-unresolved').map(item=>item.identifier);
-const providers={doi:createCrossrefResolver(),isbn:createOpenLibraryResolver()};
+const providers={doi:createCrossrefResolver(),isbn:createOpenLibraryResolver(),pmid:createPubMedResolver()};
 for(const identifier of new Set(missing)){
   const provider=providers[identifier.split(':',1)[0]];
   if(!provider)throw new Error(`Add metadata for ${identifier} through import review or a curated record.`);
   const prior=readCache(cache).byIdentifier.get(identifier);
+  if(prior?.state==='resolved')continue;
   const result=await provider.resolve(identifier,{seed:prior});
   if(result.record?.state!=='resolved')throw new Error(`Could not resolve ${identifier}. Review the identifier and try again.`);
-  cache.records=cache.records.filter(record=>record.id!==result.record.id && record.id!==prior?.id);
-  cache.records.push(result.record);
+  cache=mergeResolvedRecord(cache,result.record);
 }
 const checked=compileMarkdown(source,cache,options);
 if(checked.diagnostics.some(item=>item.code==='citation-unresolved'))throw new Error('Review unresolved citations before saving metadata.');
@@ -184,7 +187,7 @@ Evidence and credit remain hoverable when ordinary references use click. Click, 
 
 Locators can name pages, chapters, sections or timestamps. A locator adds citation text; it does not by itself link to a particular page or timestamp. The selected citation style determines the surrounding punctuation. Use `compileHTML` to compile within existing authored HTML, or `compileMarkdown` for Markdown; code blocks and excluded interactive elements are skipped. Structured editors can import `planCitationOccurrences` from `cite-inator` and call `planCitationOccurrences(occurrences, cache, options)` with stable occurrence IDs instead of splicing compiled HTML by position; see the [structured occurrence contract](./reference/integration.html). `planCitationOccurrences` is a Node/build-time API and requires a document `namespace`, for example `{namespace:"essay-one"}`. It is not exported by the copied browser compiler bundle.
 
-Record `citationParts` retain italics, bold text and safe links in authored reference formatting. Keep source bibliographic data in structured fields when you want presets to format it automatically. `originalIssued` and `issued` distinguish original publication from the cited edition. `reprintYear` chooses `both`, `original` or `edition`. Year letters normally belong to one reference list. Use `suffixScope:'cache'` only for one work split across pages sharing a bibliography, not independent essays.
+Authors can use `reference:` for formatted reference text and `original-year:` / `edition-year:` for publication dates; see [author-supplied details](./reference/authoring.html). Integrations can alternatively use record `citationParts`, `originalIssued` and `issued`. Keep source bibliographic data in structured fields when you want presets to format it automatically. `reprintYear` chooses `both`, `original` or `edition`. Year letters normally belong to one reference list. Use `suffixScope:'cache'` only for one work split across pages sharing a bibliography, not independent essays.
 
 ## Access, rights and evidence
 
@@ -256,3 +259,20 @@ A heading or title you set explicitly overrides its translation. Source titles/a
 ## Next recipes
 
 Browse the [annotated working examples and API guides](./guide.html#examples), try the [editor-note and tag tools](./tools/editor-tools.html), or explore the [shared bibliography](./tools/bibliography.html). The [worked draft integration](./host/) runs the accepted editor code, with [source, staging, revision, undo and persistence notes](./host/recipe.html). These are separate hosts of the same library; the import API does not require a particular page layout or CSS framework.
+
+## Author-supplied reference details
+
+```text
+{cite isbn:9780029079379 | original-year:1912}
+{cite isbn:9780029079379 | edition-year:1995}
+{cite isbn:9780029079379 | reference:"Durkheim, É. (1995). *The elementary forms of religious life*. Free Press."}
+{cite doi:10.1371/journal.pmed.0020124 | read-url:"https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0020124" | access:open}
+```
+
+The ISBN normally supplies the edition year. Year overrides apply to every mention of that work in the document; conflicting declarations fail. Custom reference text supports *italic* and **bold** with asterisks, not embedded HTML. A changed year cannot silently rewrite a previously authored reference; supply `reference:` too or correct the shared metadata. Cache-wide year letters require shared date corrections rather than per-page overrides.
+
+Artwork fields are `attribution:`, `display-date:`, `medium:`, `dimensions:`, `institution:`, `accession:`, `rights:`, `photographer:` and `uploader:`. They supplement an existing work. Photographer and uploader are distinct from creator. Copy fields are `read-url:`, `pdf:`, `access:` and `checked:`. Quote text/URLs; years and ISO dates may be unquoted. PDF links require a checked date (`checked:2026-11-25`); supply a real date when you have checked the link. Access is `open`, `subscription`, `purchase`, `loan` or `unknown`; it describes only the supplied copy. Canonical DOI links remain unchanged.
+
+The returned metadata records these as Document author assertions. The input cache stays unchanged. Identifier aliases share assertions. Repeat equal values freely; differing values for one work are errors. Supported years are 1000–9999, original no later than edition. A different edition year discards the old month/day.
+
+The npm starter resolver accepts PMID as well as DOI and ISBN. An exact PubMed response from Europe PMC supplies DOI/PMCID aliases automatically, preserving curated records and rejecting identity conflicts. Ordinary compilation makes no network requests. The examples use saved metadata. See the [authoring reference](./reference/authoring.html) for syntax, provenance and limitations.

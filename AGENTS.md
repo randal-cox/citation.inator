@@ -19,3 +19,7 @@ The maintainer authorized routine two-way coordination through GitHub issues in 
 ## Reader-facing copy
 
 Run a reader-copy pass before delivering UI changes. “Remove the talking-to-me copy” means sweep the whole interface, including statuses, tooltips and disclosures: remove development narration, self-justification and repeated instructions; retain useful labels, state, consent, essential provenance and actionable errors. Put implementation and scope explanations in the docs. For substantial cleanup or repeated misses, use an independent agent reader-copy review and resolve its findings. Do not transfer unnecessary prose into accessibility-only text.
+
+## Authoring boundary
+
+Authors describe the source and its use; site configuration controls shared behavior. Put article-specific reference text, dates, attribution and copy links in citation notation. Reserve JavaScript/configuration for site-wide presentation, interaction and integrations. Generated metadata should come from resolvers or import tools where possible; do not require authors to hand-maintain identifier aliases. Review examples and new APIs against this boundary.

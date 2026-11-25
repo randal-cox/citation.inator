@@ -1,4 +1,4 @@
-/*! cite-inator compiler v0.5.1-preview.1 | MIT | See LICENSE */
+/*! cite-inator compiler v0.5.1-preview.2 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -314,128 +314,6 @@ function createCitationMessages({ locale = "en", strings = {} } = {}) {
   });
 }
 
-// src/class-names.mjs
-var defaultClassPrefix = "citation";
-function validClassPrefix(prefix) {
-  return typeof prefix === "string" && /^[a-z][a-z0-9-]{0,31}$/.test(prefix);
-}
-function validateClassPrefix(prefix) {
-  if (!validClassPrefix(prefix)) throw new TypeError("Use a lowercase citation class prefix.");
-}
-function partClassNames(prefix, parts) {
-  return parts.split(" ").map((part) => `${prefix}-${part}`);
-}
-
-// package.json
-var package_default = {
-  name: "cite-inator",
-  version: "0.5.1-preview.1",
-  description: "Portable citations, endnotes, and source inspection",
-  type: "module",
-  license: "MIT",
-  author: {
-    name: "Randal Cox",
-    url: "https://orcid.org/0009-0002-3427-7190"
-  },
-  repository: {
-    type: "git",
-    url: "git+https://github.com/randal-cox/cite.inator.git"
-  },
-  engines: {
-    node: ">=22.13.0"
-  },
-  exports: {
-    ".": "./src/compiler.mjs",
-    "./records": "./src/records.mjs",
-    "./crossref": "./src/crossref.mjs",
-    "./browser": "./dist/citation-inspector.mjs",
-    "./style.css": "./dist/citation-inspector.css",
-    "./citations.json": "./dist/citations.json",
-    "./package.json": "./package.json",
-    "./markup": "./src/markup.mjs",
-    "./openlibrary": "./src/openlibrary.mjs",
-    "./access": "./src/access.mjs",
-    "./tools": "./src/tools.mjs",
-    "./tools-browser": "./dist/citation-tools.mjs",
-    "./import": "./src/import-api.mjs",
-    "./import-browser": "./dist/citation-import.mjs",
-    "./import-files": "./src/import-files.mjs",
-    "./import-files-browser": "./dist/citation-import-files.mjs",
-    "./compiler-browser": "./dist/citation-compiler.mjs",
-    "./i18n": "./src/i18n.mjs"
-  },
-  bin: {
-    "cite-inator": "./scripts/compile.mjs",
-    "citation-inator": "./scripts/compile.mjs"
-  },
-  files: [
-    "src",
-    "dist/citation-inspector.mjs",
-    "dist/citation-inspector.css",
-    "dist/citation-tools.mjs",
-    "dist/LICENSE",
-    "dist/THIRD_PARTY_LICENSES.txt",
-    "dist/citations.json",
-    "scripts/compile.mjs",
-    "ROADMAP.md",
-    "CHANGELOG.md",
-    "CITATION.cff",
-    "docs",
-    "dist/citation-import.mjs",
-    "dist/citation-import-files.mjs",
-    "dist/citation-pdf.worker.mjs",
-    "scripts/import.mjs",
-    "dist/citation-compiler.mjs"
-  ],
-  scripts: {
-    build: "node scripts/build.mjs",
-    test: "node --test test/*.test.mjs",
-    "test:browser": "node test/browser.mjs",
-    start: "node scripts/serve.mjs",
-    prepack: "npm run build",
-    "checkin:check": "node scripts/checkin.mjs --staged",
-    "milestone:check": "npm test && npm run build && npm run test:browser && npm run test:learn && node scripts/checkin.mjs",
-    "hooks:install": "git config --local core.hooksPath .githooks",
-    "build:learn": "npm run build && node scripts/build-learning.mjs",
-    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs"
-  },
-  devDependencies: {
-    "axe-core": "4.14.0",
-    dompurify: "3.5.0",
-    esbuild: "0.25.12",
-    "playwright-core": "1.65.1"
-  },
-  dependencies: {
-    "@noble/hashes": "2.4.0",
-    "@xmldom/xmldom": "0.9.12",
-    fflate: "0.8.3",
-    marked: "16.4.2",
-    parse5: "7.3.0",
-    "pdfjs-dist": "6.5.438"
-  }
-};
-
-// src/icons.mjs
-var paths = {
-  pdf: '<path d="M6 3h8l4 4v14H6z M14 3v5h4"/><path d="m8 17 3-5 2 4 3 1-4 1z"/>',
-  publisher: '<path d="M3 9 12 4l9 5z M5 20h14 M7 11v7m5-7v7m5-7v7"/>',
-  book: '<path d="M5 4h14v16H7a2 2 0 0 1-2-2z M5 17h14 M8 8h8m-8 3h6"/>',
-  link: '<path d="m9 15 6-6 M8 16l-1 1a3 3 0 0 1-4-4l5-5a3 3 0 0 1 4 0 M16 8l1-1a3 3 0 0 1 4 4l-5 5a3 3 0 0 1-4 0"/>',
-  repository: '<path d="M4 4h16v5H4z M6 9v11h12V9 M10 13h4"/>',
-  article: '<path d="M6 4h12v16H6z M9 8h6m-6 4h6m-6 4h4"/>',
-  external: '<path d="M13 4h7v7m0-7-9 9m7 0v7H4V6h7"/>',
-  library: '<path d="M4 19V5h4v14zm4 0V5h4v14zm6-13 4-1 3 14-4 1z"/>',
-  status: '<path d="M12 3 4 7v5c0 5 4 8 8 9 4-1 8-4 8-9V7z M12 8v5m0 3h.01"/>',
-  back: '<path d="m10 6-6 6 6 6 M4 12h11a4 4 0 0 0 4-4"/>',
-  endnote: '<path d="M4 5h16M4 10h10m-10 5h5m6-2v7m-3-3 3 3 3-3"/>',
-  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
-  settings: '<path d="M10 3h4l.6 2.3 2 .9 2.1-.7 2 3.5-1.6 1.7v2.3l1.6 1.7-2 3.5-2.1-.7-2 .9L14 21h-4l-.6-2.3-2-.9-2.1.7-2-3.5 1.6-1.7V11L3.3 9.3l2-3.5 2.1.7 2-.9z"/><circle cx="12" cy="12" r="3"/>',
-  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
-};
-function iconMarkup(name2) {
-  return `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${Object.hasOwn(paths, name2) ? paths[name2] : paths.link}</svg>`;
-}
-
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
 var cleanText = (value) => typeof value === "string" ? value.trim() : "";
@@ -704,6 +582,197 @@ function readCache(input) {
   return { byId, byIdentifier };
 }
 
+// src/author-fields.mjs
+var authorFields = /* @__PURE__ */ new Set(["original-year", "edition-year", "reference", "attribution", "display-date", "medium", "dimensions", "institution", "accession", "rights", "photographer", "uploader", "pdf", "read-url", "access", "checked"]);
+var recordFields = { "original-year": "originalIssued", "edition-year": "issued", attribution: "creatorAttribution", "display-date": "displayDate", medium: "medium", dimensions: "dimensions", institution: "holdingInstitution", accession: "accession" };
+function referenceParts(value) {
+  return value.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/u).filter(Boolean).map((text) => text.startsWith("**") && text.endsWith("**") ? { text: text.slice(2, -2), emphasis: "bold" } : text.startsWith("*") && text.endsWith("*") ? { text: text.slice(1, -1), emphasis: "italic" } : { text });
+}
+function validAuthorField(field, value) {
+  if (!value.trim()) return false;
+  if (field.endsWith("-year")) return /^[1-9][0-9]{3}$/.test(value);
+  if (["pdf", "read-url"].includes(field)) return Boolean(httpsURL(value));
+  if (field === "access") return ["open", "subscription", "purchase", "loan", "unknown"].includes(value);
+  if (field === "checked") return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  return true;
+}
+function applyAuthorFields(blocks, index, { suffixScope }) {
+  const assertions = /* @__PURE__ */ new Map();
+  for (const token of blocks.flat()) for (const item of token.items || []) {
+    if (!item.authorFields) continue;
+    const record = item.identifier.scheme === "local" ? index.byId.get(item.identifier.value) : index.byIdentifier.get(canonicalIdentifierKey(item.identifier));
+    if (!record) throw new TypeError(`Resolve ${canonicalIdentifierKey(item.identifier)} before adding reference details.`);
+    const fields = assertions.get(record.id) || {};
+    for (const [key, value] of Object.entries(item.authorFields)) {
+      if (Object.hasOwn(fields, key) && fields[key] !== value) throw new TypeError(`Conflicting ${key} declarations for ${record.id}. Use one value throughout the document.`);
+      fields[key] = value;
+    }
+    assertions.set(record.id, fields);
+  }
+  for (const [id, fields] of assertions) {
+    const prior = index.byId.get(id), next = { ...prior };
+    const datesChanged = ["original-year", "edition-year"].some((key) => fields[key] && prior[recordFields[key]]?.[0] !== Number(fields[key]));
+    const displayChanged = fields["display-date"] && fields["display-date"] !== prior.displayDate;
+    if ((datesChanged || displayChanged) && suffixScope === "cache") throw new TypeError(`Put shared date corrections for ${id} in the shared metadata before using suffixScope:cache.`);
+    if (!fields.reference && (datesChanged && prior.displayDate || (datesChanged || displayChanged) && (prior.citationParts?.length || prior.citationText))) throw new TypeError(`Date assertions for ${id} conflict with its custom reference/date. Supply reference: too, or correct the shared metadata.`);
+    for (const [key, field] of Object.entries(recordFields)) if (fields[key]) {
+      next[field] = key.endsWith("-year") ? prior[field]?.[0] === Number(fields[key]) ? prior[field] : [Number(fields[key])] : fields[key];
+    }
+    if (fields["edition-year"] && fields["display-date"] && fields["display-date"] !== fields["edition-year"]) throw new TypeError(`display-date: disagrees with edition-year: for ${id}.`);
+    if (datesChanged && fields.reference && prior.displayDate && !fields["display-date"]) delete next.displayDate;
+    if (next.originalIssued && next.issued && next.originalIssued[0] > next.issued[0]) throw new TypeError(`Original year is later than edition year for ${id}.`);
+    if (fields.reference) {
+      next.citationParts = referenceParts(fields.reference);
+      next.citationText = "";
+    }
+    if (fields.rights) next.license = { name: fields.rights };
+    const contributors = ["photographer", "uploader"].filter((key) => fields[key]).map((role) => ({ role, name: fields[role] }));
+    if (contributors.length) next.contributors = [...(prior.contributors || []).filter((person) => !fields[person.role]), ...contributors];
+    if ((fields.access || fields.checked) && !fields.pdf && !fields["read-url"]) throw new TypeError(`access: and checked: need pdf: or read-url: for ${id}.`);
+    const locations = ["pdf", "read-url"].filter((key) => fields[key]).map((key) => {
+      if (key === "pdf" && !fields.checked) throw new TypeError(`Supply checked:YYYY-MM-DD with pdf: for ${id}.`);
+      return { kind: key === "pdf" ? "pdf" : "publisher", provider: "Author-supplied copy", url: fields[key], access: fields.access || "unknown", verifiedAt: fields.checked ? fields.checked + "T00:00:00.000Z" : null };
+    });
+    if (locations.length) next.locations = [...prior.locations.filter((location) => !locations.some((added) => added.url === location.url)), ...locations];
+    const priorFields = new Set(Object.keys(fields).filter((key) => recordFields[key]).map((key) => recordFields[key]));
+    if (fields.reference) {
+      priorFields.add("citationParts");
+      priorFields.add("citationText");
+    }
+    if (fields.rights) priorFields.add("license");
+    if (contributors.length) priorFields.add("contributors");
+    if (locations.length) priorFields.add("locations");
+    if (prior.displayDate && next.displayDate !== prior.displayDate) priorFields.add("displayDate");
+    next.provenance = [...prior.provenance, { provider: "Document author", note: JSON.stringify({ assertions: fields, prior: Object.fromEntries([...priorFields].map((key) => [key, prior[key] ?? null])) }) }];
+    const normalized = normalizeRecord(next);
+    index.byId.set(id, normalized);
+    for (const identifier of normalized.identifiers) index.byIdentifier.set(canonicalIdentifierKey(identifier), normalized);
+  }
+}
+
+// src/class-names.mjs
+var defaultClassPrefix = "citation";
+function validClassPrefix(prefix) {
+  return typeof prefix === "string" && /^[a-z][a-z0-9-]{0,31}$/.test(prefix);
+}
+function validateClassPrefix(prefix) {
+  if (!validClassPrefix(prefix)) throw new TypeError("Use a lowercase citation class prefix.");
+}
+function partClassNames(prefix, parts) {
+  return parts.split(" ").map((part) => `${prefix}-${part}`);
+}
+
+// package.json
+var package_default = {
+  name: "cite-inator",
+  version: "0.5.1-preview.2",
+  description: "Portable citations, endnotes, and source inspection",
+  type: "module",
+  license: "MIT",
+  author: {
+    name: "Randal Cox",
+    url: "https://orcid.org/0009-0002-3427-7190"
+  },
+  repository: {
+    type: "git",
+    url: "git+https://github.com/randal-cox/cite.inator.git"
+  },
+  engines: {
+    node: ">=22.13.0"
+  },
+  exports: {
+    ".": "./src/compiler.mjs",
+    "./records": "./src/records.mjs",
+    "./crossref": "./src/crossref.mjs",
+    "./browser": "./dist/citation-inspector.mjs",
+    "./style.css": "./dist/citation-inspector.css",
+    "./citations.json": "./dist/citations.json",
+    "./package.json": "./package.json",
+    "./markup": "./src/markup.mjs",
+    "./openlibrary": "./src/openlibrary.mjs",
+    "./access": "./src/access.mjs",
+    "./tools": "./src/tools.mjs",
+    "./tools-browser": "./dist/citation-tools.mjs",
+    "./import": "./src/import-api.mjs",
+    "./import-browser": "./dist/citation-import.mjs",
+    "./import-files": "./src/import-files.mjs",
+    "./import-files-browser": "./dist/citation-import-files.mjs",
+    "./compiler-browser": "./dist/citation-compiler.mjs",
+    "./i18n": "./src/i18n.mjs",
+    "./pubmed": "./src/pubmed.mjs"
+  },
+  bin: {
+    "cite-inator": "./scripts/compile.mjs",
+    "citation-inator": "./scripts/compile.mjs"
+  },
+  files: [
+    "src",
+    "dist/citation-inspector.mjs",
+    "dist/citation-inspector.css",
+    "dist/citation-tools.mjs",
+    "dist/LICENSE",
+    "dist/THIRD_PARTY_LICENSES.txt",
+    "dist/citations.json",
+    "scripts/compile.mjs",
+    "ROADMAP.md",
+    "CHANGELOG.md",
+    "CITATION.cff",
+    "docs",
+    "dist/citation-import.mjs",
+    "dist/citation-import-files.mjs",
+    "dist/citation-pdf.worker.mjs",
+    "scripts/import.mjs",
+    "dist/citation-compiler.mjs"
+  ],
+  scripts: {
+    build: "node scripts/build.mjs",
+    test: "node --test test/*.test.mjs",
+    "test:browser": "node test/browser.mjs",
+    start: "node scripts/serve.mjs",
+    prepack: "npm run build",
+    "checkin:check": "node scripts/checkin.mjs --staged",
+    "milestone:check": "npm test && npm run build && npm run test:browser && npm run test:learn && node scripts/checkin.mjs",
+    "hooks:install": "git config --local core.hooksPath .githooks",
+    "build:learn": "npm run build && node scripts/build-learning.mjs",
+    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs"
+  },
+  devDependencies: {
+    "axe-core": "4.14.0",
+    dompurify: "3.5.0",
+    esbuild: "0.25.12",
+    "playwright-core": "1.65.1"
+  },
+  dependencies: {
+    "@noble/hashes": "2.4.0",
+    "@xmldom/xmldom": "0.9.12",
+    fflate: "0.8.3",
+    marked: "16.4.2",
+    parse5: "7.3.0",
+    "pdfjs-dist": "6.5.438"
+  }
+};
+
+// src/icons.mjs
+var paths = {
+  pdf: '<path d="M6 3h8l4 4v14H6z M14 3v5h4"/><path d="m8 17 3-5 2 4 3 1-4 1z"/>',
+  publisher: '<path d="M3 9 12 4l9 5z M5 20h14 M7 11v7m5-7v7m5-7v7"/>',
+  book: '<path d="M5 4h14v16H7a2 2 0 0 1-2-2z M5 17h14 M8 8h8m-8 3h6"/>',
+  link: '<path d="m9 15 6-6 M8 16l-1 1a3 3 0 0 1-4-4l5-5a3 3 0 0 1 4 0 M16 8l1-1a3 3 0 0 1 4 4l-5 5a3 3 0 0 1-4 0"/>',
+  repository: '<path d="M4 4h16v5H4z M6 9v11h12V9 M10 13h4"/>',
+  article: '<path d="M6 4h12v16H6z M9 8h6m-6 4h6m-6 4h4"/>',
+  external: '<path d="M13 4h7v7m0-7-9 9m7 0v7H4V6h7"/>',
+  library: '<path d="M4 19V5h4v14zm4 0V5h4v14zm6-13 4-1 3 14-4 1z"/>',
+  status: '<path d="M12 3 4 7v5c0 5 4 8 8 9 4-1 8-4 8-9V7z M12 8v5m0 3h.01"/>',
+  back: '<path d="m10 6-6 6 6 6 M4 12h11a4 4 0 0 0 4-4"/>',
+  endnote: '<path d="M4 5h16M4 10h10m-10 5h5m6-2v7m-3-3 3 3 3-3"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+  settings: '<path d="M10 3h4l.6 2.3 2 .9 2.1-.7 2 3.5-1.6 1.7v2.3l1.6 1.7-2 3.5-2.1-.7-2 .9L14 21h-4l-.6-2.3-2-.9-2.1.7-2-3.5 1.6-1.7V11L3.3 9.3l2-3.5 2.1.7 2-.9z"/><circle cx="12" cy="12" r="3"/>',
+  more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
+};
+function iconMarkup(name2) {
+  return `<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${Object.hasOwn(paths, name2) ? paths[name2] : paths.link}</svg>`;
+}
+
 // src/reference-features.mjs
 var fallbackOrigin = "https://citation.invalid";
 function siteURL(value, siteOrigin, { fragment = false } = {}) {
@@ -811,6 +880,7 @@ function parseItem(text) {
   let editorNote;
   let markerTags;
   const affixes = {};
+  const authored = {};
   let formSpecified = false;
   let isolated = false;
   for (const option of options) {
@@ -843,10 +913,17 @@ function parseItem(text) {
       if (!raw || Object.hasOwn(affixes, field) || raw.startsWith('"') && !quoted) return null;
       affixes[field] = unescape(quoted ? quoted[1] : raw).trim();
       if (!affixes[field]) return null;
+    } else if (authorFields.has(option.slice(0, option.indexOf(":")))) {
+      const colon = option.indexOf(":"), field = option.slice(0, colon), raw = option.slice(colon + 1).trim();
+      const quoted = /^"((?:\\.|[^"\\])*)"$/.exec(raw);
+      if (Object.hasOwn(authored, field) || raw.startsWith('"') && !quoted) return null;
+      const value = unescape(quoted ? quoted[1] : raw);
+      if (!validAuthorField(field, value)) return null;
+      authored[field] = value;
     } else if (option && !hint) hint = unescape(option);
     else return null;
   }
-  return { identifier, form, label, hint, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
+  return { identifier, form, label, hint, ...Object.keys(authored).length && { authorFields: authored }, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
 }
 function validateKeyword(citationKeyword) {
   if (typeof citationKeyword !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(citationKeyword)) {
@@ -925,8 +1002,8 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
 var name = (author) => author.literal || author.family;
 var sortName = (record) => (record.type === "legislation" ? record.title : record.authors.map(name).join("")) || record.title || record.original;
 var compare = (a, b2) => {
-  const left = a.normalize("NFKC").toLowerCase();
-  const right = b2.normalize("NFKC").toLowerCase();
+  const left = a.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+  const right = b2.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
   return left < right ? -1 : left > right ? 1 : 0;
 };
 var titleFor = (record) => record.title || record.original || "Unresolved citation";
@@ -1358,6 +1435,7 @@ function compileBlocks(blocks, cache, {
   const structuredPrefix = `citation_${namespace.length}-${namespace}`;
   const part = (names) => `class="${partClassNames(classPrefix, names).join(" ")}" data-citation-part="${names}"${prefixAttribute}`;
   const index = readCache(cache);
+  applyAuthorFields(blocks, index, { suffixScope });
   const used = /* @__PURE__ */ new Map();
   const diagnostics = [];
   const features = prepareReferences({ siteOccurrences, occurrences, siteOrigin, tagCatalogue, listItemTags }, diagnostics);

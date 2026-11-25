@@ -1,4 +1,4 @@
-/*! cite-inator import v0.5.1-preview.1 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator import v0.5.1-preview.2 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -8149,7 +8149,7 @@ function parseFragment(fragmentContext, html, options) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.5.1-preview.1",
+  version: "0.5.1-preview.2",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -8182,7 +8182,8 @@ var package_default = {
     "./import-files": "./src/import-files.mjs",
     "./import-files-browser": "./dist/citation-import-files.mjs",
     "./compiler-browser": "./dist/citation-compiler.mjs",
-    "./i18n": "./src/i18n.mjs"
+    "./i18n": "./src/i18n.mjs",
+    "./pubmed": "./src/pubmed.mjs"
   },
   bin: {
     "cite-inator": "./scripts/compile.mjs",
@@ -9202,6 +9203,74 @@ function parseReferences(entries, options = {}) {
   return { schema: "citation-inator.import-references.v1", entries: entries.map((text) => parseReference(text, options)) };
 }
 
+// src/author-fields.mjs
+var authorFields = /* @__PURE__ */ new Set(["original-year", "edition-year", "reference", "attribution", "display-date", "medium", "dimensions", "institution", "accession", "rights", "photographer", "uploader", "pdf", "read-url", "access", "checked"]);
+var recordFields = { "original-year": "originalIssued", "edition-year": "issued", attribution: "creatorAttribution", "display-date": "displayDate", medium: "medium", dimensions: "dimensions", institution: "holdingInstitution", accession: "accession" };
+function referenceParts(value) {
+  return value.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/u).filter(Boolean).map((text) => text.startsWith("**") && text.endsWith("**") ? { text: text.slice(2, -2), emphasis: "bold" } : text.startsWith("*") && text.endsWith("*") ? { text: text.slice(1, -1), emphasis: "italic" } : { text });
+}
+function validAuthorField(field, value) {
+  if (!value.trim()) return false;
+  if (field.endsWith("-year")) return /^[1-9][0-9]{3}$/.test(value);
+  if (["pdf", "read-url"].includes(field)) return Boolean(httpsURL(value));
+  if (field === "access") return ["open", "subscription", "purchase", "loan", "unknown"].includes(value);
+  if (field === "checked") return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  return true;
+}
+function applyAuthorFields(blocks2, index, { suffixScope }) {
+  const assertions = /* @__PURE__ */ new Map();
+  for (const token of blocks2.flat()) for (const item of token.items || []) {
+    if (!item.authorFields) continue;
+    const record = item.identifier.scheme === "local" ? index.byId.get(item.identifier.value) : index.byIdentifier.get(canonicalIdentifierKey(item.identifier));
+    if (!record) throw new TypeError(`Resolve ${canonicalIdentifierKey(item.identifier)} before adding reference details.`);
+    const fields = assertions.get(record.id) || {};
+    for (const [key, value] of Object.entries(item.authorFields)) {
+      if (Object.hasOwn(fields, key) && fields[key] !== value) throw new TypeError(`Conflicting ${key} declarations for ${record.id}. Use one value throughout the document.`);
+      fields[key] = value;
+    }
+    assertions.set(record.id, fields);
+  }
+  for (const [id, fields] of assertions) {
+    const prior = index.byId.get(id), next = { ...prior };
+    const datesChanged = ["original-year", "edition-year"].some((key) => fields[key] && prior[recordFields[key]]?.[0] !== Number(fields[key]));
+    const displayChanged = fields["display-date"] && fields["display-date"] !== prior.displayDate;
+    if ((datesChanged || displayChanged) && suffixScope === "cache") throw new TypeError(`Put shared date corrections for ${id} in the shared metadata before using suffixScope:cache.`);
+    if (!fields.reference && (datesChanged && prior.displayDate || (datesChanged || displayChanged) && (prior.citationParts?.length || prior.citationText))) throw new TypeError(`Date assertions for ${id} conflict with its custom reference/date. Supply reference: too, or correct the shared metadata.`);
+    for (const [key, field] of Object.entries(recordFields)) if (fields[key]) {
+      next[field] = key.endsWith("-year") ? prior[field]?.[0] === Number(fields[key]) ? prior[field] : [Number(fields[key])] : fields[key];
+    }
+    if (fields["edition-year"] && fields["display-date"] && fields["display-date"] !== fields["edition-year"]) throw new TypeError(`display-date: disagrees with edition-year: for ${id}.`);
+    if (datesChanged && fields.reference && prior.displayDate && !fields["display-date"]) delete next.displayDate;
+    if (next.originalIssued && next.issued && next.originalIssued[0] > next.issued[0]) throw new TypeError(`Original year is later than edition year for ${id}.`);
+    if (fields.reference) {
+      next.citationParts = referenceParts(fields.reference);
+      next.citationText = "";
+    }
+    if (fields.rights) next.license = { name: fields.rights };
+    const contributors = ["photographer", "uploader"].filter((key) => fields[key]).map((role) => ({ role, name: fields[role] }));
+    if (contributors.length) next.contributors = [...(prior.contributors || []).filter((person) => !fields[person.role]), ...contributors];
+    if ((fields.access || fields.checked) && !fields.pdf && !fields["read-url"]) throw new TypeError(`access: and checked: need pdf: or read-url: for ${id}.`);
+    const locations = ["pdf", "read-url"].filter((key) => fields[key]).map((key) => {
+      if (key === "pdf" && !fields.checked) throw new TypeError(`Supply checked:YYYY-MM-DD with pdf: for ${id}.`);
+      return { kind: key === "pdf" ? "pdf" : "publisher", provider: "Author-supplied copy", url: fields[key], access: fields.access || "unknown", verifiedAt: fields.checked ? fields.checked + "T00:00:00.000Z" : null };
+    });
+    if (locations.length) next.locations = [...prior.locations.filter((location) => !locations.some((added) => added.url === location.url)), ...locations];
+    const priorFields = new Set(Object.keys(fields).filter((key) => recordFields[key]).map((key) => recordFields[key]));
+    if (fields.reference) {
+      priorFields.add("citationParts");
+      priorFields.add("citationText");
+    }
+    if (fields.rights) priorFields.add("license");
+    if (contributors.length) priorFields.add("contributors");
+    if (locations.length) priorFields.add("locations");
+    if (prior.displayDate && next.displayDate !== prior.displayDate) priorFields.add("displayDate");
+    next.provenance = [...prior.provenance, { provider: "Document author", note: JSON.stringify({ assertions: fields, prior: Object.fromEntries([...priorFields].map((key) => [key, prior[key] ?? null])) }) }];
+    const normalized = normalizeRecord(next);
+    index.byId.set(id, normalized);
+    for (const identifier of normalized.identifiers) index.byIdentifier.set(canonicalIdentifierKey(identifier), normalized);
+  }
+}
+
 // src/i18n.mjs
 var en = {
   "access.links": "Source links",
@@ -9572,6 +9641,7 @@ function parseItem(text) {
   let editorNote;
   let markerTags;
   const affixes = {};
+  const authored = {};
   let formSpecified = false;
   let isolated = false;
   for (const option of options) {
@@ -9604,10 +9674,17 @@ function parseItem(text) {
       if (!raw || Object.hasOwn(affixes, field) || raw.startsWith('"') && !quoted) return null;
       affixes[field] = unescape(quoted ? quoted[1] : raw).trim();
       if (!affixes[field]) return null;
+    } else if (authorFields.has(option.slice(0, option.indexOf(":")))) {
+      const colon = option.indexOf(":"), field = option.slice(0, colon), raw = option.slice(colon + 1).trim();
+      const quoted = /^"((?:\\.|[^"\\])*)"$/.exec(raw);
+      if (Object.hasOwn(authored, field) || raw.startsWith('"') && !quoted) return null;
+      const value = unescape(quoted ? quoted[1] : raw);
+      if (!validAuthorField(field, value)) return null;
+      authored[field] = value;
     } else if (option && !hint) hint = unescape(option);
     else return null;
   }
-  return { identifier, form, label, hint, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
+  return { identifier, form, label, hint, ...Object.keys(authored).length && { authorFields: authored }, ...editorNote !== void 0 && { editorNote }, ...markerTags !== void 0 && { markerTags }, ...isolated && { isolated }, ...affixes };
 }
 function validateKeyword(citationKeyword) {
   if (typeof citationKeyword !== "string" || !/^[a-z][a-z0-9-]{0,31}$/.test(citationKeyword)) {
@@ -9714,8 +9791,8 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
 var name = (author) => author.literal || author.family;
 var sortName = (record) => (record.type === "legislation" ? record.title : record.authors.map(name).join("")) || record.title || record.original;
 var compare = (a, b2) => {
-  const left = a.normalize("NFKC").toLowerCase();
-  const right = b2.normalize("NFKC").toLowerCase();
+  const left = a.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+  const right = b2.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
   return left < right ? -1 : left > right ? 1 : 0;
 };
 var titleFor = (record) => record.title || record.original || "Unresolved citation";
@@ -10147,6 +10224,7 @@ function compileBlocks(blocks2, cache, {
   const structuredPrefix = `citation_${namespace.length}-${namespace}`;
   const part = (names) => `class="${partClassNames(classPrefix, names).join(" ")}" data-citation-part="${names}"${prefixAttribute}`;
   const index = readCache(cache);
+  applyAuthorFields(blocks2, index, { suffixScope });
   const used = /* @__PURE__ */ new Map();
   const diagnostics = [];
   const features = prepareReferences({ siteOccurrences, occurrences, siteOrigin, tagCatalogue, listItemTags }, diagnostics);

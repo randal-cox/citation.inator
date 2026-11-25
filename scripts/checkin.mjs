@@ -47,7 +47,7 @@ try {
     ...["citation-compiler.mjs","citation-import.mjs","citation-import-files.mjs","citation-pdf.worker.mjs"].map(name=>["dist/"+name,"demos/drop-in/"+name]),
     ["dist/THIRD_PARTY_LICENSES.txt", "demos/drop-in/THIRD_PARTY_LICENSES.txt"],
     ["CITATION.cff", "demos/drop-in/CITATION.cff"],
-    ...["integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "naming-migration.md", "notation-migration.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
+    ...["authoring.md", "integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "naming-migration.md", "notation-migration.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
   ]) {
     if (await read(source) !== await read(copy)) fail(copy + " differs from " + source + ". Run npm run build.");
   }

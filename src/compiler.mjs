@@ -1,3 +1,4 @@
+import {authorFields, validAuthorField, applyAuthorFields} from './author-fields.mjs';
 import { createCitationMessages } from "./i18n.mjs";
 import { defaultClassPrefix, partClassNames, validateClassPrefix } from "./class-names.mjs";
 import packageInfo from "../package.json" with { type: "json" };
@@ -31,6 +32,7 @@ function parseItem(text) {
   let editorNote;
   let markerTags;
   const affixes = {};
+  const authored = {};
   let formSpecified = false;
   let isolated = false;
   for (const option of options) {
@@ -63,10 +65,17 @@ function parseItem(text) {
       if (!raw || Object.hasOwn(affixes, field) || (raw.startsWith('"') && !quoted)) return null;
       affixes[field] = unescape(quoted ? quoted[1] : raw).trim();
       if (!affixes[field]) return null;
+    } else if (authorFields.has(option.slice(0,option.indexOf(':')))) {
+      const colon=option.indexOf(':'),field=option.slice(0,colon),raw=option.slice(colon+1).trim();
+      const quoted=/^"((?:\\.|[^"\\])*)"$/.exec(raw);
+      if(Object.hasOwn(authored,field) || raw.startsWith('"')&&!quoted)return null;
+      const value=unescape(quoted?quoted[1]:raw);
+      if(!validAuthorField(field,value))return null;
+      authored[field]=value;
     } else if (option && !hint) hint = unescape(option);
     else return null;
   }
-  return { identifier, form, label, hint, ...(editorNote !== undefined && { editorNote }), ...(markerTags !== undefined && { markerTags }), ...(isolated && { isolated }), ...affixes };
+  return { identifier, form, label, hint, ...(Object.keys(authored).length && {authorFields:authored}), ...(editorNote !== undefined && { editorNote }), ...(markerTags !== undefined && { markerTags }), ...(isolated && { isolated }), ...affixes };
 }
 
 function validateKeyword(citationKeyword) {
@@ -176,8 +185,8 @@ export function parseDirectives(source, { citationKeyword = "cite" } = {}) {
 const name = author => author.literal || author.family;
 const sortName = record => (record.type === "legislation" ? record.title : record.authors.map(name).join("\u001f")) || record.title || record.original;
 const compare = (a, b) => {
-  const left = a.normalize("NFKC").toLowerCase();
-  const right = b.normalize("NFKC").toLowerCase();
+  const left = a.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+  const right = b.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
   return left < right ? -1 : left > right ? 1 : 0;
 };
 const titleFor = record => record.title || record.original || "Unresolved citation";
@@ -651,6 +660,7 @@ function compileBlocks(blocks, cache, {
   const structuredPrefix = `citation_${namespace.length}-${namespace}`;
   const part = names => `class="${partClassNames(classPrefix, names).join(" ")}" data-citation-part="${names}"${prefixAttribute}`;
   const index = readCache(cache);
+  applyAuthorFields(blocks,index,{suffixScope});
   const used = new Map();
   const diagnostics = [];
   const features = prepareReferences({ siteOccurrences, occurrences, siteOrigin, tagCatalogue, listItemTags }, diagnostics);
