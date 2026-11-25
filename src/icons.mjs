@@ -12,6 +12,7 @@ const paths = {
   back: '<path d="m10 6-6 6 6 6 M4 12h11a4 4 0 0 0 4-4"/>',
   endnote: '<path d="M4 5h16M4 10h10m-10 5h5m6-2v7m-3-3 3 3 3-3"/>',
   copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+  settings: '<path d="M10 3h4l.6 2.3 2 .9 2.1-.7 2 3.5-1.6 1.7v2.3l1.6 1.7-2 3.5-2.1-.7-2 .9L14 21h-4l-.6-2.3-2-.9-2.1.7-2-3.5 1.6-1.7V11L3.3 9.3l2-3.5 2.1.7 2-.9z"/><circle cx="12" cy="12" r="3"/>',
   more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
 };
 

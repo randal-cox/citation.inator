@@ -21,7 +21,7 @@ initializeCitationInspector(reader, {
   accessCatalog: [{ id: "hathi-trust", label: "Hathi Trust", kind: "library" }],
   locale: "en",
   strings: {
-    "access.help.unknown": "Choose your library or reading services",
+    "access.help.unknown": "Reading services",
     "access.more": { one: "{count} other place", other: "{count} other places" }
   }
 });
@@ -120,3 +120,5 @@ OpenURL field mapping follows the [OCLC reference](https://help.oclc.org/Resourc
 When the reader has not configured an access profile, the 0.3.0 browser build shows one settings prompt after each owned reading/reference list, rather than repeating it in every item. Each inspector panel keeps its settings prompt. The list prompt is outside the numbered items, so filtering items does not hide the only prompt or change reference numbering. Lists outside the component are never modified; standalone reference items retain local help. Saving/clearing settings updates these controls and restores focus when a replacement helper survives. Disabling access settings removes the prompts; it does not guarantee a surviving prompt to focus.
 
 Checked dates in source panels appear below their reading buttons in compact YYYY-MM-DD format. Endnote return controls include a return arrow plus their mention letter, separated from reading destinations by a small divider.
+
+The built-in settings control is a compact gear-and-label pill, **Reading services**. Hosts can customize its wording through the existing `access.help.unknown`, `access.help.none` and `access.help.match` message keys; the control opens the same built-in or host-provided settings workflow.

@@ -53,7 +53,7 @@ try{
   assert.match(await firstPanel.getByRole('link',{name:'Read online',exact:true}).innerText(),/Read online/);
   assert.match(await firstPanel.getByRole('link',{name:'Download PDF',exact:true}).innerText(),/Download PDF/);
   const checked=await firstPanel.getByRole('link',{name:'Download PDF',exact:true}).evaluate(node=>{const label=node.parentElement.querySelector('small');return {text:label.textContent,below:label.getBoundingClientRect().top>=node.getBoundingClientRect().bottom};});assert.match(checked.text,/2026-11-24/);assert(checked.below);
-  assert.match(await firstPanel.getByRole('button',{name:'Choose your library or reading services',exact:true}).innerText(),/library/);
+  assert.match(await firstPanel.getByRole('button',{name:'Reading services',exact:true}).innerText(),/Reading services/);
   await page.keyboard.press('Escape');
   await page.waitForFunction(()=>!document.querySelector('citation-inspector').hasAttribute('open'));
   const doiOnly=JSON.parse(await page.locator('#records').inputValue());doiOnly.records.find(record=>record.id==='ioannidis-2005').locations=[];

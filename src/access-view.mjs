@@ -209,7 +209,9 @@ export class AccessView {
     const profile = this.profile;
     const matched = links.some(link => link.dataset.accessService === "reader-library" || profile?.services.includes(link.dataset.accessService));
     const key = profile === null ? "unknown" : matched ? "match" : "none";
-    const help = node(container.ownerDocument, "button", this.text("access.help." + key), "access-help");
+    const help = node(container.ownerDocument, "button", "", "access-help");
+    help.innerHTML = iconMarkup("settings");
+    help.append(node(container.ownerDocument, "span", this.text("access.help." + key)));
     help.type = "button";
     help.addEventListener("click", () => this.openSettings(help));
     container.append(help);

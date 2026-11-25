@@ -1,4 +1,4 @@
-/*! cite-inator tools v0.5.1-preview.0 | MIT | See LICENSE */
+/*! cite-inator tools v0.5.1-preview.1 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -98,9 +98,9 @@ var en = {
   "access.selected": "Through your services",
   "access.other": "Other places to look",
   "access.more": { one: "More options ({count})", other: "More options ({count})" },
-  "access.help.unknown": "Choose your library or reading services",
-  "access.help.none": "Edit your library or reading services",
-  "access.help.match": "Change reading services",
+  "access.help.unknown": "Reading services",
+  "access.help.none": "Reading services",
+  "access.help.match": "Reading services",
   "access.settings": "Where you can read",
   "access.services": "Services you can use",
   "access.preferred": "Open titles in",
@@ -150,9 +150,9 @@ var es = {
   "access.library.address": "Direcci\xF3n de la biblioteca",
   "access.library.help": "Usa la direcci\xF3n HTTPS de tu biblioteca. Solo se utiliza al abrir un enlace de biblioteca.",
   "access.privacy": "Se guarda en este navegador para este sitio. La disponibilidad depende del t\xEDtulo.",
-  "access.help.unknown": "Elige tu biblioteca o servicios de lectura",
-  "access.help.none": "Editar tu biblioteca o servicios de lectura",
-  "access.help.match": "Cambiar servicios de lectura",
+  "access.help.unknown": "Servicios de lectura",
+  "access.help.none": "Servicios de lectura",
+  "access.help.match": "Servicios de lectura",
   "access.at": "en {service}",
   "access.checked": "Comprobado el {date}",
   "access.stale": "Puede haber cambiado de direcci\xF3n",
@@ -9340,7 +9340,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.5.1-preview.0",
+  version: "0.5.1-preview.1",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9440,6 +9440,7 @@ var paths = {
   back: '<path d="m10 6-6 6 6 6 M4 12h11a4 4 0 0 0 4-4"/>',
   endnote: '<path d="M4 5h16M4 10h10m-10 5h5m6-2v7m-3-3 3 3 3-3"/>',
   copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/>',
+  settings: '<path d="M10 3h4l.6 2.3 2 .9 2.1-.7 2 3.5-1.6 1.7v2.3l1.6 1.7-2 3.5-2.1-.7-2 .9L14 21h-4l-.6-2.3-2-.9-2.1.7-2-3.5 1.6-1.7V11L3.3 9.3l2-3.5 2.1.7 2-.9z"/><circle cx="12" cy="12" r="3"/>',
   more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>'
 };
 function iconMarkup(name2) {

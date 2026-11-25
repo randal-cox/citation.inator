@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1-preview.1 — In development
+
+- Replace the long reader-settings prompt with a compact gear-and-label Reading services control, retaining localization and host settings hooks.
+- Use a single vector chevron for matching learning-page selectors.
+
 ## 0.5.1-preview.0 — In development
 
 - Use one configured marker keyword, default `cite`, for both works and directives. Remove implicit alternate spellings; this intentional notation migration requires draft approval before release.

@@ -291,8 +291,11 @@ citation-inspector { display: contents; }
 [data-citation-part~="access-link-label"] { font:500 .85rem/1.4 system-ui,sans-serif; overflow-wrap:anywhere; }
 [data-citation-part~="access-inline"] { align-items:flex-start; }
 [data-citation-part~="access-more"] a { margin-inline: .2rem; }
-[data-citation-part~="access-help"] { font: inherit; color: var(--citation-accent, #214fab); background: transparent; border: 0; padding: .35rem 0; text-decoration: underline; cursor: pointer; }
-[data-citation-part~="access"] [data-citation-part~="access-help"] { flex-basis: 100%; text-align: start; }
+[data-citation-part~="access-help"] { display:inline-flex; align-items:center; gap:.4em; width:fit-content; max-width:100%; font:500 .82rem/1.4 var(--citation-panel-font,system-ui,sans-serif); color:var(--citation-accent,#214fab); background:var(--citation-paper,#fff); border:1px solid var(--citation-line,#a9bad4); border-radius:999px; padding:.35em .75em; text-decoration:none; cursor:pointer; }
+[data-citation-part~="access-help"] svg { width:1em; height:1em; flex:none; }
+[data-citation-part~="access-help"]:hover { background:var(--citation-wash,#eaf1fd); }
+[data-citation-part~="access-help"]:focus-visible { outline:2px solid currentColor; outline-offset:3px; }
+[data-citation-part~="access"] [data-citation-part~="access-help"] { flex-basis:auto; align-self:flex-start; text-align:start; }
 [data-citation-part~="access-inline"] { display: inline-flex; flex-wrap: wrap; align-items: flex-start; gap: .25rem; }
 [data-citation-part~="access-inline"] [data-citation-part~="access-help"] { font-size: .8em; }
 [data-citation-part~="access-stale"] { font-size: .75em; }
