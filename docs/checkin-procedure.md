@@ -32,6 +32,8 @@ A pending test or reviewer result stays pending until evidence arrives. Attribut
 
 ## Before closing a milestone
 
+Final publication requires explicit maintainer approval of the candidate plus any required adopter approval. Preview commits, successful checks and adopter sign-off do not imply maintainer acceptance. Record both approvals separately. Keep newly reported UX issues open until reviewed and resolved or explicitly deferred by the maintainer.
+
 1. Compare the delivered implementation, demos and documentation against the agreed scope. Reconcile the milestone record, roadmap and changelog.
 2. Identify the candidate being reviewed. Run:
 

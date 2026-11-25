@@ -16,7 +16,7 @@ The optional `note:` is a generated work label for editors; tools may replace it
 
 The 0.5.0 project name is **cite.inator**; released 0.4.0 archives retain their original `citation-inator` package name. Existing browser assets, markup and stored-data contracts remain compatible; see [the naming migration](docs/naming-migration.md).
 
-**Development 0.5.1 preview:** the default marker is `cite` for both works and directives; there are no automatic aliases. [Migration instructions](docs/notation-migration.md). Final release awaits draft approval.
+**Development 0.5.1 preview:** the default marker is `cite` for both works and directives; there are no automatic aliases. [Migration instructions](docs/notation-migration.md). Final release requires both Randal’s explicit approval and draft’s sign-off.
 
 **Authoring principle:** authors describe the source and its use; site configuration controls shared behavior. The development candidate adds year, formatted-reference, artwork and copy-link fields in `{cite …}` and exact PMID-to-DOI discovery in the npm resolver. See [author notation and examples](docs/authoring.md); site-wide setup remains in JavaScript or configuration. Spaces separate named fields, with optional pipes for visual grouping. Author `tags` blocks and list `filters:true` provide topic filtering without JavaScript.
 
