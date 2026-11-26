@@ -16,7 +16,7 @@ The DOI identifies the work. `note:` is a generated work label, hidden from read
 
 ## Load, compile, initialize
 
-This Guide documents `0.6.0-preview.5`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
+This Guide documents `0.6.0-preview.6`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
 
 ### Without a package installation
 

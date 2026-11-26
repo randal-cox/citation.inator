@@ -4,18 +4,34 @@ import {DOMParser} from '@xmldom/xmldom';
 import {normalizeImportLimits} from './import-limits.mjs';
 import {importHash} from './import-hash.mjs';
 const decoder=new TextDecoder('utf-8',{fatal:true});
-const children=node=>Array.from(node.childNodes || []);
+const children=node=>Array.from(node?.childNodes || []);
 const attr=(node,name)=>{const colon=name.indexOf(':');if(colon<0)return node.getAttribute?.(name);const ns={text:'urn:oasis:names:tc:opendocument:xmlns:text:1.0',xlink:'http://www.w3.org/1999/xlink',r:'http://schemas.openxmlformats.org/officeDocument/2006/relationships',w:'http://schemas.openxmlformats.org/wordprocessingml/2006/main'};return node.getAttributeNS?.(ns[name.slice(0,colon)],name.slice(colon+1)) || node.getAttribute?.(name);};
 const text=node=>node.textContent || '';
 const tagName=node=>{const uri=node.namespaceURI || '',local=node.localName?.toLowerCase();return uri==='http://schemas.openxmlformats.org/wordprocessingml/2006/main'?'w:'+local:uri==='urn:oasis:names:tc:opendocument:xmlns:text:1.0'?'text:'+local:uri==='urn:oasis:names:tc:opendocument:xmlns:office:1.0'?'office:'+local:uri==='urn:oasis:names:tc:opendocument:xmlns:drawing:1.0'?'draw:'+local:'';};
 const abort=signal=>{if(signal?.aborted)throw signal.reason || new DOMException('Import cancelled.','AbortError');};
 function xmlTree(bytes){const source=decoder.decode(bytes);if(/<!\s*(?:DOCTYPE|ENTITY)\b/iu.test(source))throw Error('Document declarations and external entities are not supported.');return new DOMParser({onError:()=>{throw Error('Malformed document XML.');}}).parseFromString(source,'application/xml');}
+// A separate opt-in Markdown projection keeps plain-text offsets/API consumers stable.
+const escapeInline=value=>value.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+function wordInline(node){
+ const tag=tagName(node);if(node.nodeType===3)return '';
+ if(!tag.startsWith('w:')||['w:del','w:instrtext','w:rpr','w:ppr','w:drawing','w:pict'].includes(tag))return '';
+ if(tag==='w:t')return escapeInline(text(node));if(tag==='w:tab')return '\t';if(tag==='w:br')return '\n';
+ let value=children(node).map(wordInline).join('');
+ if(tag==='w:r'&&value.trim()){
+  const properties=children(node).find(child=>tagName(child)==='w:rpr');
+  const enabled=name=>{const property=children(properties).find(child=>tagName(child)==='w:'+name);return property&&!['0','false','off','none'].includes(attr(property,'w:val'));};
+  const vertical=children(properties).find(child=>tagName(child)==='w:vertalign'),position=vertical&&attr(vertical,'w:val');
+  for(const [name,html] of [['b','strong'],['i','em'],['u','u'],['strike','s']])if(enabled(name))value='<'+html+'>'+value+'</'+html+'>';
+  if(position==='superscript'||position==='subscript'){const html=position==='superscript'?'sup':'sub';value='<'+html+'>'+value+'</'+html+'>';}
+ }
+ return value;
+}
 function officeText(bytes,format,limits){
  const target=format==='docx'?'word/document.xml':'content.xml',relationships='word/_rels/document.xml.rels',cap=Math.min(limits.archiveEntryBytes,limits.sourceCharacters*12);let found=false;const seen=new Set();
  const files=unzipSync(bytes,{filter:entry=>{if(![target,relationships].includes(entry.name))return false;if(seen.has(entry.name))throw Error('Duplicate document content.');seen.add(entry.name);if(entry.name===target)found=true;if(entry.originalSize>cap||entry.size>limits.fileBytes)throw Error('Document content exceeds the extraction limit.');return true;}});
  if(!files[target])throw Error('The document has no readable main content.');if(files[target].length>cap)throw Error('Document content exceeds the extraction limit.');
  const root=xmlTree(files[target]);const expected=format==='docx'?'http://schemas.openxmlformats.org/wordprocessingml/2006/main':'urn:oasis:names:tc:opendocument:xmlns:office:1.0';if(root.documentElement.namespaceURI!==expected)throw Error('Unsupported document namespace.');
- const paragraphs=[],fields=[],links=[],excludedContent=[],relations=new Map();let count=0,metadataSize=0;
+ const paragraphs=[],markdownParagraphs=[],fields=[],links=[],excludedContent=[],relations=new Map();let count=0,metadataSize=0;
  if(format==='docx'&&files[relationships]){const doc=xmlTree(files[relationships]);for(const entry of Array.from(doc.getElementsByTagName('*')))if(entry.localName==='Relationship')relations.set(entry.getAttribute('Id'),entry.getAttribute('Target'));}
  const knownNamespaces=new Set(['http://schemas.openxmlformats.org/wordprocessingml/2006/main','urn:oasis:names:tc:opendocument:xmlns:text:1.0','urn:oasis:names:tc:opendocument:xmlns:office:1.0','urn:oasis:names:tc:opendocument:xmlns:drawing:1.0']);
  const foreign=node=>node.nodeType===1&&!knownNamespaces.has(node.namespaceURI);
@@ -27,15 +43,16 @@ function officeText(bytes,format,limits){
   if(tag==='w:fldsimple'&&attr(node,'w:instr'))field({kind:'word-field',raw:attr(node,'w:instr')});
   if(tag==='w:hyperlink'||tag==='text:a'){const href=tag==='w:hyperlink'?relations.get(attr(node,'r:id')):attr(node,'xlink:href');if(href){const label=text(node);metadataSize+=href.length+label.length;if(links.length>=limits.citedItems*4||metadataSize>limits.sourceCharacters)throw Error('Citation metadata exceeds the extraction limit.');links.push({href,label});}}
   if(['text:reference-mark-start','text:bookmark-start'].includes(tag)&&/ZOTERO|CSL_CITATION|MENDELEY/iu.test(attr(node,'text:name') || ''))field({kind:'opendocument-field',raw:attr(node,'text:name')});
-  if(['w:del','w:instrtext','text:tracked-changes','office:annotation','draw:frame','script'].includes(tag)){if(tag==='w:instrtext')field({kind:'word-field-chunk',raw:text(node)});return '';}
+  if(['w:rpr','w:ppr','w:del','w:instrtext','text:tracked-changes','office:annotation','draw:frame','script'].includes(tag)){if(tag==='w:instrtext')field({kind:'word-field-chunk',raw:text(node)});return '';}
   if(tag==='w:t'||node.nodeName==='#text'&&format==='odt')return text(node);
   if(tag==='w:tab'||tag==='text:tab')return '\t';if(tag==='w:br'||tag==='text:line-break')return '\n';
   if(tag==='text:s'){const length=Number(attr(node,'text:c') || 1);if(!Number.isSafeInteger(length)||length<1||length>1000)throw Error('Unsupported space run.');return ' '.repeat(length);}
   return children(node).map(extract).join('');
  };
- const visit=node=>{const tag=tagName(node);if(foreign(node)){exclude(node);return;}if(['w:del','text:tracked-changes','office:annotation','draw:frame'].includes(tag)){exclude(node);return;}if(format==='docx'&&tag==='w:p'||format==='odt'&&['text:p','text:h'].includes(tag)){paragraphs.push(extract(node));return;}for(const child of children(node))visit(child);};visit(root);
+ const visit=node=>{const tag=tagName(node);if(foreign(node)){exclude(node);return;}if(['w:del','text:tracked-changes','office:annotation','draw:frame'].includes(tag)){exclude(node);return;}if(format==='docx'&&tag==='w:p'||format==='odt'&&['text:p','text:h'].includes(tag)){paragraphs.push(extract(node));if(format==='docx')markdownParagraphs.push(wordInline(node));return;}for(const child of children(node))visit(child);};visit(root);
  const source=paragraphs.join('\n\n');if(!source.trim())throw Error('This document has no readable main text.');if(source.length>limits.sourceCharacters)throw Error('Extracted text exceeds the import limit.');
- return {text:source,metadata:{citationFields:fields,links,excludedContent},diagnostics:[{code:'import-native-working-copy',format},...(fields.length?[{code:'import-managed-citation-fields-preserved',count:fields.length}]:[]),...(excludedContent.length?[{code:'import-office-excluded-content-preserved',count:excludedContent.length}]:[])]};
+ const markdown=format==='docx'?markdownParagraphs.join('\n\n'):undefined;if(markdown?.length>limits.sourceCharacters)throw Error('Formatted working copy exceeds the import limit.');
+ return {text:source,...(markdown!==undefined&&{markdown,workingCopyFormat:'markdown'}),metadata:{citationFields:fields,links,excludedContent},diagnostics:[{code:'import-native-working-copy',format},...(fields.length?[{code:'import-managed-citation-fields-preserved',count:fields.length}]:[]),...(excludedContent.length?[{code:'import-office-excluded-content-preserved',count:excludedContent.length}]:[])]};
 }
 async function pdfText(bytes,{limits,signal,pdfWorkerSrc}){
  const pdfjs=await import('pdfjs-dist/legacy/build/pdf.mjs');abort(signal);

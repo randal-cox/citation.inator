@@ -79,3 +79,13 @@ test('valid office roots cannot authorize foreign descendant prefix shadowing',a
 
 test('Node Buffer PDFs extract without detaching or changing caller bytes',async()=>{const bytes=Buffer.from(pdf([['A useful paper.']])),before=Buffer.from(bytes);const result=await extract(bytes,'pdf');assert.match(result.text,/A useful paper/);assert.deepEqual(bytes,before);});
 test('repeated page/total footer URLs are excluded but the same DOI in body text is retained',async()=>{const url='https://doi.org/10.5555/article';const pages=Array.from({length:3},(_,i)=>textStream(['Body '+url],{y:400})+'\n'+textStream(['Journal | '+url+' June 1, 2024 '+(i+1)+' / 3'],{y:25}));const result=await extract(pdf(pages),'pdf');assert.equal(result.text.split(url).length-1,3);assert.ok(!result.text.includes('Journal |'));assert.equal(result.metadata.excludedText.filter(x=>x.reason==='page-number-furniture').length,3);});
+
+test('DOCX keeps plain offsets and offers safe inline Markdown with affiliation superscripts',async()=>{
+ const bytes=officeZip('docx',docx('<w:p><w:r><w:t>Randal</w:t></w:r><w:r><w:rPr><w:vertAlign w:val="superscript"/></w:rPr><w:t>1</w:t></w:r><w:r><w:t> &amp; Brad</w:t></w:r><w:r><w:rPr><w:b/><w:i/><w:vertAlign w:val="subscript"/></w:rPr><w:t>2&lt;x&gt;</w:t></w:r></w:p>'));
+ const result=await extract(bytes,'docx');assert.equal(result.text,'Randal1 & Brad2<x>');assert.equal(result.markdown,'Randal<sup>1</sup> &amp; Brad<sub><em><strong>2&lt;x&gt;</strong></em></sub>');assert.equal(result.workingCopyFormat,'markdown');
+});
+
+test('empty or whitespace-only Word formatting does not create phantom reference paragraphs',async()=>{
+ const result=await extract(officeZip('docx',docx('<w:p><w:r><w:t>Text</w:t></w:r></w:p><w:p><w:r><w:rPr><w:i/></w:rPr><w:t></w:t></w:r></w:p><w:p><w:r><w:rPr><w:b/></w:rPr><w:t> </w:t></w:r></w:p>')),'docx');
+ assert(!result.markdown.includes('<strong> </strong>'));
+});

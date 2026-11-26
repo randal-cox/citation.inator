@@ -45,3 +45,5 @@ The overview explains website citation maintenance and headline features, then e
 ## Recipe mechanisms
 
 Each card introduction names the mechanism and where to inspect it: marker fields in Source, metadata/configuration/tools in JavaScript, or generated structure in HTML. JavaScript and pretty-printed HTML sit side by side before the download buttons; relevant disclosures open on example selection and retain the reader’s choice during edits. Metadata-driven recipes include complete cited records, with the demonstrated fields first. Everyday examples precede the Advanced group.
+
+Playground keeps Everyday, Intermediate and Advanced groups in a sidebar down to 601 px; phones use a grouped Examples disclosure. Downloads live in the toolbar with individual files and selected ZIP export. Diagnostics follows Source, flags warnings/errors, and closes when the last error resolves. HTML starts closed; JavaScript opens for Advanced examples.

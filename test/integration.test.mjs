@@ -455,3 +455,9 @@ test('Markdown endnote lines keep their position without a following blank line'
   assert(code.html.includes('{cite endnote}'));
   assert.match(compileMarkdown('    {cite endnote}',cache).html,/<pre><code>\{cite endnote\}/);
 });
+
+test('adjacent standalone endnote blocks retain the first list and diagnose only the duplicate',()=>{
+ const result=compileMarkdown('A claim {cite ostrom}.\n\n{cite endnote}\n\n{cite endnote}',makeCache([book]));
+ assert.equal(nodes(result.html,node=>attribute(node,'data-citation-part')==='endnotes').length,1);assert.deepEqual(result.diagnostics.map(item=>item.state),['duplicate-endnotes']);assert(!result.html.includes('{cite endnote}'));
+ const scoped=compileMarkdown('A claim {cite ostrom}.\n\n{cite endnote scope:since-last}\n\nAnother {cite ostrom}.\n\n{cite endnote scope:since-last}',makeCache([book]));assert.equal(scoped.diagnostics.length,0);assert.equal(nodes(scoped.html,node=>attribute(node,'data-citation-part')==='endnotes').length,2);
+});

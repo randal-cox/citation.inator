@@ -6,7 +6,7 @@ authors:
   - family-names: Cox
     given-names: Randal
     orcid: "https://orcid.org/0009-0002-3427-7190"
-version: 0.6.0-preview.5
+version: 0.6.0-preview.6
 date-released: "2026-11-26"
 repository-code: "https://github.com/randal-cox/cite.inator"
 license: MIT

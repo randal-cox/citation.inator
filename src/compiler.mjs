@@ -1061,6 +1061,7 @@ function compileBlocks(blocks, cache, {
       emittedNotes = true;
       return referencesHTML(scopeItems(marker.scope ?? 0), marker.scope ?? 0, false, marker);
     }
+    if(marker&&!scoped&&emittedNotes){diagnostics.push({state:'duplicate-endnotes',code:'citation-duplicate-endnotes',source:marker.raw,message:'Only one full endnote list is needed. Use scope:since-last for separate section lists.'});return ''; }
     if (meaningful.length === 1 && meaningful[0].type === "list") {
       const token = meaningful[0];
       const items = [...token.items];

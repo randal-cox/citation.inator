@@ -1,4 +1,4 @@
-/*! cite-inator tools v0.6.0-preview.5 | MIT | See LICENSE */
+/*! cite-inator tools v0.6.0-preview.6 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -9911,7 +9911,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.5",
+  version: "0.6.0-preview.6",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9988,7 +9988,7 @@ var package_default = {
     "milestone:check": "npm test && npm run build && npm run test:browser && npm run test:learn && node scripts/checkin.mjs",
     "hooks:install": "git config --local core.hooksPath .githooks",
     "build:learn": "npm run build && node scripts/build-learning.mjs",
-    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs && node test/bibliography-workspace-browser.mjs",
+    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs && node test/bibliography-workspace-browser.mjs && node test/responsive-review-browser.mjs",
     "test:zotero": "node --test test/zotero.test.mjs && node test/zotero-browser.mjs",
     "example:library": "node scripts/library-workflow-example.mjs"
   },
@@ -11163,6 +11163,10 @@ function compileBlocks(blocks, cache, {
     if (marker && (scoped || !emittedNotes)) {
       emittedNotes = true;
       return referencesHTML(scopeItems(marker.scope ?? 0), marker.scope ?? 0, false, marker);
+    }
+    if (marker && !scoped && emittedNotes) {
+      diagnostics.push({ state: "duplicate-endnotes", code: "citation-duplicate-endnotes", source: marker.raw, message: "Only one full endnote list is needed. Use scope:since-last for separate section lists." });
+      return "";
     }
     if (meaningful.length === 1 && meaningful[0].type === "list") {
       const token = meaningful[0];

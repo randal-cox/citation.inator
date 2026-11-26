@@ -1,4 +1,4 @@
-/*! cite-inator native import v0.6.0-preview.5 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator native import v0.6.0-preview.6 | MIT | See THIRD_PARTY_LICENSES.txt */
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -40471,7 +40471,7 @@ var importHash = (value) => bytesToHex(sha256(utf8ToBytes(value)));
 
 // src/import-files.mjs
 var decoder = new TextDecoder("utf-8", { fatal: true });
-var children = (node) => Array.from(node.childNodes || []);
+var children = (node) => Array.from(node?.childNodes || []);
 var attr = (node, name) => {
   const colon = name.indexOf(":");
   if (colon < 0) return node.getAttribute?.(name);
@@ -40493,6 +40493,30 @@ function xmlTree(bytes) {
     throw Error("Malformed document XML.");
   } }).parseFromString(source, "application/xml");
 }
+var escapeInline = (value) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+function wordInline(node) {
+  const tag = tagName(node);
+  if (node.nodeType === 3) return "";
+  if (!tag.startsWith("w:") || ["w:del", "w:instrtext", "w:rpr", "w:ppr", "w:drawing", "w:pict"].includes(tag)) return "";
+  if (tag === "w:t") return escapeInline(text(node));
+  if (tag === "w:tab") return "	";
+  if (tag === "w:br") return "\n";
+  let value = children(node).map(wordInline).join("");
+  if (tag === "w:r" && value.trim()) {
+    const properties = children(node).find((child) => tagName(child) === "w:rpr");
+    const enabled = (name) => {
+      const property = children(properties).find((child) => tagName(child) === "w:" + name);
+      return property && !["0", "false", "off", "none"].includes(attr(property, "w:val"));
+    };
+    const vertical = children(properties).find((child) => tagName(child) === "w:vertalign"), position = vertical && attr(vertical, "w:val");
+    for (const [name, html] of [["b", "strong"], ["i", "em"], ["u", "u"], ["strike", "s"]]) if (enabled(name)) value = "<" + html + ">" + value + "</" + html + ">";
+    if (position === "superscript" || position === "subscript") {
+      const html = position === "superscript" ? "sup" : "sub";
+      value = "<" + html + ">" + value + "</" + html + ">";
+    }
+  }
+  return value;
+}
 function officeText(bytes, format, limits) {
   const target = format === "docx" ? "word/document.xml" : "content.xml", relationships = "word/_rels/document.xml.rels", cap = Math.min(limits.archiveEntryBytes, limits.sourceCharacters * 12);
   let found = false;
@@ -40510,7 +40534,7 @@ function officeText(bytes, format, limits) {
   const root = xmlTree(files[target]);
   const expected = format === "docx" ? "http://schemas.openxmlformats.org/wordprocessingml/2006/main" : "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
   if (root.documentElement.namespaceURI !== expected) throw Error("Unsupported document namespace.");
-  const paragraphs = [], fields = [], links = [], excludedContent = [], relations = /* @__PURE__ */ new Map();
+  const paragraphs = [], markdownParagraphs = [], fields = [], links = [], excludedContent = [], relations = /* @__PURE__ */ new Map();
   let count = 0, metadataSize = 0;
   if (format === "docx" && files[relationships]) {
     const doc = xmlTree(files[relationships]);
@@ -40547,7 +40571,7 @@ function officeText(bytes, format, limits) {
       }
     }
     if (["text:reference-mark-start", "text:bookmark-start"].includes(tag) && /ZOTERO|CSL_CITATION|MENDELEY/iu.test(attr(node, "text:name") || "")) field({ kind: "opendocument-field", raw: attr(node, "text:name") });
-    if (["w:del", "w:instrtext", "text:tracked-changes", "office:annotation", "draw:frame", "script"].includes(tag)) {
+    if (["w:rpr", "w:ppr", "w:del", "w:instrtext", "text:tracked-changes", "office:annotation", "draw:frame", "script"].includes(tag)) {
       if (tag === "w:instrtext") field({ kind: "word-field-chunk", raw: text(node) });
       return "";
     }
@@ -40573,6 +40597,7 @@ function officeText(bytes, format, limits) {
     }
     if (format === "docx" && tag === "w:p" || format === "odt" && ["text:p", "text:h"].includes(tag)) {
       paragraphs.push(extract(node));
+      if (format === "docx") markdownParagraphs.push(wordInline(node));
       return;
     }
     for (const child of children(node)) visit(child);
@@ -40581,7 +40606,9 @@ function officeText(bytes, format, limits) {
   const source = paragraphs.join("\n\n");
   if (!source.trim()) throw Error("This document has no readable main text.");
   if (source.length > limits.sourceCharacters) throw Error("Extracted text exceeds the import limit.");
-  return { text: source, metadata: { citationFields: fields, links, excludedContent }, diagnostics: [{ code: "import-native-working-copy", format }, ...fields.length ? [{ code: "import-managed-citation-fields-preserved", count: fields.length }] : [], ...excludedContent.length ? [{ code: "import-office-excluded-content-preserved", count: excludedContent.length }] : []] };
+  const markdown = format === "docx" ? markdownParagraphs.join("\n\n") : void 0;
+  if (markdown?.length > limits.sourceCharacters) throw Error("Formatted working copy exceeds the import limit.");
+  return { text: source, ...markdown !== void 0 && { markdown, workingCopyFormat: "markdown" }, metadata: { citationFields: fields, links, excludedContent }, diagnostics: [{ code: "import-native-working-copy", format }, ...fields.length ? [{ code: "import-managed-citation-fields-preserved", count: fields.length }] : [], ...excludedContent.length ? [{ code: "import-office-excluded-content-preserved", count: excludedContent.length }] : []] };
 }
 async function pdfText(bytes, { limits, signal, pdfWorkerSrc }) {
   const pdfjs = await Promise.resolve().then(() => (init_pdf(), pdf_exports));

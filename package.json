@@ -1,6 +1,6 @@
 {
   "name": "cite-inator",
-  "version": "0.6.0-preview.5",
+  "version": "0.6.0-preview.6",
   "description": "Portable citations, endnotes, and source inspection",
   "type": "module",
   "license": "MIT",
@@ -77,7 +77,7 @@
     "milestone:check": "npm test && npm run build && npm run test:browser && npm run test:learn && node scripts/checkin.mjs",
     "hooks:install": "git config --local core.hooksPath .githooks",
     "build:learn": "npm run build && node scripts/build-learning.mjs",
-    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs && node test/bibliography-workspace-browser.mjs",
+    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs && node test/bibliography-workspace-browser.mjs && node test/responsive-review-browser.mjs",
     "test:zotero": "node --test test/zotero.test.mjs && node test/zotero-browser.mjs",
     "example:library": "node scripts/library-workflow-example.mjs"
   },

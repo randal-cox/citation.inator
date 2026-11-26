@@ -44,7 +44,7 @@ try{
   assert.equal(await page.locator('#result-panel').evaluate(node=>node.open),false);
   await page.locator('#result-panel>summary').click();await page.locator('#source-panel>summary').click();await page.locator('#style').selectOption('chicago-author-date');
   assert.equal(await page.locator('#source-panel').evaluate(node=>node.open),false);await page.locator('#source-panel>summary').click();
-  assert(await page.evaluate(()=>{const a=document.getElementById('metadata-panel'),b=document.getElementById('configuration-panel'),c=document.getElementById('diagnostics-panel');return !(a.closest('.workbench')||b.closest('.workbench'))&&Boolean(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING)&&Boolean(b.compareDocumentPosition(c)&Node.DOCUMENT_POSITION_FOLLOWING)}));
+  assert(await page.evaluate(()=>{const a=document.getElementById('metadata-panel'),b=document.getElementById('configuration-panel'),c=document.getElementById('diagnostics-panel');return !(a.closest('.workbench')||b.closest('.workbench'))&&Boolean(a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING)&&c.parentElement.classList.contains('source-column')&&Boolean(document.getElementById('source-panel').compareDocumentPosition(c)&Node.DOCUMENT_POSITION_FOLLOWING)}));
   await page.locator('#result [data-ci-record]').first().click();
   await page.waitForFunction(()=>document.querySelector('citation-inspector').hasAttribute('open'));
   const firstPanel=page.getByRole('dialog',{name:'cite.inator',exact:true});
@@ -83,10 +83,11 @@ try{
     assert(await page.locator('#error').isHidden(),value);
     assert(await page.locator('#result [data-ci-record]').count(),value);
   }
+  await page.locator('[data-example="separators"]').click();const separatorLabels=await page.locator('#result [data-ci-record][id]').allTextContents();assert.equal(separatorLabels.length,2);assert.equal(separatorLabels[0],separatorLabels[1]);
   await page.locator('[data-example="reference-parts"]').click();assert.equal(await page.locator('#javascript-panel').evaluate(node=>node.open),false);assert.match(await page.locator('#source').inputValue(),/reference:"/);assert(await page.locator('#result em').count());
   assert.equal(await page.locator('#html-panel').evaluate(node=>node.open),false);
-  assert.equal(await page.locator('.downloads .download-button').count(),6);
-  for(const control of await page.locator('.downloads .download-button').all())assert.equal(await control.locator('span[aria-hidden="true"]').innerText(),'↓');
+  await page.locator('#downloads-menu').evaluate(node=>node.open=true);assert.equal(await page.locator('.download-options .download-button').count(),9);
+  for(const control of await page.locator('.download-options .download-button').all())assert.equal(await control.locator('span[aria-hidden="true"]').innerText(),'↓');
   assert.equal(await page.getByRole('heading',{name:'Advanced',exact:true}).count(),1);
   await page.locator('[data-example="leading"]').click();
   const leading=await page.locator('#result li').first().evaluate(node=>node.firstElementChild.hasAttribute('data-ci-inspect-icon'));assert(leading);
@@ -144,33 +145,31 @@ try{
   assert.match(await sheet.getByRole('alert').innerText(),/Check your library address/);
   await sheet.getByRole('button',{name:'Cancel',exact:true}).click();
   await page.keyboard.press('Escape');
-  const download=page.waitForEvent('download');
+  await page.locator('#downloads-menu').evaluate(node=>node.open=true);const download=page.waitForEvent('download');
   await page.locator('#download-cache').click();
   const cacheDownload=await download;assert.equal(cacheDownload.suggestedFilename(),'citations.json');
   const selectedCache=JSON.parse(await readFile(await cacheDownload.path(),'utf8'));
   for(const [format,extension] of [['csl-json','json'],['bibtex','bib'],['ris','ris']]){
-    await page.locator('#bibliography-format').selectOption(format);
-    const pending=page.waitForEvent('download');await page.locator('#download-bibliography').click();const file=await pending;
+    await page.locator('#downloads-menu').evaluate(node=>node.open=true);
+    const pending=page.waitForEvent('download');await page.locator(format==='csl-json'?'#download-bibliography':'#download-'+format).click();const file=await pending;
     assert.equal(file.suggestedFilename(),'bibliography.'+extension);const bytes=await readFile(await file.path(),'utf8');
     if(format==='csl-json')assert.deepEqual(JSON.parse(bytes).map(item=>item.id),selectedCache.records.map(item=>item.id));
     else assert.equal((bytes.match(format==='bibtex'?/^@/gm:/^TY  - /gm)||[]).length,selectedCache.records.length);
     assert.match(await page.locator('#export-status').innerText(),new RegExp(`Downloaded ${selectedCache.records.length} reference`));
   }
-  await page.locator('#bibliography-format').selectOption('csl-json');
-  assert(await page.locator('#export-status').isHidden());
-  await page.locator('.downloads').screenshot({path:join(tmpdir(),'cite-bibliography-downloads.png')});
+  await page.locator('.download-options').screenshot({path:join(tmpdir(),'cite-bibliography-downloads.png')});
   await page.screenshot({path:join(tmpdir(),'citation-learning-first.png'),fullPage:true});
   await page.getByText('Advanced: reference metadata',{exact:true}).click();
   await page.locator('#records').fill(JSON.stringify({schema:'citation-inator.cache.v1',records:[{id:'software',type:'software',state:'resolved',title:'Analysis software',authors:[{literal:'Research team'}],issued:[2020],releaseVersion:'2.0'}]}));
   await page.locator('#source').fill('{cite software}\n\n{cite endnote}');
   await page.waitForFunction(()=>!document.getElementById('result').hasAttribute('data-stale'));
-  await page.locator('#bibliography-format').selectOption('bibtex');
-  {const pending=page.waitForEvent('download');await page.locator('#download-bibliography').click();await pending;}
+  await page.locator('#downloads-menu').evaluate(node=>node.open=true);
+  {const pending=page.waitForEvent('download');await page.locator('#download-bibtex').click();await pending;}
   await page.getByRole('link',{name:'Review details',exact:true}).click();assert(await page.locator('#diagnostics-panel').getAttribute('open')!==null);
-  assert.match(await page.locator('#diagnostics').innerText(),/export-type-fallback/);
-  await page.locator('#bibliography-format').selectOption('csl-json');assert(await page.locator('#export-status').isHidden());
+  assert.match(await page.locator('#diagnostics').innerText(),/export-type-fallback/);await page.locator('#downloads-menu').evaluate(node=>node.open=true);await page.locator('[data-download-choice=bibtex]').check();{const pending=page.waitForEvent('download');await page.locator('#download-selected').click();await pending;}assert.match(await page.locator('#download-progress').innerText(),/could not be preserved/);assert.match(await page.locator('#diagnostics').innerText(),/export-type-fallback/);
+  await page.locator('#downloads-menu').evaluate(node=>node.open=true);
   {const pending=page.waitForEvent('download');await page.locator('#download-bibliography').click();await pending;}
-  assert.equal(await page.locator('#diagnostics').innerText(),'None');
+  assert.equal(await page.locator('#diagnostics').innerText(),'No issues.');
   assert(!await page.locator('#export-status').innerText().then(text=>text.includes('could not')));
   await page.locator('#source').fill('{');assert(await page.locator('#export-status').isHidden());
   await page.locator('#reset').click();

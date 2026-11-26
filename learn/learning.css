@@ -56,3 +56,22 @@ header .github-link{margin-inline-start:auto;display:grid;gap:.15rem;text-align:
 #lesson code,.guide #examples section p code{font:italic .92em/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
 
 .bibliography-download{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;padding-right:.7rem;margin-right:.1rem;border-right:1px solid var(--border)}.bibliography-download label{font-weight:650}#export-status{font-size:.9rem}
+
+/* Keep the approved categorized sidebar in the narrow desktop companion panel. */
+.playground-layout{grid-template-columns:clamp(190px,24vw,320px) minmax(0,1fr)}
+.playground-layout>.examples{margin:0;border:0;background:transparent;border-radius:0}
+.examples>.gallery-heading{list-style:none;background:transparent;cursor:default}
+.examples>.gallery-heading::-webkit-details-marker{display:none}
+@media(min-width:601px){.playground-layout{display:grid}.examples{position:sticky;max-height:calc(100dvh - 2rem);overflow:auto}.example-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;padding:0}.example-gallery>button{flex:initial}.gallery-subheading{border:0;border-top:1px solid var(--border);padding:.75rem .1rem .2rem;margin:.45rem 0 0;align-self:initial}}
+@media(min-width:601px) and (max-width:1000px){.example-gallery{grid-template-columns:1fr}}
+@media(max-width:600px){.playground-layout{display:block}.examples{position:static;max-height:none;overflow:visible}.examples>.gallery-heading{cursor:pointer;list-style:revert;padding:.7rem .1rem}.example-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible}.gallery-subheading{grid-column:1/-1;border:0;border-top:1px solid var(--border);padding:.75rem .1rem .2rem;margin:.45rem 0 0}.example-gallery>button{flex:initial}.example-detail{margin-top:1rem}}
+
+.controls #reset{margin-left:0}.toolbar-divider{border-inline-start:1px solid var(--border);height:2rem}.downloads-menu{margin-inline-start:auto;position:relative;min-width:0}.downloads-menu>summary{cursor:pointer;border:1px solid #8297ae;border-radius:5px;padding:.45rem .7rem;background:white;list-style:none}.download-options{position:absolute;z-index:6;inset-inline-end:0;top:calc(100% + .5rem);width:min(36rem,calc(100vw - 2rem));padding:1rem;background:white;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 28px #182c4426}.download-choice{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.7rem;padding:.4rem 0}.download-choice label{font-size:.9rem}.download-options #download-selected{margin-top:.7rem;width:100%}@media(max-width:600px){.download-choice{grid-template-columns:1fr}.download-choice .download-button{justify-self:start}}
+
+@media(max-width:600px){.examples>.gallery-heading::before{content:'▸';display:inline-block;width:1.2em}.examples[open]>.gallery-heading::before{content:'▾'}.examples>.gallery-heading{list-style:none}}
+
+.source-column{min-width:0}.source-column>details{margin:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:white}.source-column>details>summary{padding:.8rem 1rem;cursor:pointer;font-weight:700;background:#edf2f8}.source-column>details[open]>summary{border-bottom:1px solid var(--border)}.source-column #diagnostics-panel{margin-top:.7rem}.source-column #diagnostics{padding:1rem;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}#diagnostics-panel[data-state="warning"]>summary{background:#fff1cc;color:#6c4900}#diagnostics-panel[data-state="error"]>summary{background:#ffe5eb;color:#8c1733}
+
+.mobile-categories{display:none}.example-categories{position:sticky;top:0;z-index:1;display:flex;gap:.3rem;flex-wrap:wrap;background:#f4f7fb;padding:.3rem 0 .6rem}.example-categories button{font-size:.72rem;padding:.3rem .4rem}@media(max-width:600px){.mobile-categories{display:inline;font-weight:400;font-size:.82rem}.example-categories{display:none}}
+
+.download-options{max-height:min(42rem,70dvh);overflow-y:auto}

@@ -120,7 +120,7 @@ export function compileMarkdown(source, cache, options = {}) {
         if (!standalone(tokens)) return;
         return { type: "citationBlockDirective", kind:tokens.find(token=>token.type!=="text")?.type, raw: line + (input[line.length] === "\n" ? "\n" : "") };
       },
-      renderer(token) { return token.kind==='tags' ? `<p>${escapeHTML(token.raw.trimEnd())}</p>\n` : escapeHTML(token.raw) + "\n"; }
+      renderer(token) { return `<p>${escapeHTML(token.raw.trimEnd())}</p>\n`; }
     }, {
       name: "citationDirective", level: "inline",
       start(input) { return starts.exec(input)?.index; },

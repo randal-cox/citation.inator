@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0-preview.6 — In development
+
+- Diagnose duplicate full endnote lists separately from misplaced directives; keep adjacent Markdown directive blocks distinct.
+- Show optional pipe separators in a dedicated Everyday example; improve malformed-marker explanations.
+- Preserve categorized Playground navigation at companion-panel and phone widths. Put downloads in the toolbar with selected-file ZIP export; show live diagnostics below Source and keep routine code disclosures closed.
+- Keep document lookup mode changes in place, retain accepted decisions, add review queues and show processing feedback beside file selection.
+- Offer a safe DOCX inline-format projection, including affiliation superscripts; retain plain text, original bytes and conservative exclusion of arbitrary HTML.
+
 ## 0.6.0-preview.5 — In development
 
 - Add a local bibliography workspace: reviewed file import, metadata comparison, explicit source checks, Undo, working-copy recovery and CSL-JSON/BibTeX/RIS downloads.

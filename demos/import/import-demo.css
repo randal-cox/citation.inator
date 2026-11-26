@@ -228,3 +228,11 @@
 .import-demo .citation-group input[type="text"]::placeholder { color:var(--review-muted); opacity:1; }
 .import-demo .citation-group .review-content>fieldset { background:var(--review-work); border:1px solid var(--review-rule); border-radius:6px; padding:12px; }
 .import-demo .citation-group pre { background:var(--review-inset); color:inherit; }
+
+.import-demo .review-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.7rem;margin:1rem 0}
+.import-demo .review-overview details{min-width:0;margin:0;border:1px solid var(--import-line,#8297ae);border-radius:6px;overflow:hidden}
+.import-demo .review-overview summary{padding:.65rem;font-weight:700;cursor:pointer}
+.import-demo .review-queue{display:flex;flex-direction:column;gap:.4rem;padding:.65rem}
+.import-demo .review-queue button{text-align:left;overflow-wrap:anywhere}
+.import-demo .lookup-mode{margin-bottom:1rem}.import-demo .lookup-mode p{margin:.3rem 0;font-size:.9rem}
+@media(max-width:750px){.import-demo .review-overview{grid-template-columns:1fr}}

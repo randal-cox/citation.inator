@@ -16,6 +16,7 @@ const decodeEntity = entity => {
   const nodes = parseFragment(entity).childNodes;
   return nodes.length === 1 && nodes[0].nodeName === '#text' ? nodes[0].value : entity;
 };
+export const isImportInlineFormatting=token=>token.type==='html'&&/^<\/?(?:sup|sub|em|strong|u|s)>$/u.test(token.raw);
 function protectedMarkers(source,citationKeyword) {
   let decoded = '', cursor = 0;
   const starts = [], ends = [];
@@ -129,7 +130,7 @@ function extractMarkdown(source, { result, append, boundary, includeURLLabels=fa
   offsets.push(source.length);
   const location = (start,end) => ({ startOffset:offsets[start], endOffset:offsets[end] });
   const children = token => token.items || token.tokens || [];
-  const containsHTML = token => token.type === 'html' || children(token).some(containsHTML);
+  const containsHTML = token => token.type === 'html' && !isImportInlineFormatting(token) || children(token).some(containsHTML);
   const skipped = (start,end,reason) => {
     boundary();
     result.diagnostics.push({ code:'import-markdown-region-skipped', sourceStart:offsets[start], sourceEnd:offsets[end], reason });
@@ -159,6 +160,7 @@ function extractMarkdown(source, { result, append, boundary, includeURLLabels=fa
       const block = ['paragraph','heading','blockquote','list','list_item','space','hr','table'].includes(token.type);
       if (block) boundary();
       if (containsHTML(token)) { skipped(at,until,'raw-html-context'); continue; }
+      if(isImportInlineFormatting(token))continue;
       if (['code','codespan','image','def','hr','br','space'].includes(token.type)) { boundary(); continue; }
       if (token.type === 'table') { skipped(at,until,'table-not-supported'); continue; }
       let currentLink = link;

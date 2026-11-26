@@ -1,4 +1,4 @@
-/*! cite-inator import v0.6.0-preview.5 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator import v0.6.0-preview.6 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/title-parts.mjs
 function normalizeTitleParts(parts, title) {
@@ -8169,7 +8169,7 @@ function parseFragment(fragmentContext, html, options) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.5",
+  version: "0.6.0-preview.6",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -8246,7 +8246,7 @@ var package_default = {
     "milestone:check": "npm test && npm run build && npm run test:browser && npm run test:learn && node scripts/checkin.mjs",
     "hooks:install": "git config --local core.hooksPath .githooks",
     "build:learn": "npm run build && node scripts/build-learning.mjs",
-    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs && node test/bibliography-workspace-browser.mjs",
+    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs && node test/bibliography-workspace-browser.mjs && node test/responsive-review-browser.mjs",
     "test:zotero": "node --test test/zotero.test.mjs && node test/zotero-browser.mjs",
     "example:library": "node scripts/library-workflow-example.mjs"
   },
@@ -10786,6 +10786,10 @@ function compileBlocks(blocks2, cache, {
       emittedNotes = true;
       return referencesHTML(scopeItems(marker.scope ?? 0), marker.scope ?? 0, false, marker);
     }
+    if (marker && !scoped && emittedNotes) {
+      diagnostics.push({ state: "duplicate-endnotes", code: "citation-duplicate-endnotes", source: marker.raw, message: "Only one full endnote list is needed. Use scope:since-last for separate section lists." });
+      return "";
+    }
     if (meaningful.length === 1 && meaningful[0].type === "list") {
       const token = meaningful[0];
       const items = [...token.items];
@@ -12492,6 +12496,7 @@ var decodeEntity = (entity) => {
   const nodes = parseFragment(entity).childNodes;
   return nodes.length === 1 && nodes[0].nodeName === "#text" ? nodes[0].value : entity;
 };
+var isImportInlineFormatting = (token) => token.type === "html" && /^<\/?(?:sup|sub|em|strong|u|s)>$/u.test(token.raw);
 function protectedMarkers(source, citationKeyword) {
   let decoded = "", cursor = 0;
   const starts = [], ends = [];
@@ -12617,7 +12622,7 @@ function extractMarkdown(source, { result, append, boundary, includeURLLabels = 
   offsets.push(source.length);
   const location = (start, end) => ({ startOffset: offsets[start], endOffset: offsets[end] });
   const children = (token) => token.items || token.tokens || [];
-  const containsHTML = (token) => token.type === "html" || children(token).some(containsHTML);
+  const containsHTML = (token) => token.type === "html" && !isImportInlineFormatting(token) || children(token).some(containsHTML);
   const skipped = (start, end, reason) => {
     boundary();
     result.diagnostics.push({ code: "import-markdown-region-skipped", sourceStart: offsets[start], sourceEnd: offsets[end], reason });
@@ -12655,6 +12660,7 @@ function extractMarkdown(source, { result, append, boundary, includeURLLabels = 
         skipped(at, until, "raw-html-context");
         continue;
       }
+      if (isImportInlineFormatting(token)) continue;
       if (["code", "codespan", "image", "def", "hr", "br", "space"].includes(token.type)) {
         boundary();
         continue;
@@ -12720,7 +12726,7 @@ function markdownBlocks(source) {
     const at = normalized.indexOf(token.raw, cursor), until = at + token.raw.length;
     if (at < cursor) throw new Error("Cannot map Markdown blocks to source.");
     cursor = until;
-    const html = (item) => item.type === "html" || (item.tokens || item.items || []).some(html);
+    const html = (item) => item.type === "html" && !isImportInlineFormatting(item) || (item.tokens || item.items || []).some(html);
     const block = { eligible: !html(token), type: token.type, start: offsets[at], end: offsets[until], text: token.type === "heading" ? extractImportText(token.raw, { format: "markdown" }).text.trim() : token.text, depth: token.depth, ordered: token.ordered };
     if (token.type === "list") {
       let itemCursor = at;
@@ -12743,8 +12749,9 @@ function partitionImportDocument(source, { startLine = "auto", endLine = null, l
     while (blockIndex < blocks2.length && blocks2[blockIndex].end <= line2.start) blockIndex++;
     const block = blocks2[blockIndex];
     if (!block?.eligible) continue;
+    const headingText = line2.text.replace(/<\/?(?:sup|sub|em|strong|u|s)>/gu, "");
     if (block.type === "heading" && block.start === line2.start && /^(?:References|Bibliography|Works cited):?$/iu.test(block.text?.trim() || "")) headings.push({ line: line2.line, start: block.start, end: block.end, label: block.text.trim(), depth: block.depth });
-    else if (block.type === "paragraph" && heading.test(line2.text) && eligible.some((segment) => segment.sourceStart < line2.end && segment.sourceEnd > line2.start)) headings.push({ line: line2.line, start: line2.start, end: line2.end, label: line2.text.trim() });
+    else if (block.type === "paragraph" && heading.test(headingText) && eligible.some((segment) => segment.sourceStart < line2.end && segment.sourceEnd > line2.start)) headings.push({ line: line2.line, start: line2.start, end: line2.end, label: headingText.trim() });
     if (headings.length > 100) throw new RangeError("Too many bibliography heading candidates. Use a smaller document.");
   }
   let boundaryRequired = false, selected = null;
@@ -12762,10 +12769,10 @@ function partitionImportDocument(source, { startLine = "auto", endLine = null, l
   const start = selected?.start ?? source.length;
   let end = selected ? endLine === null ? source.length : lines[endLine - 1].end : source.length;
   if (selected && endLine === null) {
-    const next = blocks2.find((block) => block.start >= selected.end && (block.type === "heading" || block.type === "paragraph" && /^(?:Notes|Appendix|Appendices|Acknowledg(?:e)?ments|Supporting information)\s*$/iu.test(block.text || "")));
+    const next = blocks2.find((block) => block.start >= selected.end && (block.type === "heading" || block.type === "paragraph" && /^(?:Notes|Appendix|Appendices|Acknowledg(?:e)?ments|Supporting information)\s*$/iu.test((block.text || "").replace(/<\/?(?:sup|sub|em|strong|u|s)>/gu, ""))));
     if (next) end = next.start;
   }
-  const entriesStart = selected ? heading.test(selected.text ?? selected.label) ? selected.end : selected.start : source.length;
+  const entriesStart = selected ? heading.test(selected.label ?? selected.text) ? selected.end : selected.start : source.length;
   const bodyRanges = selected ? [{ start: 0, end: start }, ...end < source.length ? [{ start: end, end: source.length }] : []] : [{ start: 0, end: boundaryRequired ? headings[0].start : source.length }];
   return {
     schema: "citation-inator.import-document.v1",

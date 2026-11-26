@@ -4,7 +4,7 @@ import {Lexer} from 'marked';
 import {importHash} from './import-hash.mjs';
 import {referenceDOIs} from './import-identifiers.mjs';
 import {parseReference,parseAPAAuthorList} from './import-references.mjs';
-import {extractImportText,detectExtractedCitations,mapImportRange} from './import-extraction.mjs';
+import {extractImportText,detectExtractedCitations,mapImportRange,isImportInlineFormatting} from './import-extraction.mjs';
 import {detectCitationFormat} from './import-format.mjs';
 import {normalizeRecord,canonicalIdentifierKey} from './records.mjs';
 const digest=importHash;
@@ -19,7 +19,7 @@ function markdownBlocks(source) {
  for(let index=0;index<source.length;index++){offsets.push(index);normalized+=source[index]==='\r'?'\n':source[index];if(source[index]==='\r'&&source[index+1]==='\n')index++;}offsets.push(source.length);
  let cursor=0;return Lexer.lex(normalized).map(token=>{
   const at=normalized.indexOf(token.raw,cursor),until=at+token.raw.length;if(at<cursor)throw new Error('Cannot map Markdown blocks to source.');cursor=until;
-  const html=item=>item.type==='html'||(item.tokens || item.items || []).some(html);
+  const html=item=>item.type==='html'&&!isImportInlineFormatting(item)||(item.tokens || item.items || []).some(html);
   const block={eligible:!html(token),type:token.type,start:offsets[at],end:offsets[until],text:token.type==='heading'?extractImportText(token.raw,{format:'markdown'}).text.trim():token.text,depth:token.depth,ordered:token.ordered};
   if(token.type==='list'){let itemCursor=at;block.items=token.items.map(item=>{const start=normalized.indexOf(item.raw,itemCursor),end=start+item.raw.length;if(start<itemCursor||end>until)throw new Error('Cannot map reference list to source.');itemCursor=end;return {start:offsets[start],end:offsets[end]};});}
   return block;
@@ -32,9 +32,9 @@ export function partitionImportDocument(source,{startLine='auto',endLine=null,li
  let blockIndex=0;
  for(const line of lines){
   while(blockIndex<blocks.length&&blocks[blockIndex].end<=line.start)blockIndex++;
-  const block=blocks[blockIndex];if(!block?.eligible)continue;
+  const block=blocks[blockIndex];if(!block?.eligible)continue;const headingText=line.text.replace(/<\/?(?:sup|sub|em|strong|u|s)>/gu,'');
   if(block.type==='heading'&&block.start===line.start&&/^(?:References|Bibliography|Works cited):?$/iu.test(block.text?.trim() || ''))headings.push({line:line.line,start:block.start,end:block.end,label:block.text.trim(),depth:block.depth});
-  else if(block.type==='paragraph'&&heading.test(line.text)&&eligible.some(segment=>segment.sourceStart<line.end&&segment.sourceEnd>line.start))headings.push({line:line.line,start:line.start,end:line.end,label:line.text.trim()});
+  else if(block.type==='paragraph'&&heading.test(headingText)&&eligible.some(segment=>segment.sourceStart<line.end&&segment.sourceEnd>line.start))headings.push({line:line.line,start:line.start,end:line.end,label:headingText.trim()});
   if(headings.length>100)throw new RangeError('Too many bibliography heading candidates. Use a smaller document.');
  }
  let boundaryRequired=false,selected=null;
@@ -48,8 +48,8 @@ export function partitionImportDocument(source,{startLine='auto',endLine=null,li
  const start=selected?.start ?? source.length;
  let end=selected?(endLine===null?source.length:lines[endLine-1].end):source.length;
  // A subsequent Markdown heading ends this reference section; never swallow an appendix.
- if(selected&&endLine===null){const next=blocks.find(block=>block.start>=selected.end&&(block.type==='heading'||block.type==='paragraph'&&/^(?:Notes|Appendix|Appendices|Acknowledg(?:e)?ments|Supporting information)\s*$/iu.test(block.text || '')));if(next)end=next.start;}
- const entriesStart=selected?(heading.test(selected.text ?? selected.label)?selected.end:selected.start):source.length;
+ if(selected&&endLine===null){const next=blocks.find(block=>block.start>=selected.end&&(block.type==='heading'||block.type==='paragraph'&&/^(?:Notes|Appendix|Appendices|Acknowledg(?:e)?ments|Supporting information)\s*$/iu.test((block.text || '').replace(/<\/?(?:sup|sub|em|strong|u|s)>/gu,''))));if(next)end=next.start;}
+ const entriesStart=selected?(heading.test(selected.label ?? selected.text)?selected.end:selected.start):source.length;
  const bodyRanges=selected?[{start:0,end:start},...(end<source.length?[{start:end,end:source.length}]:[])]:[{start:0,end:boundaryRequired?headings[0].start:source.length}];
  return {schema:'citation-inator.import-document.v1',sourceHash:digest(source),headings,boundaryRequired,
   bibliography:selected?{start,end,entriesStart,heading:source.slice(start,entriesStart),startLine:selected.line}:null,

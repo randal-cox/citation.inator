@@ -20,8 +20,10 @@ const fixtureFetch=async(...args)=>{
  savedRequest ||= fetch(importOptions.providerResponses).then(response=>{if(!response.ok)throw Error('Saved example metadata unavailable. Reload to try again.');return response.json();}).then(savedProviderFetch);
  return (await savedRequest)(...args);
 };
-const providerLookup=createBrowserEnrichment(importOptions.providerResponses?{fetch:fixtureFetch}:{});
-const lookup=importOptions.providerResponses?{...providerLookup,lookup:async(...args)=>savedProviderEvidence(await providerLookup.lookup(...args))}:providerLookup;
+let onlineLookups=Boolean(importOptions.onlineLookups||!importOptions.providerResponses);
+const providerLookup=createBrowserEnrichment({fetch:(...args)=>onlineLookups?fetch(...args):fixtureFetch(...args)});
+const lookup={...providerLookup,lookup:async(...args)=>{const result=await providerLookup.lookup(...args);return onlineLookups?result:savedProviderEvidence(result);}};
+$('online-lookups')?.addEventListener('change',()=>{const retained=[...completionStates].filter(([,entry])=>entry.accepted||entry.kept);clearLookups();for(const [key,entry] of retained)completionStates.set(key,entry);lookup.reset();onlineLookups=$('online-lookups').checked;$('lookup-mode-description').textContent=onlineLookups?'Reference details are sent to Crossref and Open Library.':'Examples use saved lookup results. Enable online lookups for your own document.';invalidateOutput();startSelectedLookups();});
 const completionStates=new Map();let lookupEpoch=0,manualLookupTimer;
 const knownReferenceIdentifier=source=>source?.identifiers?.find(id=>['doi','isbn'].includes(id.scheme));
 const referenceIdentifier=source=>knownReferenceIdentifier(source)||source?.identifierProposals?.find(id=>['doi','isbn'].includes(id.scheme));
@@ -35,7 +37,15 @@ function completionData(){return [...completionStates].filter(([,entry])=>entry.
 function invalidateOutput(){version++;output=null;for(const id of ['use-output','download','download-records'])$(id).disabled=true;clearTimeout(conversionTimer);if($('converted-document').open || $('reading-details').open){$('conversion-progress').hidden=false;conversionTimer=setTimeout(()=>void convertDocument(),200);}}
 function refreshCompletions(){
  for(const group of $('groups').children){updateReviewAppearance(group);for(const field of group.querySelectorAll('fieldset[data-item]'))renderCompletion(field,group);}
- updateReviewNavigation();updateLookupSummary();
+ updateReviewNavigation();updateLookupSummary();renderReviewOverview();
+}
+const overviewOpen=new Map();
+function renderReviewOverview(){
+ const root=$('review-overview');if(!root)return;if(root.contains(document.activeElement)){root.addEventListener('focusout',()=>setTimeout(renderReviewOverview,0),{once:true});return;}const progress=currentReviewProgress(),attention=new Set(progress.reviewGroups),pending=new Set(progress.lookupGroups),buckets={attention:[],pending:[],probable:[]};
+ for(const [index,match] of (review?.matches||[]).entries()){const group=$('groups').children[index];if(!group||group.dataset.action==='reject')continue;const needs=attention.has(index);buckets[needs?'attention':pending.has(index)?'pending':'probable'].push({index,label:match.citation.raw});}
+ root.replaceChildren();for(const [key,title] of [['attention','Needs your attention'],['pending','Looking up'],['probable','Probably right']]){
+  const details=el('details');details.open=overviewOpen.get(key)??key==='attention';const summary=el('summary',title+' · '+buckets[key].length);details.append(summary);details.addEventListener('toggle',()=>{if(details.isConnected)overviewOpen.set(key,details.open);});const list=el('div');list.className='review-queue';for(const entry of buckets[key]){const button=el('button',entry.label);button.type='button';button.addEventListener('click',()=>{document.querySelector('[data-review-group="'+entry.index+'"]')?.scrollIntoView({block:'center'});openReview(entry.index,true);});list.append(button);}if(!buckets[key].length)list.append(el('p','None'));details.append(list);root.append(details);
+ }
 }
 function renderCompletion(field,group){
  let area=field.querySelector('.identifier-completion');if(!area){area=el('div');area.className='identifier-completion';field.append(area);}
@@ -135,7 +145,7 @@ $('retry-lookups').addEventListener('click',()=>{
 $('retry-lookups').addEventListener('blur',updateLookupSummary);
 function invalidate(message='') {
  clearLookups();closeReview();clearTimeout(conversionTimer);clearTimeout(analysisTimer);version++;review=null;output=null;documentModel=null;referenceRecords=[];referenceEntries=[];$('reference-summary').replaceChildren();$('converted-document').open=false;$('reading-details').open=false;$('reading-preview').replaceChildren();$('preview-notice').textContent='';$('conversion-progress').hidden=true;$('detected-format').textContent='Detected format';$('format-choice').textContent='';$('evidence').hidden=true;$('evidence-json').textContent='';$('preview').setAttribute('aria-disabled','true');$('output-section').hidden=true;$('status').textContent=message;
- $('errors').textContent='';$('groups').replaceChildren();updateLookupSummary();
+ $('errors').textContent='';$('groups').replaceChildren();updateLookupSummary();renderReviewOverview();
 }
 async function loadExample() {
  fileController?.abort();const selected=$('example').value,ticket=++fileVersion;let text;
@@ -188,20 +198,26 @@ function openReview(index,focus=false) {
  else {group.style.maxHeight=(window.innerHeight-24)+'px';group.style.top='12px';}
  if(focus)group.focus({preventScroll:true});
 }
+function appendWorkingText(container,source){
+ const stack=[container];for(const token of readableImportSource(source).split(/(<\/?(?:sup|sub|strong|em|u|s)>)/g)){
+  const match=/^<(\/?)(sup|sub|strong|em|u|s)>$/.exec(token);
+  if(match){if(match[1]){if(stack.at(-1).tagName?.toLowerCase()===match[2])stack.pop();}else{const node=document.createElement(match[2]);stack.at(-1).append(node);stack.push(node);}}else{const value=token.replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&amp;','&');stack.at(-1).append(document.createTextNode(value));}
+ }
+}
 function renderDocument() {
  const source=workingSource,container=$('document-preview');container.replaceChildren();
  const ranges=documentModel?.bodyRanges || [{start:0,end:source.length}];
  for(const range of ranges){let cursor=range.start;
   for(const [index,match] of (review?.matches || []).entries()) {
    const citation=match.citation;if(citation.start<range.start || citation.end>range.end || citation.start<cursor)continue;
-   container.append(document.createTextNode(readableImportSource(source.slice(cursor,citation.start))));
+   appendWorkingText(container,source.slice(cursor,citation.start));
    const anchor=el('button',source.slice(citation.start,citation.end));anchor.type='button';anchor.dataset.reviewGroup=String(index);anchor.className='review-citation';
    const status=match.items.some(item=>item.state==='unmatched')?'unmatched':match.items.some(item=>item.state==='ambiguous')?'ambiguous':'candidate';
    anchor.dataset.matchState=status;anchor.setAttribute('aria-label',`Review citation ${index+1}: ${citation.raw} (${status})`);anchor.setAttribute('aria-expanded','false');anchor.setAttribute('aria-controls',`review-group-${index}`);anchor.setAttribute('aria-haspopup','dialog');
    anchor.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch'&&!activeGroup?.contains(document.activeElement))openReview(index);});anchor.addEventListener('pointerleave',scheduleClose);
    anchor.addEventListener('click',()=>openReview(index,true));container.append(anchor);cursor=citation.end;
   }
-  container.append(document.createTextNode(readableImportSource(source.slice(cursor,range.end).trimEnd())));
+  appendWorkingText(container,source.slice(cursor,range.end).trimEnd());
  }
 }
 function selectedTargets(group) {
@@ -295,7 +311,7 @@ function renderGroups() {
 }
 async function analyzeSource() {
  invalidate('Analyzing…');renderDocument();const ticket=version;
- $('analyze-form').setAttribute('aria-busy','true');
+ $('analyze-form').setAttribute('aria-busy','true');await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  try {
   const result=await request('analyze');if(ticket!==version)return;
   documentModel=result.document;referenceEntries=result.referenceEntries || [];formatChoiceRequired=result.formatChoiceRequired || documentModel?.boundaryRequired;$('detected-format').textContent='Detected format: '+result.formatDetection.label;$('format-choice').textContent=documentModel?.boundaryRequired?'Choose the bibliography boundary.':result.formatChoiceRequired?'Choose a citation format.':'';
@@ -346,16 +362,16 @@ $('download-original').addEventListener('click',()=>{if(originalFile)download(or
 async function loadFile(files,origin='chosen'){
  fileController?.abort();const controller=fileController=new AbortController(),ticket=++fileVersion;
  try {
-  if(files.length!==1)throw Error('Choose one document.');const file=files[0];
+  if(files.length!==1)throw Error('Choose one document.');const file=files[0];$('status').textContent='Reading '+file.name+'…';await new Promise(resolve=>requestAnimationFrame(resolve));
   if(!/\.(?:txt|md|markdown|pdf|docx|odt)$/iu.test(file.name))throw Error('Choose a TXT, Markdown, PDF, DOCX or ODT file.');
   if(file.size>importLimits.fileBytes)throw Error('Use a file smaller than '+(importLimits.fileBytes/1000000)+' MB.');
   let text,extraction;
-  if(/\.(?:pdf|docx|odt)$/iu.test(file.name)){const {extractImportFile}=await import('../../dist/citation-import-files.mjs');extraction=await extractImportFile(file,{limits:importLimits,signal:controller.signal});text=extraction.text;}
+  if(/\.(?:pdf|docx|odt)$/iu.test(file.name)){const {extractImportFile}=await import('../../dist/citation-import-files.mjs');extraction=await extractImportFile(file,{limits:importLimits,signal:controller.signal});text=extraction.markdown??extraction.text;}
   else {try{text=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(await file.arrayBuffer());}catch{throw Error('Use a UTF-8 text file.');}}
   if(ticket!==fileVersion)return;if(text.length>importLimits.sourceCharacters)throw Error('Use a document of at most '+importLimits.sourceCharacters.toLocaleString('en')+' characters.');
-  $('file-extraction').hidden=!extraction;$('file-extraction-json').textContent=extraction?JSON.stringify({...extraction,text:undefined},null,2):'';
+  $('file-extraction').hidden=!extraction;$('file-extraction-json').textContent=extraction?JSON.stringify({...extraction,text:undefined,markdown:undefined},null,2):'';
   lookup.reset();activeExampleSelection='';originalFile=file;$('file-source-option').textContent=origin==='dropped'?'Dropped file':'Chosen file';$('example').value='';$('download-original').hidden=false;$('input-name').textContent=file.name;setSource(text);$('style').value='auto';resetBoundary();void analyzeSource();
- }catch(error){if(ticket===fileVersion)$('errors').textContent=error.message;}
+ }catch(error){if(ticket===fileVersion){$('errors').textContent=error.message;$('status').textContent='';}}
 }
 $('choose-file').addEventListener('click',()=>$('import-file').click());
 $('import-file').addEventListener('change',()=>{if($('import-file').files.length)void loadFile([...$('import-file').files]);$('import-file').value='';});

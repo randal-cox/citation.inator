@@ -51,3 +51,5 @@ The 0.5.1 list demo assigns and labels topics using `tags` blocks, and enables p
 ## 0.6 preview additions
 
 The Playground download toolbar now exports the compiled document’s used references as CSL-JSON, BibTeX and RIS, including explicit further reading. The [Zotero/API reference](zotero.md#bibliography-files) describes privacy, format-loss diagnostics and pending actual-manager import acceptance. This extends the released learning surface; it does not change the 0.5 release receipt.
+
+The preview adds an Everyday **Optional separators** card after First citation: its two markers differ only in visual pipe separators and compile to identical labels. First citation uses spaces alone.
