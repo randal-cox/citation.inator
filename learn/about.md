@@ -9,7 +9,7 @@ cite.inator’s goal is to make that work easy, configurable, powerful and inspe
 - **Useful reading links.** Offer publisher, PDF and library routes, with reader preferences for the services they use.
 - **Evidence you can inspect.** Open the metadata behind a reference and review proposed identifiers before accepting them.
 - **Help with existing documents.** Import a manuscript, review its references and export citation markers and bibliographic metadata.
-- **Free to use and make your own.** The [MIT license](https://github.com/randal-cox/cite.inator/blob/main/LICENSE) permits use, modification and redistribution, including commercial use. No account or subscription is required.
+- **Free to use and make your own.** The [MIT license](./license.html) permits use, modification and redistribution, including commercial use. No account or subscription is required.
 
 ## Start with one citation
 
@@ -25,4 +25,4 @@ Download a starter for these files and the example’s metadata, then follow the
 
 Import a PDF, Word or OpenDocument file, Markdown, or pasted text. Review the suggested references and identifiers, then download the converted document and its bibliography. Your original stays intact.
 
-[Try Import](./import/)
+<div class="overview-actions"><a href="./import/">Try Import</a></div>

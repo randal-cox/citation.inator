@@ -1,3 +1,4 @@
+import {normalizeOpaqueRanges,maskOpaqueRanges} from './import-opaque.mjs';
 // Experimental 0.4.0 source API. Recognition and matching propose review items only.
 import { normalizeRecord } from './records.mjs';
 import {parseOrganizationAuthor} from './import-references.mjs';
@@ -75,7 +76,8 @@ export function parseInTextCitations(text, options = {}) {
   if (!range || !Number.isInteger(range.start) || !Number.isInteger(range.end) || range.start < 0 || range.end < range.start || range.end > text.length) throw new TypeError('Supply a valid source range.');
   if (![maxCitations,maxItems].every(value=>value === Infinity || Number.isSafeInteger(value) && value>0)) throw new TypeError('Citation limits must be positive integers.');
   const limits={maxCitations,maxItems};let itemCount=0;
-  const protectedRanges = scanCitationMarkers(text, { citationKeyword });
+  const opaque=normalizeOpaqueRanges(text,options.opaque);
+  const protectedRanges = [...scanCitationMarkers(maskOpaqueRanges(text,opaque), { citationKeyword }),...opaque];
   const citations = [], diagnostics = [];
   const source = text.slice(range.start, range.end);
   if (style === 'vancouver') return detectNumeric(source,range.start,protectedRanges,style,limits);
@@ -210,7 +212,7 @@ export function matchCitations(detection, references) {
     items: citation.items.map(item => {
       if (item.referenceNumber !== undefined) {
         const candidates = records.filter(entry=>entry.referenceNumber === item.referenceNumber).map(({record})=>({
-          recordId:record.id,title:record.title,evidence:{referenceNumber:item.referenceNumber,identity:'document-local-label'}
+          recordId:record.id,title:record.title,evidence:{matchKind:'bibliography-entry',identifierVerification:'not-checked',referenceNumber:item.referenceNumber,identity:'document-local-label'}
         }));
         return {item,state:!candidates.length ? 'unmatched' : candidates.length === 1 ? 'unique' : 'ambiguous',candidates,requiresReview:true};
       }
@@ -228,6 +230,7 @@ export function matchCitations(detection, references) {
         const missingSuffix = Boolean(item.sourceSuffix && !sourceSuffix),abbreviated=bylines.some(byline=>byline.authors.some((name,index)=>organizationAlias(name,record.authors[index])));
         uncertain ||= abbreviated || missingSuffix || record.authorsComplete === false || item.undated && !undated;
         return [{ recordId: record.id, title: record.title, ...(item.authorAlternatives && { authorStarts: bylines.map(byline => byline.start) }), evidence: {
+          matchKind:'bibliography-entry',identifierVerification:'not-checked',
           authors: abbreviated?'possible-organization-abbreviation':record.authorsComplete === false ? 'incomplete-byline' : item.boundaryUncertain ? 'uncertain-narrative-span' : 'exact-normalized', year: yearField,
           suffix: missingSuffix ? 'unknown-source-suffix' : item.sourceSuffix ? 'exact-source-suffix' : 'not-specified' } }];
       });

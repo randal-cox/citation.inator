@@ -217,12 +217,15 @@ For a mixed group, use `action:'accept'` and one explicit target per item, for e
 Output contains a local marker such as:
 
 ```text
-{cite pending-261a03336653006d0720 unresolved:"(Rivera, 2020)"}
+{cite pending-261a03336653006d0720
+  cue:"Rivera, 2020"
+  comment:"Original: (Rivera, 2020). No matching bibliography entry."
+}
 ```
 
-The fallback is literal original citation wording, including its punctuation for a single-item group. It is escaped text, not HTML or a permanent `label:` override. While the record is missing, unresolved or partial, the reader displays that wording with `data-ci-state="unresolved-placeholder"`, dashed underlining and an unresolved endnote status. Compiler and description/annotation tools report `citation-unresolved-placeholder`. `collectMarkerTags(..., cache, {includeDiagnostics:true})` reports it even when the marker has no topic tags; it does not invent counts. Annotation leaves the unresolved marker unchanged.
+In preview.7, the cue is compact author/year wording derived from the detected citation. Prefixes, locators and narrative form stay in their own fields. The comment retains the original wording and why review remains necessary. Valid quoted comment fields never enter compiled HTML, hover data or public compiler payloads; original authored source naturally retains them. A missing, unresolved or partial target displays the cue as escaped provisional text with `data-ci-state="unresolved-placeholder"`, an unresolved warning and `citation-unresolved-placeholder` diagnostics. Genuine resolution restores normal metadata-driven formatting; a cue alone never resolves a record. Existing saved `unresolved:` markers remain supported as verbatim fallbacks; new imports do not require duplicate cue and unresolved fields.
 
-The result cache includes a `state:'unresolved'` placeholder with no invented title, authors, year or identifiers; its `unresolvedText` retains the original wording. For a matched item, typed candidate references are retained in provenance notes explicitly marked unverified, without adopting their metadata or identity. With one candidate reference, `original` contains its source text; `unresolvedText` still holds the citation wording. With several candidates, all are retained as unverified alternatives and `original` remains the citation wording. Its ID appears in `newRecordIds` and the outcome's `placeholderRecordIds`. An accepted placeholder outcome has `state:'accepted'` and `code:'import-unresolved-placeholder'`. Keep source and cache in the same host transaction. Standard site allocation, `recordId`/`recordIds`, limits, stale-review and exact-span guards apply. Equal author/year wording does not merge placeholders automatically.
+The result cache contains a `state:'unresolved'` placeholder with no invented title, authors, year or identifiers. No original in-text wording is duplicated in `unresolvedText`; it stays in the source comment. For one candidate reference, `original` retains its actual bibliography text, and provenance identifies all candidate references as unverified alternatives. Otherwise `original` is the compact cue. Its ID appears in `newRecordIds` and the outcome’s `placeholderRecordIds`; an accepted placeholder outcome has `state:'accepted'` and `code:'import-unresolved-placeholder'`. Keep source and cache in the same host transaction. Equal author/year wording never merges placeholder identities automatically.
 
 Complete that same record with reviewed metadata and `state:'resolved'`, retaining its ID. Recompilation then ignores the fallback and formats the reference normally; the warning disappears. Alternatively retarget the marker to a verified work. Never mark the record resolved just to silence the diagnostic.
 
@@ -233,3 +236,40 @@ Low-level hosts using `planImportEdits` directly must include its hashed `placeh
 ### Keyword configuration after import
 
 An import request's `citationKeyword` is not global state. Pass that same setting to downstream compiler and tool calls. With `citationKeyword:'citation'`, call `markerKind(marker,{citationKeyword:'citation'})` and `compileCitations(source,cache,{citationKeyword:'citation'})`. Omitting these options selects the new default `cite`, so a different spelling remains literal text. See the [complete configuration example](notation-migration.md#pass-the-same-keyword-to-every-parsing-stage).
+
+## Compose import with equations and other tools
+
+The host can protect source regions with `opaque` ranges, using zero-based JavaScript UTF-16 offsets and exclusive ends over the exact supplied Markdown/text projection:
+
+```js
+const request = {
+  source: markdown,
+  mode:'document', style:'apa',
+  revision:'editor-42',
+  opaque:mathRegions.map(({start,end})=>({start,end}))
+};
+const analysis = processImportRequest(request);
+```
+
+The optional revision is a nonempty string of at most 200 characters or a nonnegative safe integer. Pass it unchanged on preview; review binding covers the source, normalized protections, host revision and reference context. The host must still compare its current editor revision immediately before applying results. No analyzer owns persistence, shared numbering or the overall transaction.
+
+Opaque inputs must be valid nonempty ranges within the source, without splitting a UTF-16 surrogate pair; up to 10,000 ranges are accepted. The complete input is validated first. Input order is immaterial; nested, overlapping and adjacent protections form a union. Math/code may be opaque while captions and surrounding prose remain eligible. Any intersecting citation group is excluded as a whole. Original source is unchanged, including CRLF and math-like notation. An opaque bibliography entry retains its raw text but becomes unparsed with no inferred metadata/evidence and `import-reference-opaque-review-required`. This avoids claiming synthetic masked text as original evidence.
+
+`normalizeOpaqueRanges` is exported for hosts; `analyzeImportDocument` and plain-text `parseInTextCitations` also accept `opaque` over their supplied source. Native OMML/MathML conversion and equation numbering remain outside this API. These ranges protect the projection; they are not source mappings into DOCX XML or PDF bytes.
+
+## Classify current review decisions
+
+```js
+import {classifyReview} from 'cite-inator/import';
+const queues = classifyReview(analysis, {
+  reviewId:analysis.review.reviewId,
+  decisions, recordDecisions,
+  policy:{siteWorks:'offer'}
+});
+```
+
+The function returns `attention` and `probable` citation indices, `groups`, `site` proposals, `counts`, `blockers` and `canApply`. It returns IDs and state rather than document text or HTML, and mutates nothing. A unique candidate can yield `suggestedTargets`; these are suggestions, never applied choices. Nonempty decisions require the matching review ID. Readiness follows current decisions, including skipped groups and which source records the accepted targets actually use. Unused site proposals do not block application.
+
+`recordDecisions` contains `{recordId,siteRecordId}`; null explicitly chooses a new work. `siteWorks` is `offer` (suggest a single conflict-free site record), `prefer` (suggest a single record even with differences), or `require` (require reuse when a used source has a site proposal). Suggestions never establish identity or count as explicit choices. Hosts omit null decisions when calling preview, because null means allocate a new record rather than reuse one. The classifier reports format/bibliography gates, undecided citation/site choices and source-span constraints; preview remains the authoritative source/plan validation.
+
+Every source-bibliography candidate explicitly reports `evidence.matchKind:'bibliography-entry'` and `evidence.identifierVerification:'not-checked'`; source records also expose their actual state. A unique author/year match, resolved record flag or DOI presence is not proof that a provider confirmed the identifier. `canApply` summarizes these review-choice gates, not online completion, truth, full transaction rollback or publication approval. Hosts retain their real asynchronous lookup/identity-check state and combine its blockers with these queues.

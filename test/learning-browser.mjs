@@ -83,7 +83,7 @@ try{
     assert(await page.locator('#error').isHidden(),value);
     assert(await page.locator('#result [data-ci-record]').count(),value);
   }
-  await page.locator('[data-example="separators"]').click();const separatorLabels=await page.locator('#result [data-ci-record][id]').allTextContents();assert.equal(separatorLabels.length,2);assert.equal(separatorLabels[0],separatorLabels[1]);
+  await page.locator('[data-example="separators"]').click();const separatorLabels=await page.locator('#result [data-ci-record][id]').allTextContents();assert.equal(separatorLabels.length,3);assert(separatorLabels.every(label=>label===separatorLabels[0]));
   await page.locator('[data-example="reference-parts"]').click();assert.equal(await page.locator('#javascript-panel').evaluate(node=>node.open),false);assert.match(await page.locator('#source').inputValue(),/reference:"/);assert(await page.locator('#result em').count());
   assert.equal(await page.locator('#html-panel').evaluate(node=>node.open),false);
   await page.locator('#downloads-menu').evaluate(node=>node.open=true);assert.equal(await page.locator('.download-options .download-button').count(),9);
@@ -184,6 +184,18 @@ try{
   await page.screenshot({path:join(tmpdir(),'citation-learning-phone.png'),fullPage:true});
   await page.goto(origin+'guide.html');
   assert(await page.getByRole('heading',{name:'Load, compile, initialize',exact:true}).count());
+  assert.equal(await page.getByRole('heading',{name:'Core Ethic for cite.inator',level:2,exact:true}).count(),1);
+  assert.equal(await page.locator('header nav a[aria-current="page"]').textContent(),'Guide');
+  assert.equal(await page.locator('iframe.guide-demo').count(),2);
+  assert.equal(await page.locator('.guide-actions>a').filter({hasText:'Open working example'}).count(),(await import('../learn/lessons.mjs')).lessons.length);
+  assert.match(await page.locator('main').innerText(),/Omit any setting whose default you want/);
+
+  assert.equal(await page.locator('#examples>section>h3').count(),(await import('../learn/lessons.mjs')).lessons.length);
+  assert.equal(await page.locator('#examples #api-reference').count(),0);
+  assert.equal(await page.locator('#api-reference a[href*="corpus"]').count(),0);
+  assert.equal(await page.locator('main a[href*="draft-integration"]').count(),0);
+  assert.match(await page.locator('main').innerText(),/Line breaks|line breaks/);
+
   await page.locator('header .brand').click();assert(page.url().endsWith('/about.html'));
   assert(await page.getByRole('heading',{name:'References for websites',exact:true}).isVisible());
   assert.match(await page.locator('main').innerText(),/MIT license/);
@@ -191,15 +203,18 @@ try{
   await page.getByRole('tab',{name:'JavaScript',exact:true}).click();assert.match(await page.getByRole('tabpanel').innerText(),/citationStyle/);
   await page.keyboard.press('ArrowRight');assert.equal(await page.getByRole('tab',{name:'HTML',exact:true}).getAttribute('aria-selected'),'true');
   await page.keyboard.press('Home');assert.equal(await page.getByRole('tab',{name:'Citation',exact:true}).getAttribute('aria-selected'),'true');
-  const footer=page.locator('body>.learning-credit');assert.equal(await footer.count(),1);
-  await footer.locator('[data-ci-panel="credit"]').hover();
-  const creditDialog=page.getByRole('dialog',{name:'How to cite',exact:true});await creditDialog.waitFor();assert.match(await creditDialog.innerText(),/How to cite this software/);assert.match(await creditDialog.innerText(),/Cox, R/);await page.keyboard.press('Escape');
+  const project=page.locator('header .project-menu');assert.equal(await project.count(),1);await project.locator(':scope > summary').click();
+  await project.getByRole('link',{name:'How to Cite',exact:true}).click();
+  assert.equal(await page.getByRole('heading',{name:'How to Cite',exact:true}).count(),1);
+  assert.match(await page.locator('main').innerText(),/Cox, R/);
+  assert.equal(await page.locator('main').getByRole('link',{name:'MIT license',exact:true}).getAttribute('href'),'./license.html');
+  await page.goto(origin+'about.html');
 
-  assert.equal(await page.locator('header .github-link #version').innerText(),version);
+  assert.equal(await page.locator('header .project-menu #version').innerText(),version);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   await page.screenshot({path:join(tmpdir(),'cite-overview-phone.png'),fullPage:true});
   await page.setViewportSize({width:1400,height:1000});
-  const headerPositions=await page.locator('body>header').evaluate(node=>({nav:node.querySelector('nav').getBoundingClientRect().right,github:node.querySelector('.github-link').getBoundingClientRect().left}));assert(headerPositions.github>headerPositions.nav);
+  const headerPositions=await page.locator('body>header').evaluate(node=>({nav:node.querySelector('nav').getBoundingClientRect().right,github:node.querySelector('.project-menu').getBoundingClientRect().left}));assert(headerPositions.github>headerPositions.nav);
   await page.screenshot({path:join(tmpdir(),'cite-overview-desktop.png'),fullPage:true});
   await page.setViewportSize({width:390,height:844});
 
@@ -224,7 +239,7 @@ try{
     assert.equal(await page.locator('#errors').innerText(),'');
   }
   for(const route of ['about.html','guide.html','notation.html','reference/integration.html','import/','tools/editor-tools.html','host/']){
-    await page.goto(origin+route);assert.equal(await page.locator('body>.learning-credit').count(),1);assert.match(await page.locator('body>.learning-credit').innerText(),/Randal Cox/);assert.deepEqual(await page.locator('header nav[aria-label="Learning"] a').allTextContents(),['Playground','Import','Guide']);
+    await page.goto(origin+route);assert.equal(await page.locator('header .project-menu').count(),1);assert.doesNotMatch(await page.locator('header .project-menu').textContent(),/Randal Cox/);assert.equal(await page.locator('body>.learning-credit').count(),0);assert.deepEqual(await page.locator('header nav[aria-label="Learning"] a').allTextContents(),['Playground','Import','Guide']);
     await page.locator('header nav').getByRole('link',{name:'Playground',exact:true}).click();assert.equal(new URL(page.url()).hash,'');assert((await page.locator('body>header').boundingBox()).y>=0);
   }
   await page.emulateMedia({colorScheme:'dark'});

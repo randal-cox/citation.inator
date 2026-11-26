@@ -1,6 +1,6 @@
 {
   "name": "cite-inator",
-  "version": "0.6.0-preview.6",
+  "version": "0.6.0-preview.7",
   "description": "Portable citations, endnotes, and source inspection",
   "type": "module",
   "license": "MIT",
@@ -70,7 +70,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.mjs",
-    "test:browser": "node test/browser.mjs && node test/zotero-browser.mjs && node test/library-browser.mjs",
+    "test:browser": "node test/browser.mjs && node test/zotero-browser.mjs && node test/library-browser.mjs && node test/import-composition-browser.mjs",
     "start": "node scripts/serve.mjs",
     "prepack": "npm run build",
     "checkin:check": "node scripts/checkin.mjs --staged",

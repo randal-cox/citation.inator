@@ -6,17 +6,17 @@ import {makeCache} from '../src/records.mjs';
 import {annotateMarkers,collectMarkerTags} from '../src/tools.mjs';
 const cache=()=>makeCache([{id:'work',title:'Work',authors:[{family:'Mori'}],issued:[2001],identifiers:[{scheme:'doi',value:'10.1234/work'}],state:'resolved'},{id:'other',title:'Other',authors:[{family:'Li'}],issued:[2002],state:'resolved'}]);
 test('pipes are optional visual separators for works and endnote fields',()=>{
- const a=compileCitations('{cite work | note:"Mori 2001" | prefix:"see also" | locator:"p. 4"}\n\n{cite endnote | heading:"Sources" | level:3}',cache());
- const b=compileCitations('{cite work note:"Mori 2001" | prefix:"see also" locator:"p. 4"}\n\n{cite endnote heading:"Sources" level:3}',cache());
+ const a=compileCitations('{cite work | cue:"Mori 2001" | prefix:"see also" | locator:"p. 4"}\n\n{cite endnote | heading:"Sources" | level:3}',cache());
+ const b=compileCitations('{cite work cue:"Mori 2001" | prefix:"see also" locator:"p. 4"}\n\n{cite endnote heading:"Sources" level:3}',cache());
  assert.equal(a.html,b.html);assert.deepEqual(b.diagnostics,[]);
 });
 test('quoted colons, pipes, semicolons and escaped quotes remain value text',()=>{
- const result=compileCitations('{cite work note:"See: x | y; \\"z\\"" reference:"Mori. *A: B | C; D*. 2001."}',cache());
+ const result=compileCitations('{cite work cue:"See: x | y; \\"z\\"" reference:"Mori. *A: B | C; D*. 2001."}',cache());
  assert.deepEqual(result.diagnostics,[]);assert.match(result.html,/A: B \| C; D/);
 });
 test('annotation updates notes with whitespace, pipes or mixed separators without duplicates',()=>{
- for(const source of ['{cite work note:"old" locator:"p. 4"}','{cite work | note:"old" locator:"p. 4"}','{cite work note:"old" | locator:"p. 4"}']){
- const result=annotateMarkers(source,cache());assert.equal((result.source.match(/note:/g)||[]).length,1);assert.match(result.source,/locator:"p. 4"/);assert.equal(annotateMarkers(result.source,cache()).source,result.source);
+ for(const source of ['{cite work cue:"old" locator:"p. 4"}','{cite work | cue:"old" locator:"p. 4"}','{cite work cue:"old" | locator:"p. 4"}']){
+ const result=annotateMarkers(source,cache());assert.equal((result.source.match(/cue:/g)||[]).length,1);assert.match(result.source,/locator:"p. 4"/);assert.equal(annotateMarkers(result.source,cache()).source,result.source);
  }
  assert.deepEqual(collectMarkerTags([{source:'{cite work tags:a,b}',format:'text'}],cache()),{work:{a:1,b:1}});
 });
@@ -55,6 +55,6 @@ test('a record named tags survives editor annotation and custom keywords',()=>{
  for(const citationKeyword of ['cite','ref']){
  const source=`{${citationKeyword} tags}`;const first=annotateMarkers(source,input,{citationKeyword});
  assert.equal(markerKind(first.source,{citationKeyword}),'citation');assert.equal(annotateMarkers(first.source,input,{citationKeyword}).source,first.source);
- assert.equal(markerKind(`{${citationKeyword} tags note:"old"}`,{citationKeyword}),'citation');
+ assert.equal(markerKind(`{${citationKeyword} tags cue:"old"}`,{citationKeyword}),'citation');
  }
 });

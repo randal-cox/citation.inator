@@ -4,7 +4,7 @@ import {authorFields} from './author-fields.mjs';
 const policy=(action,category)=>Object.freeze({action,category});
 export const CITATION_OPTION_POLICIES=Object.freeze(Object.fromEntries([
  ['form',policy('retain','presentation')],['isolated',policy('retain','presentation')],
- ['note',policy('recompute','editor')],['unresolved',policy('replace-fallback','source')],
+ ['cue',policy('recompute','editor')],['comment',policy('review','source')],['unresolved',policy('replace-fallback','source')],
  ...[...new Set(['locator','label','prefix','tags',...authorFields])].map(name=>[name,policy('review','source')])
 ]));
 

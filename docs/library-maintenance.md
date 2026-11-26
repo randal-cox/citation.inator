@@ -89,12 +89,10 @@ No supplied notice means only “no confirmed notice in this metadata.” Provid
 
 ## Run the local example
 
-In a clean source checkout, first run `npm ci` and install the dedicated browser with `npx playwright-core install chromium --only-shell`. Then:
+In a source checkout, run `npm ci`, then:
 
 ```sh
 node scripts/library-workflow-example.mjs
-node --test test/library-maintenance.test.mjs
-node test/library-browser.mjs
 ```
 
-The example uses synthetic metadata and no network or file writes. It exercises import, export, a selected publisher refresh and explicit correction acceptance. The browser test uses Playwright's dedicated Chromium under strict CSP; no everyday Chrome is launched. These are library/fixture checks. Actual Zotero application import, authenticated draft/KR integration and final milestone approval remain separate acceptance steps.
+The example uses synthetic metadata and no network or file writes. It demonstrates import, export, a selected publisher refresh and explicit correction acceptance.

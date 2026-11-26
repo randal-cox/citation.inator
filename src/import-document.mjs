@@ -1,3 +1,4 @@
+import {normalizeOpaqueRanges,maskOpaqueRanges,intersectsOpaque} from './import-opaque.mjs';
 import {normalizeImportLimits} from './import-limits.mjs';
 // Experimental full-source text/Markdown import. Original source is never rewritten here.
 import {Lexer} from 'marked';
@@ -143,16 +144,21 @@ function bibliographyEntries(source,document,style,limits) {
   return {...parsed,...entry,line,raw,id:'ref-'+digest(raw).slice(0,20),evidence};
  });
 }
-export function analyzeImportDocument(source,{style='auto',bibliography={},limits:overrides,citationKeyword='cite'}={}) {
- const limits=normalizeImportLimits(overrides),document=partitionImportDocument(source,{...bibliography,limits,citationKeyword});
+export function analyzeImportDocument(source,{style='auto',bibliography={},limits:overrides,citationKeyword='cite',opaque:protectedRanges}={}) {
+ const opaque=normalizeOpaqueRanges(source,protectedRanges),analysisSource=maskOpaqueRanges(source,opaque);
+ const limits=normalizeImportLimits(overrides),document=partitionImportDocument(analysisSource,{...bibliography,limits,citationKeyword});
+ document.sourceHash=digest(source);
  const parts=document.bodyRanges.filter(range=>range.end>range.start).map(range=>{
-  const extraction=extractImportText(source.slice(range.start,range.end),{format:'markdown',citationKeyword});return {range,extraction};
+  const extraction=extractImportText(analysisSource.slice(range.start,range.end),{format:'markdown',citationKeyword});return {range,extraction};
  });
  const visible=parts.map(part=>part.extraction.text).join('\n\n');
  const formatDetection=detectCitationFormat(visible,{limits}),formatChoiceRequired=style==='auto'&&!formatDetection.style&&visible.trim().length>0;
  const effectiveStyle=style==='auto'?(formatDetection.style||'apa'):style;
  if(!['apa','chicago-author-date','vancouver'].includes(effectiveStyle))throw new TypeError('Choose a supported citation format.');
- const entries=bibliographyEntries(source,document,effectiveStyle,limits),seen=new Set(),records=[];
+ const entries=bibliographyEntries(analysisSource,document,effectiveStyle,limits).map(entry=>{
+  if(!intersectsOpaque(entry.start,entry.end,opaque))return entry;
+  return {...entry,raw:source.slice(entry.start,entry.end),id:'ref-'+digest(source.slice(entry.start,entry.end)).slice(0,20),state:'unparsed',fields:{},evidence:[],diagnostics:[...(entry.diagnostics||[]),{code:'import-reference-opaque-review-required',start:entry.start,end:entry.end}]};
+ }),seen=new Set(),records=[];
  for(const entry of entries){if(seen.has(entry.id))continue;seen.add(entry.id);
   const record=normalizeRecord({id:entry.id,type:'document',state:'partial',...entry.fields,original:entry.raw,citationText:entry.raw,citationParts:[{text:entry.raw}],provenance:[{provider:'Imported bibliography',note:`Source lines ${entry.line}; SHA-256 ${digest(entry.raw)}`} ]});
   const recovered=new Set(entry.diagnostics.filter(item=>item.code==='import-wrapped-identifier-recovered').map(item=>item.value));
@@ -160,7 +166,7 @@ export function analyzeImportDocument(source,{style='auto',bibliography={},limit
   record.identifiers=record.identifiers.filter(id=>!recovered.has(id.value));
   records.push({...record,...(identifierProposals.length&&{identifierProposals}),...(entry.fields.referenceNumber&&{referenceNumber:entry.fields.referenceNumber}),...(entry.fields.sourceSuffix&&{sourceSuffix:entry.fields.sourceSuffix}),...(entry.fields.undated&&{undated:true})});
  }
- const citations=[],diagnostics=[];
+ const citations=[],diagnostics=entries.flatMap(entry=>entry.diagnostics.filter(item=>item.code==='import-reference-opaque-review-required'));
  // Imported prose can repeat a page-header DOI across unrelated entries. Keep
  // every source proposal, but give no local record ownership of a disputed ID.
  const claims=new Map();
@@ -179,7 +185,7 @@ export function analyzeImportDocument(source,{style='auto',bibliography={},limit
   for(const item of detected.citations){
    if(effectiveStyle==='vancouver'&&localFormat.ignoredNumericRanges.some(ignore=>item.start<ignore.end&&item.end>ignore.start))continue;
    const fragments=item.sourceFragments.map(fragment=>({...fragment,sourceStart:fragment.sourceStart+range.start,sourceEnd:fragment.sourceEnd+range.start}));
-   if(!fragments.length)continue;
+   if(!fragments.length||intersectsOpaque(fragments[0].sourceStart,fragments.at(-1).sourceEnd,opaque))continue;
    citations.push({...item,start:fragments[0].sourceStart,end:fragments.at(-1).sourceEnd,sourceFragments:fragments});
   }
  }

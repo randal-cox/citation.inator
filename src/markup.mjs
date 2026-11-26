@@ -1,6 +1,7 @@
-import { Marked } from "marked";
+import {stripSourceComments} from './notation-options.mjs';
+import { Marked, Lexer } from "marked";
 import { parse, parseFragment, serialize } from "parse5";
-import { compileCitationBlocks, escapeHTML, parseDirectives } from "./compiler.mjs";
+import { compileCitationBlocks, escapeHTML, parseDirectives, scanCitationMarkers } from "./compiler.mjs";
 
 const excluded = new Set([
   "a", "button", "code", "head", "iframe", "label", "math", "noscript", "option", "pre", "script",
@@ -55,10 +56,70 @@ function surroundingProse(node, step, options) {
   return prose;
 }
 
+const sourceHTML=text=>escapeHTML(text).replaceAll('&quot;','"').replaceAll('&#39;',"'");
+function renderSourceMarker(raw,options,diagnostics,forceMalformed=false){
+ const all=stripSourceComments(raw,{fields:['comment','cue','note']});
+ const marker=all.hasComments?scanCitationMarkers(raw,{...options,firstOnly:true})[0]:null;
+ if(forceMalformed||marker?.token?.malformed){const safe='{'+(options.citationKeyword||'cite')+' …}';diagnostics.push({state:'malformed',code:'citation-malformed',source:safe});return `<code>${escapeHTML(safe)}</code>`;}
+ return sourceHTML(stripSourceComments(raw).text);
+}
+function projectMarkerBraces(source){
+ // HTML-decoded braces and whitespace must have the same lexical ownership as
+ // literal characters. Preserve a raw offset for every projected UTF-16 unit.
+ const pattern=/&(?:#(?:x[0-9a-f]+|[0-9]+);?|[a-z][a-z0-9]*;)/giu;
+ const matches=[...source.matchAll(pattern)].flatMap(match=>{
+  const value=parseFragment(match[0]).childNodes.map(node=>node.value||'').join('');
+  return value&&!/["'\\]/u.test(value)&&value!==match[0]?[{...match,at:match.index,raw:match[0],value}]:[];
+ });
+ if(!matches.length)return {text:source,toRaw:index=>index,toLex:index=>index};
+ let text='',cursor=0;const offsets=[];
+ for(const match of matches){while(cursor<match.at){offsets.push(cursor);text+=source[cursor++];}for(let i=0;i<match.value.length;i++){offsets.push(cursor);text+=match.value[i];}cursor+=match.raw.length;}
+ while(cursor<source.length){offsets.push(cursor);text+=source[cursor++];}offsets.push(source.length);
+ return {text,toRaw:index=>offsets[index],toLex:index=>{let low=0,high=offsets.length-1;while(low<high){const middle=(low+high)>>1;if(offsets[middle]<index)low=middle+1;else high=middle;}return low;}};
+}
+function annotationAtoms(tree){
+ const atoms=[];visit(tree,node=>{const location=node.sourceCodeLocation;if(node.tagName&&location?.startTag&&location.endOffset>location.startOffset)atoms.push({start:location.startOffset,end:location.endOffset});});return atoms;
+}
+function ownedMarker(projection,cursor,atoms,options){
+ let lexical=projection.text.slice(cursor),marker=scanCitationMarkers(lexical,{...options,firstOnly:true})[0];
+ if(!marker)return null;
+ const from=projection.toRaw(cursor+marker.start),covered=new Set();
+ for(let pass=0;pass<32;pass++){
+  const end=projection.toRaw(cursor+marker.end),annotations=stripSourceComments(marker.raw,{fields:['comment','cue','note']}).ranges;
+  const next=atoms.filter(atom=>atom.start>from&&atom.start<end&&!covered.has(atom)&&annotations.some(range=>{const at=projection.toLex(atom.start)-cursor-marker.start;return at>=range.start&&at<range.end;}));
+  if(!next.length)break;
+  const ranges=next.map(atom=>{covered.add(atom);return {start:Math.max(0,projection.toLex(atom.start)-cursor),end:projection.toLex(atom.end)-cursor};}).sort((a,b)=>b.start-a.start);
+  for(const range of ranges)lexical=lexical.slice(0,range.start)+lexical.slice(range.start,range.end).replace(/[^\r\n]/g,' ')+lexical.slice(range.end);
+  marker=scanCitationMarkers(lexical,{...options,firstOnly:true})[0];if(!marker)return null;
+  if(pass===31){marker={...marker,end:lexical.length,raw:lexical.slice(marker.start),token:{type:'text',malformed:true,incomplete:true}};}
+ }
+ // Invalid comment delimiters have ambiguous ownership; never recover a short
+ // raw fallback that could publish the remainder of an annotation.
+ if(!stripSourceComments(marker.raw).valid)marker={...marker,end:lexical.length,raw:lexical.slice(marker.start),token:{type:'text',malformed:true,incomplete:true}};
+ return marker;
+}
+function redactHTMLSourceAnnotations(source,options){
+ const edits=[],diagnostics=[],ranges=[],projection=projectMarkerBraces(source);const tree=parse(source,{sourceCodeLocationInfo:true}),atoms=annotationAtoms(tree),keyword=options.citationKeyword||'cite';
+ visit(tree,node=>{if(skip(node))return false;if(node.nodeName==='#text'&&node.sourceCodeLocation&&new RegExp('\\{\\s*'+keyword+'(?=[\\s}]|$)').test(node.value))ranges.push(node.sourceCodeLocation);});
+ for(const range of ranges.sort((a,b)=>a.startOffset-b.startOffset)){
+  let cursor=projection.toLex(range.startOffset);
+  while(projection.toRaw(cursor)<range.endOffset){
+   const marker=ownedMarker(projection,cursor,atoms,options);if(!marker||projection.toRaw(cursor+marker.start)>=range.endOffset)break;
+   const start=projection.toRaw(cursor+marker.start),end=projection.toRaw(cursor+marker.end);cursor+=marker.end;
+   if(edits.some(edit=>start>=edit.start&&start<edit.end))continue;
+   const clean=stripSourceComments(marker.raw,{fields:['comment','cue','note']});
+   if(clean.hasComments&&(marker.token?.malformed||stripSourceComments(marker.raw).hasComments||marker.raw.includes('<'))){const text=marker.token?.malformed?renderSourceMarker(marker.raw,options,diagnostics,true):sourceHTML(stripSourceComments(marker.raw).text);edits.push({start,end,text});}
+  }
+ }
+ for(const edit of edits.sort((a,b)=>b.start-a.start))source=source.slice(0,edit.start)+edit.text+source.slice(edit.end);
+ return {source,diagnostics};
+}
+
 /** Compile trusted author HTML while preserving source outside the edited text nodes. */
 export function compileHTML(source, cache, options = {}) {
   if (typeof source !== "string") throw new TypeError("Supply HTML as a string.");
   parseDirectives("", options);
+  const annotations=redactHTMLSourceAnnotations(source,options);source=annotations.source;
   const document = parse(source, { sourceCodeLocationInfo: true });
   const edits = [];
   let bodyEnd = source.length;
@@ -97,7 +158,25 @@ export function compileHTML(source, cache, options = {}) {
   }
   const insertAt = Math.max(cursor, bodyEnd);
   blocks.push([{ type: "markup", text: source.slice(cursor, insertAt) }]);
-  return compileCitationBlocks(blocks, cache, { ...options, markup: true, closingMarkup: source.slice(insertAt) });
+  const result=compileCitationBlocks(blocks, cache, { ...options, markup: true, closingMarkup: source.slice(insertAt) });return {...result,diagnostics:[...annotations.diagnostics,...result.diagnostics]};
+}
+
+function prepareEncodedMarkdownMarkers(source,options,diagnostics){
+ const projection=projectMarkerBraces(source);if(projection.text===source&&!/[<&]/u.test(source))return source;
+ const atoms=annotationAtoms(parse(source,{sourceCodeLocationInfo:true})),markers=[];
+ let markerCursor=0;while(markerCursor<projection.text.length){const marker=ownedMarker(projection,markerCursor,atoms,options);if(!marker)break;markers.push({...marker,sourceStart:projection.toRaw(markerCursor+marker.start),sourceEnd:projection.toRaw(markerCursor+marker.end)});markerCursor+=marker.end;}
+ let lexical=source;for(const marker of [...markers].reverse())if(!marker.token?.incomplete)lexical=lexical.slice(0,marker.sourceStart)+'x'.repeat(marker.sourceEnd-marker.sourceStart)+lexical.slice(marker.sourceEnd);
+ const blocked=[];
+ const walk=(tokens,start,end)=>{let cursor=start;for(const token of tokens||[]){if(!token.raw)continue;const at=lexical.indexOf(token.raw,cursor);if(at<cursor||at+token.raw.length>end){blocked.push([start,end]);return;}cursor=at+token.raw.length;if(['code','codespan','html','link','image'].includes(token.type))blocked.push([at,cursor]);else if(token.items)walk(token.items,at,cursor);else if(token.tokens)walk(token.tokens,at,cursor);}};
+ walk(Lexer.lex(lexical),0,lexical.length);
+ for(const marker of [...markers].reverse()){
+  if(blocked.some(([start,end])=>marker.sourceStart>=start&&marker.sourceStart<end))continue;
+  if(source.slice(marker.sourceStart,marker.sourceEnd)===marker.raw&&!(marker.token?.malformed&&stripSourceComments(marker.raw,{fields:['comment','cue','note']}).hasComments))continue;
+  const clean=stripSourceComments(marker.raw,{fields:['comment','cue','note']});
+  const replacement=marker.token?.malformed&&clean.hasComments?renderSourceMarker(marker.raw,options,diagnostics,true):marker.raw;
+  source=source.slice(0,marker.sourceStart)+replacement+source.slice(marker.sourceEnd);
+ }
+ return source;
 }
 
 /** Compile trusted Markdown. Raw HTML follows the same trust model as compileHTML. */
@@ -105,36 +184,39 @@ export function compileMarkdown(source, cache, options = {}) {
   if (typeof source !== "string") throw new TypeError("Supply Markdown as a string.");
   const keyword = options.citationKeyword ?? "cite";
   parseDirectives("", options);
-  const starts = new RegExp(String.raw`\\[{}\\]|\{(?:${keyword})[ \t]`);
+  const starts = new RegExp(String.raw`\\[{}\\]|\{\s*(?:${keyword})[ \t\r\n]`);
+  const annotationDiagnostics=[];source=prepareEncodedMarkdownMarkers(source,options,annotationDiagnostics);
   const markdown = new Marked({
     extensions: [{
       name: "citationBlockDirective", level: "block",
       start(input) {
-        const match = new RegExp(String.raw`\n {0,3}\{(?:${keyword})[ \t]+(?:endnote|list)(?=[ \t|}])`).exec(input);
+        const match = new RegExp(String.raw`\n {0,3}\{\s*(?:${keyword})[ \t\r\n]+(?:endnote|list)(?=[ \t|}])`).exec(input);
         return match ? match.index + 1 : undefined;
       },
       tokenizer(input) {
-        const line = input.split("\n", 1)[0];
-        if (/^(?: {4}|\t)/.test(line)) return;
-        const tokens = parseDirectives(line, { citationKeyword: keyword });
-        if (!standalone(tokens)) return;
-        return { type: "citationBlockDirective", kind:tokens.find(token=>token.type!=="text")?.type, raw: line + (input[line.length] === "\n" ? "\n" : "") };
+        if (/^(?: {4}|\t)/.test(input)) return;
+        const indent=/^ {0,3}/.exec(input)[0].length;
+        const marker=scanCitationMarkers(input.slice(indent),{citationKeyword:keyword})[0];
+        if(!marker||marker.start!==0||marker.token?.incomplete)return;
+        const end=indent+marker.end,tail=/^[ \t]*(?:\r?\n|$)/.exec(input.slice(end));
+        if(!tail)return;
+        return {type:'citationBlockDirective',kind:marker.token.type,raw:input.slice(0,end+tail[0].length)};
       },
-      renderer(token) { return `<p>${escapeHTML(token.raw.trimEnd())}</p>\n`; }
+      renderer(token) { return `<p>${renderSourceMarker(token.raw.trimEnd(),options,annotationDiagnostics)}</p>\n`; }
     }, {
       name: "citationDirective", level: "inline",
       start(input) { return starts.exec(input)?.index; },
       tokenizer(input) {
         if (starts.exec(input)?.index !== 0) return;
-        const first = parseDirectives(input.split("\n", 1)[0], { citationKeyword: keyword })[0];
+        const first = parseDirectives(input, { citationKeyword: keyword })[0];
         if (first?.raw && input.startsWith(first.raw)) return { type: "citationDirective", raw: first.raw };
         if (first?.malformed && input.startsWith(first.text)) return { type: "citationDirective", raw: first.text };
         if (/^\\[{}\\]/.test(input)) return { type: "citationDirective", raw: input.slice(0, 2) };
       },
-      renderer(token) { return escapeHTML(token.raw); }
+      renderer(token) { return renderSourceMarker(token.raw,options,annotationDiagnostics); }
     }]
   });
-  return compileHTML(markdown.parse(source), cache, options);
+  const result=compileHTML(markdown.parse(source), cache, options);return {...result,diagnostics:[...annotationDiagnostics,...result.diagnostics]};
 }
 
 /** Change generated fragment IDs and their references before embedding another copy. */

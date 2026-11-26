@@ -53,23 +53,6 @@ For local metadata, pass `transport:'local'` and the real `serverId` when provid
 
 The connected test machine runs Zotero 9.0.4, whose enabled API supports local application reads but rejects ordinary browser-origin reads. A direct hosted-browser connection is therefore not supported by that observed setup. No origin/security bypass or local bridge has been introduced. Hosted Web API search remains draft's first-prototype route; private authentication and second-session onboarding still need host verification.
 
-## Reproduce bounded evidence
-
-```sh
-node scripts/probe-zotero.mjs https://korazonresearch.org/
-node --test test/zotero.test.mjs
-node test/zotero-browser.mjs
-node scripts/check-zotero-library.mjs /private/path/selected-items.json
-```
-
-The connection probe reads only a public item template and local service root, uses a dedicated managed browser and tests a deliberately invalid key. It never accepts credentials or reads library items. Its two fresh browser contexts establish public CORS/error behavior, not authenticated daily-use acceptance.
-
-The library probe reads a caller-supplied response containing selected bibliographic items and prints aggregate counts only. Its transient `probe-*` IDs are measurement IDs, not persistent work identities. Keep private input files outside the repository and web-served paths.
-
-On 25 November 2026, the authorized BEST collection supplied 34 items: 26 articles, 7 books and 1 software item. All rendered individually in Chicago/APA; 3 editor arrays matched their CSL source after normalization/export. Eight records required review: 7 unsupported URLs and 2 formatted titles (one overlap). One shared-identifier group prevents an unreviewed aggregate cache. This is a mapping/field-preservation rehearsal, not a claim that the library is bibliographically correct, all formatting is faithful or draft has adopted the adapter. Real data and identifiers were not committed.
-
-Sources: [Zotero API basics](https://www.zotero.org/support/dev/web_api/v3/basics), [local API](https://www.zotero.org/support/dev/web_api/v3/local_api). The installed 9.0.4 server implementation and actual browser requests were also inspected; newer local versions may behave differently.
-
 ## Replacing a work: shared option policy (preview.2)
 
 Import `citationOptionPolicy` and `CITATION_OPTION_POLICIES` from `cite-inator/tools`, the tools browser module, compiler browser module or manager module. All use the same definition. This helper classifies options; it neither rewrites a marker nor decides whether two identifiers describe the same work.
@@ -82,18 +65,18 @@ const policy = citationOptionPolicy('locator');
 | Action | Fields | Host behavior when the work changes |
 | --- | --- | --- |
 | retain | form, isolated | Keep the presentation setting |
-| recompute | note | Generate the note from the new target |
+| recompute | cue | Generate the cue from the new target |
 | replace-fallback | unresolved | Remove the old work’s fallback; use the new target’s own wording if it is unresolved |
-| review | locator, label, prefix, tags and all author-field assertions | Offer explicit keep/change/remove; do not transfer silently |
+| review | comment, locator, label, prefix, tags and all author-field assertions | Offer explicit keep/change/remove; do not transfer silently |
 | review | Every unknown field | Conservative default; no guessed semantics |
 
 Pass an option name without a colon. Pass `null` for the bare legacy display fallback. Returned policy objects and the known-field table are immutable. `known` describes this policy vocabulary, not whether a marker using the field parses. For example, future `quote` currently receives unknown/review; this does not implement quote notation.
 
-The source field list derives from the same `authorFields` definition used by the grammar. Use the function for unknown-field fallback rather than treating the table as an exhaustive future grammar. Apply it only to an actual work replacement. A note refresh, alias spelling change or same-work edit must retain the existing round-trip behavior.
+The source field list derives from the same `authorFields` definition used by the grammar. Use the function for unknown-field fallback rather than treating the table as an exhaustive future grammar. Apply it only to an actual work replacement. A cue refresh, alias spelling change or same-work edit must retain the existing round-trip behavior.
 
 ## Bibliography files
 
-To take a manuscript’s references into another manager, use the Playground’s Bibliography format control and Download bibliography button. It includes cited works and explicit further reading, once per work; unused cached records are excluded. Downloads stop while edits are awaiting compilation or the preview has an error.
+To take a manuscript’s references into another manager, open the Playground’s **Downloads** menu and choose **CSL-JSON**, **BibTeX** or **RIS**. Select several formats to download them together as a ZIP. It includes cited works and explicit further reading, once per work; unused cached records are excluded. Downloads stop while edits are awaiting compilation or the preview has an error.
 
 Host integration:
 

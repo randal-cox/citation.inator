@@ -25,7 +25,7 @@ test('formatted reference is escaped and italicized in text, HTML and Markdown c
 });
 test('work-context editor notes keep effective author date and are idempotent',()=>{
  const source='{cite work | edition-year:1996}';
- const first=annotateMarkers(source,cache(),{noteContext:'work'});assert.match(first.source,/note:"Mori, 1996"/);assert.equal(annotateMarkers(first.source,cache(),{noteContext:'work'}).source,first.source);
+ const first=annotateMarkers(source,cache(),{noteContext:'work'});assert.match(first.source,/cue:"Mori, 1996"/);assert.equal(annotateMarkers(first.source,cache(),{noteContext:'work'}).source,first.source);
 });
 test('artwork and copy assertions normalize safely and retain provenance',()=>{
  const result=compileCitations('{cite work | attribution:"Attributed to Mori" | display-date:"c. 1500" | medium:"Oil" | institution:"Museum" | accession:"A1" | rights:"CC BY-SA" | photographer:"Kai" | uploader:"Lee" | pdf:"https://example.org/copy.pdf" | checked:2026-11-25 | access:open}',cache());

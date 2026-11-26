@@ -1,3 +1,4 @@
+import {normalizeOpaqueRanges,maskOpaqueRanges} from './import-opaque.mjs';
 import {importSiteContext,allocateImportRecords} from './import-sites.mjs';
 import {readableImportSource} from './import-display.mjs';
 import {normalizeImportLimits} from './import-limits.mjs';
@@ -19,21 +20,23 @@ export function processImportRequest(input) {
   formatRecordId('import-validation',{citationKeyword,identifierForm});
   scanCitationMarkers('',{citationKeyword});if(typeof namespace!=='string'||!/^[-A-Za-z0-9_]{1,80}$/u.test(namespace))throw new TypeError('Use a namespace of up to 80 letters, digits, hyphens or underscores.');
   if (!['auto','apa','chicago-author-date','vancouver'].includes(requestedStyle)) throw new TypeError('Choose APA, Chicago author–date or Vancouver.');
+  const opaque=normalizeOpaqueRanges(source,input.opaque);
+  if(input.revision!==undefined&&!(typeof input.revision==='string'&&input.revision.length>0&&input.revision.length<=200||Number.isSafeInteger(input.revision)&&input.revision>=0))throw new TypeError('Supply a nonempty revision string of at most 200 characters or a nonnegative integer.');
   const fullDocument=input.mode==='document';
   if(fullDocument && (input.records!==undefined || input.referenceText!==undefined))throw new TypeError('Full-document import derives references from the source.');
-  const model=fullDocument?analyzeImportDocument(source,{style:requestedStyle,bibliography:input.bibliography,limits,citationKeyword}):null;
+  const model=fullDocument?analyzeImportDocument(source,{style:requestedStyle,bibliography:input.bibliography,limits,citationKeyword,opaque}):null;
   const records=model?.records ?? input.records;
   if(!Array.isArray(records)||records.length>limits.references)throw new TypeError('Supply at most '+limits.references+' reference records.');
   if(input.referenceText !== undefined && (typeof input.referenceText!=='string'||input.referenceText.length>limits.sourceCharacters)) throw new TypeError('Supply bounded reference text.');
-  const formatDetection=model?.formatDetection ?? detectCitationFormat(source,{limits}),formatChoiceRequired=model?.formatChoiceRequired ?? (requestedStyle==='auto'&&!formatDetection.style);
+  const formatDetection=model?.formatDetection ?? detectCitationFormat(maskOpaqueRanges(source,opaque),{limits}),formatChoiceRequired=model?.formatChoiceRequired ?? (requestedStyle==='auto'&&!formatDetection.style);
   const style=model?.effectiveStyle ?? (requestedStyle==='auto'?(formatDetection.style || 'apa'):requestedStyle);
   const cache=makeCache(records);
   if(cache.records.some(record=>record.title.length>limits.titleCharacters || record.authors.length>limits.authorsPerRecord) || records.some(record=>JSON.stringify(record).length>limits.recordCharacters))throw new TypeError('Use shorter reference records.');
   const recoveredProposals=new Map((model?.records || []).filter(record=>record.identifierProposals?.length).map(record=>[record.id,record.identifierProposals]));
   const site=importSiteContext(cache.records,input.siteCache,limits);
   const hostRecords=input.recordDecisions!==undefined||input.siteCache!==undefined||input.recordId!==undefined||input.recordIds!==undefined;
-  const contextHash=importHash(JSON.stringify({siteCache:input.siteCache ?? null,limits,mode:fullDocument?'document':'fixture',bibliography:input.bibliography ?? {},records,style:requestedStyle,citationKeyword,namespace,referenceText:input.referenceText || ''}));
-  const detect=()=>{if(model)return model.detection;const result=parseInTextCitations(source,{style,maxCitations:limits.citationGroups,maxItems:limits.citedItems});if(style==='vancouver')result.citations=result.citations.filter(item=>!formatDetection.ignoredNumericRanges.some(range=>item.start<range.end&&item.end>range.start));return result;};
+  const contextHash=importHash(JSON.stringify({opaque,revision:input.revision??null,siteCache:input.siteCache ?? null,limits,mode:fullDocument?'document':'fixture',bibliography:input.bibliography ?? {},records,style:requestedStyle,citationKeyword,namespace,referenceText:input.referenceText || ''}));
+  const detect=()=>{if(model)return model.detection;const result=parseInTextCitations(source,{style,citationKeyword,opaque,maxCitations:limits.citationGroups,maxItems:limits.citedItems});if(style==='vancouver')result.citations=result.citations.filter(item=>!formatDetection.ignoredNumericRanges.some(range=>item.start<range.end&&item.end>range.start));return result;};
   const match=()=>{const result=matchCitations(detect(),records);if(result.matches.reduce((n,m)=>n+m.items.reduce((n,i)=>n+i.candidates.length,0),0)>limits.candidateChoices)throw new RangeError('Too many candidate choices. Use a smaller reference set.');return result;};
   if (action==='analyze') {
     const matched=match();
@@ -45,7 +48,7 @@ export function processImportRequest(input) {
       if(entries.length>limits.references)throw new TypeError('Use at most '+limits.references+' explicitly separated entries.');
       parsedReferences=parseReferences(entries,{style});
     }
-    return {siteMatches:site.matches,review,document:model?.document,referenceEntries:model?.entries,formatDetection,formatChoiceRequired,effectiveStyle:style,diagnostics:matched.diagnostics,parsedReferences,referenceRecords:cache.records.map(record=>({id:record.id,type:record.type,authorsComplete:record.authorsComplete,title:record.title,authors:record.authors,issued:record.issued,originalIssued:record.originalIssued,publisher:record.publisher,publisherPlace:record.publisherPlace,containerTitle:record.containerTitle,volume:record.volume,issue:record.issue,pages:record.pages,articleNumber:record.articleNumber,identifiers:record.identifiers,...(recoveredProposals.has(record.id)&&{identifierProposals:recoveredProposals.get(record.id)}),referenceNumber:records.find(input=>input.id===record.id)?.referenceNumber,undated:records.find(input=>input.id===record.id)?.undated === true}))};
+    return {...(input.revision!==undefined&&{revision:input.revision}),...(input.opaque!==undefined&&{opaque}),siteRecordIds:site.records.map(record=>record.id),siteMatches:site.matches,review,document:model?.document,referenceEntries:model?.entries,formatDetection,formatChoiceRequired,effectiveStyle:style,diagnostics:matched.diagnostics,parsedReferences,referenceRecords:cache.records.map(record=>({id:record.id,state:record.state,type:record.type,authorsComplete:record.authorsComplete,title:record.title,authors:record.authors,issued:record.issued,originalIssued:record.originalIssued,publisher:record.publisher,publisherPlace:record.publisherPlace,containerTitle:record.containerTitle,volume:record.volume,issue:record.issue,pages:record.pages,articleNumber:record.articleNumber,identifiers:record.identifiers,...(recoveredProposals.has(record.id)&&{identifierProposals:recoveredProposals.get(record.id)}),referenceNumber:records.find(input=>input.id===record.id)?.referenceNumber,undated:records.find(input=>input.id===record.id)?.undated === true}))};
   }
   if (action!=='preview') throw new TypeError('Choose analyze or preview.');
   if(model?.document.boundaryRequired)throw new TypeError('Choose the bibliography boundary.');
@@ -100,12 +103,18 @@ export function processImportRequest(input) {
   }
   const completedCache=makeCache(portable);
   const output=applyImportEdits(source,plan);
-  const hasEndnotes=scanCitationMarkers(output.source,{citationKeyword}).some(marker=>markerKind(marker.raw,{citationKeyword})==='endnote');
   const partialNumeric=style==='vancouver' && current.matches.some((match,index)=>!plan.edits.some(edit=>edit.citationIndex===index));
   const previewNotice=partialNumeric ? 'Some original reference numbers remain. The reading preview is withheld until every numeric group is converted; the reviewed source remains available.' : '';
-  const readingSource=model?model.document.bodyRanges.map(range=>{let part=source.slice(range.start,range.end);for(const edit of [...plan.edits].reverse())if(edit.start>=range.start&&edit.end<=range.end)part=part.slice(0,edit.start-range.start)+edit.text+part.slice(edit.end-range.start);return part;}).join('\n\n'):output.source;
+  const readingSource=(model?model.document.bodyRanges:[{start:0,end:source.length}]).map(range=>{
+    let part=source.slice(range.start,range.end);
+    const changes=plan.edits.filter(edit=>edit.start>=range.start&&edit.end<=range.end);
+    for(const area of opaque){const start=Math.max(area.start,range.start),end=Math.min(area.end,range.end);if(start<end)changes.push({start,end,text:source.slice(start,end).replace(/[\\{}]/g,'\\$&')});}
+    for(const edit of changes.sort((a,b)=>b.start-a.start))part=part.slice(0,edit.start-range.start)+edit.text+part.slice(edit.end-range.start);
+    return part;
+  }).join('\n\n');
+  const hasEndnotes=scanCitationMarkers(readingSource,{citationKeyword}).some(marker=>markerKind(marker.raw,{citationKeyword})==='endnote');
   const reader=compileCitations(readableImportSource(readingSource)+(hasEndnotes?'':`\n\n{${citationKeyword} endnote}`),completedCache,{citationStyle:style,namespace,citationKeyword});
-  return {...(allocation&&{recordMap:Object.fromEntries(allocation.mapping),newRecordIds:allocation.newRecordIds,reusedRecordIds:allocation.reusedRecordIds}),source:output.source,changed:output.changed,outcomes:plan.outcomes,edits:plan.edits,html:partialNumeric?'':reader.html,previewNotice,cache:completedCache,diagnostics:reader.diagnostics};
+  return {...(input.revision!==undefined&&{revision:input.revision}),...(allocation&&{recordMap:Object.fromEntries(allocation.mapping),newRecordIds:allocation.newRecordIds,reusedRecordIds:allocation.reusedRecordIds}),source:output.source,changed:output.changed,outcomes:plan.outcomes,edits:plan.edits,html:partialNumeric?'':reader.html,previewNotice,cache:completedCache,diagnostics:reader.diagnostics};
 }
 
 // Composable primitives for hosts that own their review presentation.
@@ -118,3 +127,6 @@ export {parseReference,parseReferences} from './import-references.mjs';
 export {detectCitationFormat} from './import-format.mjs';
 export {IMPORT_LIMITS,normalizeImportLimits} from './import-limits.mjs';
 export {createBrowserEnrichment,compareIdentity,automaticCandidate,mergeCompletion,normalizeImportIdentifier,enrichmentIdentifier,importSearchTitle,assessImportCandidate,rankImportCandidates} from './import-enrichment.mjs';
+
+export {normalizeOpaqueRanges} from './import-opaque.mjs';
+export {classifyReview} from './import-classifier.mjs';

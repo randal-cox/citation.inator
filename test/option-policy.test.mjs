@@ -6,7 +6,7 @@ import {citationOptionPolicy as managerPolicy} from '../src/zotero.mjs';
 import {authorFields} from '../src/author-fields.mjs';
 test('replacement keeps presentation, recomputes notes and replaces the old unresolved fallback',()=>{
  assert.equal(citationOptionPolicy('form').action,'retain');assert.equal(citationOptionPolicy('isolated').action,'retain');
- assert.equal(citationOptionPolicy('note').action,'recompute');assert.equal(citationOptionPolicy('unresolved').action,'replace-fallback');
+ assert.equal(citationOptionPolicy('cue').action,'recompute');assert.equal(citationOptionPolicy('unresolved').action,'replace-fallback');
 });
 test('source-dependent assertions and unknown options require intentional replacement review',()=>{
  for(const key of ['locator','label','prefix','tags',...authorFields])assert.equal(citationOptionPolicy(key).action,'review',key);

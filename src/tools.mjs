@@ -1,10 +1,10 @@
 export {exportBibliography} from './bibliography-export.mjs';
 export {citationOptionPolicy,CITATION_OPTION_POLICIES} from './option-policy.mjs';
-import {optionSpans} from './notation-options.mjs';
+import {optionSpans,stripSourceComments} from './notation-options.mjs';
 export {createCitationMessages, citationLocales} from "./i18n.mjs";
 import { parse } from 'parse5';
 import { Lexer } from 'marked';
-import { compileCitationBlocks, formatRecordId, parseDirectives, scanCitationMarkers } from './compiler.mjs';
+import { compileCitationBlocks, formatRecordId, parseDirectives, scanCitationMarkers, splitCitationParagraphs } from './compiler.mjs';
 import { isCitationTextExcluded } from './markup.mjs';
 import { canonicalIdentifierKey, readCache } from './records.mjs';
 export { markerKind, formatRecordId } from './compiler.mjs';
@@ -104,10 +104,10 @@ function analyze(source, cache, options) {
   for (const range of ranges) {
     const text = source.slice(range.start, range.end);
     for (const marker of scanCitationMarkers(text, options)) {
-      if (marker.token?.malformed) diagnostics.push({ state: 'malformed', code: 'citation-malformed', source: marker.raw, start: range.start + marker.start });
+      if (marker.token?.malformed) diagnostics.push({ state: 'malformed', code: 'citation-malformed', source: stripSourceComments(marker.raw).text, start: range.start + marker.start });
       if (marker.token?.type === 'citation') markers.push({ ...marker, start: marker.start + range.start, end: marker.end + range.start });
     }
-    for (const paragraph of text.split(/\r?\n(?:[ \t]*\r?\n)+/)) blocks.push(parseDirectives(paragraph, options));
+    for (const paragraph of splitCitationParagraphs(text,options)) blocks.push(parseDirectives(paragraph, options));
   }
   const result = compileCitationBlocks(blocks, cache, options);
   if (markers.length !== result.citationDescriptions.length) throw new Error('Citation source ranges do not match the compilation context.');
@@ -121,7 +121,7 @@ export function describeCitation(identifierOrMarker, cache, options = {}) {
   const source = identifierOrMarker.trim().startsWith('{') ? identifierOrMarker : `{${options.citationKeyword || 'cite'} ${identifierOrMarker}}`;
   const markers = scanCitationMarkers(source, options);
   if (markers.length !== 1 || markers[0].token?.type !== 'citation' || source.trim() !== markers[0].raw) {
-    return { text: '', items: [], state: 'malformed', diagnostics: [{ state: 'malformed', code: 'citation-malformed', source: identifierOrMarker }] };
+    return { text: '', items: [], state: 'malformed', diagnostics: [{ state: 'malformed', code: 'citation-malformed', source: stripSourceComments(identifierOrMarker).text }] };
   }
   const result = analyze(source, cache, { ...options, format: 'text' });
   const items = result.descriptions.flatMap(marker => marker.items);
@@ -142,12 +142,12 @@ export function annotateMarkers(source, cache, options = {}) {
   for (const [index, marker] of markers.entries()) {
     const description = descriptions[index];
     if (description.items.some(item => item.state === 'unresolved')) continue;
-    const bodyStart = marker.raw.match(/^\{[^\s]+\s+/)[0].length;
+    const bodyStart = marker.raw.match(/^\{\s*[^\s]+\s+/)[0].length;
     const body = marker.raw.slice(bodyStart, -1);
     for (const [i, item] of splitSpans(body, ';').entries()) {
       const text = body.slice(item.start, item.end);
       const parts = optionSpans(text);
-      const note = parts.slice(1).find(span => /^\s*note:/.test(text.slice(span.start, span.end)));
+      const note = parts.slice(1).find(span => /^\s*cue:/.test(text.slice(span.start, span.end)));
       let noteText=description.items[i].text;
       if (noteContext === 'work') {
         const recordId=description.items[i].recordId;
@@ -155,7 +155,7 @@ export function annotateMarkers(source, cache, options = {}) {
         noteText=workDescriptions.get(recordId);
       }
       noteText=escaped(noteText);
-      const replacement = `note:"${options.format && options.format !== 'text' ? noteText.replace(/[&<>]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[character])) : noteText}"`;
+      const replacement = `cue:"${options.format && options.format !== 'text' ? noteText.replace(/[&<>]/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[character])) : noteText}"`;
       if (note) {
         const original = text.slice(note.start, note.end);
         const start = marker.start + bodyStart + item.start + note.start + original.search(/\S/);
@@ -191,7 +191,8 @@ export function collectMarkerTags(sources, cache, options = {}) {
         const key = canonicalIdentifierKey(item.identifier);
         const record = item.identifier.scheme === 'local' ? index?.byId.get(item.identifier.value) : index?.byIdentifier.get(key);
         const id = record?.id || (item.identifier.scheme === 'local' ? item.identifier.value : key);
-        if (item.unresolvedText && (!record || record.state!=='resolved') || record && record.state!=='resolved' && record.unresolvedText)issues.push({state:'unresolved',code:'citation-unresolved-placeholder',identifier:key,original:item.unresolvedText || record.unresolvedText});
+        const fallback=record?.state!=='resolved'&&((item.editorNote||'').replace(/\s+/gu,' ').trim()||item.unresolvedText||record?.unresolvedText);
+        if(fallback)issues.push({state:'unresolved',code:'citation-unresolved-placeholder',identifier:key,original:fallback});
         else if(index && (!record || record.state==='unresolved'))issues.push({state:'unresolved',code:'citation-unresolved',identifier:key});
         if (!item.markerTags?.length) continue;
         if (!counts.has(id)) counts.set(id, new Map());
@@ -202,4 +203,25 @@ export function collectMarkerTags(sources, cache, options = {}) {
   }
   const result = Object.fromEntries([...counts].map(([id, tags]) => [id, Object.fromEntries(tags)]));
   return options.includeDiagnostics ? { counts: result, diagnostics } : result;
+}
+
+/** Explicit source migration; protected prose/code and authored comments stay byte-for-byte. */
+export function migrateCitationCues(source,options={}){
+ if(typeof source!=='string')throw TypeError('Supply authored source text.');
+ const diagnostics=[],edits=[];
+ for(const range of textRanges(source,options.format||'text',diagnostics,options))for(const marker of scanCitationMarkers(source.slice(range.start,range.end),options)){
+  if(marker.token?.incomplete)continue;
+  const head=/^\{\s*[^\s]+\s+/u.exec(marker.raw);if(!head)continue;
+  const bodyStart=head[0].length,body=marker.raw.slice(bodyStart,-1),proposed=[];
+  for(const item of splitSpans(body,';'))for(const field of optionSpans(body.slice(item.start,item.end)).slice(1)){
+   const start=bodyStart+item.start+field.start,text=marker.raw.slice(start,bodyStart+item.start+field.end),match=/^\s*note:(?=\s*")/u.exec(text);
+   if(match){const at=start+match[0].indexOf('note:');proposed.push({start:at,end:at+4,text:'cue'});}
+  }
+  if(!proposed.length)continue;
+  let changed=marker.raw;for(const edit of [...proposed].reverse())changed=changed.slice(0,edit.start)+edit.text+changed.slice(edit.end);
+  if(scanCitationMarkers(changed,options)[0]?.token?.type!=='citation'){diagnostics.push({code:'cue-migration-needs-review',start:range.start+marker.start});continue;}
+  for(const edit of proposed)edits.push({...edit,start:range.start+marker.start+edit.start,end:range.start+marker.start+edit.end});
+ }
+ let output=source;for(const edit of edits.sort((a,b)=>b.start-a.start))output=output.slice(0,edit.start)+edit.text+output.slice(edit.end);
+ return {source:output,edits:edits.reverse(),changed:Boolean(edits.length),diagnostics};
 }

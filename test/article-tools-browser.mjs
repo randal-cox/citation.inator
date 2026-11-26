@@ -114,7 +114,7 @@ export async function checkArticleTools(browser, origin, evidence) {
     await page.goto(origin + '/editor-tools.html');
     await page.getByRole('button', { name: 'Refresh editor notes' }).click();
     await page.getByRole('status').getByText('Editor notes refreshed. Reader output is unchanged.').waitFor();
-    assert.match(await page.locator('#editor-source').inputValue(),/note:"/);
+    assert.match(await page.locator('#editor-source').inputValue(),/cue:"/);
     const annotated = await page.locator('#editor-source').inputValue();
     await page.getByRole('button', { name: 'Refresh editor notes' }).click();
     await page.getByRole('status').getByText('Editor notes are already current.').waitFor();

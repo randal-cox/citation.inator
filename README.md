@@ -1,16 +1,20 @@
 # cite.inator
 
-Write DOI or ISBN markers in your article and turn them into linked references, endnotes and source panels.
+Maintaining citations on a website is tedious: formatting references, keeping repeated sources consistent, maintaining reading links and fitting everything into your site’s design.
+
+cite.inator makes that work easy, configurable, powerful and inspectable. Write DOI or ISBN markers in your article and turn them into linked references, endnotes and source panels.
+
+[Read the Guide](https://randal-cox.github.io/cite.inator/guide.html) · [Try the Playground](https://randal-cox.github.io/cite.inator/) · [Import a manuscript](https://randal-cox.github.io/cite.inator/import/)
 
 ```text
-A claim {cite doi:10.1371/journal.pmed.0020124 | note:"Ioannidis 2005"}.
+A claim {cite doi:10.1371/journal.pmed.0020124 | cue:"Ioannidis 2005"}.
 
 {cite endnote}
 ```
 
-The optional `note:` is a generated work label for editors; tools may replace it, and it does not appear in the reader’s citation. A build or import step resolves bibliographic metadata and keeps a generated cache. Authors normally write identifiers, rather than reference JSON. Curated records remain useful for sources without identifiers and for site-specific metadata. [Load and initialize](#load-and-initialize) · [Overview](https://randal-cox.github.io/cite.inator/about.html) · [Try the examples](https://randal-cox.github.io/cite.inator/).
+The optional `cue:` is a generated work label for editors; tools may replace it. Resolved references use their bibliographic metadata; until resolution, a cue supplies visibly flagged provisional wording. A build or import step resolves bibliographic metadata and keeps a generated cache. Authors normally write identifiers, rather than reference JSON. Curated records remain useful for sources without identifiers and for site-specific metadata. [Load and initialize](#load-and-initialize) · [Overview](https://randal-cox.github.io/cite.inator/about.html) · [Try the examples](https://randal-cox.github.io/cite.inator/).
 
-**Release 0.5.1 — Author notation and learning tools.** [Release and downloads](https://github.com/randal-cox/cite.inator/releases/tag/v0.5.1) · [Live playground and Guide](https://randal-cox.github.io/cite.inator/). Includes 22 editable examples, copied-file/npm/offline starters, a worked draft.inator editor integration, UI language configuration and the established compiler/import/reader tools.
+**Release 0.5.1 — Author notation and learning tools.** [Release and downloads](https://github.com/randal-cox/cite.inator/releases/tag/v0.5.1) · [Guide](https://randal-cox.github.io/cite.inator/guide.html). Includes 22 editable examples, copied-file/npm/offline starters, a worked draft.inator editor integration, UI language configuration and the established compiler/import/reader tools.
 
 **0.6 preview:** A local Bibliography review workspace is included in the learning/offline build. [File import, reviewed refresh and source checks](docs/library-maintenance.md) are available in an optional library module. Selected Zotero/CSL metadata and document-only CSL-JSON, BibTeX and RIS downloads are available on the development branch. [API and limitations](docs/zotero.md). Final 0.6 is not released.
 
@@ -18,11 +22,9 @@ The optional `note:` is a generated work label for editors; tools may replace it
 
 The 0.5.0 project name is **cite.inator**; released 0.4.0 archives retain their original `citation-inator` package name. Existing browser assets, markup and stored-data contracts remain compatible; see [the naming migration](docs/naming-migration.md).
 
-**0.5.1 notation:** the default marker is `cite` for both works and directives; there are no automatic aliases. [Migration instructions](docs/notation-migration.md). Published with maintainer approval and draft integration sign-off.
+**0.5.1 notation:** the default marker is `cite` for both works and directives; there are no automatic aliases. [Migration instructions](docs/notation-migration.md).
 
 **Authoring principle:** authors describe the source and its use; site configuration controls shared behavior. The development candidate adds year, formatted-reference, artwork and copy-link fields in `{cite …}` and exact PMID-to-DOI discovery in the npm resolver. See [author notation and examples](docs/authoring.md); site-wide setup remains in JavaScript or configuration. Spaces separate named fields, with optional pipes for visual grouping. Author `tags` blocks and list `filters:true` provide topic filtering without JavaScript. Unmatched imported citations can become flagged unresolved placeholders that retain their wording until the reference is completed; see [the import contract](docs/import-api.md#unmatched-citations-as-unresolved-placeholders-051-development).
-
-**0.6 development preview:** selected Zotero/CSL metadata conversion and non-destructive site matching are available as [developer APIs](docs/zotero.md). Account connection and the editor picker remain host integration work.
 
 
 ## Load and initialize
@@ -56,7 +58,7 @@ Use `planCitationOccurrences` and `bindCitationTrigger` to add the inspector to 
 
 ## Article editors and a site-wide bibliography
 
-Version 0.2.0 adds source-only `note:"Cox 1995"` metadata, `describeCitation` and `annotateMarkers` editor APIs, and JSON CLI operations to describe, refresh or check notes. Per-item `tags:theory,praxis` contributions are collected with `collectMarkerTags` (or `--collect-tags --json`); the host aggregates and curates record topics. Use `includeDiagnostics: true` in build tools. The self-contained `citation-tools.mjs` also works in a browser without npm.
+Article tooling provides work-recognition `cue:"Cox 1995"` metadata, `describeCitation` and `annotateMarkers` editor APIs, and JSON CLI operations to describe, refresh or check notes. Per-item `tags:theory,praxis` contributions are collected with `collectMarkerTags` (or `--collect-tags --json`); the host aggregates and curates record topics. Use `includeDiagnostics: true` in build tools. The self-contained `citation-tools.mjs` also works in a browser without npm.
 
 Compiler results expose actual citation occurrences, including listing-only `nocite` entries. `createSiteOccurrenceIndex` joins those anchors to published page routes; pass the resulting `siteOccurrences` into a bibliography to get static **Cited in** / **Listed in** return links and corresponding inspector sections. Records can carry `tags`, with a `tagCatalogue`, per-list usage overrides, build-time filters and optional keyboard-operated browser filters. `listFilters: { minItems: 6, minTags: 2 }` limits controls to longer multi-topic lists. `inlineTags: "marker"` displays the tags contributed at a particular mention.
 
@@ -95,7 +97,7 @@ For Chicago author–date, use the same `authors[].id` on variant spellings of o
 
 Keep the default `suffixScope: "fragment"` for articles with their own reference lists. Use `suffixScope: "cache"` for a work split across pages that share a bibliography. [Year-letter options](docs/integration.md#shared-excerpts-scoped-endnotes-and-reading-lists)
 
-Write `{cite isbn:9780593656433 | prefix:see also | locator:34}` for an affix and locator. Use `citationParts` for editorial italics or bold. Use `originalIssued` and `issued` for the original and edition dates. Use `library` and `full-text` locations for access links. Apply reader preferences with `accessProviders` and `hiddenAccessProviders`. The panel exposes an `open` attribute while visible.
+Write `{cite isbn:9780593656433 | prefix:see also | locator:34}` for an affix and locator. Write `reference:"…"` for authored reference formatting, `original-year:` and `edition-year:` for dates, and `read-url:` or `pdf:` for reading copies. Site integrations can also supply structured record metadata. Apply reader preferences with `accessProviders` and `hiddenAccessProviders`. The panel exposes an `open` attribute while visible.
 
 See the [citation-style catalogue and support matrix](docs/citation-styles.md). Version 0.3.0 also includes the host reference-prefix hook and once-per-list access help, documented in the integration guide.
 

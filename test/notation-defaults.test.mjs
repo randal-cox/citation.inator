@@ -24,7 +24,7 @@ test('text HTML Markdown and note tools agree on cite default and retain literal
   const literal=compile('{citation one} {endnotes}',cache,{namespace:'literal'});
   assert(literal.html.includes('{citation one}'));assert(literal.html.includes('{endnotes}'));assert.equal(literal.cache.records.length,0);
  }
- const source='A {cite one}.';assert(annotateMarkers(source,cache).source.includes('note:"Rivera, 2020"'));
+ const source='A {cite one}.';assert(annotateMarkers(source,cache).source.includes('cue:"Rivera, 2020"'));
  assert.equal(annotateMarkers('{citation one}',cache).changed,false);
  assert.equal(parseDirectives('\\{cite one}').map(token=>token.text).join(''),'{cite one}');
 });

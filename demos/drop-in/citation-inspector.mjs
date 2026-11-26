@@ -1,4 +1,4 @@
-/*! cite-inator v0.6.0-preview.6 | MIT | See LICENSE */
+/*! cite-inator v0.6.0-preview.7 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {
@@ -529,7 +529,8 @@ var policy = (action2, category) => Object.freeze({ action: action2, category })
 var CITATION_OPTION_POLICIES = Object.freeze(Object.fromEntries([
   ["form", policy("retain", "presentation")],
   ["isolated", policy("retain", "presentation")],
-  ["note", policy("recompute", "editor")],
+  ["cue", policy("recompute", "editor")],
+  ["comment", policy("review", "source")],
   ["unresolved", policy("replace-fallback", "source")],
   ...[.../* @__PURE__ */ new Set(["locator", "label", "prefix", "tags", ...authorFields])].map((name) => [name, policy("review", "source")])
 ]));
@@ -551,8 +552,8 @@ function optionSpans(source) {
     if (source[i] === "|") {
       spans.push({ start, end: i });
       start = i + 1;
-    } else if (/[ \t]/.test(source[i])) {
-      const following = /^[ \t]+(?=[a-z0-9][a-z0-9-]*:|isolated(?:[ \t|]|$))/.exec(source.slice(i));
+    } else if (/[ \t\r\n]/.test(source[i])) {
+      const following = /^[ \t\r\n]+(?=[a-z0-9][a-z0-9-]*:|isolated(?:[ \t\r\n|]|$))/.exec(source.slice(i));
       if (following && source.slice(start, i).trim() && !source.slice(start, i).trimEnd().endsWith(";")) {
         spans.push({ start, end: i });
         start = i + following[0].length;
@@ -564,6 +565,69 @@ function optionSpans(source) {
   return spans;
 }
 var optionParts = (source) => optionSpans(source).map(({ start, end }) => source.slice(start, end).trim());
+function stripSourceComments(source, { fields = ["comment"] } = {}) {
+  const edits = [];
+  let quoted = false, seen = /* @__PURE__ */ new Set(), valid = true;
+  for (let i = 0; i < source.length; i++) {
+    if (source[i] === "\\") {
+      i++;
+      continue;
+    }
+    if (source[i] === '"') {
+      quoted = !quoted;
+      continue;
+    }
+    if (quoted) continue;
+    if (source[i] === ";") {
+      seen.clear();
+      continue;
+    }
+    const field = fields.find((name) => source.startsWith(name + ":", i));
+    if (!field || i > 0 && !/[\s|;{]/u.test(source[i - 1])) continue;
+    if (seen.has(field)) valid = false;
+    seen.add(field);
+    let value = i + field.length + 1;
+    while (/\s/u.test(source[value] || "") && value < source.length) value++;
+    let end = value;
+    if (source[value] === '"') {
+      end = value + 1;
+      for (; end < source.length; end++) {
+        if (source[end] === "\\") {
+          end++;
+          continue;
+        }
+        if (source[end] === '"') {
+          end++;
+          break;
+        }
+      }
+      if (end > source.length || source[end - 1] !== '"') {
+        valid = false;
+        end = source.length;
+      }
+    } else {
+      valid = false;
+      end = source.length;
+    }
+    let start = i, prior = i;
+    while (prior > 0 && /\s/u.test(source[prior - 1])) prior--;
+    if (source[prior - 1] === "|") start = prior - 1;
+    else {
+      let next = end;
+      while (next < source.length && /\s/u.test(source[next])) next++;
+      if (source[next] === "|") end = next + 1;
+    }
+    edits.push({ start, end });
+    i = end - 1;
+  }
+  let text = "", cursor = 0;
+  for (const edit of edits) {
+    text += source.slice(cursor, Math.max(cursor, edit.start));
+    cursor = Math.max(cursor, edit.end);
+  }
+  text += source.slice(cursor);
+  return { text, valid, hasComments: edits.length > 0, ranges: edits.map(({ start, end }) => ({ start, end })) };
+}
 
 // src/class-names.mjs
 var defaultClassPrefix = "citation";
@@ -683,7 +747,7 @@ var parentheticalForms = /* @__PURE__ */ new Set(["parenthetical", "suppress-aut
 var annotationNames = { evidence: "Citation evidence", credit: "Citation credit" };
 var split = (value, separator) => {
   const parts = [""];
-  for (const [token] of value.matchAll(/\\.|"[^"\\]*(?:\\.[^"\\]*)*"|./gu)) {
+  for (const [token] of value.matchAll(/\\.|"[^"\\]*(?:\\.[^"\\]*)*"|./gsu)) {
     if (token === separator) parts.push("");
     else parts[parts.length - 1] += token;
   }
@@ -723,11 +787,12 @@ function parseItem(text) {
       if (unresolvedText !== void 0 || !match) return null;
       unresolvedText = unescape(match[1]);
       if (!unresolvedText.trim()) return null;
-    } else if (option.startsWith("note:")) {
-      const match = /^note:\s*"((?:\\.|[^"\\])*)"$/.exec(option);
+    } else if (option.startsWith("cue:")) {
+      const match = /^cue:\s*"((?:\\.|[^"\\])*)"$/.exec(option);
       if (editorNote !== void 0 || !match) return null;
       editorNote = unescape(match[1]);
-    } else if (option.startsWith("tags:")) {
+    } else if (option.startsWith("note:")) return null;
+    else if (option.startsWith("tags:")) {
       const tags = option.slice(5).trim().split(",").map((tag) => tag.trim());
       if (markerTags !== void 0 || !tags.every((tag) => /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag))) return null;
       markerTags = [...new Set(tags)];
@@ -772,28 +837,70 @@ function parseEndnotes(body, raw) {
   }
   return token;
 }
-function directivePattern(citationKeyword) {
+function* directiveMatches(source, citationKeyword) {
   validateKeyword(citationKeyword);
-  return new RegExp(String.raw`\\[\\{}]|\{(${citationKeyword})[ \t]+((?:\\[^\n]|"[^"\\\n]*(?:\\.[^"\\\n]*)*"|[^"{}\\\n])+)\}`, "g");
+  for (let i = 0; i < source.length; i++) {
+    if (source[i] === "\\" && /[\\{}]/u.test(source[i + 1] || "")) {
+      yield Object.assign([source.slice(i, i + 2)], { index: i });
+      i++;
+      continue;
+    }
+    if (source[i] !== "{") continue;
+    let keywordStart = i + 1;
+    while (/\s/u.test(source[keywordStart] || "")) keywordStart++;
+    if (!source.startsWith(citationKeyword, keywordStart)) continue;
+    const prefix = keywordStart + citationKeyword.length;
+    if (prefix < source.length && !/[\s}]/u.test(source[prefix])) continue;
+    let quoted = false, end = source.length, complete = false;
+    for (let j = prefix; j < source.length; j++) {
+      if (source[j] === "\\") {
+        j++;
+        continue;
+      }
+      if (source[j] === '"') quoted = !quoted;
+      else if (!quoted && source[j] === "}") {
+        end = j + 1;
+        complete = true;
+        break;
+      }
+    }
+    yield Object.assign([source.slice(i, end), citationKeyword, source.slice(prefix, complete ? end - 1 : end)], { index: i, incomplete: !complete });
+    i = end - 1;
+  }
 }
 function malformedSpans(source, citationKeyword) {
-  const starts = new RegExp(`\\{${citationKeyword}(?=[\\s}]|$)`, "g"), spans = [];
+  const starts = new RegExp(`\\{\\s*${citationKeyword}(?=[\\s}]|$)`, "g"), spans = [];
   for (const match of source.matchAll(starts)) {
     if (spans.length && match.index < spans.at(-1).end) continue;
-    const tail = source.slice(match.index), boundary = /[}\r\n]/.exec(tail);
-    const end = boundary ? match.index + boundary.index + (boundary[0] === "}" ? 1 : 0) : source.length;
+    let end = source.length, quoted = false;
+    for (let i = match.index + 1; i < source.length; i++) {
+      if (source[i] === "\\") {
+        i++;
+        continue;
+      }
+      if (source[i] === '"') quoted = !quoted;
+      if (!quoted && source[i] === "}") {
+        end = i + 1;
+        break;
+      }
+    }
     spans.push({ start: match.index, end, raw: source.slice(match.index, end) });
   }
   return spans;
 }
-function scanCitationMarkers(source, { citationKeyword = "cite" } = {}) {
+function scanCitationMarkers(source, { citationKeyword = "cite", firstOnly = false } = {}) {
   if (typeof source !== "string") throw new TypeError("Supply source text.");
-  const matches = [...source.matchAll(directivePattern(citationKeyword))], markers = [];
+  const markers = [];
+  function* matches() {
+    yield* directiveMatches(source, citationKeyword);
+    yield { index: source.length, 0: "" };
+  }
   let cursor = 0;
-  for (const match of [...matches, { index: source.length, 0: "" }]) {
+  for (const match of matches()) {
     for (const span of malformedSpans(source.slice(cursor, match.index), citationKeyword)) markers.push({ ...span, start: cursor + span.start, end: cursor + span.end, token: { type: "text", text: span.raw, raw: span.raw, malformed: true, incomplete: true } });
     if (match[0].startsWith("{")) markers.push({ start: match.index, end: match.index + match[0].length, raw: match[0], token: parseDirectives(match[0], { citationKeyword })[0] });
     cursor = match.index + match[0].length;
+    if (firstOnly && markers.length) break;
   }
   return markers;
 }
@@ -806,7 +913,7 @@ function markerKind(raw, options = {}) {
   return token?.type === "endnotes" ? "endnote" : ["citation", "list", "nocite", "tags", "annotation"].includes(token?.type) ? token.type : "malformed";
 }
 function parseDirectives(source, { citationKeyword = "cite" } = {}) {
-  const directive = directivePattern(citationKeyword);
+  validateKeyword(citationKeyword);
   const tokens = [];
   const appendText = (value) => {
     let at = 0;
@@ -818,15 +925,18 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
     if (at < value.length) tokens.push({ type: "text", text: value.slice(at) });
   };
   let cursor = 0;
-  for (const match of source.matchAll(directive)) {
+  for (const match of directiveMatches(source, citationKeyword)) {
     if (match.index > cursor) appendText(source.slice(cursor, match.index));
     const raw = match[0];
     cursor = match.index + raw.length;
-    if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
-    else if (match[1] === citationKeyword && /^endnote(?:[ \t]+(?=[a-z][a-z0-9-]*:)|[ \t]*\||$)/.test(match[2].trim())) {
-      tokens.push(parseEndnotes(match[2], raw));
-    } else if (/^tags[ \t]/.test(match[2].trim()) && normalizeIdentifier(unescape(optionParts(match[2].trim().slice(5))[0]))) {
-      const [key, ...values] = optionParts(match[2].trim().slice(5));
+    const commentResult = stripSourceComments(match[2] || "");
+    const bodyText = commentResult.text;
+    if (raw.startsWith("{") && (match.incomplete || !commentResult.valid)) tokens.push({ type: "text", text: raw, malformed: true, ...match.incomplete && { incomplete: true } });
+    else if (raw.startsWith("\\")) tokens.push({ type: "text", text: raw.slice(1) });
+    else if (match[1] === citationKeyword && /^endnote(?:\s+(?=[a-z][a-z0-9-]*:)|\s*\||$)/.test(bodyText.trim())) {
+      tokens.push(parseEndnotes(bodyText, raw));
+    } else if (/^tags\s/.test(bodyText.trim()) && normalizeIdentifier(unescape(optionParts(bodyText.trim().slice(5))[0]))) {
+      const [key, ...values] = optionParts(bodyText.trim().slice(5));
       const identifier = normalizeIdentifier(unescape(key));
       const definitions = values.map((value) => {
         const field = /^([a-z0-9][a-z0-9-]{0,63}):\s*"((?:\\.|[^"\\])+)"$/.exec(value);
@@ -834,8 +944,8 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
       });
       if (identifier && definitions.length && definitions.every((value) => value?.label) && new Set(definitions.map((value) => value.id)).size === definitions.length) tokens.push({ type: "tags", items: [{ identifier }], definitions, raw });
       else tokens.push({ type: "text", text: raw, malformed: true });
-    } else if (match[1] === citationKeyword && /^(?:list|nocite)[ \t]/.test(match[2].trim())) {
-      const [, type, body] = /^(list|nocite)\s+(.+)$/.exec(match[2].trim()) || [];
+    } else if (match[1] === citationKeyword && /^(?:list|nocite)\s/.test(bodyText.trim())) {
+      const [, type, body] = /^(list|nocite)\s+([\s\S]+)$/.exec(bodyText.trim()) || [];
       const [keys, ...options] = optionParts(body || "");
       const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
       const listOptions = {};
@@ -861,10 +971,10 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
           raw
         });
       } else tokens.push({ type: "text", text: raw, malformed: true });
-    } else if (match[1] === citationKeyword && Object.hasOwn(annotationNames, match[2].trim())) {
-      tokens.push({ type: "annotation", name: match[2].trim(), raw });
+    } else if (match[1] === citationKeyword && Object.hasOwn(annotationNames, bodyText.trim())) {
+      tokens.push({ type: "annotation", name: bodyText.trim(), raw });
     } else {
-      const items = split(match[2], ";").map(parseItem);
+      const items = split(bodyText, ";").map(parseItem);
       if (items.every(Boolean) && (items.length === 1 || items.every((item) => parentheticalForms.has(item.form)) || items.every((item) => item.form === "narrative"))) {
         tokens.push({ type: "citation", items, raw });
       } else tokens.push({ type: "text", text: raw, malformed: true });

@@ -127,7 +127,7 @@ test('Markdown content bounds prevent mapping visible headings to delimiter synt
 
 test('original notation protection survives Markdown transformations and custom keywords',()=>{
  for(const citationKeyword of ['citation','ref']) {
-  const source=`{${citationKeyword} alpha | note:"first \`code\` Avery (2021)"} After (Bennett, 2020).`;
+  const source=`{${citationKeyword} alpha | cue:"first \`code\` Avery (2021)"} After (Bennett, 2020).`;
   const extraction=extractImportText(source,{format:'markdown',citationKeyword});
   assert.deepEqual(detectExtractedCitations(extraction).citations.map(c=>c.raw),['(Bennett, 2020)']);
   assert.throws(()=>detectExtractedCitations(extraction,{citationKeyword:'different'}),/same citationKeyword/);
@@ -135,13 +135,13 @@ test('original notation protection survives Markdown transformations and custom 
 });
 
 test('encoded marker delimiters remain protected before Markdown inline transformations',()=>{
- const source='&#123;cite alpha | note:"before `code` Avery (2021)"&#125; After (Bennett, 2020).';
+ const source='&#123;cite alpha | cue:"before `code` Avery (2021)"&#125; After (Bennett, 2020).';
  assert.deepEqual(detectExtractedCitations(extractImportText(source,{format:'markdown'})).citations.map(c=>c.raw),['(Bennett, 2020)']);
 });
 
 test('escaped literal notation examples are protected before Markdown removes escapes',()=>{
  for(const citationKeyword of ['citation','ref']) {
-  const source=`\\{${citationKeyword} alpha | note:"first \`code\` Avery (2021)"} After (Bennett, 2020).`;
+  const source=`\\{${citationKeyword} alpha | cue:"first \`code\` Avery (2021)"} After (Bennett, 2020).`;
   assert.deepEqual(detectExtractedCitations(extractImportText(source,{format:'markdown',citationKeyword})).citations.map(c=>c.raw),['(Bennett, 2020)']);
  }
 });

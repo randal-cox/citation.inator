@@ -12,9 +12,9 @@ The playground compiles Markdown locally. Its editable HTML preview uses DOMPuri
 
 ## Authoring and navigation
 
-The gallery starts with DOI/ISBN markers and optional source-only `note:` text; metadata is preloaded for offline examples. The advanced metadata editor supports curated records and identifier-free sources. It is not a required authoring format. The Guide documents resolving new identifiers before compilation; the playground does not silently fetch provider metadata.
+The gallery starts with DOI/ISBN markers and optional source-only `cue:` text; metadata is preloaded for offline examples. The advanced metadata editor supports curated records and identifier-free sources. It is not a required authoring format. The Guide documents resolving new identifiers before compilation; the playground does not silently fetch provider metadata.
 
-All generated HTML pages group Playground, Import and Guide together, with GitHub and its version subtitle at the far right. The masthead opens `about.html`, a concise overview of the library, getting started and its free MIT license. Source and Result are independently collapsible and open by default; advanced reference metadata and Configuration sit below the workbench just before Diagnostics. Card titles come first; excerpts follow with an ellipsis and a complete-line clamp. The Guide combines the quick start, worked examples, notation links and API reference. `tutorials.html` remains a compatibility redirect. The generated import shell uses the same light appearance; the standalone import demo retains its separate dark-mode support.
+All generated HTML pages group Playground, Import and Guide together, with an About menu and its version subtitle at the far right. The masthead opens `about.html`, a concise overview of the library, getting started and its free MIT license. Source and Result are independently collapsible and open by default; advanced reference metadata and Configuration sit below the workbench just before Diagnostics. Card titles come first; excerpts follow with an ellipsis and a complete-line clamp. The Guide combines the quick start, worked examples, notation links and API reference. `tutorials.html` remains a compatibility redirect. The generated import shell uses the same light appearance; the standalone import demo retains its separate dark-mode support.
 
 The Import area has Document and Bibliography views. Bibliography review adds local interchange-file import, metadata comparison, explicit source checks and recoverable working copies; its dedicated browser regression runs with `npm run test:learn`.
 
@@ -40,7 +40,7 @@ Native examples are prebuilt public assets, so ordinary site builds need only np
 
 ## Overview and shared credits
 
-The overview explains website citation maintenance and headline features, then exposes the minimal article, JavaScript and HTML in keyboard-accessible tabs. Every generated page uses one shared footer: author/ORCID on the left, MIT license and the library's own software-credit hover on the right. Footer credits are compiled with the same configured marker grammar as the examples.
+The overview explains website citation maintenance and headline features, then exposes the minimal article, JavaScript and HTML in keyboard-accessible tabs. Every generated page uses one shared project menu: GitHub, a styled local MIT license page and a direct How to Cite page with a library-generated citation and package-derived author/ORCID. The How to Cite page has a project-description subtitle, Author/ORCID and License facts, and one citation compiled with the same marker grammar as the examples. Navigation marks the current page with a padded rounded highlight. Related-site links will be added when their destinations are supplied. The Guide embeds the actual import and bibliography pages with compact chrome, using the same controls and state transitions as the full workspaces.
 
 ## Recipe mechanisms
 

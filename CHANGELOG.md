@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0-preview.7 — In development
+
+- Add validated opaque source ranges and revision binding for composed import. Preserve math/code regions, adjacent prose/captions and original source; retain opaque bibliography entries for review without invented metadata.
+- Add a pure current-decision review classifier, site-reuse policy suggestions and blockers. Distinguish source-bibliography matches from identifier checks.
+- Replace marker `note:` with `cue:` and provide source-aware migration. Unresolved cues supply flagged provisional wording; generated import comments retain original wording without entering compiled reader output. Resolved metadata restores normal formatting.
+- Support comments, multiline markers and whitespace before the configured keyword; demonstrate indented citation blocks without redundant pipes. Strengthen HTML/Markdown annotation ownership across encoded grammar and nested markup.
+- Simplify Guide setup/configuration, add defaults and live workspaces, correct headings and consumer API navigation, and lead the README with direct Guide links and the website-citation rationale.
+- Unify page navigation and About/version menu; add styled License and library-generated How to Cite pages. Use consistent action buttons, clear active-page styling and contained stacked backlinks.
+- Keep converted document and reading preview open by default, refresh them after reanalysis, place continuing edits in Resolve and label/icon the Markdown/reference-cache downloads.
+
 ## 0.6.0-preview.6 — In development
 
 - Diagnose duplicate full endnote lists separately from misplaced directives; keep adjacent Markdown directive blocks distinct.

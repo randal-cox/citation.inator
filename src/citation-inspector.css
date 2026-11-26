@@ -347,7 +347,7 @@ citation-inspector { display: contents; }
 [data-citation-part~="access"] a[data-access-labeled]{display:inline-flex;gap:.5rem;align-items:center;width:auto;height:auto;min-height:2.35rem;padding:.5rem .75rem;font:600 .95rem/1.4 system-ui,sans-serif;text-decoration:none}
 [data-citation-part~="access"] a[data-access-labeled] svg{flex:none}
 
-[data-citation-part~="backlinks"] a{flex-direction:row-reverse;width:auto;min-width:2.35rem;padding-inline:.3rem;gap:.15rem}[data-citation-part~="backlink-separator"]{margin-inline:.25rem;color:var(--citation-ink,#172848)}
+[data-citation-part~="backlinks"] a{display:inline-flex;align-items:center;justify-content:center;flex-direction:column;width:auto;min-width:2.35rem;height:auto;min-height:2.35rem;padding:.2rem .3rem;line-height:1;gap:.1rem}[data-citation-part~="backlink-separator"]{margin-inline:.25rem;color:var(--citation-ink,#172848)}
 
 [data-citation-part~="reference-list"] > li { overflow-wrap: anywhere; }
 

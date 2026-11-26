@@ -4,7 +4,7 @@ import {importDemoRequest} from '../scripts/import-demo-service.mjs';
 test('format inference uses source punctuation and brackets, not an example name',()=>{
  for(const [source,style] of [['(Avery, 2021)','apa'],['(Avery 2021)','chicago-author-date'],['[2, 7]','vancouver'],['Avery (2021, 12). (Duval [1898] 2004, 61)','chicago-author-date'],['(Avery, n.d.)','apa']])assert.equal(detectCitationFormat(source).style,style);
  for(const source of ['Avery (2021).','No citation here.','(Avery, 2021) and [2].','(Avery, 2021) and (Bennett 2020).'])assert.equal(detectCitationFormat(source).style,null);
- assert.equal(detectCitationFormat('{cite local:a | note:"Avery 2021"}').state,'unknown');
+ assert.equal(detectCitationFormat('{cite local:a | cue:"Avery 2021"}').state,'unknown');
 });
 test('auto mode retains uncertainty and requires explicit format before conversion',()=>{
  const input={source:'Avery (2021).',style:'auto',records:[{id:'avery',type:'book',state:'partial',title:'Test',authors:[{family:'Avery'}],issued:[2021]}]};const result=importDemoRequest(input);

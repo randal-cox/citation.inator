@@ -1,4 +1,4 @@
-/*! cite-inator manager v0.6.0-preview.6 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator manager v0.6.0-preview.7 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/title-parts.mjs
 function normalizeTitleParts(parts, title) {
@@ -420,7 +420,8 @@ var policy = (action, category) => Object.freeze({ action, category });
 var CITATION_OPTION_POLICIES = Object.freeze(Object.fromEntries([
   ["form", policy("retain", "presentation")],
   ["isolated", policy("retain", "presentation")],
-  ["note", policy("recompute", "editor")],
+  ["cue", policy("recompute", "editor")],
+  ["comment", policy("review", "source")],
   ["unresolved", policy("replace-fallback", "source")],
   ...[.../* @__PURE__ */ new Set(["locator", "label", "prefix", "tags", ...authorFields])].map((name2) => [name2, policy("review", "source")])
 ]));

@@ -21,8 +21,8 @@
 .import-demo button:disabled { opacity:.5; cursor:default; }
 .import-demo textarea { width:100%; resize:vertical; min-height:100px; font:15px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; padding:14px; color:inherit; background:white; border:1px solid #8da6bf; border-radius:3px; }
 .import-demo :is(button,select,textarea,a,summary):focus-visible { outline:3px solid #0c716f; outline-offset:3px; }
-.import-demo details { margin:18px 0; }
-.import-demo summary { cursor:pointer; font-weight:650; }
+.import-demo main details { margin:18px 0; }
+.import-demo main summary { cursor:pointer; font-weight:650; }
 .import-demo .citation-group { border-top:1px solid #bccbdc; padding:18px 0; }
 .import-demo .citation-group:first-child { border-top:0; padding-top:0; }
 .import-demo blockquote { margin:0 0 12px; padding:0 0 0 14px; border-left:3px solid #0c716f; font:18px/1.55 Georgia,serif; overflow-wrap:anywhere; }
@@ -129,29 +129,29 @@
 .import-demo #lookup-activity { font-size:13px; }
 .import-demo #retry-lookups[aria-disabled="true"] { opacity:.6; cursor:default; }
 
-.import-demo details>summary { display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid #a5b9cf; border-radius:7px; background:#e8eff7; list-style:none; }
-.import-demo details>summary::-webkit-details-marker { display:none; }
-.import-demo details>summary::before { content:""; flex:none; width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(-45deg); }
-.import-demo details[open]>summary::before { transform:rotate(45deg); }
-.import-demo details>summary:hover { background:#dce8f4; }
+.import-demo main details>summary { display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid #a5b9cf; border-radius:7px; background:#e8eff7; list-style:none; }
+.import-demo main details>summary::-webkit-details-marker { display:none; }
+.import-demo main details>summary::before { content:""; flex:none; width:7px; height:7px; border-right:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(-45deg); }
+.import-demo main details[open]>summary::before { transform:rotate(45deg); }
+.import-demo main details>summary:hover { background:#dce8f4; }
 .import-demo :is(#import-document,#resolve-citations)>summary { font-size:22px; line-height:1.3; }
 .import-demo .disclosure-body { padding-top:16px; }
-.import-demo summary.resolve-heading { margin-bottom:0; flex-wrap:nowrap; justify-content:initial; }
-.import-demo summary.resolve-heading>[role="heading"] { min-width:0; }
-.import-demo summary.resolve-heading .lookup-progress { margin-left:auto; flex:none; max-width:48%; text-align:right; }
+.import-demo main summary.resolve-heading { margin-bottom:0; flex-wrap:nowrap; justify-content:initial; }
+.import-demo main summary.resolve-heading>[role="heading"] { min-width:0; }
+.import-demo main summary.resolve-heading .lookup-progress { margin-left:auto; flex:none; max-width:48%; text-align:right; }
 .import-demo #retry-lookups { float:right; }
-@media(prefers-color-scheme:dark) { .import-demo details>summary { background:#21384e; border-color:#526b83; } .import-demo details>summary:hover { background:#2b465f; } }
-@media(max-width:560px) { .import-demo summary.resolve-heading { font-size:19px; gap:10px; padding:12px; } .import-demo #lookup-count { font-size:14px; } .import-demo #lookup-activity { font-size:11px; } }
+@media(prefers-color-scheme:dark) { .import-demo main details>summary { background:#21384e; border-color:#526b83; } .import-demo main details>summary:hover { background:#2b465f; } }
+@media(max-width:560px) { .import-demo main summary.resolve-heading { font-size:19px; gap:10px; padding:12px; } .import-demo #lookup-count { font-size:14px; } .import-demo #lookup-activity { font-size:11px; } }
 
 /* A disclosure is one panel: its header and revealed content share the outline. */
-.import-demo details { border:1px solid #a5b9cf; border-radius:7px; background:#f7faff; }
-.import-demo details>summary { border:0; border-radius:6px; }
-.import-demo details[open] { padding-bottom:14px; }
-.import-demo details[open]>summary { border-bottom:1px solid #a5b9cf; border-bottom-left-radius:0; border-bottom-right-radius:0; }
-.import-demo details[open]>:not(summary) { margin-left:16px; margin-right:16px; max-width:calc(100% - 32px); }
+.import-demo main details { border:1px solid #a5b9cf; border-radius:7px; background:#f7faff; }
+.import-demo main details>summary { border:0; border-radius:6px; }
+.import-demo main details[open] { padding-bottom:14px; }
+.import-demo main details[open]>summary { border-bottom:1px solid #a5b9cf; border-bottom-left-radius:0; border-bottom-right-radius:0; }
+.import-demo main details[open]>:not(summary) { margin-left:16px; margin-right:16px; max-width:calc(100% - 32px); }
 .import-demo .supplied-bibliography { padding:0; }
 .import-demo .lookup-progress :is(#lookup-count,#lookup-activity) { font-size:14px; font-weight:650; white-space:nowrap; }
-@media(prefers-color-scheme:dark) { .import-demo details { background:#1b3044; border-color:#526b83; } .import-demo details[open]>summary { border-color:#526b83; } }
+@media(prefers-color-scheme:dark) { .import-demo main details { background:#1b3044; border-color:#526b83; } .import-demo main details[open]>summary { border-color:#526b83; } }
 @media(max-width:560px) { .import-demo .lookup-progress :is(#lookup-count,#lookup-activity) { font-size:12px; } }
 
 .import-demo .resolve-section { position:relative; }
@@ -236,3 +236,5 @@
 .import-demo .review-queue button{text-align:left;overflow-wrap:anywhere}
 .import-demo .lookup-mode{margin-bottom:1rem}.import-demo .lookup-mode p{margin:.3rem 0;font-size:.9rem}
 @media(max-width:750px){.import-demo .review-overview{grid-template-columns:1fr}}
+
+.download-action{display:inline-flex;align-items:center;gap:.4rem}.download-action>span[aria-hidden]{font-size:1.15em;line-height:1;font-weight:700}

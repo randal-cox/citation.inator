@@ -74,7 +74,10 @@ Site `tagCatalogue` and `listItemTags` configuration remain available for shared
 ## A citation whose reference is still missing
 
 ```text
-{cite pending-rivera unresolved:"(Rivera, 2020)"}
+{cite pending-rivera
+  cue:"Rivera, 2020"
+  comment:"Original: (Rivera, 2020). No matching bibliography entry."
+}
 ```
 
-Use `unresolved:` to retain original wording visibly while its reference is missing. Supply the punctuation you want displayed: a single fallback is verbatim. The compiler reports `citation-unresolved-placeholder`, including when no cache record exists. Import review can create the local unresolved record automatically with **Keep as unresolved**. The marker remains flagged for missing/partial metadata; completing the same record as resolved restores normal citation formatting without editing the marker. See [placeholder import decisions](import-api.md#citations-as-unresolved-placeholders) for grouped and unsafe-span cases.
+Use `cue:` for compact author/year wording while a reference is missing. Keep original wording and review context in `comment:`, and locators or prefixes in their own fields. The cue is visibly provisional; it never establishes identity or changes the record state. The compiler reports `citation-unresolved-placeholder`, including when no cache record exists. Import review can create the local unresolved record automatically with **Keep as unresolved**. The marker remains flagged for missing/partial metadata; completing the same record as resolved restores normal citation formatting without editing the marker. See [placeholder import decisions](import-api.md#citations-as-unresolved-placeholders) for grouped and unsafe-span cases.

@@ -91,3 +91,9 @@ Current import follow-ups after the bounded parser pass: measure additional genu
 ## Composable scholarly tools — discussion
 
 Randal requests exploring a separate formula.inator around draft's equation work, with import integration alongside cite. The [draft discussion](https://github.com/randal-cox/draft.inator/issues/35#issuecomment-7198344135) asks which parsing/rendering/numbering pieces are reusable. Proposed boundary: draft owns the manuscript revision, combined review, assets, Undo and publication; cite owns citations/references; a formula module owns reusable math conversion/rendering. Shared extraction and revision-bound proposals should avoid successive widgets flattening or rewriting one another's source. This is a design proposal awaiting Claude's code-informed response, not a new repository/framework or prerequisite to the0.6 citation loop.
+
+## Current documentation follow-up
+
+The preview.7 Guide review expands readable authoring syntax, makes the author/site boundary explicit, improves heading structure and separates consumer APIs from repository evidence. Unresolved cue behavior and draft migration remain tracked in the [current milestone](docs/milestones/0.6.0.md#guide-and-import-follow-up--preview7-26-november).
+
+Preview.7 now implements the cite-side composed-import seams: validated opaque source ranges, revision binding and a pure review classifier, alongside cue/comment/readable-source notation and reviewed documentation. Exact current evidence and remaining adopter/host/final-release gates are recorded in [the milestone](docs/milestones/0.6.0.md#current-preview7-status). Draft owns the shared Markdown projection, figures, numbering and transaction; reusable math remains internal until a second adopter justifies extraction.

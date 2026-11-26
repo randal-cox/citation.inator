@@ -46,7 +46,7 @@ const result = annotateMarkers(source, cache, {
 });
 ```
 
-`noteContext: 'article'` is the unchanged default, using the full source's disambiguation. `work` describes each work independently with fragment scope, so two same-author/year works both get `note:"Cox 1995"`, matching standalone descriptions. It overrides cache-wide suffix scope for note text, not reader formatting. Use the same style/reprint options for the picker and annotation. Reader-facing suffixes still come from normal compilation. Partial records, escaping, protected regions and unresolved-group behavior retain their existing contracts. JSON CLI annotation and stale-note checks accept `options.noteContext` too; use the same value for writing and checking notes.
+`noteContext: 'article'` is the unchanged default, using the full source's disambiguation. `work` describes each work independently with fragment scope, so two same-author/year works both get `cue:"Cox 1995"`, matching standalone descriptions. It overrides cache-wide suffix scope for note text, not reader formatting. Use the same style/reprint options for the picker and annotation. Reader-facing suffixes still come from normal compilation. Partial records, escaping, protected regions and unresolved-group behavior retain their existing contracts. JSON CLI annotation and stale-note checks accept `options.noteContext` too; use the same value for writing and checking notes.
 
 <a id="write-local-record-ids-040-preview"></a>
 
@@ -91,16 +91,16 @@ Keep the library LICENSE and the bundled dependency notices with distributed ass
 
 Run `npm start` in the repository and open [the shared bibliography example](http://127.0.0.1:4187/demos/static/bibliography.html) or [the editor example](http://127.0.0.1:4187/demos/static/editor-tools.html). Both also ship in the standalone folder as `bibliography.html` and `editor-tools.html`.
 
-## Editor-only notes
+## Work-recognition cues and comments
 
 ```text
-{cite source-one | note:"Cox 1995"}
-{cite source-one | note:"Cox 1995a"; source-two | note:"Cox 1995b"}
+{cite source-one | cue:"Cox 1995"}
+{cite source-one | cue:"Cox 1995a"; source-two | cue:"Cox 1995b"}
 ```
 
-A quoted `note:` belongs to one cited item. A group can have one per item. It does not change reader HTML, accessible names, return-link context, diagnostics or returned bibliographic records, even when the work is unresolved. It is different from `label:` (which changes reader text), the legacy unresolved display hint, and a bibliographic record's `note` field. Empty notes are accepted; duplicate/malformed note options follow the usual malformed-notation diagnostics. Notes are not supported on list/endnote/evidence/credit directives.
+A quoted `cue:` belongs to one cited item. A group can have one per item. For resolved records it does not change reader HTML, accessible names, return-link context, diagnostics or returned bibliographic records. For missing, unresolved or partial records it supplies compact provisional wording, preserving structured prefixes and locators, with an unresolved warning; it never changes the record state. `comment:` remains absent from compiled reader artifacts in every state. A cue differs from an explicit permanent `label:`, a legacy unresolved display hint and a bibliographic record's `note` field. Empty cues are accepted; duplicate/malformed cue options follow the usual malformed-notation diagnostics. Cues are not supported on list/endnote/evidence/credit directives.
 
-Notes help editors read raw source. They are not confidential comments: a host can publish source files, and a no-compilation fallback may display literal notation. A stale note never becomes authoritative metadata for readers.
+Cues help editors recognize works in raw source. They are not confidential comments: a host can publish source files, and a no-compilation fallback may display literal notation. A stale cue never becomes authoritative metadata for readers.
 
 ```js
 const description = describeCitation('source-one', cache, {
@@ -112,7 +112,7 @@ console.log(description.items); // recordId, identifier, text, state, anchorId, 
 console.log(description.diagnostics);
 ```
 
-The first argument accepts an identifier, a semicolon-separated identifier group, or a full citation marker. A full marker is interpreted as notation, not as prose or Markdown. Descriptions identify the work using the selected style; custom reader labels, prefixes, locators and narrative forms do not replace that identity description. The returned `anchorId` belongs to a synthetic one-marker query, not an existing article. Never use it as a published return target; use full article compilation or structured-plan occurrences for indexing. Without a complete source document, descriptions cannot know that document's year letters or citation numbering. Pass the whole article to annotation for its formatting context.
+The first argument accepts an identifier, a semicolon-separated identifier group, or a full citation marker. A full marker is interpreted as notation, not as prose or Markdown. Resolved-work descriptions identify the work using the selected style; custom reader labels, prefixes, locators and narrative forms do not replace that identity description. Provisional cue descriptions retain the cue’s prefix and locator context. The returned `anchorId` belongs to a synthetic one-marker query, not an existing article. Never use it as a published return target; use full article compilation or structured-plan occurrences for indexing. Without a complete source document, descriptions cannot know that document's year letters or citation numbering. Pass the whole article to annotation for its formatting context.
 
 ```js
 const result = annotateMarkers(source, cache, {
@@ -122,11 +122,11 @@ const result = annotateMarkers(source, cache, {
 });
 // result.source: transformed source
 // result.edits: { start, end, text } source edits in ascending order
-// result.changed: whether any note edits were proposed
+// result.changed: whether any cue edits were proposed
 // result.diagnostics: unresolved/malformed citations and skipped regions
 ```
 
-Edits use zero-based JavaScript UTF-16 offsets, with an exclusive end. Outside those ranges the original source is retained, including line endings and whitespace. The host owns saving, undo and checking that the editor has not changed the source since analysis. A second run with the same cache/options makes no edits. A changed year, author or style refreshes the notes on the next run. Notes use single-line text and quote/escape notation delimiters. HTML/Markdown insertions escape markup characters in note content.
+Edits use zero-based JavaScript UTF-16 offsets, with an exclusive end. Outside those ranges the original source is retained, including line endings and whitespace. The host owns saving, undo and checking that the editor has not changed the source since analysis. A second run with the same cache/options makes no edits. A changed year, author or style refreshes the cues on the next run. Cues use single-line text and quote/escape notation delimiters. HTML/Markdown insertions escape markup characters in cue content.
 
 HTML skips the compiler's excluded elements and interactive/editable regions, including scripts, attributes and code. Markdown additionally protects fenced/indented code, code spans, links and raw HTML regions excluded by the HTML compiler. When a Markdown token cannot be located exactly in the original source, its containing region is left intact and `annotation-region-skipped` is returned. Unsupported or ambiguous input is not rewritten by guesswork. Use literal brace notation in source; entity-encoded braces are not an annotation target and return `annotation-encoded-marker-skipped`. Review diagnostics when mixing unusual HTML/Markdown structures. Rich-text paste and DOCX parsing are not included.
 
@@ -147,10 +147,10 @@ A description request is `{ "citation": "source-one", "cache": CACHE, "options":
 ## Tags contributed by citation markers
 
 ```text
-{cite source-one | note:"Cox 1995" | tags:ritual-theory,consent-ethics}
+{cite source-one | cue:"Cox 1995" | tags:ritual-theory,consent-ethics}
 ```
 
-`tags:` is per cited item, like `note:`. It contributes metadata without changing reader output or diagnostics by default; `annotateMarkers` retains it when refreshing notes. IDs follow the same syntax as record tags. Repeated IDs within one item count once. Invalid or duplicate `tags:` options make the marker malformed under the normal notation rules. List-directive `tags:` continues to mean build-time filtering, not a contribution.
+`tags:` is per cited item, like `cue:`. It contributes metadata without changing reader output or diagnostics by default; `annotateMarkers` retains it when refreshing notes. IDs follow the same syntax as record tags. Repeated IDs within one item count once. Invalid or duplicate `tags:` options make the marker malformed under the normal notation rules. List-directive `tags:` continues to mean build-time filtering, not a contribution.
 
 ```js
 const result = collectMarkerTags([
@@ -279,12 +279,26 @@ const result = compileCitations(source, cache, {
 
 The callback receives `{ record, tags, namespace, number, kind }`; `kind` is `reading-list` or `endnote`. Metadata is cloned so changing it cannot mutate the cache. Return a string, `null` or `undefined`. Text is escaped and wrapped in the configurable `reference-prefix` class/part. HTML/object results are rejected. Prefix text is presentation only: it does not enter copied citations, bibliographic records, exports or source marker notes.
 
-The 0.5.1 development grammar accepts optional pipes between named fields. `annotateMarkers` recognizes existing `note:` fields with whitespace, pipes or mixed separators, updates them in place and does not duplicate them. A new `tags` marker kind identifies author topic declarations; see [authoring topics](authoring.md#author-defined-reading-list-topics). These are not citation mentions and do not contribute to `collectMarkerTags` counts.
+The 0.5.1 development grammar accepts optional pipes between named fields. `annotateMarkers` recognizes existing `cue:` fields with whitespace, pipes or mixed separators, updates them in place and does not duplicate them. A new `tags` marker kind identifies author topic declarations; see [authoring topics](authoring.md#author-defined-reading-list-topics). These are not citation mentions and do not contribute to `collectMarkerTags` counts.
 
 ### Unresolved placeholders (0.5.1 development)
 
-A marker's `unresolved:"…"` fallback retains original wording until its target record is resolved. `describeCitation` returns that wording and `citation-unresolved-placeholder`; `annotateMarkers` leaves it unchanged and returns the diagnostic. `collectMarkerTags(sources, cache, {includeDiagnostics:true})` reports the same code even for a marker without tags, with empty counts where appropriate. Regular unresolved citations still use `citation-unresolved`. Completing the target record removes placeholder behavior automatically. [Import and completion contract](import-api.md#citations-as-unresolved-placeholders).
+A marker’s `cue:"Rivera, 2020"` supplies flagged provisional wording until its target is resolved. `comment:` retains the original wording and review context in authored source. `describeCitation` and tag tools report `citation-unresolved-placeholder`; annotation leaves the unresolved cue unchanged. Completing the same target with genuine resolved metadata restores normal formatting. Legacy `unresolved:` wording remains readable for existing source, but new imports use cue plus comment. [Import and completion contract](import-api.md#citations-as-unresolved-placeholders).
 
 ## Classify options when replacing a work
 
 `citationOptionPolicy(name)` and the immutable `CITATION_OPTION_POLICIES` table are exported by core/tools/manager entry points in 0.6.0-preview.2. The helper separates retained presentation, recomputed notes, replaced unresolved fallbacks and source/unknown options that require review. It does not rewrite markers or decide work identity. Apply it to an actual work replacement; unchanged-work round trips still preserve every option. See the [field policy and host behavior](zotero.md#replacing-a-work-shared-option-policy-preview2).
+
+## Migrate source notes to cues
+
+Use `migrateCitationCues` from `cite-inator/tools` for source written with the former `note:` field:
+
+```js
+import {migrateCitationCues} from 'cite-inator/tools';
+const result = migrateCitationCues(source, {format:'markdown'});
+// Review result.edits and result.diagnostics, then save result.source.
+```
+
+The helper renames recognized quoted field keys and preserves code, prose, quoted comment text and source layout. The old `note:` source option is diagnosed as malformed rather than silently accepted. Bibliographic `record.note` metadata and the `noteContext` JavaScript option keep their names.
+
+Use `comment:"Your annotation"` for author reminders or original import context. Cue refresh preserves comments; replacing the actual work requires reviewing them, just as it requires reviewing a page locator. Compiled reader output omits comments; original Markdown retains them.

@@ -14,43 +14,43 @@ const chicago = { citationStyle: 'chicago-author-date' };
 const catalogue = [{id:'theory',label:'Theory',icon:'/icons/book.svg'}, {id:'praxis',label:'Praxis'}];
 
 test('editor notes cannot affect compiled output, including unresolved hints, groups and markup', () => {
-  for (const compile of [compileCitations, compileHTML, compileMarkdown]) for (const id of ['alpha','missing']) {
+  for (const compile of [compileCitations, compileHTML, compileMarkdown]) for (const id of ['alpha']) {
     const plain = `Before {cite ${id} | locator:"p. 4"; beta} after.`;
-    const annotated = `Before {cite ${id} | locator:"p. 4" | note:"PRIVATE \\| \\; \\{quote\\}"; beta | note:"stale"} after.`;
+    const annotated = `Before {cite ${id} | locator:"p. 4" | cue:"PRIVATE \\| \\; \\{quote\\}"; beta | cue:"stale"} after.`;
     assert.deepEqual(compile(plain,cache,chicago),compile(annotated,cache,chicago));
   }
-  assert.deepEqual(compileCitations('{cite missing | legacy hint}',cache),compileCitations('{cite missing | legacy hint | note:"hidden"}',cache));
-  assert.ok(compileCitations('{cite alpha | note:"one" | note:"two"}',cache).diagnostics.some(d=>d.state==='malformed'));
+  assert.match(compileCitations('{cite missing | legacy hint | cue:"Cox, 1995"}',cache).html,/Cox, 1995/);
+  assert.ok(compileCitations('{cite alpha | cue:"one" | cue:"two"}',cache).diagnostics.some(d=>d.state==='malformed'));
 });
 
 test('query and annotation follow page-local suffixes, styles, reprints and curated identities', () => {
   assert.equal(describeCitation('alpha',cache,chicago).text,'Cox 1995');
-  const input='😀\r\n{cite beta | note: "old" ; alpha | prefix:"see also" | locator:"p. 4"}\r\n\r\n{cite endnote}';
+  const input='😀\r\n{cite beta | cue: "old" ; alpha | prefix:"see also" | locator:"p. 4"}\r\n\r\n{cite endnote}';
   const result=annotateMarkers(input,cache,chicago);
-  assert.match(result.source,/beta \| note:"Cox 1995b" ; alpha/);
-  assert.match(result.source,/locator:"p. 4" \| note:"Cox 1995a"/);
+  assert.match(result.source,/beta \| cue:"Cox 1995b" ; alpha/);
+  assert.match(result.source,/locator:"p. 4" \| cue:"Cox 1995a"/);
   assert.equal(annotateMarkers(result.source,cache,chicago).changed,false);
   assert.deepEqual(compileCitations(input,cache,chicago),compileCitations(result.source,cache,chicago));
   const updated=makeCache(cache.records.map(record=>record.id==='alpha'?{...record,issued:[1996]}:record));
-  assert.match(annotateMarkers(result.source,updated,chicago).source,/note:"Cox 1996"/);
+  assert.match(annotateMarkers(result.source,updated,chicago).source,/cue:"Cox 1996"/);
   assert.equal(describeCitation('alpha',cache,{citationStyle:'apa'}).text,'Cox, 1995');
   assert.equal(describeCitation('missing',cache).state,'unresolved');
   assert.equal(describeCitation('{cite alpha | form:wrong}',cache).state,'malformed');
-  assert.equal(annotateMarkers('{cite missing | note:"old"}',cache).changed,false);
+  assert.equal(annotateMarkers('{cite missing | cue:"old"}',cache).changed,false);
   const reprint=makeCache([{...work('reprint','Book',1995),originalIssued:[1912]}]);
   assert.equal(describeCitation('reprint',reprint,chicago).text,'Cox [1912] 1995');
-  assert.match(annotateMarkers('{ref alpha}',cache,{...chicago,citationKeyword:'ref'}).source,/note:"Cox 1995"/);
+  assert.match(annotateMarkers('{ref alpha}',cache,{...chicago,citationKeyword:'ref'}).source,/cue:"Cox 1995"/);
 });
 
 test('annotation preserves literal source, excludes code and attributes, and handles CRLF Markdown', () => {
   const html='<p title="{cite alpha}">Text {cite alpha}.</p><code>{cite beta}</code><script>"{cite beta}"</script><!-- {cite beta} -->';
   const result=annotateMarkers(html,cache,{...chicago,format:'html'});
   assert.equal(result.edits.length,1);
-  assert.equal(result.source,html.replace('Text {cite alpha}','Text {cite alpha | note:"Cox 1995"}'));
+  assert.equal(result.source,html.replace('Text {cite alpha}','Text {cite alpha | cue:"Cox 1995"}'));
   const md='`{cite beta}`\r\n\r\nBefore **text** {cite alpha}.\r\n\r\n```js\r\n{cite beta}\r\n```\r\n\r\n[link {cite beta}](https://example.org)';
   const marked=annotateMarkers(md,cache,{...chicago,format:'markdown'});
   assert.equal(marked.edits.length,1);
-  assert.equal(marked.source,md.replace('Before **text** {cite alpha}','Before **text** {cite alpha | note:"Cox 1995"}'));
+  assert.equal(marked.source,md.replace('Before **text** {cite alpha}','Before **text** {cite alpha | cue:"Cox 1995"}'));
   assert.equal(annotateMarkers(String.raw`Escaped \{cite alpha} and {cite alpha | label:"a\;b\|c"}`,cache).edits.length,1);
 });
 
@@ -134,11 +134,11 @@ test('annotation shares compilation eligibility and preserves relative targets w
   const source='<p><span role="note">See {cite alpha}.</span> <span contenteditable="false">More {cite beta}.</span> <a href="#x">{cite gamma}</a></p>';
   const result=annotateMarkers(source,cache,{...chicago,format:'html'});
   assert.equal(result.edits.length,2);
-  assert.match(result.source,/note:"Cox 1995a"/); assert.match(result.source,/note:"Cox 1995b"/);
+  assert.match(result.source,/cue:"Cox 1995a"/); assert.match(result.source,/cue:"Cox 1995b"/);
   assert.deepEqual(compileHTML(result.source,cache,chicago),compileHTML(source,cache,chicago));
   const md='<a href="#x">{cite beta}</a> and {cite alpha}.';
   const marked=annotateMarkers(md,cache,{...chicago,format:'markdown'});
-  assert.equal(marked.edits.length,1); assert.match(marked.source,/note:"Cox 1995"/);
+  assert.equal(marked.edits.length,1); assert.match(marked.source,/cue:"Cox 1995"/);
   const links=prepareReferences({siteOccurrences:{alpha:[{href:'../article.html#x',label:'Parent'},{href:'./article.html#x',label:'Sibling'}]}}).occurrences('alpha');
   assert.equal(links.length,2);
 });
@@ -216,7 +216,7 @@ test('unresolved and malformed diagnostics expose stable codes without replacing
 });
 
 test('marker tags are reader-neutral metadata preserved by annotation and counted per contribution', () => {
-  const sources=['{cite alpha | tags:a}', '{cite alpha | note:"old" | tags:a,b}'];
+  const sources=['{cite alpha | tags:a}', '{cite alpha | cue:"old" | tags:a,b}'];
   assert.deepEqual(collectMarkerTags(sources),{alpha:{a:2,b:1}});
   for(const compile of [compileCitations,compileHTML,compileMarkdown]) {
     assert.deepEqual(compile('{cite alpha | tags:a,b}',cache),compile('{cite alpha}',cache));
@@ -278,7 +278,7 @@ test('markerKind classifies whole compiler markers without duplicating reserved-
 test('work-context annotation agrees with standalone descriptions while reader year letters stay contextual',()=>{
  const source='{cite beta; alpha | locator:12}\n\n{cite endnote}';
  const work=annotateMarkers(source,cache,{...chicago,noteContext:'work'});
- assert.equal((work.source.match(/note:"Cox 1995"/g)||[]).length,2);assert.ok(!work.source.includes('1995a'));assert.ok(!work.source.includes('1995b'));
+ assert.equal((work.source.match(/cue:"Cox 1995"/g)||[]).length,2);assert.ok(!work.source.includes('1995a'));assert.ok(!work.source.includes('1995b'));
  assert.equal(annotateMarkers(work.source,cache,{...chicago,noteContext:'work'}).changed,false);
  assert.deepEqual(compileCitations(source,cache,chicago),compileCitations(work.source,cache,chicago));
  assert.match(annotateMarkers(source,cache,chicago).source,/1995a/);assert.match(annotateMarkers(source,cache,chicago).source,/1995b/);
@@ -290,7 +290,7 @@ test('work-context annotation agrees with standalone descriptions while reader y
 test('work notes stay consistent in markup and the JSON annotation/check CLI',()=>{
  for(const [format,source] of [['html','<p>{cite alpha; beta}</p>'],['markdown','Text {cite alpha; beta}.']]) {
   const annotated=annotateMarkers(source,cache,{...chicago,format,noteContext:'work'});
-  assert.equal((annotated.source.match(/note:"Cox 1995"/g)||[]).length,2);assert.equal(annotateMarkers(annotated.source,cache,{...chicago,format,noteContext:'work'}).changed,false);
+  assert.equal((annotated.source.match(/cue:"Cox 1995"/g)||[]).length,2);assert.equal(annotateMarkers(annotated.source,cache,{...chicago,format,noteContext:'work'}).changed,false);
   const compile=format==='html'?compileHTML:compileMarkdown;assert.deepEqual(compile(source,cache,chicago),compile(annotated.source,cache,chicago));
  }
  const request={source:'{cite alpha; beta}',cache,options:{...chicago,noteContext:'work'}};

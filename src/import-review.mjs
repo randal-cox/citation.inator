@@ -4,6 +4,11 @@ import { normalizeIdentifier,normalizeRecord } from './records.mjs';
 import { scanCitationMarkers, formatRecordId } from './compiler.mjs';
 const hash=importHash;
 const quote = value => '"'+String(value).replace(/[\\"{};|]/g,character=>'\\'+character)+'"';
+const importCue=(item,original,form)=>{
+ const names=Array.isArray(item.authors)?item.authors.filter(name=>typeof name==='string'&&name.trim()):[];
+ if(names.length&&(Number.isInteger(item.year)||item.undated))return names.join(' & ')+(item.etAl?' et al.':'')+(form==='narrative'?' (':', ')+(item.undated?'n.d.':item.year)+(item.sourceSuffix||'')+(form==='narrative'?')':'');
+ return String(original).replace(/\s+/gu,' ').trim();
+};
 const digest = (sourceHash,matches) => hash(sourceHash+'\n'+JSON.stringify(matches));
 
 /** Retain a revision-bound snapshot. This is local data, not a provider request. */
@@ -12,6 +17,11 @@ export function createImportReview(source, matched) {
   const sourceHash=hash(source), matches=structuredClone(matched.matches);
   return {schema:'citation-inator.import-review.v1',sourceHash,sourceLength:source.length,
     reviewId:digest(sourceHash,matches),matches};
+}
+
+export function placeholderOriginal(match,itemIndex){
+ const citation=match.citation,item=match.items[itemIndex].item,range=item.rawRange;
+ return match.items.length===1?citation.raw:range&&Number.isInteger(range.start)&&Number.isInteger(range.end)&&range.start>=0&&range.end>range.start&&citation.raw.slice(range.start,range.end)===item.rawText?item.rawText:null;
 }
 
 /** Plan whole-group edits. Rejected, deferred, absent and unsafe decisions preserve source. */
@@ -49,11 +59,12 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
         if(typeof id!=='string' || normalizeIdentifier('local:'+id)?.value!==id || taken.has(id))throw new TypeError('Placeholder IDs must be valid and distinct from existing records.');
         taken.add(id);
         const item=match.items[itemIndex].item;
-        const rawRange=item.rawRange;
-        const original=match.items.length===1?citation.raw:rawRange && Number.isInteger(rawRange.start) && Number.isInteger(rawRange.end) && rawRange.start>=0 && rawRange.end>rawRange.start && citation.raw.slice(rawRange.start,rawRange.end)===item.rawText ? item.rawText : null;
+        const original=placeholderOriginal(match,itemIndex);
         const referenceTexts=[...new Set(match.items[itemIndex].candidates.map(candidate=>references.get(candidate.recordId)).filter(Boolean))];
-        pending.push({id,original,itemIndex,referenceTexts});
-        return {scheme:'local',value:id,placeholder:true,original};
+        const cue=importCue(item,original,citation.form);
+        const comment='Original: '+original+' '+(referenceTexts.length?'Bibliographic identity remains unconfirmed.':'No matching bibliography entry.');
+        pending.push({id,original,itemIndex,referenceTexts,cue,comment});
+        return {scheme:'local',value:id,placeholder:true,original,cue,comment};
       }
       if(target && typeof target.recordId==='string' && target.identifier===undefined && target.placeholder===undefined) {
         const id=target.recordId, identifier=normalizeIdentifier(id);
@@ -75,7 +86,7 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
     const items=match.items.map((proposal,itemIndex)=>{
       const identifier=identities[itemIndex], item=proposal.item;
       // Escape identifiers so punctuation cannot become notation options or extra items.
-      return (identifier.scheme==='local'?formatRecordId(identifier.value,{citationKeyword,identifierForm}):(identifier.scheme+':'+identifier.value).replace(/[\\"{};|]/g,character=>'\\'+character)) + (identifier.placeholder ? ' | unresolved:'+quote(identifier.original) : '') + (item.prefix ? ' | prefix:'+quote(item.prefix) : '') + (item.locator ? ' | locator:'+quote(item.locator) : '') +
+      return (identifier.scheme==='local'?formatRecordId(identifier.value,{citationKeyword,identifierForm}):(identifier.scheme+':'+identifier.value).replace(/[\\"{};|]/g,character=>'\\'+character)) + (identifier.placeholder ? ' | cue:'+quote(identifier.cue)+' | comment:'+quote(identifier.comment) : '') + (item.prefix ? ' | prefix:'+quote(item.prefix) : '') + (item.locator ? ' | locator:'+quote(item.locator) : '') +
         (citation.form === 'narrative' ? ' | form:narrative' : '');
     });
     if (match.items.some(proposal=>proposal.item.boundaryUncertain)) {
@@ -93,7 +104,7 @@ export function planImportEdits(source,review,{reviewId,decisions=[],citationKey
     const text=`{${citationKeyword} ${items.join('; ')}}`;
     const token=scanCitationMarkers(text,{citationKeyword})[0]?.token;
     if (token?.type !== 'citation' || token.items.length !== identities.length || token.items.some((item,index)=>item.identifier.scheme !== identities[index].scheme || item.identifier.value !== identities[index].value)) throw new Error('Could not encode accepted record identities.');
-    placeholderRecords.push(...pending.map(item=>normalizeRecord({id:item.id,state:'unresolved',original:item.referenceTexts.length===1?item.referenceTexts[0]:item.original,unresolvedText:item.original,provenance:[{provider:'Import review',note:'Citation retained for editorial completion; no bibliographic identity has been inferred.'},...item.referenceTexts.map(text=>({provider:'Import review',note:'Unverified candidate reference; not an accepted identity: '+text}))]})));
+    placeholderRecords.push(...pending.map(item=>normalizeRecord({id:item.id,state:'unresolved',original:item.referenceTexts.length===1?item.referenceTexts[0]:item.cue,provenance:[{provider:'Import review',note:'Citation retained for editorial completion; no bibliographic identity has been inferred.'},...item.referenceTexts.map(text=>({provider:'Import review',note:'Unverified candidate reference; not an accepted identity: '+text}))]})));
     edits.push({start,end,before:source.slice(start,end),text,citationIndex:index,...selection});
     outcomes.push({citationIndex:index,state:'accepted',...selection,...(pending.length && {placeholderRecordIds:pending.map(item=>item.id),code:'import-unresolved-placeholder'})});
   }
