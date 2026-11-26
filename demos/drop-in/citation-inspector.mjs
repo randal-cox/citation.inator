@@ -1,4 +1,4 @@
-/*! cite-inator v0.6.0-preview.1 | MIT | See LICENSE */
+/*! cite-inator v0.6.0-preview.2 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {
@@ -496,6 +496,27 @@ function readCache(input) {
   return { byId, byIdentifier };
 }
 
+// src/author-fields.mjs
+var authorFields = /* @__PURE__ */ new Set(["original-year", "edition-year", "reference", "attribution", "display-date", "medium", "dimensions", "institution", "accession", "rights", "photographer", "uploader", "pdf", "read-url", "access", "checked"]);
+function validAuthorField(field, value) {
+  if (!value.trim()) return false;
+  if (field.endsWith("-year")) return /^[1-9][0-9]{3}$/.test(value);
+  if (["pdf", "read-url"].includes(field)) return Boolean(httpsURL(value));
+  if (field === "access") return ["open", "subscription", "purchase", "loan", "unknown"].includes(value);
+  if (field === "checked") return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  return true;
+}
+
+// src/option-policy.mjs
+var policy = (action2, category) => Object.freeze({ action: action2, category });
+var CITATION_OPTION_POLICIES = Object.freeze(Object.fromEntries([
+  ["form", policy("retain", "presentation")],
+  ["isolated", policy("retain", "presentation")],
+  ["note", policy("recompute", "editor")],
+  ["unresolved", policy("replace-fallback", "source")],
+  ...[.../* @__PURE__ */ new Set(["locator", "label", "prefix", "tags", ...authorFields])].map((name) => [name, policy("review", "source")])
+]));
+
 // src/notation-options.mjs
 function optionSpans(source) {
   const spans = [];
@@ -526,17 +547,6 @@ function optionSpans(source) {
   return spans;
 }
 var optionParts = (source) => optionSpans(source).map(({ start, end }) => source.slice(start, end).trim());
-
-// src/author-fields.mjs
-var authorFields = /* @__PURE__ */ new Set(["original-year", "edition-year", "reference", "attribution", "display-date", "medium", "dimensions", "institution", "accession", "rights", "photographer", "uploader", "pdf", "read-url", "access", "checked"]);
-function validAuthorField(field, value) {
-  if (!value.trim()) return false;
-  if (field.endsWith("-year")) return /^[1-9][0-9]{3}$/.test(value);
-  if (["pdf", "read-url"].includes(field)) return Boolean(httpsURL(value));
-  if (field === "access") return ["open", "subscription", "purchase", "loan", "unknown"].includes(value);
-  if (field === "checked") return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
-  return true;
-}
 
 // src/class-names.mjs
 var defaultClassPrefix = "citation";

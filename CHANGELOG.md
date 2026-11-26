@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.0-preview.2 — In development
+
+- Export one immutable citation-option replacement policy through core, tools and manager entry points; unknown source options require explicit review.
+- Preserve same-work round-trip behavior; this metadata helper does not rewrite citations or add quote notation.
+
 ## 0.6.0-preview.1 — In development
 
 - Add pure selected-item CSL/Zotero adapters and a separate browser manager module; keep private manager addresses outside portable records.

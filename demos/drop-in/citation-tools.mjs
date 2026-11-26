@@ -1,4 +1,4 @@
-/*! cite-inator tools v0.6.0-preview.1 | MIT | See LICENSE */
+/*! cite-inator tools v0.6.0-preview.2 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -83,6 +83,361 @@ THIS IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRE
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
+
+// src/records.mjs
+var CACHE_SCHEMA = "citation-inator.cache.v1";
+var cleanText = (value) => typeof value === "string" ? value.trim() : "";
+var normalizeTags = (value) => [...new Set((Array.isArray(value) ? value : []).filter((tag) => typeof tag === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag)))];
+var stableId = /^[a-z0-9][a-z0-9.-]{0,159}$/;
+var doi = (value) => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value) && !value.split("/").some((part) => part === "." || part === "..");
+var kinds = /* @__PURE__ */ new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document", "artwork", "image"]);
+var versions = /* @__PURE__ */ new Set(["version of record", "accepted manuscript", "author preprint", "preprint", "repository dissertation", "dataset", "software release"]);
+var integrityStates = /* @__PURE__ */ new Set(["retracted", "corrected", "expression of concern"]);
+var locationKinds = /* @__PURE__ */ new Set(["publisher", "repository", "pdf", "preprint", "status", "full-text", "library"]);
+function httpsURL(value) {
+  try {
+    const url = new URL(cleanText(value));
+    if (url.protocol === "https:" && !url.username && !url.password) return url.href;
+  } catch {
+  }
+  return "";
+}
+function validISBN10(value) {
+  return /^\d{9}[\dX]$/.test(value) && [...value].reduce((sum, digit, index) => sum + (digit === "X" ? 10 : Number(digit)) * (10 - index), 0) % 11 === 0;
+}
+function isbn13CheckDigit(stem) {
+  const total = [...stem].reduce((sum, digit, index) => sum + Number(digit) * (index % 2 ? 3 : 1), 0);
+  return (10 - total % 10) % 10;
+}
+function normalizeIdentifier(input) {
+  if (typeof input !== "string") return null;
+  const raw = input.trim();
+  if (!raw || raw.length > 2048) return null;
+  if (doi(raw)) return { scheme: "doi", value: raw.toLowerCase() };
+  if (/^https:\/\//i.test(raw)) return normalizeIdentifier(`url:${raw}`);
+  const match = /^([a-z]+):(.*)$/i.exec(raw);
+  if (!match) return stableId.test(raw) ? { scheme: "local", value: raw } : null;
+  const scheme = match[1].toLowerCase();
+  let value = match[2].trim();
+  switch (scheme) {
+    case "doi":
+      return doi(value) ? { scheme, value: value.toLowerCase() } : null;
+    case "pmid":
+      return /^[1-9]\d{0,11}$/.test(value) ? { scheme, value } : null;
+    case "pmcid":
+      value = value.toUpperCase();
+      return /^PMC[1-9]\d{0,11}$/.test(value) ? { scheme, value } : null;
+    case "arxiv":
+      value = value.replace(/^arxiv:/i, "");
+      return /^(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*\/\d{7})(?:v[1-9]\d*)?$/i.test(value) ? { scheme, value } : null;
+    case "issn":
+      value = value.replace(/[-\s]/g, "").toUpperCase();
+      if (!/^\d{7}[\dX]$/.test(value)) return null;
+      if ([...value].reduce((sum, digit, index) => sum + (digit === "X" ? 10 : Number(digit)) * (8 - index), 0) % 11) return null;
+      return { scheme, value: value.slice(0, 4) + "-" + value.slice(4) };
+    case "isbn": {
+      value = value.replace(/[\s-]/g, "").toUpperCase();
+      if (/^97[89]\d{10}$/.test(value) && isbn13CheckDigit(value.slice(0, -1)) === Number(value.at(-1))) return { scheme, value };
+      if (validISBN10(value)) return { scheme, value };
+      return null;
+    }
+    case "dataset":
+    case "software":
+      if (doi(value)) return normalizeIdentifier(value);
+      return normalizeIdentifier(`url:${value}`);
+    case "url": {
+      const safe = httpsURL(value);
+      if (!safe) return null;
+      const { hostname, pathname } = new URL(safe);
+      if (["doi.org", "dx.doi.org"].includes(hostname)) {
+        try {
+          return normalizeIdentifier(`doi:${decodeURIComponent(pathname.slice(1))}`);
+        } catch {
+          return null;
+        }
+      }
+      if (hostname === "pubmed.ncbi.nlm.nih.gov") {
+        const pmid = /^\/(\d+)\/?$/.exec(pathname)?.[1];
+        if (pmid) return normalizeIdentifier(`pmid:${pmid}`);
+      }
+      if (hostname === "pmc.ncbi.nlm.nih.gov" || hostname === "www.ncbi.nlm.nih.gov") {
+        const pmc = /^\/(?:pmc\/)?articles\/(PMC\d+)\/?$/.exec(pathname)?.[1];
+        if (pmc) return normalizeIdentifier(`pmcid:${pmc}`);
+      }
+      if (hostname === "arxiv.org") {
+        const arxiv = /^\/(?:abs|pdf)\/(.+?)(?:\.pdf)?$/.exec(pathname)?.[1];
+        if (arxiv) return normalizeIdentifier(`arxiv:${arxiv}`);
+      }
+      return { scheme, value: safe };
+    }
+    case "local":
+      return stableId.test(value) ? { scheme, value } : null;
+    default:
+      return null;
+  }
+}
+function localRecordId(prefix, key) {
+  let hash = 14695981039346656037n;
+  for (const byte of new TextEncoder().encode(key)) hash = BigInt.asUintN(64, (hash ^ BigInt(byte)) * 1099511628211n);
+  return `${prefix}-${hash.toString(16)}`;
+}
+var identifierKey = ({ scheme, value }) => `${scheme}:${value}`;
+function canonicalIdentifierKey(identifier) {
+  const { scheme, value } = identifier;
+  if (scheme !== "isbn" || !validISBN10(value)) return identifierKey(identifier);
+  const stem = "978" + value.slice(0, -1);
+  return `isbn:${stem}${isbn13CheckDigit(stem)}`;
+}
+function identifierURL(id) {
+  if (!id) return "";
+  const valid = normalizeIdentifier(identifierKey(id));
+  if (!valid) return "";
+  const path = valid.value.split("/").map(encodeURIComponent).join("/");
+  return {
+    doi: `https://doi.org/${path}`,
+    pmid: `https://pubmed.ncbi.nlm.nih.gov/${path}/`,
+    pmcid: `https://pmc.ncbi.nlm.nih.gov/articles/${path}/`,
+    arxiv: `https://arxiv.org/abs/${path}`,
+    isbn: `https://search.worldcat.org/search?q=bn%3A${path}`,
+    url: valid.value
+  }[valid.scheme] || "";
+}
+function dateParts(value) {
+  if (!Array.isArray(value) || !value.length || value.length > 3 || !value.every(Number.isInteger)) return null;
+  const [year, month = 1, day = 1] = value;
+  if (year < 1e3 || year > 9999 || month < 1 || month > 12 || day < 1 || day > new Date(Date.UTC(year, month, 0)).getUTCDate()) return null;
+  return [...value];
+}
+function stamp(value) {
+  const date = cleanText(value);
+  return date && Number.isFinite(Date.parse(date)) ? new Date(date).toISOString() : null;
+}
+function normalizeTextParts(parts) {
+  return (Array.isArray(parts) ? parts : []).flatMap((part) => {
+    if (typeof part?.text !== "string" || !part.text) return [];
+    const href = httpsURL(part.href);
+    return [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
+  });
+}
+function fullAuthorName(author, inverted = false) {
+  if (author.literal) return author.literal;
+  return (inverted ? [author.family, author.given, author.suffix] : [author.given, author.family, author.suffix]).filter(Boolean).join(inverted ? ", " : " ");
+}
+function normalizeChecksum(value) {
+  const algorithm = cleanText(value?.algorithm).toLowerCase().replace("-", "");
+  const digest = cleanText(value?.value).toLowerCase();
+  const lengths = { md5: 32, sha1: 40, sha256: 64, sha384: 96, sha512: 128 };
+  if (!lengths[algorithm] || digest.length !== lengths[algorithm] || !/^[a-f0-9]+$/.test(digest)) return null;
+  return { algorithm, value: digest, ...cleanText(value.role) && { role: cleanText(value.role) } };
+}
+function normalizeRecord(input) {
+  if (!input || !stableId.test(cleanText(input.id))) throw new TypeError("A stable citation record ID is required.");
+  const array = (value) => Array.isArray(value) ? value : [];
+  const identifiers = /* @__PURE__ */ new Map();
+  for (const item of array(input.identifiers)) {
+    if (!item || typeof item.scheme !== "string" || typeof item.value !== "string") continue;
+    const id = normalizeIdentifier(identifierKey(item));
+    if (id && id.scheme !== "local") identifiers.set(identifierKey(id), id);
+  }
+  const relatedIdentifiers = array(input.relatedIdentifiers).flatMap((item) => {
+    const label = cleanText(item?.label);
+    const value = cleanText(item?.value);
+    const authority = cleanText(item?.authority);
+    return label && value && authority ? [{ label, value, authority }] : [];
+  });
+  const people = (value) => array(value).flatMap((author) => {
+    const literal = cleanText(author?.literal);
+    const family = cleanText(author?.family);
+    const given = cleanText(author?.given);
+    const short = cleanText(author?.short);
+    const suffix = cleanText(author?.suffix);
+    const id = cleanText(author?.id);
+    return literal ? [{ literal, ...short && { short } }] : family ? [{ family, ...given && { given }, ...suffix && { suffix }, ...id && { id } }] : [];
+  });
+  const authors = people(input.authors), editors = people(input.editors), translators = people(input.translators);
+  const locations = array(input.locations).flatMap((location) => {
+    const url = httpsURL(location?.url);
+    const provider = cleanText(location?.provider);
+    const verifiedAt = stamp(location?.verifiedAt);
+    if (!url || !provider || !locationKinds.has(location.kind)) return [];
+    if (["pdf", "preprint"].includes(location.kind) && !verifiedAt) return [];
+    return [{
+      kind: location.kind,
+      url,
+      provider,
+      verifiedAt,
+      version: versions.has(location.version) ? location.version : null,
+      service: /^[a-z0-9][a-z0-9-]{0,63}$/.test(location.service || "") ? location.service : null,
+      access: ["open", "subscription", "purchase", "loan"].includes(location.access) ? location.access : "unknown"
+    }];
+  });
+  const provenance = array(input.provenance).flatMap((source) => {
+    const provider = cleanText(source?.provider);
+    return provider ? [{
+      provider,
+      url: httpsURL(source.url),
+      retrievedAt: stamp(source.retrievedAt),
+      note: cleanText(source.note),
+      ...normalizeChecksum(source.checksum) && { checksum: normalizeChecksum(source.checksum) },
+      ...Array.isArray(source.checksums) && { checksums: source.checksums.map(normalizeChecksum).filter(Boolean) }
+    }] : [];
+  });
+  const title = cleanText(input.title);
+  const citationParts = normalizeTextParts(input.citationParts);
+  const abstract = cleanText(input.abstract?.text);
+  const abstractSource = cleanText(input.abstract?.source);
+  const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
+  const originalIssued = dateParts(input.originalIssued);
+  const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
+  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "unresolvedText", "releaseVersion", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
+  return {
+    id: input.id.trim(),
+    type: kinds.has(input.type) ? input.type : "document",
+    state: title ? state : state === "partial" && citationParts.length ? "partial" : "unresolved",
+    ...input.license && cleanText(input.license.name) && {
+      license: { name: cleanText(input.license.name), url: httpsURL(input.license.url) }
+    },
+    ...Array.isArray(input.contributors) && {
+      contributors: input.contributors.flatMap((person) => {
+        const name2 = cleanText(person?.name), role = cleanText(person?.role);
+        return name2 && role ? [{ name: name2, role }] : [];
+      })
+    },
+    title,
+    authors,
+    ...editors.length && { editors },
+    ...translators.length && { translators },
+    identifiers: [...identifiers.values()],
+    locations,
+    provenance,
+    ...Array.isArray(input.tags) && { tags: normalizeTags(input.tags) },
+    ...relatedIdentifiers.length && { relatedIdentifiers },
+    citationParts,
+    ...input.authorsComplete === false && { authorsComplete: false },
+    ...Array.isArray(input.listAnnotationParts) && { listAnnotationParts: normalizeTextParts(input.listAnnotationParts) },
+    ...Object.fromEntries(optional.map((field) => [field, cleanText(input[field])]).filter(([, value]) => value)),
+    issued: dateParts(input.issued),
+    ...originalIssued && { originalIssued },
+    online: dateParts(input.online),
+    print: dateParts(input.print),
+    retrievedAt: stamp(input.retrievedAt),
+    version: versions.has(input.version) ? input.version : null,
+    integrity: integrityStates.has(input.integrity?.state) && (httpsURL(input.integrity?.url) || cleanText(input.integrity?.source)) ? {
+      state: input.integrity.state,
+      source: cleanText(input.integrity.source),
+      url: httpsURL(input.integrity.url)
+    } : null,
+    abstract: abstract && abstractSource ? {
+      text: abstract,
+      source: abstractSource,
+      ...input.abstract.kind === "excerpt" && { kind: "excerpt" },
+      ...httpsURL(input.abstract.url) && { url: httpsURL(input.abstract.url) }
+    } : null,
+    ...Object.fromEntries(textFields.map((field) => [field, cleanText(input[field])]))
+  };
+}
+function readCache(input) {
+  if (input?.schema !== CACHE_SCHEMA || !Array.isArray(input.records)) throw new TypeError("Unsupported citation cache schema.");
+  const byId = /* @__PURE__ */ new Map();
+  const byIdentifier = /* @__PURE__ */ new Map();
+  for (const raw of input.records) {
+    const record = normalizeRecord(raw);
+    if (byId.has(record.id)) throw new Error(`Duplicate record ID ${record.id}.`);
+    byId.set(record.id, record);
+    for (const identifier of record.identifiers) {
+      const key = canonicalIdentifierKey(identifier);
+      const existing = byIdentifier.get(key);
+      if (existing && existing !== record) throw new Error(`Conflicting records for ${key}.`);
+      byIdentifier.set(key, record);
+      byIdentifier.set(identifierKey(identifier), record);
+    }
+  }
+  return { byId, byIdentifier };
+}
+
+// src/author-fields.mjs
+var authorFields = /* @__PURE__ */ new Set(["original-year", "edition-year", "reference", "attribution", "display-date", "medium", "dimensions", "institution", "accession", "rights", "photographer", "uploader", "pdf", "read-url", "access", "checked"]);
+var recordFields = { "original-year": "originalIssued", "edition-year": "issued", attribution: "creatorAttribution", "display-date": "displayDate", medium: "medium", dimensions: "dimensions", institution: "holdingInstitution", accession: "accession" };
+function referenceParts(value) {
+  return value.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/u).filter(Boolean).map((text) => text.startsWith("**") && text.endsWith("**") ? { text: text.slice(2, -2), emphasis: "bold" } : text.startsWith("*") && text.endsWith("*") ? { text: text.slice(1, -1), emphasis: "italic" } : { text });
+}
+function validAuthorField(field, value) {
+  if (!value.trim()) return false;
+  if (field.endsWith("-year")) return /^[1-9][0-9]{3}$/.test(value);
+  if (["pdf", "read-url"].includes(field)) return Boolean(httpsURL(value));
+  if (field === "access") return ["open", "subscription", "purchase", "loan", "unknown"].includes(value);
+  if (field === "checked") return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+  return true;
+}
+function applyAuthorFields(blocks, index, { suffixScope }) {
+  const assertions = /* @__PURE__ */ new Map();
+  for (const token of blocks.flat()) for (const item of token.items || []) {
+    if (!item.authorFields) continue;
+    const record = item.identifier.scheme === "local" ? index.byId.get(item.identifier.value) : index.byIdentifier.get(canonicalIdentifierKey(item.identifier));
+    if (!record) continue;
+    const fields = assertions.get(record.id) || {};
+    for (const [key, value] of Object.entries(item.authorFields)) {
+      if (Object.hasOwn(fields, key) && fields[key] !== value) throw new TypeError(`Conflicting ${key} declarations for ${record.id}. Use one value throughout the document.`);
+      fields[key] = value;
+    }
+    assertions.set(record.id, fields);
+  }
+  for (const [id, fields] of assertions) {
+    const prior = index.byId.get(id), next = { ...prior };
+    const datesChanged = ["original-year", "edition-year"].some((key) => fields[key] && prior[recordFields[key]]?.[0] !== Number(fields[key]));
+    const displayChanged = fields["display-date"] && fields["display-date"] !== prior.displayDate;
+    if ((datesChanged || displayChanged) && suffixScope === "cache") throw new TypeError(`Put shared date corrections for ${id} in the shared metadata before using suffixScope:cache.`);
+    if (!fields.reference && (datesChanged && prior.displayDate || (datesChanged || displayChanged) && (prior.citationParts?.length || prior.citationText))) throw new TypeError(`Date assertions for ${id} conflict with its custom reference/date. Supply reference: too, or correct the shared metadata.`);
+    for (const [key, field] of Object.entries(recordFields)) if (fields[key]) {
+      next[field] = key.endsWith("-year") ? prior[field]?.[0] === Number(fields[key]) ? prior[field] : [Number(fields[key])] : fields[key];
+    }
+    if (fields["edition-year"] && fields["display-date"] && fields["display-date"] !== fields["edition-year"]) throw new TypeError(`display-date: disagrees with edition-year: for ${id}.`);
+    if (datesChanged && fields.reference && prior.displayDate && !fields["display-date"]) delete next.displayDate;
+    if (next.originalIssued && next.issued && next.originalIssued[0] > next.issued[0]) throw new TypeError(`Original year is later than edition year for ${id}.`);
+    if (fields.reference) {
+      next.citationParts = referenceParts(fields.reference);
+      next.citationText = "";
+    }
+    if (fields.rights) next.license = { name: fields.rights };
+    const contributors = ["photographer", "uploader"].filter((key) => fields[key]).map((role) => ({ role, name: fields[role] }));
+    if (contributors.length) next.contributors = [...(prior.contributors || []).filter((person) => !fields[person.role]), ...contributors];
+    if ((fields.access || fields.checked) && !fields.pdf && !fields["read-url"]) throw new TypeError(`access: and checked: need pdf: or read-url: for ${id}.`);
+    const locations = ["pdf", "read-url"].filter((key) => fields[key]).map((key) => {
+      if (key === "pdf" && !fields.checked) throw new TypeError(`Supply checked:YYYY-MM-DD with pdf: for ${id}.`);
+      return { kind: key === "pdf" ? "pdf" : "publisher", provider: "Author-supplied copy", url: fields[key], access: fields.access || "unknown", verifiedAt: fields.checked ? fields.checked + "T00:00:00.000Z" : null };
+    });
+    if (locations.length) next.locations = [...prior.locations.filter((location) => !locations.some((added) => added.url === location.url)), ...locations];
+    const priorFields = new Set(Object.keys(fields).filter((key) => recordFields[key]).map((key) => recordFields[key]));
+    if (fields.reference) {
+      priorFields.add("citationParts");
+      priorFields.add("citationText");
+    }
+    if (fields.rights) priorFields.add("license");
+    if (contributors.length) priorFields.add("contributors");
+    if (locations.length) priorFields.add("locations");
+    if (prior.displayDate && next.displayDate !== prior.displayDate) priorFields.add("displayDate");
+    next.provenance = [...prior.provenance, { provider: "Document author", note: JSON.stringify({ assertions: fields, prior: Object.fromEntries([...priorFields].map((key) => [key, prior[key] ?? null])) }) }];
+    const normalized = normalizeRecord(next);
+    index.byId.set(id, normalized);
+    for (const identifier of normalized.identifiers) index.byIdentifier.set(canonicalIdentifierKey(identifier), normalized);
+  }
+}
+
+// src/option-policy.mjs
+var policy = (action, category) => Object.freeze({ action, category });
+var CITATION_OPTION_POLICIES = Object.freeze(Object.fromEntries([
+  ["form", policy("retain", "presentation")],
+  ["isolated", policy("retain", "presentation")],
+  ["note", policy("recompute", "editor")],
+  ["unresolved", policy("replace-fallback", "source")],
+  ...[.../* @__PURE__ */ new Set(["locator", "label", "prefix", "tags", ...authorFields])].map((name2) => [name2, policy("review", "source")])
+]));
+function citationOptionPolicy(name2) {
+  if (name2 === null) return Object.freeze({ known: true, action: "review", category: "source" });
+  if (typeof name2 !== "string" || !name2.trim()) throw new TypeError("Supply an option name, or null for a bare display fallback.");
+  if (Object.hasOwn(CITATION_OPTION_POLICIES, name2)) return Object.freeze({ known: true, ...CITATION_OPTION_POLICIES[name2] });
+  return Object.freeze({ known: false, action: "review", category: "unknown" });
+}
 
 // src/notation-options.mjs
 function optionSpans(source) {
@@ -9356,277 +9711,6 @@ var jt = k.parseInline;
 var Ut = b.parse;
 var Kt = x.lex;
 
-// src/records.mjs
-var CACHE_SCHEMA = "citation-inator.cache.v1";
-var cleanText = (value) => typeof value === "string" ? value.trim() : "";
-var normalizeTags = (value) => [...new Set((Array.isArray(value) ? value : []).filter((tag) => typeof tag === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag)))];
-var stableId = /^[a-z0-9][a-z0-9.-]{0,159}$/;
-var doi = (value) => /^10\.\d{4,9}\/[^\s\u0000-\u001f\u007f<>{}]+$/iu.test(value) && !value.split("/").some((part) => part === "." || part === "..");
-var kinds = /* @__PURE__ */ new Set(["article-journal", "book", "thesis", "article", "dataset", "software", "webpage", "report", "chapter", "legislation", "document", "artwork", "image"]);
-var versions = /* @__PURE__ */ new Set(["version of record", "accepted manuscript", "author preprint", "preprint", "repository dissertation", "dataset", "software release"]);
-var integrityStates = /* @__PURE__ */ new Set(["retracted", "corrected", "expression of concern"]);
-var locationKinds = /* @__PURE__ */ new Set(["publisher", "repository", "pdf", "preprint", "status", "full-text", "library"]);
-function httpsURL(value) {
-  try {
-    const url = new URL(cleanText(value));
-    if (url.protocol === "https:" && !url.username && !url.password) return url.href;
-  } catch {
-  }
-  return "";
-}
-function validISBN10(value) {
-  return /^\d{9}[\dX]$/.test(value) && [...value].reduce((sum, digit, index) => sum + (digit === "X" ? 10 : Number(digit)) * (10 - index), 0) % 11 === 0;
-}
-function isbn13CheckDigit(stem) {
-  const total = [...stem].reduce((sum, digit, index) => sum + Number(digit) * (index % 2 ? 3 : 1), 0);
-  return (10 - total % 10) % 10;
-}
-function normalizeIdentifier(input) {
-  if (typeof input !== "string") return null;
-  const raw = input.trim();
-  if (!raw || raw.length > 2048) return null;
-  if (doi(raw)) return { scheme: "doi", value: raw.toLowerCase() };
-  if (/^https:\/\//i.test(raw)) return normalizeIdentifier(`url:${raw}`);
-  const match = /^([a-z]+):(.*)$/i.exec(raw);
-  if (!match) return stableId.test(raw) ? { scheme: "local", value: raw } : null;
-  const scheme = match[1].toLowerCase();
-  let value = match[2].trim();
-  switch (scheme) {
-    case "doi":
-      return doi(value) ? { scheme, value: value.toLowerCase() } : null;
-    case "pmid":
-      return /^[1-9]\d{0,11}$/.test(value) ? { scheme, value } : null;
-    case "pmcid":
-      value = value.toUpperCase();
-      return /^PMC[1-9]\d{0,11}$/.test(value) ? { scheme, value } : null;
-    case "arxiv":
-      value = value.replace(/^arxiv:/i, "");
-      return /^(?:\d{4}\.\d{4,5}|[a-z][a-z0-9.-]*\/\d{7})(?:v[1-9]\d*)?$/i.test(value) ? { scheme, value } : null;
-    case "issn":
-      value = value.replace(/[-\s]/g, "").toUpperCase();
-      if (!/^\d{7}[\dX]$/.test(value)) return null;
-      if ([...value].reduce((sum, digit, index) => sum + (digit === "X" ? 10 : Number(digit)) * (8 - index), 0) % 11) return null;
-      return { scheme, value: value.slice(0, 4) + "-" + value.slice(4) };
-    case "isbn": {
-      value = value.replace(/[\s-]/g, "").toUpperCase();
-      if (/^97[89]\d{10}$/.test(value) && isbn13CheckDigit(value.slice(0, -1)) === Number(value.at(-1))) return { scheme, value };
-      if (validISBN10(value)) return { scheme, value };
-      return null;
-    }
-    case "dataset":
-    case "software":
-      if (doi(value)) return normalizeIdentifier(value);
-      return normalizeIdentifier(`url:${value}`);
-    case "url": {
-      const safe = httpsURL(value);
-      if (!safe) return null;
-      const { hostname, pathname } = new URL(safe);
-      if (["doi.org", "dx.doi.org"].includes(hostname)) {
-        try {
-          return normalizeIdentifier(`doi:${decodeURIComponent(pathname.slice(1))}`);
-        } catch {
-          return null;
-        }
-      }
-      if (hostname === "pubmed.ncbi.nlm.nih.gov") {
-        const pmid = /^\/(\d+)\/?$/.exec(pathname)?.[1];
-        if (pmid) return normalizeIdentifier(`pmid:${pmid}`);
-      }
-      if (hostname === "pmc.ncbi.nlm.nih.gov" || hostname === "www.ncbi.nlm.nih.gov") {
-        const pmc = /^\/(?:pmc\/)?articles\/(PMC\d+)\/?$/.exec(pathname)?.[1];
-        if (pmc) return normalizeIdentifier(`pmcid:${pmc}`);
-      }
-      if (hostname === "arxiv.org") {
-        const arxiv = /^\/(?:abs|pdf)\/(.+?)(?:\.pdf)?$/.exec(pathname)?.[1];
-        if (arxiv) return normalizeIdentifier(`arxiv:${arxiv}`);
-      }
-      return { scheme, value: safe };
-    }
-    case "local":
-      return stableId.test(value) ? { scheme, value } : null;
-    default:
-      return null;
-  }
-}
-function localRecordId(prefix, key) {
-  let hash = 14695981039346656037n;
-  for (const byte of new TextEncoder().encode(key)) hash = BigInt.asUintN(64, (hash ^ BigInt(byte)) * 1099511628211n);
-  return `${prefix}-${hash.toString(16)}`;
-}
-var identifierKey = ({ scheme, value }) => `${scheme}:${value}`;
-function canonicalIdentifierKey(identifier) {
-  const { scheme, value } = identifier;
-  if (scheme !== "isbn" || !validISBN10(value)) return identifierKey(identifier);
-  const stem = "978" + value.slice(0, -1);
-  return `isbn:${stem}${isbn13CheckDigit(stem)}`;
-}
-function identifierURL(id) {
-  if (!id) return "";
-  const valid = normalizeIdentifier(identifierKey(id));
-  if (!valid) return "";
-  const path = valid.value.split("/").map(encodeURIComponent).join("/");
-  return {
-    doi: `https://doi.org/${path}`,
-    pmid: `https://pubmed.ncbi.nlm.nih.gov/${path}/`,
-    pmcid: `https://pmc.ncbi.nlm.nih.gov/articles/${path}/`,
-    arxiv: `https://arxiv.org/abs/${path}`,
-    isbn: `https://search.worldcat.org/search?q=bn%3A${path}`,
-    url: valid.value
-  }[valid.scheme] || "";
-}
-function dateParts(value) {
-  if (!Array.isArray(value) || !value.length || value.length > 3 || !value.every(Number.isInteger)) return null;
-  const [year, month = 1, day = 1] = value;
-  if (year < 1e3 || year > 9999 || month < 1 || month > 12 || day < 1 || day > new Date(Date.UTC(year, month, 0)).getUTCDate()) return null;
-  return [...value];
-}
-function stamp(value) {
-  const date = cleanText(value);
-  return date && Number.isFinite(Date.parse(date)) ? new Date(date).toISOString() : null;
-}
-function normalizeTextParts(parts) {
-  return (Array.isArray(parts) ? parts : []).flatMap((part) => {
-    if (typeof part?.text !== "string" || !part.text) return [];
-    const href = httpsURL(part.href);
-    return [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
-  });
-}
-function fullAuthorName(author, inverted = false) {
-  if (author.literal) return author.literal;
-  return (inverted ? [author.family, author.given, author.suffix] : [author.given, author.family, author.suffix]).filter(Boolean).join(inverted ? ", " : " ");
-}
-function normalizeChecksum(value) {
-  const algorithm = cleanText(value?.algorithm).toLowerCase().replace("-", "");
-  const digest = cleanText(value?.value).toLowerCase();
-  const lengths = { md5: 32, sha1: 40, sha256: 64, sha384: 96, sha512: 128 };
-  if (!lengths[algorithm] || digest.length !== lengths[algorithm] || !/^[a-f0-9]+$/.test(digest)) return null;
-  return { algorithm, value: digest, ...cleanText(value.role) && { role: cleanText(value.role) } };
-}
-function normalizeRecord(input) {
-  if (!input || !stableId.test(cleanText(input.id))) throw new TypeError("A stable citation record ID is required.");
-  const array = (value) => Array.isArray(value) ? value : [];
-  const identifiers = /* @__PURE__ */ new Map();
-  for (const item of array(input.identifiers)) {
-    if (!item || typeof item.scheme !== "string" || typeof item.value !== "string") continue;
-    const id = normalizeIdentifier(identifierKey(item));
-    if (id && id.scheme !== "local") identifiers.set(identifierKey(id), id);
-  }
-  const relatedIdentifiers = array(input.relatedIdentifiers).flatMap((item) => {
-    const label = cleanText(item?.label);
-    const value = cleanText(item?.value);
-    const authority = cleanText(item?.authority);
-    return label && value && authority ? [{ label, value, authority }] : [];
-  });
-  const people = (value) => array(value).flatMap((author) => {
-    const literal = cleanText(author?.literal);
-    const family = cleanText(author?.family);
-    const given = cleanText(author?.given);
-    const short = cleanText(author?.short);
-    const suffix = cleanText(author?.suffix);
-    const id = cleanText(author?.id);
-    return literal ? [{ literal, ...short && { short } }] : family ? [{ family, ...given && { given }, ...suffix && { suffix }, ...id && { id } }] : [];
-  });
-  const authors = people(input.authors), editors = people(input.editors), translators = people(input.translators);
-  const locations = array(input.locations).flatMap((location) => {
-    const url = httpsURL(location?.url);
-    const provider = cleanText(location?.provider);
-    const verifiedAt = stamp(location?.verifiedAt);
-    if (!url || !provider || !locationKinds.has(location.kind)) return [];
-    if (["pdf", "preprint"].includes(location.kind) && !verifiedAt) return [];
-    return [{
-      kind: location.kind,
-      url,
-      provider,
-      verifiedAt,
-      version: versions.has(location.version) ? location.version : null,
-      service: /^[a-z0-9][a-z0-9-]{0,63}$/.test(location.service || "") ? location.service : null,
-      access: ["open", "subscription", "purchase", "loan"].includes(location.access) ? location.access : "unknown"
-    }];
-  });
-  const provenance = array(input.provenance).flatMap((source) => {
-    const provider = cleanText(source?.provider);
-    return provider ? [{
-      provider,
-      url: httpsURL(source.url),
-      retrievedAt: stamp(source.retrievedAt),
-      note: cleanText(source.note),
-      ...normalizeChecksum(source.checksum) && { checksum: normalizeChecksum(source.checksum) },
-      ...Array.isArray(source.checksums) && { checksums: source.checksums.map(normalizeChecksum).filter(Boolean) }
-    }] : [];
-  });
-  const title = cleanText(input.title);
-  const citationParts = normalizeTextParts(input.citationParts);
-  const abstract = cleanText(input.abstract?.text);
-  const abstractSource = cleanText(input.abstract?.source);
-  const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
-  const originalIssued = dateParts(input.originalIssued);
-  const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
-  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "unresolvedText", "releaseVersion", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
-  return {
-    id: input.id.trim(),
-    type: kinds.has(input.type) ? input.type : "document",
-    state: title ? state : state === "partial" && citationParts.length ? "partial" : "unresolved",
-    ...input.license && cleanText(input.license.name) && {
-      license: { name: cleanText(input.license.name), url: httpsURL(input.license.url) }
-    },
-    ...Array.isArray(input.contributors) && {
-      contributors: input.contributors.flatMap((person) => {
-        const name2 = cleanText(person?.name), role = cleanText(person?.role);
-        return name2 && role ? [{ name: name2, role }] : [];
-      })
-    },
-    title,
-    authors,
-    ...editors.length && { editors },
-    ...translators.length && { translators },
-    identifiers: [...identifiers.values()],
-    locations,
-    provenance,
-    ...Array.isArray(input.tags) && { tags: normalizeTags(input.tags) },
-    ...relatedIdentifiers.length && { relatedIdentifiers },
-    citationParts,
-    ...input.authorsComplete === false && { authorsComplete: false },
-    ...Array.isArray(input.listAnnotationParts) && { listAnnotationParts: normalizeTextParts(input.listAnnotationParts) },
-    ...Object.fromEntries(optional.map((field) => [field, cleanText(input[field])]).filter(([, value]) => value)),
-    issued: dateParts(input.issued),
-    ...originalIssued && { originalIssued },
-    online: dateParts(input.online),
-    print: dateParts(input.print),
-    retrievedAt: stamp(input.retrievedAt),
-    version: versions.has(input.version) ? input.version : null,
-    integrity: integrityStates.has(input.integrity?.state) && (httpsURL(input.integrity?.url) || cleanText(input.integrity?.source)) ? {
-      state: input.integrity.state,
-      source: cleanText(input.integrity.source),
-      url: httpsURL(input.integrity.url)
-    } : null,
-    abstract: abstract && abstractSource ? {
-      text: abstract,
-      source: abstractSource,
-      ...input.abstract.kind === "excerpt" && { kind: "excerpt" },
-      ...httpsURL(input.abstract.url) && { url: httpsURL(input.abstract.url) }
-    } : null,
-    ...Object.fromEntries(textFields.map((field) => [field, cleanText(input[field])]))
-  };
-}
-function readCache(input) {
-  if (input?.schema !== CACHE_SCHEMA || !Array.isArray(input.records)) throw new TypeError("Unsupported citation cache schema.");
-  const byId = /* @__PURE__ */ new Map();
-  const byIdentifier = /* @__PURE__ */ new Map();
-  for (const raw of input.records) {
-    const record = normalizeRecord(raw);
-    if (byId.has(record.id)) throw new Error(`Duplicate record ID ${record.id}.`);
-    byId.set(record.id, record);
-    for (const identifier of record.identifiers) {
-      const key = canonicalIdentifierKey(identifier);
-      const existing = byIdentifier.get(key);
-      if (existing && existing !== record) throw new Error(`Conflicting records for ${key}.`);
-      byIdentifier.set(key, record);
-      byIdentifier.set(identifierKey(identifier), record);
-    }
-  }
-  return { byId, byIdentifier };
-}
-
 // src/tag-declarations.mjs
 function applyTagDeclarations(blocks, index, { tagCatalogue = [], listItemTags = {} } = {}, diagnostics = []) {
   if (!Array.isArray(tagCatalogue) || !listItemTags || typeof listItemTags !== "object" || Array.isArray(listItemTags)) return { tagCatalogue, listItemTags };
@@ -9660,74 +9744,6 @@ function applyTagDeclarations(blocks, index, { tagCatalogue = [], listItemTags =
   return { tagCatalogue: catalogue, listItemTags: overrides };
 }
 
-// src/author-fields.mjs
-var authorFields = /* @__PURE__ */ new Set(["original-year", "edition-year", "reference", "attribution", "display-date", "medium", "dimensions", "institution", "accession", "rights", "photographer", "uploader", "pdf", "read-url", "access", "checked"]);
-var recordFields = { "original-year": "originalIssued", "edition-year": "issued", attribution: "creatorAttribution", "display-date": "displayDate", medium: "medium", dimensions: "dimensions", institution: "holdingInstitution", accession: "accession" };
-function referenceParts(value) {
-  return value.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/u).filter(Boolean).map((text) => text.startsWith("**") && text.endsWith("**") ? { text: text.slice(2, -2), emphasis: "bold" } : text.startsWith("*") && text.endsWith("*") ? { text: text.slice(1, -1), emphasis: "italic" } : { text });
-}
-function validAuthorField(field, value) {
-  if (!value.trim()) return false;
-  if (field.endsWith("-year")) return /^[1-9][0-9]{3}$/.test(value);
-  if (["pdf", "read-url"].includes(field)) return Boolean(httpsURL(value));
-  if (field === "access") return ["open", "subscription", "purchase", "loan", "unknown"].includes(value);
-  if (field === "checked") return /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
-  return true;
-}
-function applyAuthorFields(blocks, index, { suffixScope }) {
-  const assertions = /* @__PURE__ */ new Map();
-  for (const token of blocks.flat()) for (const item of token.items || []) {
-    if (!item.authorFields) continue;
-    const record = item.identifier.scheme === "local" ? index.byId.get(item.identifier.value) : index.byIdentifier.get(canonicalIdentifierKey(item.identifier));
-    if (!record) continue;
-    const fields = assertions.get(record.id) || {};
-    for (const [key, value] of Object.entries(item.authorFields)) {
-      if (Object.hasOwn(fields, key) && fields[key] !== value) throw new TypeError(`Conflicting ${key} declarations for ${record.id}. Use one value throughout the document.`);
-      fields[key] = value;
-    }
-    assertions.set(record.id, fields);
-  }
-  for (const [id, fields] of assertions) {
-    const prior = index.byId.get(id), next = { ...prior };
-    const datesChanged = ["original-year", "edition-year"].some((key) => fields[key] && prior[recordFields[key]]?.[0] !== Number(fields[key]));
-    const displayChanged = fields["display-date"] && fields["display-date"] !== prior.displayDate;
-    if ((datesChanged || displayChanged) && suffixScope === "cache") throw new TypeError(`Put shared date corrections for ${id} in the shared metadata before using suffixScope:cache.`);
-    if (!fields.reference && (datesChanged && prior.displayDate || (datesChanged || displayChanged) && (prior.citationParts?.length || prior.citationText))) throw new TypeError(`Date assertions for ${id} conflict with its custom reference/date. Supply reference: too, or correct the shared metadata.`);
-    for (const [key, field] of Object.entries(recordFields)) if (fields[key]) {
-      next[field] = key.endsWith("-year") ? prior[field]?.[0] === Number(fields[key]) ? prior[field] : [Number(fields[key])] : fields[key];
-    }
-    if (fields["edition-year"] && fields["display-date"] && fields["display-date"] !== fields["edition-year"]) throw new TypeError(`display-date: disagrees with edition-year: for ${id}.`);
-    if (datesChanged && fields.reference && prior.displayDate && !fields["display-date"]) delete next.displayDate;
-    if (next.originalIssued && next.issued && next.originalIssued[0] > next.issued[0]) throw new TypeError(`Original year is later than edition year for ${id}.`);
-    if (fields.reference) {
-      next.citationParts = referenceParts(fields.reference);
-      next.citationText = "";
-    }
-    if (fields.rights) next.license = { name: fields.rights };
-    const contributors = ["photographer", "uploader"].filter((key) => fields[key]).map((role) => ({ role, name: fields[role] }));
-    if (contributors.length) next.contributors = [...(prior.contributors || []).filter((person) => !fields[person.role]), ...contributors];
-    if ((fields.access || fields.checked) && !fields.pdf && !fields["read-url"]) throw new TypeError(`access: and checked: need pdf: or read-url: for ${id}.`);
-    const locations = ["pdf", "read-url"].filter((key) => fields[key]).map((key) => {
-      if (key === "pdf" && !fields.checked) throw new TypeError(`Supply checked:YYYY-MM-DD with pdf: for ${id}.`);
-      return { kind: key === "pdf" ? "pdf" : "publisher", provider: "Author-supplied copy", url: fields[key], access: fields.access || "unknown", verifiedAt: fields.checked ? fields.checked + "T00:00:00.000Z" : null };
-    });
-    if (locations.length) next.locations = [...prior.locations.filter((location) => !locations.some((added) => added.url === location.url)), ...locations];
-    const priorFields = new Set(Object.keys(fields).filter((key) => recordFields[key]).map((key) => recordFields[key]));
-    if (fields.reference) {
-      priorFields.add("citationParts");
-      priorFields.add("citationText");
-    }
-    if (fields.rights) priorFields.add("license");
-    if (contributors.length) priorFields.add("contributors");
-    if (locations.length) priorFields.add("locations");
-    if (prior.displayDate && next.displayDate !== prior.displayDate) priorFields.add("displayDate");
-    next.provenance = [...prior.provenance, { provider: "Document author", note: JSON.stringify({ assertions: fields, prior: Object.fromEntries([...priorFields].map((key) => [key, prior[key] ?? null])) }) }];
-    const normalized = normalizeRecord(next);
-    index.byId.set(id, normalized);
-    for (const identifier of normalized.identifiers) index.byIdentifier.set(canonicalIdentifierKey(identifier), normalized);
-  }
-}
-
 // src/class-names.mjs
 var defaultClassPrefix = "citation";
 function validClassPrefix(prefix) {
@@ -9743,7 +9759,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.1",
+  version: "0.6.0-preview.2",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -11261,8 +11277,10 @@ function collectMarkerTags(sources, cache, options = {}) {
   return options.includeDiagnostics ? { counts: result, diagnostics } : result;
 }
 export {
+  CITATION_OPTION_POLICIES,
   annotateMarkers,
   citationLocales,
+  citationOptionPolicy,
   collectMarkerTags,
   createCitationMessages,
   createSiteOccurrenceIndex,

@@ -284,3 +284,7 @@ The 0.5.1 development grammar accepts optional pipes between named fields. `anno
 ### Unresolved placeholders (0.5.1 development)
 
 A marker's `unresolved:"…"` fallback retains original wording until its target record is resolved. `describeCitation` returns that wording and `citation-unresolved-placeholder`; `annotateMarkers` leaves it unchanged and returns the diagnostic. `collectMarkerTags(sources, cache, {includeDiagnostics:true})` reports the same code even for a marker without tags, with empty counts where appropriate. Regular unresolved citations still use `citation-unresolved`. Completing the target record removes placeholder behavior automatically. [Import and completion contract](import-api.md#citations-as-unresolved-placeholders).
+
+## Classify options when replacing a work
+
+`citationOptionPolicy(name)` and the immutable `CITATION_OPTION_POLICIES` table are exported by core/tools/manager entry points in 0.6.0-preview.2. The helper separates retained presentation, recomputed notes, replaced unresolved fallbacks and source/unknown options that require review. It does not rewrite markers or decide work identity. Apply it to an actual work replacement; unchanged-work round trips still preserve every option. See the [field policy and host behavior](zotero.md#replacing-a-work-shared-option-policy-preview2).

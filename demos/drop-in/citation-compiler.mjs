@@ -1,4 +1,4 @@
-/*! cite-inator compiler v0.6.0-preview.1 | MIT | See LICENSE */
+/*! cite-inator compiler v0.6.0-preview.2 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -585,70 +585,6 @@ function readCache(input) {
   return { byId, byIdentifier };
 }
 
-// src/tag-declarations.mjs
-function applyTagDeclarations(blocks, index, { tagCatalogue = [], listItemTags = {} } = {}, diagnostics = []) {
-  if (!Array.isArray(tagCatalogue) || !listItemTags || typeof listItemTags !== "object" || Array.isArray(listItemTags)) return { tagCatalogue, listItemTags };
-  const catalogue = tagCatalogue.map((tag) => ({ ...tag, id: normalizeTags([tag?.id])[0], label: cleanText(tag?.label) })), overrides = { ...listItemTags };
-  const assigned = /* @__PURE__ */ new Map();
-  for (const token of blocks.flat()) {
-    if (token.type !== "tags") continue;
-    const identifier = token.items[0].identifier, key = canonicalIdentifierKey(identifier);
-    const record = identifier.scheme === "local" ? index.byId.get(identifier.value) : index.byIdentifier.get(key);
-    if (!record || record.state === "unresolved") diagnostics.push({ state: "unresolved", code: "citation-unresolved", identifier: key });
-    if (!record) continue;
-    const previous = assigned.get(record.id) || /* @__PURE__ */ new Set();
-    for (const definition of token.definitions) {
-      const configured = catalogue.find((tag) => tag.id === definition.id);
-      if (configured && configured.label !== definition.label) throw new TypeError(`Conflicting label for tag ${definition.id}. Use one label throughout the document.`);
-      if (!configured) catalogue.push(definition);
-      previous.add(definition.id);
-    }
-    assigned.set(record.id, previous);
-  }
-  for (const [id, tags] of assigned) {
-    const prior = index.byId.get(id);
-    const next = normalizeRecord({ ...prior, tags: normalizeTags([...prior.tags || [], ...tags]), provenance: [...prior.provenance, { provider: "Document author", note: JSON.stringify({ tags: [...tags], priorTags: prior.tags || [] }) }] });
-    index.byId.set(id, next);
-    for (const identifier of next.identifiers) index.byIdentifier.set(canonicalIdentifierKey(identifier), next);
-    if (Object.hasOwn(overrides, id)) {
-      if (!Array.isArray(overrides[id])) throw new TypeError("Supply listItemTags values as arrays of topic IDs.");
-      overrides[id] = normalizeTags([...overrides[id], ...tags]);
-    }
-  }
-  return { tagCatalogue: catalogue, listItemTags: overrides };
-}
-
-// src/notation-options.mjs
-function optionSpans(source) {
-  const spans = [];
-  let start = 0, quoted = false;
-  for (let i = 0; i < source.length; i++) {
-    if (source[i] === "\\") {
-      i++;
-      continue;
-    }
-    if (source[i] === '"') {
-      quoted = !quoted;
-      continue;
-    }
-    if (quoted) continue;
-    if (source[i] === "|") {
-      spans.push({ start, end: i });
-      start = i + 1;
-    } else if (/[ \t]/.test(source[i])) {
-      const following = /^[ \t]+(?=[a-z0-9][a-z0-9-]*:|isolated(?:[ \t|]|$))/.exec(source.slice(i));
-      if (following && source.slice(start, i).trim() && !source.slice(start, i).trimEnd().endsWith(";")) {
-        spans.push({ start, end: i });
-        start = i + following[0].length;
-        i = start - 1;
-      }
-    }
-  }
-  spans.push({ start, end: source.length });
-  return spans;
-}
-var optionParts = (source) => optionSpans(source).map(({ start, end }) => source.slice(start, end).trim());
-
 // src/author-fields.mjs
 var authorFields = /* @__PURE__ */ new Set(["original-year", "edition-year", "reference", "attribution", "display-date", "medium", "dimensions", "institution", "accession", "rights", "photographer", "uploader", "pdf", "read-url", "access", "checked"]);
 var recordFields = { "original-year": "originalIssued", "edition-year": "issued", attribution: "creatorAttribution", "display-date": "displayDate", medium: "medium", dimensions: "dimensions", institution: "holdingInstitution", accession: "accession" };
@@ -717,6 +653,86 @@ function applyAuthorFields(blocks, index, { suffixScope }) {
   }
 }
 
+// src/option-policy.mjs
+var policy = (action, category) => Object.freeze({ action, category });
+var CITATION_OPTION_POLICIES = Object.freeze(Object.fromEntries([
+  ["form", policy("retain", "presentation")],
+  ["isolated", policy("retain", "presentation")],
+  ["note", policy("recompute", "editor")],
+  ["unresolved", policy("replace-fallback", "source")],
+  ...[.../* @__PURE__ */ new Set(["locator", "label", "prefix", "tags", ...authorFields])].map((name2) => [name2, policy("review", "source")])
+]));
+function citationOptionPolicy(name2) {
+  if (name2 === null) return Object.freeze({ known: true, action: "review", category: "source" });
+  if (typeof name2 !== "string" || !name2.trim()) throw new TypeError("Supply an option name, or null for a bare display fallback.");
+  if (Object.hasOwn(CITATION_OPTION_POLICIES, name2)) return Object.freeze({ known: true, ...CITATION_OPTION_POLICIES[name2] });
+  return Object.freeze({ known: false, action: "review", category: "unknown" });
+}
+
+// src/tag-declarations.mjs
+function applyTagDeclarations(blocks, index, { tagCatalogue = [], listItemTags = {} } = {}, diagnostics = []) {
+  if (!Array.isArray(tagCatalogue) || !listItemTags || typeof listItemTags !== "object" || Array.isArray(listItemTags)) return { tagCatalogue, listItemTags };
+  const catalogue = tagCatalogue.map((tag) => ({ ...tag, id: normalizeTags([tag?.id])[0], label: cleanText(tag?.label) })), overrides = { ...listItemTags };
+  const assigned = /* @__PURE__ */ new Map();
+  for (const token of blocks.flat()) {
+    if (token.type !== "tags") continue;
+    const identifier = token.items[0].identifier, key = canonicalIdentifierKey(identifier);
+    const record = identifier.scheme === "local" ? index.byId.get(identifier.value) : index.byIdentifier.get(key);
+    if (!record || record.state === "unresolved") diagnostics.push({ state: "unresolved", code: "citation-unresolved", identifier: key });
+    if (!record) continue;
+    const previous = assigned.get(record.id) || /* @__PURE__ */ new Set();
+    for (const definition of token.definitions) {
+      const configured = catalogue.find((tag) => tag.id === definition.id);
+      if (configured && configured.label !== definition.label) throw new TypeError(`Conflicting label for tag ${definition.id}. Use one label throughout the document.`);
+      if (!configured) catalogue.push(definition);
+      previous.add(definition.id);
+    }
+    assigned.set(record.id, previous);
+  }
+  for (const [id, tags] of assigned) {
+    const prior = index.byId.get(id);
+    const next = normalizeRecord({ ...prior, tags: normalizeTags([...prior.tags || [], ...tags]), provenance: [...prior.provenance, { provider: "Document author", note: JSON.stringify({ tags: [...tags], priorTags: prior.tags || [] }) }] });
+    index.byId.set(id, next);
+    for (const identifier of next.identifiers) index.byIdentifier.set(canonicalIdentifierKey(identifier), next);
+    if (Object.hasOwn(overrides, id)) {
+      if (!Array.isArray(overrides[id])) throw new TypeError("Supply listItemTags values as arrays of topic IDs.");
+      overrides[id] = normalizeTags([...overrides[id], ...tags]);
+    }
+  }
+  return { tagCatalogue: catalogue, listItemTags: overrides };
+}
+
+// src/notation-options.mjs
+function optionSpans(source) {
+  const spans = [];
+  let start = 0, quoted = false;
+  for (let i = 0; i < source.length; i++) {
+    if (source[i] === "\\") {
+      i++;
+      continue;
+    }
+    if (source[i] === '"') {
+      quoted = !quoted;
+      continue;
+    }
+    if (quoted) continue;
+    if (source[i] === "|") {
+      spans.push({ start, end: i });
+      start = i + 1;
+    } else if (/[ \t]/.test(source[i])) {
+      const following = /^[ \t]+(?=[a-z0-9][a-z0-9-]*:|isolated(?:[ \t|]|$))/.exec(source.slice(i));
+      if (following && source.slice(start, i).trim() && !source.slice(start, i).trimEnd().endsWith(";")) {
+        spans.push({ start, end: i });
+        start = i + following[0].length;
+        i = start - 1;
+      }
+    }
+  }
+  spans.push({ start, end: source.length });
+  return spans;
+}
+var optionParts = (source) => optionSpans(source).map(({ start, end }) => source.slice(start, end).trim());
+
 // src/class-names.mjs
 var defaultClassPrefix = "citation";
 function validClassPrefix(prefix) {
@@ -732,7 +748,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.1",
+  version: "0.6.0-preview.2",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -11140,7 +11156,9 @@ function compileMarkdown(source, cache, options = {}) {
   return compileHTML(markdown.parse(source), cache, options);
 }
 export {
+  CITATION_OPTION_POLICIES,
   citationLocales,
+  citationOptionPolicy,
   compileCitations,
   compileHTML,
   compileMarkdown,

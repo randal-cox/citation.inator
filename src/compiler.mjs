@@ -1,3 +1,4 @@
+export {citationOptionPolicy,CITATION_OPTION_POLICIES} from './option-policy.mjs';
 import {applyTagDeclarations} from './tag-declarations.mjs';
 import {optionParts} from './notation-options.mjs';
 import {authorFields, validAuthorField, applyAuthorFields} from './author-fields.mjs';
