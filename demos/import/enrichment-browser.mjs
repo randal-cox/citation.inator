@@ -9,6 +9,14 @@ function normalizeImportLimits(overrides = {}) {
   return Object.freeze({ ...IMPORT_LIMITS, ...overrides });
 }
 
+// src/title-parts.mjs
+function normalizeTitleParts(parts, title) {
+  if (!Array.isArray(parts) || !parts.length) return [];
+  if (!parts.every((p) => p && typeof p.text === "string" && (!p.emphasis || ["italic", "bold"].includes(p.emphasis)))) return [];
+  if (parts.map((p) => p.text).join("") !== title) return [];
+  return parts.map(({ text, emphasis }) => ({ text, ...emphasis && { emphasis } }));
+}
+
 // src/records.mjs
 var cleanText = (value) => typeof value === "string" ? value.trim() : "";
 var normalizeTags = (value) => [...new Set((Array.isArray(value) ? value : []).filter((tag) => typeof tag === "string" && /^[a-z0-9][a-z0-9-]{0,63}$/.test(tag)))];
@@ -126,7 +134,7 @@ function normalizeTextParts(parts) {
   return (Array.isArray(parts) ? parts : []).flatMap((part) => {
     if (typeof part?.text !== "string" || !part.text) return [];
     const href = httpsURL(part.href);
-    return [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
+    return [{ text: part.text, ...part.strong === true && { strong: true }, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
   });
 }
 function normalizeChecksum(value) {
@@ -210,6 +218,10 @@ function normalizeRecord(input) {
       })
     },
     title,
+    ...Object.fromEntries(["title", "containerTitle"].flatMap((field) => {
+      const parts = normalizeTitleParts(input[field + "Parts"], cleanText(input[field]));
+      return parts.length ? [[field + "Parts", parts]] : [];
+    })),
     authors,
     ...editors.length && { editors },
     ...translators.length && { translators },

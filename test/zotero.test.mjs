@@ -28,7 +28,7 @@ test('translations, original dates, corporate creators and missing identifiers r
  assert.match(bibliographyText(book.record,'','chicago-author-date'),/Translated by Alex Jones/);assert.match(bibliographyText(book.record,'','apa'),/A\. Jones, Trans\./);
 });
 test('losses are reviewable before insertion rather than silently presented as faithful conversion',()=>{
- for(const csl of [{...article,title:'Study of <i>Species</i>'},{...article,author:[{family:'Gogh','non-dropping-particle':'van'}]},{...article,issued:{'date-parts':[[1990],[1992]]}},{...article,type:'unexpected-type'}]){
+ for(const csl of [{...article,title:'Study of <span>Species</span>'},{...article,author:[{family:'Gogh','non-dropping-particle':'van'}]},{...article,issued:{'date-parts':[[1990],[1992]]}},{...article,type:'unexpected-type'}]){
  const result=fromCSLJSON(csl,{recordId:'review'});assert.equal(result.requiresReview,true);assert.equal(result.record.state,'partial');assert(result.diagnostics.length);
  }
  const safe=fromCSLJSON({...article,title:'Study <script>evil()</script> &amp; evidence'},{recordId:'safe'});assert(!safe.record.title.includes('evil'));assert.match(safe.record.title,/&/);

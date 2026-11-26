@@ -1019,8 +1019,8 @@ class CitationInspector extends HTMLElement {
     if (!Array.isArray(parts) || !parts.every(part => typeof part?.text === "string") ||
         parts.map(part => part.text).join("") !== bibliography) parts = [{ text: bibliography }];
     let linkedDOI = false;
-    for (const { text, emphasis, href } of parts) {
-      const node = emphasis === "italic" ? element("em") : emphasis === "bold" ? element("strong") : citation;
+    for (const { text, emphasis, href, strong } of parts) {
+      const node = emphasis === "italic" ? element("em") : emphasis === "bold" || strong ? element("strong") : citation;
       const doiAt = !linkedDOI && doiURL ? text.toLowerCase().indexOf(doiURL.toLowerCase()) : -1;
       const link = httpsURL(href);
       if (link) {
@@ -1032,7 +1032,7 @@ class CitationInspector extends HTMLElement {
         node.append(text.slice(0, doiAt), external(doiURL, text.slice(doiAt, end)), text.slice(end));
         linkedDOI = true;
       }
-      if (node !== citation) citation.append(node);
+      if (node !== citation) {if(strong&&emphasis){const wrapper=element("strong");wrapper.append(node);citation.append(wrapper);}else citation.append(node);}
     }
     citation.dir = "auto";
     fragment.append(names.length > 8 ? disclosure(this.#messages.text('ui.formatted'), citation) : citation);

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0-preview.3 — In development
+
+- Add deterministic document-bibliography exports in CSL-JSON, BibTeX and RIS, with format-loss diagnostics and private occurrence/manager fields excluded.
+- Add bibliography downloads beside existing Playground downloads; disable stale/error exports.
+- Preserve supported italic/bold CSL title runs through metadata conversion, style rendering, hover panels and CSL export.
+- Preserve explicit reading URLs in bibliography files and report generic thesis/type fallbacks without inventing degree information.
+
 ## 0.6.0-preview.2 — In development
 
 - Export one immutable citation-option replacement policy through core, tools and manager entry points; unknown source options require explicit review.

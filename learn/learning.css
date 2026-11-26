@@ -54,3 +54,5 @@ header .github-link{margin-inline-start:auto;display:grid;gap:.15rem;text-align:
 .learning-site>main{min-width:0;width:100%}.overview-code{min-width:0}
 
 #lesson code,.guide #examples section p code{font:italic .92em/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+
+.bibliography-download{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;padding-right:.7rem;margin-right:.1rem;border-right:1px solid var(--border)}.bibliography-download label{font-weight:650}#export-status{font-size:.9rem}

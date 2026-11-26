@@ -1,4 +1,17 @@
-/*! cite-inator manager v0.6.0-preview.2 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator manager v0.6.0-preview.3 | MIT | See THIRD_PARTY_LICENSES.txt */
+
+// src/title-parts.mjs
+function normalizeTitleParts(parts, title) {
+  if (!Array.isArray(parts) || !parts.length) return [];
+  if (!parts.every((p) => p && typeof p.text === "string" && (!p.emphasis || ["italic", "bold"].includes(p.emphasis)))) return [];
+  if (parts.map((p) => p.text).join("") !== title) return [];
+  return parts.map(({ text, emphasis }) => ({ text, ...emphasis && { emphasis } }));
+}
+var escape = (value) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function cslTitle(title, parts) {
+  const safe = normalizeTitleParts(parts, title);
+  return safe.length ? safe.map((p) => p.emphasis ? `<${p.emphasis === "italic" ? "i" : "b"}>${escape(p.text)}</${p.emphasis === "italic" ? "i" : "b"}>` : escape(p.text)).join("") : escape(title);
+}
 
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
@@ -99,6 +112,20 @@ function canonicalIdentifierKey(identifier) {
   const stem = "978" + value.slice(0, -1);
   return `isbn:${stem}${isbn13CheckDigit(stem)}`;
 }
+function identifierURL(id) {
+  if (!id) return "";
+  const valid = normalizeIdentifier(identifierKey(id));
+  if (!valid) return "";
+  const path = valid.value.split("/").map(encodeURIComponent).join("/");
+  return {
+    doi: `https://doi.org/${path}`,
+    pmid: `https://pubmed.ncbi.nlm.nih.gov/${path}/`,
+    pmcid: `https://pmc.ncbi.nlm.nih.gov/articles/${path}/`,
+    arxiv: `https://arxiv.org/abs/${path}`,
+    isbn: `https://search.worldcat.org/search?q=bn%3A${path}`,
+    url: valid.value
+  }[valid.scheme] || "";
+}
 function dateParts(value) {
   if (!Array.isArray(value) || !value.length || value.length > 3 || !value.every(Number.isInteger)) return null;
   const [year, month = 1, day = 1] = value;
@@ -113,7 +140,7 @@ function normalizeTextParts(parts) {
   return (Array.isArray(parts) ? parts : []).flatMap((part) => {
     if (typeof part?.text !== "string" || !part.text) return [];
     const href = httpsURL(part.href);
-    return [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
+    return [{ text: part.text, ...part.strong === true && { strong: true }, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
   });
 }
 function normalizeChecksum(value) {
@@ -192,11 +219,15 @@ function normalizeRecord(input) {
     },
     ...Array.isArray(input.contributors) && {
       contributors: input.contributors.flatMap((person) => {
-        const name = cleanText(person?.name), role = cleanText(person?.role);
-        return name && role ? [{ name, role }] : [];
+        const name2 = cleanText(person?.name), role = cleanText(person?.role);
+        return name2 && role ? [{ name: name2, role }] : [];
       })
     },
     title,
+    ...Object.fromEntries(["title", "containerTitle"].flatMap((field) => {
+      const parts = normalizeTitleParts(input[field + "Parts"], cleanText(input[field]));
+      return parts.length ? [[field + "Parts", parts]] : [];
+    })),
     authors,
     ...editors.length && { editors },
     ...translators.length && { translators },
@@ -250,6 +281,136 @@ function readCache(input) {
 function makeCache(records) {
   return { schema: CACHE_SCHEMA, records: [...readCache({ schema: CACHE_SCHEMA, records }).byId.values()] };
 }
+function toCSL(record) {
+  const id = (scheme) => record.identifiers.find((item) => item.scheme === scheme)?.value;
+  const date = (parts) => parts && { "date-parts": [parts] };
+  return Object.fromEntries(Object.entries({
+    id: record.id,
+    type: ["artwork", "image"].includes(record.type) ? "graphic" : record.type,
+    title: cslTitle(record.title, record.titleParts),
+    author: record.authors.map(({ id: id2, short, ...author }) => author),
+    ...record.editors?.length && { editor: record.editors.map(({ id: id2, short, ...person }) => person) },
+    ...record.translators?.length && { translator: record.translators.map(({ id: id2, short, ...person }) => person) },
+    jurisdiction: record.jurisdiction,
+    number: record.number,
+    "original-date": date(record.originalIssued),
+    "container-title": record.containerTitle && cslTitle(record.containerTitle, record.containerTitleParts),
+    publisher: record.publisher,
+    "publisher-place": record.publisherPlace,
+    volume: record.volume,
+    issue: record.issue,
+    page: record.pages || record.articleNumber,
+    note: [record.note, record.creatorAttribution && "Creator attribution: " + record.creatorAttribution, ...(record.contributors || []).map((person) => person.role + ": " + person.name)].filter(Boolean).join(" \xB7 "),
+    medium: record.medium,
+    dimensions: record.dimensions,
+    archive: record.holdingInstitution,
+    archive_location: record.accession,
+    "copyright": record.rightsHolder,
+    "issued": record.displayDate ? { literal: record.displayDate } : date(record.issued),
+    edition: record.edition,
+    ...record.releaseVersion && { version: record.releaseVersion },
+    DOI: id("doi"),
+    ISBN: id("isbn"),
+    PMID: id("pmid"),
+    PMCID: id("pmcid"),
+    URL: identifierURL(record.identifiers.find((item) => item.scheme === "doi")) || id("url") || record.locations.find((item) => ["publisher", "repository"].includes(item.kind))?.url
+  }).filter(([, value]) => value));
+}
+
+// src/bibliography-export.mjs
+var formats = {
+  "csl-json": { extension: "json", mimeType: "application/vnd.citationstyles.csl+json" },
+  bibtex: { extension: "bib", mimeType: "application/x-bibtex" },
+  ris: { extension: "ris", mimeType: "application/x-research-info-systems" }
+};
+var bibTypes = { "article-journal": "article", article: "misc", book: "book", chapter: "incollection", report: "techreport" };
+var risTypes = { "article-journal": "JOUR", article: "GEN", book: "BOOK", chapter: "CHAP", report: "RPRT", thesis: "THES", webpage: "ELEC", dataset: "DATA", software: "COMP", artwork: "ART", image: "ART", legislation: "STAT", document: "GEN" };
+var tex = (value) => String(value ?? "").replace(/[\\{}%&#_$~^]/g, (c) => ({ "\\": "\\textbackslash{}", "{": "\\{", "}": "\\}", "%": "\\%", "&": "\\&", "#": "\\#", "_": "\\_", "$": "\\$", "~": "\\textasciitilde{}", "^": "\\textasciicircum{}" })[c]).replace(/\s+/gu, " ").trim();
+var line = (value) => String(value).replace(/[\u0000-\u001f\u007f\u0085\u2028\u2029]+/gu, " ").trim();
+var name = (person) => person.literal ? `{${tex(person.literal)}}` : ["{" + tex(person.family) + "}", person.suffix && "{" + tex(person.suffix) + "}", person.given && "{" + tex(person.given) + "}"].filter(Boolean).join(", ");
+function exportBibliography(cache, { format = "csl-json" } = {}) {
+  if (!Object.hasOwn(formats, format)) throw new TypeError("Choose csl-json, bibtex or ris.");
+  const records = [...readCache(cache).byId.values()], diagnostics = [];
+  const warn = (record, code, field) => diagnostics.push({ code, recordId: record.id, ...field && { field } });
+  const items = records.map((record) => {
+    if (record.state === "unresolved" || !record.title) warn(record, "export-incomplete-record");
+    if (record.citationParts?.length || record.citationText) warn(record, "export-custom-reference-omitted", "citationParts");
+    const csl = toCSL(record);
+    delete csl.note;
+    const explicitURL = record.identifiers.find((id) => id.scheme === "url")?.value;
+    if (explicitURL) csl.URL = explicitURL;
+    if (record.state === "partial") warn(record, "export-record-review-required");
+    if (record.contributors?.length || record.creatorAttribution) warn(record, "export-contributor-detail-omitted", "contributors");
+    for (const scheme of ["doi", "isbn", "pmid", "pmcid", "url"]) if (record.identifiers.filter((id) => id.scheme === scheme).length > 1) warn(record, "export-additional-identifiers-omitted", scheme);
+    return { record, csl };
+  });
+  let text;
+  if (format === "csl-json") text = JSON.stringify(items.map(({ csl }) => csl), null, 2) + "\n";
+  else if (format === "bibtex") text = items.map(({ record: r, csl: c }) => {
+    const type = bibTypes[r.type] || "misc";
+    if (type === "misc") warn(r, "export-type-fallback", "type");
+    for (const [field, value] of [["translator", r.translators?.length], ["version", r.releaseVersion], ["original-date", r.originalIssued], ["issued", r.displayDate], ["PMID", c.PMID], ["PMCID", c.PMCID], ["medium", r.medium], ["archive", r.holdingInstitution], ["number", r.number]]) if (value) warn(r, "export-field-omitted", field);
+    if (r.authors.length && r.editors?.length) warn(r, "export-creator-role-reader-dependent", "editor");
+    const people = (list) => list?.map(name).join(" and ");
+    const fields = {
+      title: `{${tex(r.title)}}`,
+      author: people(r.authors),
+      editor: people(r.editors),
+      [r.type === "chapter" ? "booktitle" : "journal"]: tex(r.containerTitle),
+      publisher: tex(r.publisher),
+      address: tex(r.publisherPlace),
+      year: r.issued?.[0],
+      month: r.issued?.[1],
+      volume: tex(r.volume),
+      number: tex(r.issue),
+      pages: tex(r.pages || r.articleNumber),
+      edition: tex(r.edition),
+      doi: tex(c.DOI || ""),
+      isbn: tex(c.ISBN || ""),
+      url: tex(c.URL || "")
+    };
+    if (r.issued?.length > 2) warn(r, "export-field-omitted", "issued.day");
+    if (r.type === "report") {
+      fields.institution = fields.publisher;
+      delete fields.publisher;
+    }
+    if (r.titleParts?.length || r.containerTitleParts?.length) warn(r, "export-title-formatting-omitted", "title");
+    return `@${type}{${r.id},
+${Object.entries(fields).filter(([, v]) => v !== void 0 && v !== "").map(([key, v]) => `  ${key} = {${v}}`).join(",\n")}
+}`;
+  }).join("\n\n") + (records.length ? "\n" : "");
+  else text = items.map(({ record: r, csl: c }) => {
+    const lines = [], add = (tag, value) => {
+      if (value !== void 0 && value !== null && value !== "") lines.push(`${tag}  - ${line(value)}`);
+    };
+    const type = risTypes[r.type];
+    add("TY", type || "GEN");
+    if (!type || type === "GEN") warn(r, "export-type-fallback", "type");
+    add("ID", r.id);
+    add("TI", r.title);
+    for (const person of r.authors) add("AU", person.literal || [person.family, person.given].filter(Boolean).join(", "));
+    for (const person of r.editors || []) add("A2", person.literal || [person.family, person.given].filter(Boolean).join(", "));
+    if ([...r.authors, ...r.editors || []].some((p) => p.literal || p.suffix)) warn(r, "export-creator-structure-reader-dependent", "creators");
+    for (const [field, value] of [["translator", r.translators?.length], ["original-date", r.originalIssued], ["version", r.releaseVersion], ["PMID", c.PMID], ["PMCID", c.PMCID], ["medium", r.medium], ["archive", r.holdingInstitution], ["number", r.number]]) if (value) warn(r, "export-field-omitted", field);
+    add("PY", r.issued?.join("/") || r.displayDate);
+    add(r.type === "chapter" ? "T2" : "JO", r.containerTitle);
+    add("PB", r.publisher);
+    add("CY", r.publisherPlace);
+    add("VL", r.volume);
+    add("IS", r.issue);
+    add("ET", r.edition);
+    const pages = r.pages || r.articleNumber, range = /^(\d+)\s*[-–—]\s*(\d+)$/.exec(pages);
+    add("SP", range ? range[1] : pages);
+    if (range) add("EP", range[2]);
+    add("DO", c.DOI);
+    add("SN", c.ISBN);
+    add("UR", c.URL);
+    if (r.titleParts?.length || r.containerTitleParts?.length) warn(r, "export-title-formatting-omitted", "title");
+    lines.push("ER  - ");
+    return lines.join("\r\n");
+  }).join("\r\n\r\n") + (records.length ? "\r\n" : "");
+  return { format, ...formats[format], text, recordCount: records.length, diagnostics };
+}
 
 // src/author-fields.mjs
 var authorFields = /* @__PURE__ */ new Set(["original-year", "edition-year", "reference", "attribution", "display-date", "medium", "dimensions", "institution", "accession", "rights", "photographer", "uploader", "pdf", "read-url", "access", "checked"]);
@@ -261,12 +422,12 @@ var CITATION_OPTION_POLICIES = Object.freeze(Object.fromEntries([
   ["isolated", policy("retain", "presentation")],
   ["note", policy("recompute", "editor")],
   ["unresolved", policy("replace-fallback", "source")],
-  ...[.../* @__PURE__ */ new Set(["locator", "label", "prefix", "tags", ...authorFields])].map((name) => [name, policy("review", "source")])
+  ...[.../* @__PURE__ */ new Set(["locator", "label", "prefix", "tags", ...authorFields])].map((name2) => [name2, policy("review", "source")])
 ]));
-function citationOptionPolicy(name) {
-  if (name === null) return Object.freeze({ known: true, action: "review", category: "source" });
-  if (typeof name !== "string" || !name.trim()) throw new TypeError("Supply an option name, or null for a bare display fallback.");
-  if (Object.hasOwn(CITATION_OPTION_POLICIES, name)) return Object.freeze({ known: true, ...CITATION_OPTION_POLICIES[name] });
+function citationOptionPolicy(name2) {
+  if (name2 === null) return Object.freeze({ known: true, action: "review", category: "source" });
+  if (typeof name2 !== "string" || !name2.trim()) throw new TypeError("Supply an option name, or null for a bare display fallback.");
+  if (Object.hasOwn(CITATION_OPTION_POLICIES, name2)) return Object.freeze({ known: true, ...CITATION_OPTION_POLICIES[name2] });
   return Object.freeze({ known: false, action: "review", category: "unknown" });
 }
 
@@ -453,13 +614,13 @@ var Preprocessor = class {
     return this.droppedBufferSize + this.pos;
   }
   getError(code, cpOffset) {
-    const { line, col, offset } = this;
+    const { line: line2, col, offset } = this;
     const startCol = col + cpOffset;
     const startOffset = offset + cpOffset;
     return {
       code,
-      startLine: line,
-      endLine: line,
+      startLine: line2,
+      endLine: line2,
       startCol,
       endCol: startCol,
       startOffset,
@@ -4618,16 +4779,16 @@ var defaultTreeAdapter = {
   getTemplateContent(templateElement) {
     return templateElement.content;
   },
-  setDocumentType(document, name, publicId, systemId) {
+  setDocumentType(document, name2, publicId, systemId) {
     const doctypeNode = document.childNodes.find((node) => node.nodeName === "#documentType");
     if (doctypeNode) {
-      doctypeNode.name = name;
+      doctypeNode.name = name2;
       doctypeNode.publicId = publicId;
       doctypeNode.systemId = systemId;
     } else {
       const node = {
         nodeName: "#documentType",
-        name,
+        name: name2,
         publicId,
         systemId,
         parentNode: null
@@ -5009,7 +5170,7 @@ var EXITS_FOREIGN_CONTENT = /* @__PURE__ */ new Set([
 ]);
 function causesExit(startTagToken) {
   const tn = startTagToken.tagID;
-  const isFontWithAttrs = tn === TAG_ID.FONT && startTagToken.attrs.some(({ name }) => name === ATTRS.COLOR || name === ATTRS.SIZE || name === ATTRS.FACE);
+  const isFontWithAttrs = tn === TAG_ID.FONT && startTagToken.attrs.some(({ name: name2 }) => name2 === ATTRS.COLOR || name2 === ATTRS.SIZE || name2 === ATTRS.FACE);
   return isFontWithAttrs || EXITS_FOREIGN_CONTENT.has(tn);
 }
 function adjustTokenMathMLAttrs(token) {
@@ -5281,10 +5442,10 @@ var Parser = class {
   //Tree mutation
   /** @protected */
   _setDocumentType(token) {
-    const name = token.name || "";
+    const name2 = token.name || "";
     const publicId = token.publicId || "";
     const systemId = token.systemId || "";
-    this.treeAdapter.setDocumentType(this.document, name, publicId, systemId);
+    this.treeAdapter.setDocumentType(this.document, name2, publicId, systemId);
     if (token.location) {
       const documentChildren = this.treeAdapter.getChildNodes(this.document);
       const docTypeNode = documentChildren.find((node) => this.treeAdapter.isDocumentTypeNode(node));
@@ -8159,13 +8320,40 @@ function fromCSLJSON(input, { recordId, limits: overrides } = {}) {
     if (value !== void 0 && value !== null) warn("csl-field-review-required", field);
     return "";
   };
+  const titleFormatting = {};
   const plain = (field) => {
     const value = text(field);
     if (!/[<&]/.test(value)) return value;
-    const root = parseFragment(value);
-    const walk = (node) => ["script", "style", "template"].includes(node.tagName) ? "" : node.nodeName === "#text" ? node.value : (node.childNodes || []).map(walk).join("");
-    if (root.childNodes.some((node) => node.tagName)) warn("csl-title-formatting-review-required", field);
-    return walk(root).trim();
+    const root = parseFragment(value), parts = [];
+    let unsupported = false;
+    const walk = (node, emphasis) => {
+      if (node.nodeName === "#text") {
+        parts.push({ text: node.value, ...emphasis && { emphasis } });
+        return;
+      }
+      if (["script", "style", "template"].includes(node.tagName)) {
+        unsupported = true;
+        return;
+      }
+      let next = emphasis;
+      if (node.tagName) {
+        const format = { i: "italic", em: "italic", b: "bold", strong: "bold" }[node.tagName];
+        if (!format || node.attrs?.length || emphasis && emphasis !== format) unsupported = true;
+        else next = format;
+      }
+      for (const child of node.childNodes || []) walk(child, next);
+    };
+    walk(root);
+    const title2 = parts.map((p) => p.text).join("").trim();
+    if (unsupported) warn("csl-title-formatting-review-required", field);
+    while (parts.length && !parts[0].text.trim()) parts.shift();
+    while (parts.length && !parts.at(-1).text.trim()) parts.pop();
+    if (parts.length) {
+      parts[0].text = parts[0].text.trimStart();
+      parts.at(-1).text = parts.at(-1).text.trimEnd();
+    }
+    if (!unsupported && parts.some((p) => p.emphasis)) titleFormatting[field === "title" ? "titleParts" : "containerTitleParts"] = parts;
+    return title2;
   };
   const people = (field) => {
     if (item[field] === void 0) return [];
@@ -8228,6 +8416,7 @@ function fromCSLJSON(input, { recordId, limits: overrides } = {}) {
     type: Object.hasOwn(types, item.type) ? types[item.type] : "document",
     title,
     containerTitle,
+    ...titleFormatting,
     authors,
     editors,
     translators,
@@ -8291,10 +8480,10 @@ function rankingAuthorEqual(a, b) {
   }
   const structured = family ? a : otherFamily ? b : null, literal = family ? b.literal : a.literal;
   if (!structured || !literal) return false;
-  const name = norm(literal), surname = norm(structured.family);
+  const name2 = norm(literal), surname = norm(structured.family);
   let given;
-  if (name.endsWith(" " + surname)) given = name.slice(0, -surname.length).trim();
-  else if (name.startsWith(surname + " ")) given = name.slice(surname.length).trim();
+  if (name2.endsWith(" " + surname)) given = name2.slice(0, -surname.length).trim();
+  else if (name2.startsWith(surname + " ")) given = name2.slice(surname.length).trim();
   else return false;
   const required = norm(structured.given);
   return !required || initials(required) === initials(given) || given.startsWith(required + " ") || required.startsWith(given + " ");
@@ -8386,6 +8575,7 @@ function reconcileZoteroItem(selection, siteCache, { limits: overrides } = {}) {
 export {
   CITATION_OPTION_POLICIES,
   citationOptionPolicy,
+  exportBibliography,
   fromCSLJSON,
   fromZotero,
   reconcileZoteroItem

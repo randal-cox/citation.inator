@@ -1,3 +1,4 @@
+export {exportBibliography} from './bibliography-export.mjs';
 export {citationOptionPolicy,CITATION_OPTION_POLICIES} from './option-policy.mjs';
 import {fromCSLJSON} from './csl-json.mjs';
 import {importSiteContext} from './import-sites.mjs';

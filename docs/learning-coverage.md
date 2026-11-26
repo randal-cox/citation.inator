@@ -47,3 +47,7 @@ The learning site explains the supported library and its experimental limits; it
 The development gallery groups examples into Everyday, Intermediate and Advanced (site configuration/integrations). Article-specific years, formatted references, artwork attribution and copy links use [author notation](authoring.md); the cards exercise these in Source.
 
 The 0.5.1 list demo assigns and labels topics using `tags` blocks, and enables per-list checkboxes with `filters:true` in Source. Site configuration remains available for shared vocabularies/icons. Intro code spans are formatted explicitly rather than embedded as undifferentiated prose.
+
+## 0.6 preview additions
+
+The Playground download toolbar now exports the compiled document’s used references as CSL-JSON, BibTeX and RIS, including explicit further reading. The [Zotero/API reference](zotero.md#bibliography-files) describes privacy, format-loss diagnostics and pending actual-manager import acceptance. This extends the released learning surface; it does not change the 0.5 release receipt.

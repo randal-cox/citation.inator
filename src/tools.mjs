@@ -1,3 +1,4 @@
+export {exportBibliography} from './bibliography-export.mjs';
 export {citationOptionPolicy,CITATION_OPTION_POLICIES} from './option-policy.mjs';
 import {optionSpans} from './notation-options.mjs';
 export {createCitationMessages, citationLocales} from "./i18n.mjs";

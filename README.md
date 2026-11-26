@@ -12,6 +12,8 @@ The optional `note:` is a generated work label for editors; tools may replace it
 
 **Release 0.5.1 — Author notation and learning tools.** [Release and downloads](https://github.com/randal-cox/cite.inator/releases/tag/v0.5.1) · [Live playground and Guide](https://randal-cox.github.io/cite.inator/). Includes 22 editable examples, copied-file/npm/offline starters, a worked draft.inator editor integration, UI language configuration and the established compiler/import/reader tools.
 
+**0.6 preview:** selected Zotero/CSL metadata and document-only CSL-JSON, BibTeX and RIS downloads are available on the development branch. [API and limitations](docs/zotero.md). Final 0.6 is not released.
+
 **Article tooling, introduced in 0.2.0.** Editor notes, a site-wide bibliography and tag filters are included. See [the milestone record](docs/milestones/0.2.0.md) and [GitHub releases](https://github.com/randal-cox/cite.inator/releases).
 
 The 0.5.0 project name is **cite.inator**; released 0.4.0 archives retain their original `citation-inator` package name. Existing browser assets, markup and stored-data contracts remain compatible; see [the naming migration](docs/naming-migration.md).

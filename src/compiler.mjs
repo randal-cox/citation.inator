@@ -1,3 +1,4 @@
+import {titleRuns} from './title-parts.mjs';
 export {citationOptionPolicy,CITATION_OPTION_POLICIES} from './option-policy.mjs';
 import {applyTagDeclarations} from './tag-declarations.mjs';
 import {optionParts} from './notation-options.mjs';
@@ -273,25 +274,21 @@ export function authorLabel(record, narrative = false) {
 const hasDefaultCitationText = (record, suffix) =>
   record.citationText && (!suffix || record.citationText.includes(` (${yearFor(record)}).`));
 
-function defaultBibliography(record, suffix = "") {
-  if (record.state === "unresolved") return titleFor(record);
-  const year = yearFor(record);
-  if (hasDefaultCitationText(record, suffix)) {
-    return record.citationText.replace(` (${year}).`, ` (${year}${suffix}).`);
-  }
-  const names = citationAuthors(record).map(author => {
-    if (author.literal) return author.literal;
-    const initials = author.given?.match(/\p{L}[\p{L}\p{M}]*/gu)?.map(part => `${[...part][0]}.`).join(" ");
-    return [author.family, initials, author.suffix].filter(Boolean).join(", ");
-  });
-  const authors = names.length > 1 ? `${names.slice(0, -1).join(", ")}, & ${names.at(-1)}` : names[0];
-  const journal = [record.containerTitle, record.volume + (record.issue ? `(${record.issue})` : ""), record.pages || record.articleNumber].filter(Boolean).join(", ");
-  const source = record.identifiers.find(id => id.scheme === "doi");
-  const details = [journal || record.publisher, identifierURL(source)].filter(Boolean);
-  return [
-    authors ? `${authors} (${year}${suffix}). ${titleFor(record)}.` : `${titleFor(record)}. (${year}${suffix}).`,
-    ...details.map(item => item.startsWith("https://") ? item : `${item}.`)
-  ].join(" ");
+function defaultBibliography(record,suffix=''){return defaultBibliographyParts(record,suffix).map(p=>p.text).join('');}
+function defaultBibliographyParts(record,suffix=''){
+ if(record.state==='unresolved')return [{text:titleFor(record)}];
+ const year=yearFor(record);
+ if(hasDefaultCitationText(record,suffix))return [{text:record.citationText.replace(` (${year}).`,` (${year}${suffix}).`)}];
+ const names=citationAuthors(record).map(author=>{if(author.literal)return author.literal;const initials=author.given?.match(/\p{L}[\p{L}\p{M}]*/gu)?.map(p=>`${[...p][0]}.`).join(' ');return [author.family,initials,author.suffix].filter(Boolean).join(', ');});
+ const authors=names.length>1?`${names.slice(0,-1).join(', ')}, & ${names.at(-1)}`:names[0];
+ const parts=[],add=text=>parts.push({text});if(authors)add(`${authors} (${year}${suffix}). `);
+ parts.push(...titleRuns({...record,title:titleFor(record)},'title',['book','report','thesis'].includes(record.type)?'italic':undefined));add('.');
+ if(!authors)add(` (${year}${suffix}).`);
+ const hasJournal=Boolean(record.containerTitle||record.volume||record.pages||record.articleNumber);
+ if(hasJournal){add(' ');if(record.containerTitle)parts.push(...titleRuns(record,'containerTitle','italic'));const rest=[record.volume+(record.issue?`(${record.issue})`:''),record.pages||record.articleNumber].filter(Boolean);if(rest.length)add((record.containerTitle?', ':'')+rest.join(', '));add('.');}
+ else if(record.publisher)add(` ${record.publisher}.`);
+ const url=identifierURL(record.identifiers.find(id=>id.scheme==='doi'));if(url)add(' '+url);
+ return parts;
 }
 
 function chicagoBibliography(record, suffix) {
@@ -304,6 +301,7 @@ function chicagoBibliography(record, suffix) {
   }
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
+  const addTitle=(field,emphasis)=>parts.push(...titleRuns(record,field,emphasis));
   if (authors.length) {
     const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullAuthorName(author, index === 0));
     const head = names.slice(0, -1).join(", ");
@@ -315,15 +313,15 @@ function chicagoBibliography(record, suffix) {
   }
   const title = titleFor(record);
   const quoted = ["article-journal", "article", "chapter", "webpage", "thesis"].includes(type);
-  if (quoted) add(`“${title}${/[.?!]$/.test(title) ? "" : "."}”`);
+  if (quoted) {add("“");addTitle("title");add(`${/[.?!]$/.test(title)?"":"."}”`);}
   else {
-    add(title, "italic");
+    addTitle("title", "italic");
     if (!/[.?!]$/.test(title)) add(".");
   }
   if (!authors.length) add(` ${citationYear(record, suffix, "chicago-author-date", true)}.`);
   if (containerTitle) {
     add(type === "chapter" ? " In " : " ");
-    add(containerTitle, "italic");
+    addTitle("containerTitle", "italic");
     if(type==="chapter"&&record.editors?.length)add(`, edited by ${roleNames(record.editors)}`);
     if (record.volume) add(` ${record.volume}`);
     if (record.issue) add(` (${record.issue})`);
@@ -352,6 +350,7 @@ function webpageReferenceURL(record) {
 function styledBibliography(record, suffix, style) {
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
+  const addTitle=(field,emphasis)=>parts.push(...titleRuns((style==="apa"&&record.apaTitle&&field==="title"?{...record,title:record.apaTitle,titleParts:[]}:record),field,emphasis));
   const { containerTitle, volume, issue, publisher, publisherPlace, edition } = record;
   const authors=citationAuthors(record);
   const title = style === "apa" && record.apaTitle || titleFor(record);
@@ -371,11 +370,11 @@ function styledBibliography(record, suffix, style) {
     const names = authors.slice(0, 6).map(author => author.literal ||
       [author.family, initials(author.given, ""), Object.hasOwn(ordinal, author.suffix) ? ordinal[author.suffix] : author.suffix?.replace(/\.$/, "")].filter(Boolean).join(" "));
     if (names.length) add(`${names.join(", ")}${authors.length > 6 ? ", et al" : ""}. `);
-    add(period(title));
+    addTitle("title");if(!/[.?!]$/.test(title))add(".");
     if (containerTitle) {
       const journal = period(record.containerAbbreviation || containerTitle);
       const issueText = issue ? `(${issue})` : "";
-      add(` ${journal} ${year}${volume || issue ? `;${volume}${issueText}` : ""}${pages ? `:${pages}` : ""}.`);
+      if(record.containerTitleParts?.length&&!record.containerAbbreviation){add(" ");addTitle("containerTitle");if(!/[.?!]$/.test(containerTitle))add(".");add(` ${year}${volume || issue ? `;${volume}${issueText}` : ""}${pages ? `:${pages}` : ""}.`);}else add(` ${journal} ${year}${volume || issue ? `;${volume}${issueText}` : ""}${pages ? `:${pages}` : ""}.`);
     } else {
       if (edition) add(` ${period(edition)}`);
       add(` ${publisherPlace || "[place unknown]"}: ${publisher || "[publisher unknown]"}; ${year}.`);
@@ -391,12 +390,12 @@ function styledBibliography(record, suffix, style) {
       add(`${byline}${authors.length > 2 ? ", et al" : authors.length === 2 ? `, and ${fullAuthorName(authors[1])}` : ""}. `);
     }
     if (containerTitle) {
-      add(`“${period(title)}” `);
-      add(containerTitle, "italic");
+      add("“");addTitle("title");add(`${/[.?!]$/.test(title)?"":"."}” `);
+      addTitle("containerTitle", "italic");
       const details = [volume && `vol. ${volume}`, issue && `no. ${issue}`, record.issued && year, locator, url].filter(Boolean);
       add(details.length ? period(`, ${details.join(", ")}`) : ".");
     } else {
-      add(title, "italic");
+      addTitle("title", "italic");
       const details = [edition, publisher, record.issued && year, url].filter(Boolean);
       add(details.length ? `. ${period(details.join(", "))}` : ".");
     }
@@ -412,29 +411,29 @@ function styledBibliography(record, suffix, style) {
     add(apa || webpage ? `${role?byline+role:period(byline)} (${year}). ` : `${byline} (${year}) `);
   }
   if (webpage) {
-    add(title, "italic");
+    addTitle("title", "italic");
     if (!/[.?!]$/.test(title)) add(".");
     if (!names.length) add(` (${year}).`);
     const site = containerTitle || publisher;
     const sameAsAuthor = site && authors.length === 1 && authors[0].literal && compare(authors[0].literal, site) === 0;
     if (site && !sameAsAuthor) add(` ${period(site)}`);
   } else if (apa && record.type==='chapter' && containerTitle) {
-    add(`${period(title)}${!names.length?` (${year}).`:''} `);
+    addTitle('title');add(`${/[.?!]$/.test(title)?'':'.'}${!names.length?` (${year}).`:''} `);
     if(record.translators?.length){const translated=record.translators.map(person=>person.literal||[person.given&&`${initials(person.given)}.`,person.family].filter(Boolean).join(' '));add(`(${joinPeople(translated,'&')}, Trans.). `);}
     add('In ');
     if(record.editors?.length){const names=record.editors.map(person=>person.literal || [person.given&&`${initials(person.given)}.`,person.family].filter(Boolean).join(' '));add(`${joinPeople(names,'&')} (${names.length===1?'Ed.':'Eds.'}), `);}
-    add(containerTitle,'italic');
+    addTitle('containerTitle','italic');
     const details=[edition&&editionText(edition),pages&&`pp. ${pages}`].filter(Boolean);if(details.length)add(` (${details.join(', ')})`);add('.');if(publisher)add(` ${period(publisher)}`);
   } else if (containerTitle) {
-    add(apa ? `${period(title)} ` : `‘${title}’, `);
+    if(apa){addTitle("title");add(`${/[.?!]$/.test(title)?"":"."} `);}else{add("‘");addTitle("title");add("’, ");}
     if (!names.length) add(`(${year})${apa ? "." : ","} `);
-    add(apa && volume ? `${containerTitle}, ${volume}` : containerTitle, "italic");
+    if(!record.containerTitleParts?.length)add(apa && volume ? `${containerTitle}, ${volume}` : containerTitle,"italic");else{addTitle("containerTitle","italic");if(apa&&volume)add(`, ${volume}`,"italic");}
     if (!apa && volume) add(`, ${volume}`);
     if (issue) add(`${apa ? "" : " "}(${issue})`);
     if (pages) add(`, ${apa ? record.pages || `Article ${record.articleNumber}` : record.pages ? locator : `article ${record.articleNumber}`}`);
     add(".");
   } else {
-    add(title, "italic");
+    addTitle("title", "italic");
     const apaRoleNames=people=>joinPeople(people.map(person=>person.literal || [person.given&&`${initials(person.given)}.`,person.family].filter(Boolean).join(' ')),'&');
     const titleDetails=apa?[
       !editorOnly(record)&&record.editors?.length&&`${apaRoleNames(record.editors)}, ${record.editors.length===1?'Ed.':'Eds.'}`,
@@ -460,7 +459,7 @@ function mediaBibliography(record, suffix, style) {
   const creator = [record.creatorAttribution, creators.join(" and ")].filter(Boolean).join(" ");
   const year = citationYear(record, suffix, style, true);
   if (creator) add(style === "chicago-author-date" ? `${creator}. ${year}. ` : `${creator}. (${year}). `);
-  parts.push({ text: title, emphasis: "italic" });
+  parts.push(...titleRuns(record,"title","italic"));
   if (!/[.?!]$/.test(title)) add(".");
   if (!creator) add(style === "chicago-author-date" ? ` ${year}.` : ` (${year}).`);
   if (record.medium) add(` ${record.medium.replace(/\.$/, "")}.`);
@@ -501,13 +500,9 @@ function bibliographyParts(record, suffix, style) {
   if (style !== "default" || record.type === "webpage" && !hasDefaultCitationText(record, suffix)) {
     return styledBibliography(record, suffix, style);
   }
-  const text = defaultBibliography(record, suffix) + (hasReprintDate(record) ? ` (Original work published ${originalYear(record)})` : "");
-  const title = record.containerTitle || (["book", "report", "thesis"].includes(record.type) ? record.title : "");
-  const at = title ? text.toLowerCase().lastIndexOf(title.toLowerCase()) : -1;
-  return at < 0 ? [{ text }] : [
-    { text: text.slice(0, at) }, { text: text.slice(at, at + title.length), emphasis: "italic" },
-    { text: text.slice(at + title.length) }
-  ];
+  const parts=defaultBibliographyParts(record,suffix);
+  if(hasReprintDate(record))parts.push({text:` (Original work published ${originalYear(record)})`});
+  return parts;
 }
 
 export function bibliographyText(record, suffix = "", style = "default") {
@@ -666,9 +661,10 @@ function safeFallback(value) {
   return value;
 }
 
-function renderBibliographyPart({ text, emphasis, href }, record) {
+function renderBibliographyPart({ text, emphasis, href, strong }, record) {
   const escaped = escapeHTML(text);
   let formatted = emphasis === "italic" ? `<em>${escaped}</em>` : emphasis === "bold" ? `<strong>${escaped}</strong>` : escaped;
+  if(strong)formatted=`<strong>${formatted}</strong>`;
   const value = href ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${formatted}</a>` : formatted;
   return value;
 }
@@ -955,7 +951,7 @@ function compileBlocks(blocks, cache, {
     const { record } = item.entry;
     const parts = bibliography(item.entry);
     const text = parts.map(part => part.text).join("");
-    const formatting = parts.some(part => part.emphasis || part.href) ? ` data-ci-bibliography-parts="${escapeHTML(JSON.stringify(parts))}"` : "";
+    const formatting = parts.some(part => part.emphasis || part.href || part.strong) ? ` data-ci-bibliography-parts="${escapeHTML(JSON.stringify(parts))}"` : "";
     const tags = features.tags(record, item.list);
     const visibleTags = !inspectLabel && inlineTags === 'marker' ? features.tags({ ...record, tags: item.markerTags || [] }) : tags;
     const usage = features.occurrences(record.id);
@@ -973,6 +969,8 @@ function compileBlocks(blocks, cache, {
   function titleOffset(parts, record, suffix) {
     const title = record.apaTitle && citationStyle === "apa" ? record.apaTitle : titleFor(record);
     let offset = 0;
+    for(const p of parts){if(p.titleField==='title'){const marked=parts.filter(p=>p.titleField==='title');return {start:offset,length:marked.reduce((n,p)=>n+p.text.length,0)};}offset+=p.text.length;}
+    offset=0;
     const generatedDefault = citationStyle === "default" && !record.citationParts?.length && !["artwork", "image", "webpage"].includes(record.type);
     for (const [index, part] of parts.entries()) {
       const plain = part.text.trim().replace(/^[“‘]/, "").replace(/[”’]$/, "");

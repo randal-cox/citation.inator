@@ -1,4 +1,4 @@
-/*! cite-inator compiler v0.6.0-preview.2 | MIT | See LICENSE */
+/*! cite-inator compiler v0.6.0-preview.3 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -314,6 +314,19 @@ function createCitationMessages({ locale = "en", strings = {} } = {}) {
   });
 }
 
+// src/title-parts.mjs
+function normalizeTitleParts(parts, title) {
+  if (!Array.isArray(parts) || !parts.length) return [];
+  if (!parts.every((p) => p && typeof p.text === "string" && (!p.emphasis || ["italic", "bold"].includes(p.emphasis)))) return [];
+  if (parts.map((p) => p.text).join("") !== title) return [];
+  return parts.map(({ text, emphasis }) => ({ text, ...emphasis && { emphasis } }));
+}
+function titleRuns(record, field, emphasis) {
+  const title = record[field] || "", parts = normalizeTitleParts(record[field + "Parts"], title);
+  const runs = parts.length ? parts.map((p) => ({ text: p.text, ...p.emphasis === "bold" && emphasis === "italic" ? { emphasis: "italic", strong: true } : p.emphasis === "italic" && emphasis === "italic" ? {} : p.emphasis || emphasis ? { emphasis: p.emphasis || emphasis } : {} })) : [{ text: title, ...emphasis && { emphasis } }];
+  return runs.map((p) => ({ ...p, titleField: field }));
+}
+
 // src/records.mjs
 var CACHE_SCHEMA = "citation-inator.cache.v1";
 var cleanText = (value) => typeof value === "string" ? value.trim() : "";
@@ -446,7 +459,7 @@ function normalizeTextParts(parts) {
   return (Array.isArray(parts) ? parts : []).flatMap((part) => {
     if (typeof part?.text !== "string" || !part.text) return [];
     const href = httpsURL(part.href);
-    return [{ text: part.text, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
+    return [{ text: part.text, ...part.strong === true && { strong: true }, ...["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }, ...href && { href } }];
   });
 }
 function fullAuthorName(author, inverted = false) {
@@ -534,6 +547,10 @@ function normalizeRecord(input) {
       })
     },
     title,
+    ...Object.fromEntries(["title", "containerTitle"].flatMap((field) => {
+      const parts = normalizeTitleParts(input[field + "Parts"], cleanText(input[field]));
+      return parts.length ? [[field + "Parts", parts]] : [];
+    })),
     authors,
     ...editors.length && { editors },
     ...translators.length && { translators },
@@ -748,7 +765,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.2",
+  version: "0.6.0-preview.3",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -784,7 +801,8 @@ var package_default = {
     "./i18n": "./src/i18n.mjs",
     "./pubmed": "./src/pubmed.mjs",
     "./zotero": "./src/zotero.mjs",
-    "./zotero-browser": "./dist/citation-manager.mjs"
+    "./zotero-browser": "./dist/citation-manager.mjs",
+    "./bibliography": "./src/bibliography-export.mjs"
   },
   bin: {
     "cite-inator": "./scripts/compile.mjs",
@@ -1162,25 +1180,32 @@ function authorLabel(record, narrative = false) {
   return `${names[0]} et al.`;
 }
 var hasDefaultCitationText = (record, suffix) => record.citationText && (!suffix || record.citationText.includes(` (${yearFor(record)}).`));
-function defaultBibliography(record, suffix = "") {
-  if (record.state === "unresolved") return titleFor(record);
+function defaultBibliographyParts(record, suffix = "") {
+  if (record.state === "unresolved") return [{ text: titleFor(record) }];
   const year = yearFor(record);
-  if (hasDefaultCitationText(record, suffix)) {
-    return record.citationText.replace(` (${year}).`, ` (${year}${suffix}).`);
-  }
+  if (hasDefaultCitationText(record, suffix)) return [{ text: record.citationText.replace(` (${year}).`, ` (${year}${suffix}).`) }];
   const names = citationAuthors(record).map((author) => {
     if (author.literal) return author.literal;
-    const initials = author.given?.match(/\p{L}[\p{L}\p{M}]*/gu)?.map((part) => `${[...part][0]}.`).join(" ");
+    const initials = author.given?.match(/\p{L}[\p{L}\p{M}]*/gu)?.map((p) => `${[...p][0]}.`).join(" ");
     return [author.family, initials, author.suffix].filter(Boolean).join(", ");
   });
   const authors = names.length > 1 ? `${names.slice(0, -1).join(", ")}, & ${names.at(-1)}` : names[0];
-  const journal = [record.containerTitle, record.volume + (record.issue ? `(${record.issue})` : ""), record.pages || record.articleNumber].filter(Boolean).join(", ");
-  const source = record.identifiers.find((id) => id.scheme === "doi");
-  const details = [journal || record.publisher, identifierURL(source)].filter(Boolean);
-  return [
-    authors ? `${authors} (${year}${suffix}). ${titleFor(record)}.` : `${titleFor(record)}. (${year}${suffix}).`,
-    ...details.map((item) => item.startsWith("https://") ? item : `${item}.`)
-  ].join(" ");
+  const parts = [], add = (text) => parts.push({ text });
+  if (authors) add(`${authors} (${year}${suffix}). `);
+  parts.push(...titleRuns({ ...record, title: titleFor(record) }, "title", ["book", "report", "thesis"].includes(record.type) ? "italic" : void 0));
+  add(".");
+  if (!authors) add(` (${year}${suffix}).`);
+  const hasJournal = Boolean(record.containerTitle || record.volume || record.pages || record.articleNumber);
+  if (hasJournal) {
+    add(" ");
+    if (record.containerTitle) parts.push(...titleRuns(record, "containerTitle", "italic"));
+    const rest = [record.volume + (record.issue ? `(${record.issue})` : ""), record.pages || record.articleNumber].filter(Boolean);
+    if (rest.length) add((record.containerTitle ? ", " : "") + rest.join(", "));
+    add(".");
+  } else if (record.publisher) add(` ${record.publisher}.`);
+  const url = identifierURL(record.identifiers.find((id) => id.scheme === "doi"));
+  if (url) add(" " + url);
+  return parts;
 }
 function chicagoBibliography(record, suffix) {
   const { type, containerTitle, publisher, edition } = record;
@@ -1192,6 +1217,7 @@ function chicagoBibliography(record, suffix) {
   }
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
+  const addTitle = (field, emphasis) => parts.push(...titleRuns(record, field, emphasis));
   if (authors.length) {
     const names = authors.slice(0, authors.length > 6 ? 3 : 6).map((author, index) => fullAuthorName(author, index === 0));
     const head = names.slice(0, -1).join(", ");
@@ -1201,15 +1227,18 @@ function chicagoBibliography(record, suffix) {
   }
   const title = titleFor(record);
   const quoted = ["article-journal", "article", "chapter", "webpage", "thesis"].includes(type);
-  if (quoted) add(`\u201C${title}${/[.?!]$/.test(title) ? "" : "."}\u201D`);
-  else {
-    add(title, "italic");
+  if (quoted) {
+    add("\u201C");
+    addTitle("title");
+    add(`${/[.?!]$/.test(title) ? "" : "."}\u201D`);
+  } else {
+    addTitle("title", "italic");
     if (!/[.?!]$/.test(title)) add(".");
   }
   if (!authors.length) add(` ${citationYear(record, suffix, "chicago-author-date", true)}.`);
   if (containerTitle) {
     add(type === "chapter" ? " In " : " ");
-    add(containerTitle, "italic");
+    addTitle("containerTitle", "italic");
     if (type === "chapter" && record.editors?.length) add(`, edited by ${roleNames(record.editors)}`);
     if (record.volume) add(` ${record.volume}`);
     if (record.issue) add(` (${record.issue})`);
@@ -1235,6 +1264,7 @@ function webpageReferenceURL(record) {
 function styledBibliography(record, suffix, style) {
   const parts = [];
   const add = (text, emphasis) => parts.push(emphasis ? { text, emphasis } : { text });
+  const addTitle = (field, emphasis) => parts.push(...titleRuns(style === "apa" && record.apaTitle && field === "title" ? { ...record, title: record.apaTitle, titleParts: [] } : record, field, emphasis));
   const { containerTitle, volume, issue, publisher, publisherPlace, edition } = record;
   const authors = citationAuthors(record);
   const title = style === "apa" && record.apaTitle || titleFor(record);
@@ -1251,11 +1281,17 @@ function styledBibliography(record, suffix, style) {
     const ordinal = { II: "2nd", III: "3rd", IV: "4th", V: "5th", VI: "6th", VII: "7th", VIII: "8th", IX: "9th", X: "10th" };
     const names2 = authors.slice(0, 6).map((author) => author.literal || [author.family, initials(author.given, ""), Object.hasOwn(ordinal, author.suffix) ? ordinal[author.suffix] : author.suffix?.replace(/\.$/, "")].filter(Boolean).join(" "));
     if (names2.length) add(`${names2.join(", ")}${authors.length > 6 ? ", et al" : ""}. `);
-    add(period(title));
+    addTitle("title");
+    if (!/[.?!]$/.test(title)) add(".");
     if (containerTitle) {
       const journal = period(record.containerAbbreviation || containerTitle);
       const issueText = issue ? `(${issue})` : "";
-      add(` ${journal} ${year}${volume || issue ? `;${volume}${issueText}` : ""}${pages ? `:${pages}` : ""}.`);
+      if (record.containerTitleParts?.length && !record.containerAbbreviation) {
+        add(" ");
+        addTitle("containerTitle");
+        if (!/[.?!]$/.test(containerTitle)) add(".");
+        add(` ${year}${volume || issue ? `;${volume}${issueText}` : ""}${pages ? `:${pages}` : ""}.`);
+      } else add(` ${journal} ${year}${volume || issue ? `;${volume}${issueText}` : ""}${pages ? `:${pages}` : ""}.`);
     } else {
       if (edition) add(` ${period(edition)}`);
       add(` ${publisherPlace || "[place unknown]"}: ${publisher || "[publisher unknown]"}; ${year}.`);
@@ -1271,12 +1307,14 @@ function styledBibliography(record, suffix, style) {
       add(`${byline}${authors.length > 2 ? ", et al" : authors.length === 2 ? `, and ${fullAuthorName(authors[1])}` : ""}. `);
     }
     if (containerTitle) {
-      add(`\u201C${period(title)}\u201D `);
-      add(containerTitle, "italic");
+      add("\u201C");
+      addTitle("title");
+      add(`${/[.?!]$/.test(title) ? "" : "."}\u201D `);
+      addTitle("containerTitle", "italic");
       const details = [volume && `vol. ${volume}`, issue && `no. ${issue}`, record.issued && year, locator, url].filter(Boolean);
       add(details.length ? period(`, ${details.join(", ")}`) : ".");
     } else {
-      add(title, "italic");
+      addTitle("title", "italic");
       const details = [edition, publisher, record.issued && year, url].filter(Boolean);
       add(details.length ? `. ${period(details.join(", "))}` : ".");
     }
@@ -1291,14 +1329,15 @@ function styledBibliography(record, suffix, style) {
     add(apa || webpage ? `${role ? byline + role : period(byline)} (${year}). ` : `${byline} (${year}) `);
   }
   if (webpage) {
-    add(title, "italic");
+    addTitle("title", "italic");
     if (!/[.?!]$/.test(title)) add(".");
     if (!names.length) add(` (${year}).`);
     const site = containerTitle || publisher;
     const sameAsAuthor = site && authors.length === 1 && authors[0].literal && compare(authors[0].literal, site) === 0;
     if (site && !sameAsAuthor) add(` ${period(site)}`);
   } else if (apa && record.type === "chapter" && containerTitle) {
-    add(`${period(title)}${!names.length ? ` (${year}).` : ""} `);
+    addTitle("title");
+    add(`${/[.?!]$/.test(title) ? "" : "."}${!names.length ? ` (${year}).` : ""} `);
     if (record.translators?.length) {
       const translated = record.translators.map((person) => person.literal || [person.given && `${initials(person.given)}.`, person.family].filter(Boolean).join(" "));
       add(`(${joinPeople(translated, "&")}, Trans.). `);
@@ -1308,21 +1347,32 @@ function styledBibliography(record, suffix, style) {
       const names2 = record.editors.map((person) => person.literal || [person.given && `${initials(person.given)}.`, person.family].filter(Boolean).join(" "));
       add(`${joinPeople(names2, "&")} (${names2.length === 1 ? "Ed." : "Eds."}), `);
     }
-    add(containerTitle, "italic");
+    addTitle("containerTitle", "italic");
     const details = [edition && editionText(edition), pages && `pp. ${pages}`].filter(Boolean);
     if (details.length) add(` (${details.join(", ")})`);
     add(".");
     if (publisher) add(` ${period(publisher)}`);
   } else if (containerTitle) {
-    add(apa ? `${period(title)} ` : `\u2018${title}\u2019, `);
+    if (apa) {
+      addTitle("title");
+      add(`${/[.?!]$/.test(title) ? "" : "."} `);
+    } else {
+      add("\u2018");
+      addTitle("title");
+      add("\u2019, ");
+    }
     if (!names.length) add(`(${year})${apa ? "." : ","} `);
-    add(apa && volume ? `${containerTitle}, ${volume}` : containerTitle, "italic");
+    if (!record.containerTitleParts?.length) add(apa && volume ? `${containerTitle}, ${volume}` : containerTitle, "italic");
+    else {
+      addTitle("containerTitle", "italic");
+      if (apa && volume) add(`, ${volume}`, "italic");
+    }
     if (!apa && volume) add(`, ${volume}`);
     if (issue) add(`${apa ? "" : " "}(${issue})`);
     if (pages) add(`, ${apa ? record.pages || `Article ${record.articleNumber}` : record.pages ? locator : `article ${record.articleNumber}`}`);
     add(".");
   } else {
-    add(title, "italic");
+    addTitle("title", "italic");
     const apaRoleNames = (people) => joinPeople(people.map((person) => person.literal || [person.given && `${initials(person.given)}.`, person.family].filter(Boolean).join(" ")), "&");
     const titleDetails = apa ? [
       !editorOnly(record) && record.editors?.length && `${apaRoleNames(record.editors)}, ${record.editors.length === 1 ? "Ed." : "Eds."}`,
@@ -1350,7 +1400,7 @@ function mediaBibliography(record, suffix, style) {
   const creator = [record.creatorAttribution, creators.join(" and ")].filter(Boolean).join(" ");
   const year = citationYear(record, suffix, style, true);
   if (creator) add(style === "chicago-author-date" ? `${creator}. ${year}. ` : `${creator}. (${year}). `);
-  parts.push({ text: title, emphasis: "italic" });
+  parts.push(...titleRuns(record, "title", "italic"));
   if (!/[.?!]$/.test(title)) add(".");
   if (!creator) add(style === "chicago-author-date" ? ` ${year}.` : ` (${year}).`);
   if (record.medium) add(` ${record.medium.replace(/\.$/, "")}.`);
@@ -1368,10 +1418,10 @@ function bibliographyParts(record, suffix, style) {
     if (!suffix || style === "mla" || style === "vancouver") return record.citationParts;
     const year = String(yearFor(record));
     const marker = style === "chicago-author-date" ? `${year}.` : `(${year})`;
-    const text2 = record.citationParts.map((part) => part.text).join("");
-    const at2 = text2.indexOf(marker);
-    if (at2 >= 0) {
-      const insertion = at2 + marker.indexOf(year) + year.length;
+    const text = record.citationParts.map((part) => part.text).join("");
+    const at = text.indexOf(marker);
+    if (at >= 0) {
+      const insertion = at + marker.indexOf(year) + year.length;
       let offset = 0;
       return record.citationParts.map((part) => {
         const local = insertion - offset;
@@ -1387,14 +1437,9 @@ function bibliographyParts(record, suffix, style) {
   if (style !== "default" || record.type === "webpage" && !hasDefaultCitationText(record, suffix)) {
     return styledBibliography(record, suffix, style);
   }
-  const text = defaultBibliography(record, suffix) + (hasReprintDate(record) ? ` (Original work published ${originalYear(record)})` : "");
-  const title = record.containerTitle || (["book", "report", "thesis"].includes(record.type) ? record.title : "");
-  const at = title ? text.toLowerCase().lastIndexOf(title.toLowerCase()) : -1;
-  return at < 0 ? [{ text }] : [
-    { text: text.slice(0, at) },
-    { text: text.slice(at, at + title.length), emphasis: "italic" },
-    { text: text.slice(at + title.length) }
-  ];
+  const parts = defaultBibliographyParts(record, suffix);
+  if (hasReprintDate(record)) parts.push({ text: ` (Original work published ${originalYear(record)})` });
+  return parts;
 }
 var nameKey = (value) => (value || "").normalize("NFKC").toLowerCase();
 var identity = (author) => author.id ? JSON.stringify([author.id]) : JSON.stringify([author.literal, author.family, author.given, author.suffix].map(nameKey));
@@ -1535,9 +1580,10 @@ function safeFallback(value) {
   if (value.startsWith("//") || /^[a-z][a-z0-9+.-]*:/i.test(value)) return "";
   return value;
 }
-function renderBibliographyPart({ text, emphasis, href }, record) {
+function renderBibliographyPart({ text, emphasis, href, strong }, record) {
   const escaped = escapeHTML(text);
   let formatted = emphasis === "italic" ? `<em>${escaped}</em>` : emphasis === "bold" ? `<strong>${escaped}</strong>` : escaped;
+  if (strong) formatted = `<strong>${formatted}</strong>`;
   const value = href ? `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${formatted}</a>` : formatted;
   return value;
 }
@@ -1817,7 +1863,7 @@ function compileBlocks(blocks, cache, {
     const { record } = item.entry;
     const parts = bibliography(item.entry);
     const text = parts.map((part2) => part2.text).join("");
-    const formatting = parts.some((part2) => part2.emphasis || part2.href) ? ` data-ci-bibliography-parts="${escapeHTML(JSON.stringify(parts))}"` : "";
+    const formatting = parts.some((part2) => part2.emphasis || part2.href || part2.strong) ? ` data-ci-bibliography-parts="${escapeHTML(JSON.stringify(parts))}"` : "";
     const tags = features.tags(record, item.list);
     const visibleTags = !inspectLabel && inlineTags === "marker" ? features.tags({ ...record, tags: item.markerTags || [] }) : tags;
     const usage = features.occurrences(record.id);
@@ -1831,6 +1877,14 @@ function compileBlocks(blocks, cache, {
   function titleOffset(parts, record, suffix) {
     const title = record.apaTitle && citationStyle === "apa" ? record.apaTitle : titleFor(record);
     let offset = 0;
+    for (const p of parts) {
+      if (p.titleField === "title") {
+        const marked = parts.filter((p2) => p2.titleField === "title");
+        return { start: offset, length: marked.reduce((n, p2) => n + p2.text.length, 0) };
+      }
+      offset += p.text.length;
+    }
+    offset = 0;
     const generatedDefault = citationStyle === "default" && !record.citationParts?.length && !["artwork", "image", "webpage"].includes(record.type);
     for (const [index2, part2] of parts.entries()) {
       const plain = part2.text.trim().replace(/^[“‘]/, "").replace(/[”’]$/, "");

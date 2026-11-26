@@ -1,3 +1,4 @@
+import {exportBibliography} from '../src/bibliography-export.mjs';
 import DOMPurify from 'dompurify';
 import {compileMarkdown} from '../src/markup.mjs';
 import {brandIconMarkup} from '../src/icons.mjs';
@@ -83,12 +84,13 @@ function render(){
     const noteStep=selected==='notes'?`const labelled = annotateMarkers(source, cache, {...options, format:'markdown', noteContext:'work'});\nconst topics = collectMarkerTags([{source, format:'markdown'}], cache, options);\nconsole.log(topics);\n`:'';
     $('initialization').textContent=`import {compileMarkdown} from './citation-compiler.mjs';\nimport {initializeCitationInspector} from './citation-inspector.mjs';\n${noteTools}\nconst source = await fetch('./article.md').then(response => response.text());\n${setup}\nconst options = ${json(configuration)};\n${noteStep}const result = compileMarkdown(${selected==='notes'?'labelled.source':'source'}, cache, options);\nconst element = document.querySelector('#article');\n// Trusted authored content; sanitize untrusted HTML before insertion.\nelement.innerHTML = result.html;\ninitializeCitationInspector(element, {...options, cache:result.cache});`;
     $('error').hidden=true;
-    for(const id of ['download-source','download-cache'])$(id).disabled=false;
-  }catch(error){compiled=null;$('error').textContent=`Preview not updated: ${error.message}`;$('error').hidden=false;$('result').setAttribute('data-stale','');for(const id of ['download-source','download-cache'])$(id).disabled=true;}
+    $('export-status').hidden=true;
+    for(const id of ['download-source','download-cache','download-bibliography'])$(id).disabled=false;
+  }catch(error){compiled=null;$('export-status').hidden=true;$('error').textContent=`Preview not updated: ${error.message}`;$('error').hidden=false;$('result').setAttribute('data-stale','');for(const id of ['download-source','download-cache','download-bibliography'])$(id).disabled=true;}
 }
 function load(){const lesson=lessons.find(item=>item.id===selected);const url=new URL(location.href);if(lesson.id==='first')url.searchParams.delete('example');else url.searchParams.set('example',lesson.id);history.replaceState(null,'',url);$('source').value=lesson.source;$('records').value=json({schema:'citation-inator.cache.v1',records:records.map(record=>({...record,...lesson.recordOverrides?.[record.id]}))});$('configuration').value=json({namespace:'learning',activation:'hover',citationStyle:'chicago-author-date',...lesson.options,...(lesson.id==='site'?{siteOccurrences:data.siteOccurrences,siteOrigin:location.origin}:{})});$('style').value='chicago-author-date';$('hover').checked=true;$('appearance').value='paper';$('lesson').replaceChildren(...lesson.text.split(/(`[^`]+`)/).filter(Boolean).map(text=>{if(!text.startsWith('`'))return document.createTextNode(text);const code=document.createElement('code');code.textContent=text.slice(1,-1);return code;}));$('example-title').textContent=lesson.title;for(const button of $('example-gallery').querySelectorAll('button'))button.setAttribute('aria-pressed',String(button.dataset.example===selected));$('javascript-panel').open=['first','names','branding','letters','notes','access','leading','site','language'].includes(selected);$('html-panel').open=['first','html','names'].includes(selected);appearance();render();$('example-gallery').querySelector('[aria-pressed="true"]')?.scrollIntoView({block:'nearest',inline:'nearest'});}
 function appearance(){document.querySelector('.result').className=`result ${$('appearance').value}`;$('css-help').textContent=$('appearance').value==='ink'?'citation-inspector { --citation-paper: #182c44; --citation-ink: #f4f7fb; --citation-accent: #8cdeed; }':$('appearance').value==='compact'?'citation-inspector { --citation-heading-font: system-ui; --citation-panel-radius: 4px; --citation-icon-radius: 3px; }':'citation-inspector { --citation-paper: #fff; --citation-ink: #182c44; }';}
-for(const id of ['source','records','configuration'])$(id).addEventListener('input',()=>{clearTimeout(timer);$('result').setAttribute('data-stale','');for(const download of ['download-source','download-cache'])$(download).disabled=true;timer=setTimeout(()=>{try{$('style').value=options().citationStyle||'chicago-author-date';}catch{}render();},180);});
+for(const id of ['source','records','configuration'])$(id).addEventListener('input',()=>{clearTimeout(timer);$('export-status').hidden=true;$('result').setAttribute('data-stale','');for(const download of ['download-source','download-cache','download-bibliography'])$(download).disabled=true;timer=setTimeout(()=>{try{$('style').value=options().citationStyle||'chicago-author-date';}catch{}render();},180);});
 $('reset').addEventListener('click',load);$('hover').addEventListener('change',()=>{try{$('configuration').value=json({...options(),activation:$('hover').checked?'hover':'click'});render();}catch{render();}});$('appearance').addEventListener('change',appearance);
 $('style').addEventListener('change',()=>{try{$('configuration').value=json({...options(),citationStyle:$('style').value});render();}catch{render();}});
 for(const help of document.querySelectorAll('.help-wrap'))for(const event of ['pointerenter','focusin'])help.addEventListener(event,()=>{
@@ -100,6 +102,15 @@ for(const help of document.querySelectorAll('.help-wrap'))for(const event of ['p
 document.addEventListener('keydown',event=>{if(event.key==='Escape')for(const help of document.querySelectorAll('.help-wrap'))help.dataset.dismissed='';});
 function download(name,value,type){const url=URL.createObjectURL(new Blob([value],{type}));const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 $('download-source').addEventListener('click',()=>{if(compiled)download('article.md',$('source').value,'text/markdown');});
+$('bibliography-format').addEventListener('change',()=>{$('export-status').hidden=true;if(compiled)$('diagnostics').textContent=compiled.diagnostics.length?json(compiled.diagnostics):'None';});
+$('download-bibliography').addEventListener('click',()=>{
+ if(!compiled)return;
+ const file=exportBibliography(compiled.cache,{format:$('bibliography-format').value});
+ download('bibliography.'+file.extension,file.text,file.mimeType);
+ const status=$('export-status');status.hidden=false;status.textContent=`Downloaded ${file.recordCount} reference${file.recordCount===1?'':'s'}.`;
+ const diagnostics=[...compiled.diagnostics,...file.diagnostics];$('diagnostics').textContent=diagnostics.length?json(diagnostics):'None';
+ if(file.diagnostics.length){status.append(' Some details could not be preserved. ');const link=document.createElement('a');link.href='#diagnostics-panel';link.textContent='Review details';link.addEventListener('click',()=>{$('diagnostics-panel').open=true;});status.append(link);}
+});
 $('download-cache').addEventListener('click',()=>{if(compiled)download('citations.json',json(compiled.cache),'application/json');});
 load();
 

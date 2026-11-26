@@ -1,3 +1,4 @@
+import {normalizeTitleParts,cslTitle} from './title-parts.mjs';
 export const CACHE_SCHEMA = "citation-inator.cache.v1";
 export const DAY = 86_400_000;
 
@@ -141,7 +142,7 @@ function normalizeTextParts(parts) {
   return (Array.isArray(parts) ? parts : []).flatMap(part => {
     if (typeof part?.text !== "string" || !part.text) return [];
     const href = httpsURL(part.href);
-    return [{ text: part.text, ...(["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }), ...(href && { href }) }];
+    return [{ text: part.text, ...(part.strong===true&&{strong:true}), ...(["italic", "bold"].includes(part.emphasis) && { emphasis: part.emphasis }), ...(href && { href }) }];
   });
 }
 
@@ -227,7 +228,7 @@ export function normalizeRecord(input) {
         return name && role ? [{ name, role }] : [];
       })
     }),
-    title, authors, ...(editors.length && {editors}), ...(translators.length && {translators}), identifiers: [...identifiers.values()], locations, provenance,
+    title, ...Object.fromEntries(["title","containerTitle"].flatMap(field=>{const parts=normalizeTitleParts(input[field+"Parts"],cleanText(input[field]));return parts.length?[[field+"Parts",parts]]:[];})), authors, ...(editors.length && {editors}), ...(translators.length && {translators}), identifiers: [...identifiers.values()], locations, provenance,
     ...(Array.isArray(input.tags) && { tags: normalizeTags(input.tags) }),
     ...(relatedIdentifiers.length && { relatedIdentifiers }),
     citationParts,
@@ -279,12 +280,12 @@ export function toCSL(record) {
   const id = scheme => record.identifiers.find(item => item.scheme === scheme)?.value;
   const date = parts => parts && { "date-parts": [parts] };
   return Object.fromEntries(Object.entries({
-    id: record.id, type: ["artwork", "image"].includes(record.type) ? "graphic" : record.type, title: record.title,
+    id: record.id, type: ["artwork", "image"].includes(record.type) ? "graphic" : record.type, title: cslTitle(record.title,record.titleParts),
     author: record.authors.map(({ id, short, ...author }) => author),
     ...(record.editors?.length && {editor:record.editors.map(({id,short,...person})=>person)}),
     ...(record.translators?.length && {translator:record.translators.map(({id,short,...person})=>person)}),
     jurisdiction: record.jurisdiction, number: record.number,
-    "original-date": date(record.originalIssued), "container-title": record.containerTitle, publisher: record.publisher,
+    "original-date": date(record.originalIssued), "container-title": record.containerTitle && cslTitle(record.containerTitle,record.containerTitleParts), publisher: record.publisher, "publisher-place":record.publisherPlace,
     volume: record.volume, issue: record.issue, page: record.pages || record.articleNumber,
     note: [record.note, record.creatorAttribution && "Creator attribution: " + record.creatorAttribution, ...(record.contributors || []).map(person => person.role + ": " + person.name)].filter(Boolean).join(" · "),
     medium: record.medium, dimensions: record.dimensions, archive: record.holdingInstitution,

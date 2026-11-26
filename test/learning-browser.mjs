@@ -68,6 +68,7 @@ try{
   await page.locator('#configuration').fill('{');
   await page.waitForFunction(()=>!document.getElementById('error').hidden);
   assert(await page.locator('#download-cache').isDisabled());
+  assert(await page.locator('#download-bibliography').isDisabled());
   await page.locator('#reset').click();
   assert(!(await page.locator('#download-cache').isDisabled()));
   await page.locator('#source').fill('<img src=x onerror="window.bad=1"><style>body{display:none}</style><script>window.bad=2</script><p style="position:fixed;inset:0">Unsafe styling</p>\n\n{cite ioannidis-2005}\n\n{cite endnote}');
@@ -84,7 +85,7 @@ try{
   }
   await page.locator('[data-example="reference-parts"]').click();assert.equal(await page.locator('#javascript-panel').evaluate(node=>node.open),false);assert.match(await page.locator('#source').inputValue(),/reference:"/);assert(await page.locator('#result em').count());
   assert.equal(await page.locator('#html-panel').evaluate(node=>node.open),false);
-  assert.equal(await page.locator('.downloads .download-button').count(),5);
+  assert.equal(await page.locator('.downloads .download-button').count(),6);
   for(const control of await page.locator('.downloads .download-button').all())assert.equal(await control.locator('span[aria-hidden="true"]').innerText(),'↓');
   assert.equal(await page.getByRole('heading',{name:'Advanced',exact:true}).count(),1);
   await page.locator('[data-example="leading"]').click();
@@ -145,8 +146,34 @@ try{
   await page.keyboard.press('Escape');
   const download=page.waitForEvent('download');
   await page.locator('#download-cache').click();
-  assert.equal((await download).suggestedFilename(),'citations.json');
+  const cacheDownload=await download;assert.equal(cacheDownload.suggestedFilename(),'citations.json');
+  const selectedCache=JSON.parse(await readFile(await cacheDownload.path(),'utf8'));
+  for(const [format,extension] of [['csl-json','json'],['bibtex','bib'],['ris','ris']]){
+    await page.locator('#bibliography-format').selectOption(format);
+    const pending=page.waitForEvent('download');await page.locator('#download-bibliography').click();const file=await pending;
+    assert.equal(file.suggestedFilename(),'bibliography.'+extension);const bytes=await readFile(await file.path(),'utf8');
+    if(format==='csl-json')assert.deepEqual(JSON.parse(bytes).map(item=>item.id),selectedCache.records.map(item=>item.id));
+    else assert.equal((bytes.match(format==='bibtex'?/^@/gm:/^TY  - /gm)||[]).length,selectedCache.records.length);
+    assert.match(await page.locator('#export-status').innerText(),new RegExp(`Downloaded ${selectedCache.records.length} reference`));
+  }
+  await page.locator('#bibliography-format').selectOption('csl-json');
+  assert(await page.locator('#export-status').isHidden());
+  await page.locator('.downloads').screenshot({path:join(tmpdir(),'cite-bibliography-downloads.png')});
   await page.screenshot({path:join(tmpdir(),'citation-learning-first.png'),fullPage:true});
+  await page.getByText('Advanced: reference metadata',{exact:true}).click();
+  await page.locator('#records').fill(JSON.stringify({schema:'citation-inator.cache.v1',records:[{id:'software',type:'software',state:'resolved',title:'Analysis software',authors:[{literal:'Research team'}],issued:[2020],releaseVersion:'2.0'}]}));
+  await page.locator('#source').fill('{cite software}\n\n{cite endnote}');
+  await page.waitForFunction(()=>!document.getElementById('result').hasAttribute('data-stale'));
+  await page.locator('#bibliography-format').selectOption('bibtex');
+  {const pending=page.waitForEvent('download');await page.locator('#download-bibliography').click();await pending;}
+  await page.getByRole('link',{name:'Review details',exact:true}).click();assert(await page.locator('#diagnostics-panel').getAttribute('open')!==null);
+  assert.match(await page.locator('#diagnostics').innerText(),/export-type-fallback/);
+  await page.locator('#bibliography-format').selectOption('csl-json');assert(await page.locator('#export-status').isHidden());
+  {const pending=page.waitForEvent('download');await page.locator('#download-bibliography').click();await pending;}
+  assert.equal(await page.locator('#diagnostics').innerText(),'None');
+  assert(!await page.locator('#export-status').innerText().then(text=>text.includes('could not')));
+  await page.locator('#source').fill('{');assert(await page.locator('#export-status').isHidden());
+  await page.locator('#reset').click();
   await page.setViewportSize({width:390,height:844});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   const help=page.getByRole('button',{name:'Hover configuration',exact:true});
@@ -267,6 +294,7 @@ try{
   await page.waitForFunction(()=>!document.getElementById('error').hidden);
   assert.match(await page.locator('#error').innerText(),/Reload the page/);
   assert(await page.locator('#download-cache').isDisabled());
+  assert(await page.locator('#download-bibliography').isDisabled());
   const directory=await mkdtemp(join(tmpdir(),'citation-learning-starter-'));
   let child;
   try{

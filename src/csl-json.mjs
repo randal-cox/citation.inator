@@ -12,7 +12,25 @@ export function fromCSLJSON(input,{recordId,limits:overrides}={}){
  const warn=(code,field)=>diagnostics.push({code,field});
  const numericFields=new Set(['volume','issue','page','article-number','edition']);
  const text=(field)=>{const value=item[field];if(typeof value==='string')return value.trim();if(numericFields.has(field)&&Number.isFinite(value))return String(value);if(value!==undefined&&value!==null)warn('csl-field-review-required',field);return '';};
- const plain=field=>{const value=text(field);if(!/[<&]/.test(value))return value;const root=parseFragment(value);const walk=node=>['script','style','template'].includes(node.tagName)?'':node.nodeName==='#text'?node.value:(node.childNodes||[]).map(walk).join('');if(root.childNodes.some(node=>node.tagName))warn('csl-title-formatting-review-required',field);return walk(root).trim();};
+ const titleFormatting={};
+ const plain=field=>{
+  const value=text(field);if(!/[<&]/.test(value))return value;
+  const root=parseFragment(value),parts=[];let unsupported=false;
+  const walk=(node,emphasis)=>{
+   if(node.nodeName==='#text'){parts.push({text:node.value,...(emphasis&&{emphasis})});return;}
+   if(['script','style','template'].includes(node.tagName)){unsupported=true;return;}
+   let next=emphasis;
+   if(node.tagName){const format={i:'italic',em:'italic',b:'bold',strong:'bold'}[node.tagName];if(!format||node.attrs?.length||emphasis&&emphasis!==format)unsupported=true;else next=format;}
+   for(const child of node.childNodes||[])walk(child,next);
+  };
+  walk(root);const title=parts.map(p=>p.text).join('').trim();
+  if(unsupported)warn('csl-title-formatting-review-required',field);
+  // Trimming applies to the edge runs too, keeping searchable text and formatting consistent.
+  while(parts.length&&!parts[0].text.trim())parts.shift();while(parts.length&&!parts.at(-1).text.trim())parts.pop();
+  if(parts.length){parts[0].text=parts[0].text.trimStart();parts.at(-1).text=parts.at(-1).text.trimEnd();}
+  if(!unsupported&&parts.some(p=>p.emphasis))titleFormatting[field==='title'?'titleParts':'containerTitleParts']=parts;
+  return title;
+ };
  const people=field=>{
   if(item[field]===undefined)return [];
   if(!Array.isArray(item[field])||item[field].length>limits.authorsPerRecord)throw new TypeError('Use a bounded CSL creator array.');
@@ -48,7 +66,7 @@ export function fromCSLJSON(input,{recordId,limits:overrides}={}){
  const literalDate=issued?'':typeof item.issued?.literal==='string'?item.issued.literal.trim():renderedDates?(item.issued?.circa?'circa ':'')+renderedDates+(item.issued?.season?' (season '+String(item.issued.season)+')':''):'';
  if(issued&&item.issued?.literal)warn('csl-date-review-required','issued');
  if(!issued&&!literalDate)warn('csl-missing-date','issued');
- const record=normalizeRecord({id:recordId,type:Object.hasOwn(types,item.type)?types[item.type]:'document',title,containerTitle,authors,editors,translators,issued,originalIssued,displayDate:literalDate,identifiers,
+ const record=normalizeRecord({id:recordId,type:Object.hasOwn(types,item.type)?types[item.type]:'document',title,containerTitle,...titleFormatting,authors,editors,translators,issued,originalIssued,displayDate:literalDate,identifiers,
   publisher:text('publisher'),publisherPlace:text('publisher-place'),volume:text('volume'),issue:text('issue'),pages:text('page'),articleNumber:text('article-number'),edition:typeof item.edition==='number'?String(item.edition):text('edition'),
   releaseVersion:text('version'),state:diagnostics.length?'partial':'resolved',provenance:[{provider:'CSL-JSON',note:'Selected bibliographic snapshot; identifiers have not been independently verified.'}]});
  if(JSON.stringify(record).length>limits.recordCharacters)throw new RangeError('Converted metadata exceeds the record limit.');

@@ -18,6 +18,8 @@ All generated HTML pages group Playground, Import and Guide together, with GitHu
 
 ## Downloads
 
+The Playground also downloads the current document’s bibliography in CSL-JSON, BibTeX or RIS. These contain the used references, not every cached library item. Format-loss warnings link to Diagnostics. [Export API and limits](zotero.md#bibliography-files).
+
 The generated site includes a copied-file first-citation ZIP, an npm build starter ZIP with its library tarball, and the full offline learning-site ZIP. Each includes source/configuration and notices. Npm installs the build starter's dependencies and creates its lockfile; the copied-file starter and full learning site need no install. Run `npm start` or `node server.mjs` inside their extracted folders. Modules require HTTP, not `file://`.
 
 `BUILD.json` records the base source commit and whether tracked changes were present. Publish from a clean accepted candidate so that its source commit identifies the actual tree. Native sample attribution/checksums are under `documents/manifest.json`. The pinned draft source manifest records exact Git blob identities; preserve its MIT license.

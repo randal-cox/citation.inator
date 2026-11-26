@@ -27,7 +27,7 @@ Copy that same-version module and its license notices. The module performs no ne
 
 `selected.record` is the only part intended for the portable citation cache. `selected.source` is host-side manager-address/version data; keep it outside reader caches, source text and exports. A separate object is not a secret store. Browser-local bindings are optional disposable acceleration state, never a prerequisite to saving source and records.
 
-`selected.requiresReview` and `diagnostics` identify unsupported/lossy metadata before insertion. A valid local reference needs no DOI or ISBN. `state:'resolved'` means the selected bibliographic fields are available; it is not independent provider verification of identifiers. Unknown types, uncertain/range dates, name particles, unsupported creator roles and formatted titles carry review diagnostics rather than a lossless-conversion claim. Exact numeric CSL date strings are normalized; free-form text is not guessed into a year.
+`selected.requiresReview` and `diagnostics` identify unsupported/lossy metadata before insertion. A valid local reference needs no DOI or ISBN. `state:'resolved'` means the selected bibliographic fields are available; it is not independent provider verification of identifiers. Unknown types, uncertain/range dates, name particles, unsupported creator roles and unsupported title markup carry review diagnostics rather than a lossless-conversion claim. Exact numeric CSL date strings are normalized; free-form text is not guessed into a year.
 
 Structured `editors` and `translators` remain distinct from `authors`, and round-trip through `toCSL`. Edited books use editors for their citation byline without rewriting their author identity. Chicago author-date and APA have initial book/chapter role handling. Other presets emit `citation-creator-role-style-review-required` for these roles; full CSL/style conformance is not claimed. Software release version is `releaseVersion`, distinct from the existing publication-version category, and exports as CSL `version`.
 
@@ -90,3 +90,31 @@ const policy = citationOptionPolicy('locator');
 Pass an option name without a colon. Pass `null` for the bare legacy display fallback. Returned policy objects and the known-field table are immutable. `known` describes this policy vocabulary, not whether a marker using the field parses. For example, future `quote` currently receives unknown/review; this does not implement quote notation.
 
 The source field list derives from the same `authorFields` definition used by the grammar. Use the function for unknown-field fallback rather than treating the table as an exhaustive future grammar. Apply it only to an actual work replacement. A note refresh, alias spelling change or same-work edit must retain the existing round-trip behavior.
+
+## Bibliography files
+
+To take a manuscript’s references into another manager, use the Playground’s Bibliography format control and Download bibliography button. It includes cited works and explicit further reading, once per work; unused cached records are excluded. Downloads stop while edits are awaiting compilation or the preview has an error.
+
+Host integration:
+
+```js
+import {exportBibliography} from 'cite-inator/bibliography';
+const file = exportBibliography(compiled.cache, {format:'bibtex'});
+// file.text, file.extension, file.mimeType, file.recordCount, file.diagnostics
+```
+
+The function is also exported from tools/manager and their self-contained browser modules. It accepts a citation cache, not a compiled-result wrapper or a Zotero envelope. Pass the compiler’s returned cache for the document’s selected works. Passing a whole library cache deliberately exports that entire cache. Serialization performs no fetches, file writes, Zotero updates or record merges.
+
+Formats are `csl-json` (default), `bibtex` and `ris`. Output preserves cache order and record IDs. CSL-JSON retains structured editors/translators, original and edition dates, software version and supported title emphasis. BibTeX/RIS have narrower field models: unsupported types, roles, dates, formatting and additional identifiers produce diagnostics identifying the affected record and field. Generic theses use a BibTeX misc fallback; no degree is inferred. Unicode is retained, so BibTeX consumers need UTF-8 support. The complete title is case-protected in BibTeX. Corporate-name structure in BibTeX, and corporate/suffix names in RIS, can vary by importer; test important names in the receiving application.
+
+Explicit work URLs are retained alongside DOI fields. Only the first identifier per scheme is serialized; additional values are diagnosed. Custom-formatted reference text is not a substitute for structured fields and is diagnosed when omitted. Editorial notes, occurrence text, quote excerpts, topic tags, abstracts, access preferences and manager envelopes are excluded. Record IDs and bibliographic URLs are public export fields: hosts must allocate portable IDs, not private library addresses. This is interchange export, not lossless project backup or synchronization.
+
+Diagnostics contain codes, record IDs and optional field names. Hosts must present them when offering files. The Playground reports the number of downloaded references and directs readers to Diagnostics when details could not be preserved. `export-incomplete-record` marks unresolved/titleless records, `export-record-review-required` marks partial records, and `export-custom-reference-omitted`, `export-additional-identifiers-omitted`, `export-type-fallback`, `export-field-omitted`, `export-contributor-detail-omitted`, `export-title-formatting-omitted` and `export-creator-role-reader-dependent` identify known format restrictions.
+
+Independent Citation.js 0.9.0 BibTeX/RIS parsers have checked synthetic title, creator, chapter, edition, date and identifier round trips, including hostile field contents. This is parser evidence, not a live Zotero import receipt. Actual Zotero application import remains an acceptance step; no test writes to the maintainer’s library.
+
+## Formatted bibliographic titles
+
+Selected CSL titles and container titles retain italic/bold runs from `i`, `em`, `b` and `strong` tags without attributes. Searchable `title` and `containerTitle` remain plain text; optional `titleParts` and `containerTitleParts` contain text/emphasis data whose concatenation must match that text. A title override invalidates mismatched runs. Reader HTML is generated and escaped from those runs, never copied from source HTML. Whole-title italics reverse source italics; a bold run inside an italic title keeps both styles. This is generated reference metadata, not extra JS for article authors.
+
+Attributes, other tags and mixed nested emphasis require review and fall back to safe plain text. CSL export reconstructs supported markup; BibTeX/RIS export plain titles with a formatting-loss diagnostic. Explicit APA title or Vancouver abbreviation overrides retain their own plain text rather than applying mismatched runs. Custom citationParts/citationText remain deliberate complete-reference overrides.
