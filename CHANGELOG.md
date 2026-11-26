@@ -2,6 +2,8 @@
 
 ## 0.6.0-preview.3 — In development
 
+- Clarify host responsibilities for stale identity bindings, failed staging callbacks and save-time exclusion of unused staged records; record the independent draft prototype rehearsal.
+
 - Add deterministic document-bibliography exports in CSL-JSON, BibTeX and RIS, with format-loss diagnostics and private occurrence/manager fields excluded.
 - Add bibliography downloads beside existing Playground downloads; disable stale/error exports.
 - Preserve supported italic/bold CSL title runs through metadata conversion, style rendering, hover panels and CSL export.
