@@ -65,6 +65,7 @@ await build({
   entryPoints:['src/compiler-browser.mjs'],bundle:true,format:'esm',target:'es2022',outfile:'dist/citation-compiler.mjs',
   banner:{js:`/*! cite-inator compiler v${version} | MIT | See LICENSE */\n/* Bundled dependency notices:\n${toolsNotices.replaceAll('*/','* /')}\n*/`}
 });
+await build({entryPoints:['src/zotero.mjs'],bundle:true,format:'esm',target:'es2022',outfile:'dist/citation-manager.mjs',banner:{js:`/*! cite-inator manager v${version} | MIT | See THIRD_PARTY_LICENSES.txt */`}});
 await writeFile('dist/THIRD_PARTY_LICENSES.txt', toolsNotices+'\n\n'+importNotices);
 await Promise.all([
   cp("src/citation-inspector.css", "dist/citation-inspector.css"),
@@ -353,12 +354,12 @@ initializeCitationInspector(element, {...options, cache: result.cache});</code><
 
 const portable = "demos/drop-in/";
 const portableArticleToolsDemo = await writeArticleToolsDemo(portable, cache, './');
-await Promise.all(["citation-inspector.mjs", "citation-inspector.css", "citation-tools.mjs", "citation-compiler.mjs", "citation-import.mjs", "citation-import-files.mjs", "citation-pdf.worker.mjs", "THIRD_PARTY_LICENSES.txt", "LICENSE"].map(name => cp(`dist/${name}`, portable + name)));
+await Promise.all(["citation-manager.mjs", "citation-inspector.mjs", "citation-inspector.css", "citation-tools.mjs", "citation-compiler.mjs", "citation-import.mjs", "citation-import-files.mjs", "citation-pdf.worker.mjs", "THIRD_PARTY_LICENSES.txt", "LICENSE"].map(name => cp(`dist/${name}`, portable + name)));
 await writeFile(portable + "citations.json", json(article.cache));
 await Promise.all([
   cp("demos/static/reading.txt", portable + "reading.txt"),
   cp("CITATION.cff", portable + "CITATION.cff"),
-  ...["authoring.md", "integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "i18n.md", "naming-migration.md", "notation-migration.md"].map(name => cp("docs/" + name, portable + name)),
+  ...["zotero.md", "authoring.md", "integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "i18n.md", "naming-migration.md", "notation-migration.md"].map(name => cp("docs/" + name, portable + name)),
   cp("scripts/static-server.mjs", portable + "server.mjs"),
   writeFile(portable + "package.json", json({name:"citation-inator-standalone",private:true,type:"module",version,scripts:{start:"node server.mjs"}})),
   writeFile(portable + "access-preview.mjs", accessDemoModule("./citation-inspector.mjs")),

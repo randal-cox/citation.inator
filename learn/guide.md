@@ -16,7 +16,7 @@ The DOI identifies the work. `note:` is a generated work label, hidden from read
 
 ## Load, compile, initialize
 
-This Guide documents `0.5.1`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
+This Guide documents `0.6.0-preview.1`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
 
 ### Without a package installation
 
@@ -304,6 +304,6 @@ The tags block assigns a topic and its label to a work without citing it in the 
 {cite pending-rivera unresolved:"(Rivera, 2020)"}
 ```
 
-If a reference is missing, `unresolved:` keeps its original citation wording visible with an unresolved warning. The compiler and editor tools report `citation-unresolved-placeholder`; it cannot disappear into ordinary prose unnoticed. Complete the same local record with reviewed metadata and mark it resolved, and normal citation formatting resumes automatically. Import review offers **Keep as unresolved** for an unmatched item. Complex groups without safe individual spans remain unchanged for manual review. See the [import placeholder contract](./reference/import-api.html#unmatched-citations-as-unresolved-placeholders-051-development).
+If a reference is missing, `unresolved:` keeps its original citation wording visible with an unresolved warning. The compiler and editor tools report `citation-unresolved-placeholder`; it cannot disappear into ordinary prose unnoticed. Complete the same local record with reviewed metadata and mark it resolved, and normal citation formatting resumes automatically. Import review offers **Keep as unresolved** for an unmatched item. Complex groups without safe individual spans remain unchanged for manual review. See the [import placeholder contract](./reference/import-api.html#citations-as-unresolved-placeholders).
 
 A custom `citationKeyword` must reach every stage: import, compiler and tools. For example, an import using `citationKeyword:"reference"` needs the same setting in `markerKind`, `describeCitation` and compilation. No call changes another call's default. Incomplete configured markers report `citation-malformed`; escaped examples, code and other keywords remain ordinary text. See [configuration propagation](./reference/notation-migration.html#pass-the-same-keyword-to-every-parsing-stage).

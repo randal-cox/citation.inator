@@ -151,7 +151,7 @@ function normalizeRecord(input) {
     const authority = cleanText(item?.authority);
     return label && value && authority ? [{ label, value, authority }] : [];
   });
-  const authors = array(input.authors).flatMap((author) => {
+  const people = (value) => array(value).flatMap((author) => {
     const literal = cleanText(author?.literal);
     const family = cleanText(author?.family);
     const given = cleanText(author?.given);
@@ -160,6 +160,7 @@ function normalizeRecord(input) {
     const id = cleanText(author?.id);
     return literal ? [{ literal, ...short && { short } }] : family ? [{ family, ...given && { given }, ...suffix && { suffix }, ...id && { id } }] : [];
   });
+  const authors = people(input.authors), editors = people(input.editors), translators = people(input.translators);
   const locations = array(input.locations).flatMap((location) => {
     const url = httpsURL(location?.url);
     const provider = cleanText(location?.provider);
@@ -194,7 +195,7 @@ function normalizeRecord(input) {
   const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
   const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
-  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "unresolvedText", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
+  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "unresolvedText", "releaseVersion", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
   return {
     id: input.id.trim(),
     type: kinds.has(input.type) ? input.type : "document",
@@ -210,6 +211,8 @@ function normalizeRecord(input) {
     },
     title,
     authors,
+    ...editors.length && { editors },
+    ...translators.length && { translators },
     identifiers: [...identifiers.values()],
     locations,
     provenance,

@@ -174,7 +174,7 @@ export function normalizeRecord(input) {
     const authority = cleanText(item?.authority);
     return label && value && authority ? [{ label, value, authority }] : [];
   });
-  const authors = array(input.authors).flatMap(author => {
+  const people = value => array(value).flatMap(author => {
     const literal = cleanText(author?.literal);
     const family = cleanText(author?.family);
     const given = cleanText(author?.given);
@@ -183,6 +183,7 @@ export function normalizeRecord(input) {
     const id = cleanText(author?.id);
     return literal ? [{ literal, ...(short && { short }) }] : family ? [{ family, ...(given && { given }), ...(suffix && { suffix }), ...(id && { id }) }] : [];
   });
+  const authors=people(input.authors),editors=people(input.editors),translators=people(input.translators);
   const locations = array(input.locations).flatMap(location => {
     const url = httpsURL(location?.url);
     const provider = cleanText(location?.provider);
@@ -212,7 +213,7 @@ export function normalizeRecord(input) {
   const optional = ["inlineAuthor", "jurisdiction", "number", "session", "legalCitation"];
   const originalIssued = dateParts(input.originalIssued);
   const state = ["resolved", "partial", "unresolved"].includes(input.state) ? input.state : "unresolved";
-  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "unresolvedText", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
+  const textFields = ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "publisherPlace", "containerAbbreviation", "apaTitle", "original", "note", "citationText", "unresolvedText", "releaseVersion", "medium", "dimensions", "holdingInstitution", "accession", "platform", "rightsHolder", "creatorAttribution", "displayDate"];
   return {
     id: input.id.trim(),
     type: kinds.has(input.type) ? input.type : "document",
@@ -226,7 +227,7 @@ export function normalizeRecord(input) {
         return name && role ? [{ name, role }] : [];
       })
     }),
-    title, authors, identifiers: [...identifiers.values()], locations, provenance,
+    title, authors, ...(editors.length && {editors}), ...(translators.length && {translators}), identifiers: [...identifiers.values()], locations, provenance,
     ...(Array.isArray(input.tags) && { tags: normalizeTags(input.tags) }),
     ...(relatedIdentifiers.length && { relatedIdentifiers }),
     citationParts,
@@ -280,6 +281,8 @@ export function toCSL(record) {
   return Object.fromEntries(Object.entries({
     id: record.id, type: ["artwork", "image"].includes(record.type) ? "graphic" : record.type, title: record.title,
     author: record.authors.map(({ id, short, ...author }) => author),
+    ...(record.editors?.length && {editor:record.editors.map(({id,short,...person})=>person)}),
+    ...(record.translators?.length && {translator:record.translators.map(({id,short,...person})=>person)}),
     jurisdiction: record.jurisdiction, number: record.number,
     "original-date": date(record.originalIssued), "container-title": record.containerTitle, publisher: record.publisher,
     volume: record.volume, issue: record.issue, page: record.pages || record.articleNumber,
@@ -287,7 +290,7 @@ export function toCSL(record) {
     medium: record.medium, dimensions: record.dimensions, archive: record.holdingInstitution,
     archive_location: record.accession, "copyright": record.rightsHolder,
     "issued": record.displayDate ? { literal: record.displayDate } : date(record.issued),
-    edition: record.edition, DOI: id("doi"), ISBN: id("isbn"), PMID: id("pmid"), PMCID: id("pmcid"),
+    edition: record.edition, ...(record.releaseVersion && {version:record.releaseVersion}), DOI: id("doi"), ISBN: id("isbn"), PMID: id("pmid"), PMCID: id("pmcid"),
     URL: identifierURL(record.identifiers.find(item => item.scheme === "doi")) || id("url") || record.locations.find(item => ["publisher", "repository"].includes(item.kind))?.url
   }).filter(([, value]) => value));
 }

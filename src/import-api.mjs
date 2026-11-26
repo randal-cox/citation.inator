@@ -75,7 +75,8 @@ export function processImportRequest(input) {
   }
   // Validate the original local choices before replacing them with their accepted canonical identifiers.
   const existingRecordIds=[...records,...site.records].map(record=>record.id);
-  const originalPlan=planImportEdits(source,input.review,{reviewId:input.reviewId,decisions:input.decisions,citationKeyword,identifierForm,existingRecordIds});
+  const referenceEntries=model?.entries || [];
+  const originalPlan=planImportEdits(source,input.review,{reviewId:input.reviewId,decisions:input.decisions,citationKeyword,identifierForm,existingRecordIds,referenceEntries});
   const sourceRecords=[...records.map(record=>enriched.get(record.id)?.record || normalizeRecord(record)),...extra,...originalPlan.placeholderRecords];
   if(originalPlan.placeholderRecords.some(record=>JSON.stringify(record).length>limits.recordCharacters))throw new RangeError('A citation placeholder exceeds the configured record size; shorten the citation or raise the record limit.');
   if(sourceRecords.length>limits.references)throw new RangeError('Too many source and placeholder records; raise the configured reference limit or use a smaller document.');
@@ -86,7 +87,7 @@ export function processImportRequest(input) {
     return {...decision,...(targets && {targets:targets.map(target=>allocation?.mapping.has(target.recordId)?{...target,recordId:allocation.mapping.get(target.recordId)}:enriched.has(target.recordId)?{identifier:enriched.get(target.recordId).identifier.scheme+':'+enriched.get(target.recordId).identifier.value}:target)})};
   });
   const outputReview=allocation?createImportReview(source,{schema:'citation-inator.import-matches.v1',matches:input.review.matches.map(match=>({...match,items:match.items.map(item=>({...item,candidates:item.candidates.map(candidate=>({...candidate,recordId:allocation.mapping.get(candidate.recordId) || candidate.recordId}))}))}))}):input.review;
-  const plan=planImportEdits(source,outputReview,{reviewId:outputReview.reviewId,decisions,citationKeyword,identifierForm,existingRecordIds});
+  const plan=planImportEdits(source,outputReview,{reviewId:outputReview.reviewId,decisions,citationKeyword,identifierForm,existingRecordIds,referenceEntries:referenceEntries.map(entry=>({...entry,id:allocation?.mapping.get(entry.id) || entry.id}))});
   const portable=[],owners=new Map(),ids=new Set();
   for(const rawRecord of (allocation?.records || sourceRecords)){
     const record=normalizeRecord(rawRecord);

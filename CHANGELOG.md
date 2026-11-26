@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0-preview.1 — In development
+
+- Add pure selected-item CSL/Zotero adapters and a separate browser manager module; keep private manager addresses outside portable records.
+- Preserve structured editors/translators and software release versions; add initial Chicago/APA book/chapter role rendering and explicit unsupported-style diagnostics.
+- Diagnose mapping losses and ID collisions before insertion; reuse existing site identity evidence without applying changes.
+- Carry forward the matched-placeholder extension from preview.0.
+- Record bounded Web/local feasibility and private BEST mapping evidence; connected search/save acceptance remains with draft.
+
 ## 0.5.1 — Released 25 November 2026
 
 - Use one configured marker keyword, default `cite`, with no implicit compatibility alias; document migration for existing sites.

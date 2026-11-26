@@ -1,6 +1,6 @@
 {
   "name": "cite-inator",
-  "version": "0.5.1",
+  "version": "0.6.0-preview.1",
   "description": "Portable citations, endnotes, and source inspection",
   "type": "module",
   "license": "MIT",
@@ -34,7 +34,9 @@
     "./import-files-browser": "./dist/citation-import-files.mjs",
     "./compiler-browser": "./dist/citation-compiler.mjs",
     "./i18n": "./src/i18n.mjs",
-    "./pubmed": "./src/pubmed.mjs"
+    "./pubmed": "./src/pubmed.mjs",
+    "./zotero": "./src/zotero.mjs",
+    "./zotero-browser": "./dist/citation-manager.mjs"
   },
   "bin": {
     "cite-inator": "./scripts/compile.mjs",
@@ -57,19 +59,21 @@
     "dist/citation-import-files.mjs",
     "dist/citation-pdf.worker.mjs",
     "scripts/import.mjs",
-    "dist/citation-compiler.mjs"
+    "dist/citation-compiler.mjs",
+    "dist/citation-manager.mjs"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.mjs",
-    "test:browser": "node test/browser.mjs",
+    "test:browser": "node test/browser.mjs && node test/zotero-browser.mjs",
     "start": "node scripts/serve.mjs",
     "prepack": "npm run build",
     "checkin:check": "node scripts/checkin.mjs --staged",
     "milestone:check": "npm test && npm run build && npm run test:browser && npm run test:learn && node scripts/checkin.mjs",
     "hooks:install": "git config --local core.hooksPath .githooks",
     "build:learn": "npm run build && node scripts/build-learning.mjs",
-    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs"
+    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs",
+    "test:zotero": "node --test test/zotero.test.mjs && node test/zotero-browser.mjs"
   },
   "devDependencies": {
     "axe-core": "4.14.0",

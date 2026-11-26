@@ -198,9 +198,9 @@ New local identifiers use the shortest safe form by default: `{cite bell-1992-ri
 
 Narrative groups can contain multiple narrative items, such as `{cite bell-1992 | form:narrative; bell-1997 | form:narrative}`. Each item retains its own identity, affixes and narrative form. The compiler renders them as separate narrative references joined by a semicolon, without an outer pair of parentheses. Mixed narrative/parenthetical groups remain malformed. Import preview re-scans the encoded group before returning any edit.
 
-## Unmatched citations as unresolved placeholders (0.5.1 development)
+## Citations as unresolved placeholders
 
-Preserve an unmatched citation as a flagged marker instead of leaving it as untracked prose. For a wholly unmatched group, submit:
+Preserve a citation as a flagged marker instead of leaving it as untracked prose. Version 0.5.1 supports unmatched items; the 0.6.0 preview also supports explicitly deferring matched or ambiguous items. For a whole group, submit:
 
 ```js
 const result = processImportRequest({
@@ -210,7 +210,7 @@ const result = processImportRequest({
 });
 ```
 
-For a mixed group, use `action:'accept'` and one explicit target per item, for example `targets:[{placeholder:true},{recordId:'the-selected-candidate'}]`. Placeholders are allowed only for unmatched items. No candidate is silently chosen for the other works in a group.
+For a mixed group, use `action:'accept'` and one explicit target per item, for example `targets:[{placeholder:true},{recordId:'the-selected-candidate'}]`. In the 0.6.0 preview, placeholders may be requested for unmatched, unique or ambiguous items. No candidate is silently chosen for the other works in a group.
 
 Output contains a local marker such as:
 
@@ -220,13 +220,13 @@ Output contains a local marker such as:
 
 The fallback is literal original citation wording, including its punctuation for a single-item group. It is escaped text, not HTML or a permanent `label:` override. While the record is missing, unresolved or partial, the reader displays that wording with `data-ci-state="unresolved-placeholder"`, dashed underlining and an unresolved endnote status. Compiler and description/annotation tools report `citation-unresolved-placeholder`. `collectMarkerTags(..., cache, {includeDiagnostics:true})` reports it even when the marker has no topic tags; it does not invent counts. Annotation leaves the unresolved marker unchanged.
 
-The result cache includes a `state:'unresolved'` placeholder with no invented title, authors, year or identifiers; its `unresolvedText` retains the original wording. Its ID appears in `newRecordIds` and the outcome's `placeholderRecordIds`. An accepted placeholder outcome has `state:'accepted'` and `code:'import-unresolved-placeholder'`. Keep source and cache in the same host transaction. Standard site allocation, `recordId`/`recordIds`, limits, stale-review and exact-span guards apply. Equal author/year wording does not merge placeholders automatically.
+The result cache includes a `state:'unresolved'` placeholder with no invented title, authors, year or identifiers; its `unresolvedText` retains the original wording. For a matched item, typed candidate references are retained in provenance notes explicitly marked unverified, without adopting their metadata or identity. With one candidate reference, `original` contains its source text; `unresolvedText` still holds the citation wording. With several candidates, all are retained as unverified alternatives and `original` remains the citation wording. Its ID appears in `newRecordIds` and the outcome's `placeholderRecordIds`. An accepted placeholder outcome has `state:'accepted'` and `code:'import-unresolved-placeholder'`. Keep source and cache in the same host transaction. Standard site allocation, `recordId`/`recordIds`, limits, stale-review and exact-span guards apply. Equal author/year wording does not merge placeholders automatically.
 
 Complete that same record with reviewed metadata and `state:'resolved'`, retaining its ID. Recompilation then ignores the fallback and formats the reference normally; the warning disappears. Alternatively retarget the marker to a verified work. Never mark the record resolved just to silence the diagnostic.
 
 Ordinary semicolon-separated mixed groups retain parser-owned item text. Expanded shared-author year lists, numeric ranges, uncertain author boundaries, multiline fallbacks and decoded/noncontiguous source spans can require manual span review. Such cases return `accepted-needs-span`/`accepted-needs-adapter`, leave the whole group unchanged, and create no orphan placeholders. Inspect outcomes; conversion success alone is not a claim that every requested group changed.
 
-Low-level hosts using `planImportEdits` directly must include its hashed `placeholderRecords` in the same source/cache transaction and supply all known `existingRecordIds` for collision avoidance. `processImportRequest` handles that allocation and reservation automatically.
+Low-level hosts using `planImportEdits` directly must include its hashed `placeholderRecords` in the same source/cache transaction and supply all known `existingRecordIds` for collision avoidance. `processImportRequest` handles that allocation and reservation automatically. To retain bibliography evidence in the 0.6.0 preview, low-level callers also pass source-derived `referenceEntries` (each with `id`, `start` and `end`); the planner copies text from those source ranges. `processImportRequest` derives these entries automatically for document imports.
 
 ### Keyword configuration after import
 

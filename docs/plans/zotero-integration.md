@@ -1,6 +1,6 @@
 # Zotero integration: implementation plan and critical review
 
-Status: revised after a fresh-agent critical discussion, 25 November 2026; ready for Randal’s discussion. Integration implementation remains paused at his request. API names and data shapes below are proposals, not shipped interfaces. Section17 records what changed after criticism. This is the authoritative current plan; milestone status belongs in the milestone record.
+Status: revised after a fresh-agent critical discussion, 25 November 2026; Randal subsequently endorsed the modest loop and authorized feasibility work; the first adapter preview is implemented with the limits below. The API sketch below is planning context; see the [adapter guide](../zotero.md) for the implemented preview interface. No final release or connected-editor acceptance is claimed. Section 17 records what changed after criticism. This is the authoritative current plan; milestone status belongs in the milestone record.
 
 ## 1. Outcome, scope and exclusions
 
@@ -40,7 +40,7 @@ Official Web API v3 supports library/collection/item reads, structured metadata,
 
 Public libraries permit unauthenticated reads. Private libraries need an API key. Zotero documents OAuth1.0a key exchange using registered client credentials; the resulting user key is used for ordinary API requests. Do not assume an OAuth2 PKCE flow or embed a client secret into a static browser bundle.
 
-The desktop local API can expose local, unsynced content and operates offline after the user enables it. Zotero10+ local object versions are scoped to that instance and expose a server ID; older clients need an explicit conservative policy when that identity evidence is absent. They are not comparable to web versions. Browser-to-localhost behavior must be tested in the actual hosted draft origin and browser; a successful shell request would not prove it.
+The desktop local API can expose local, unsynced content and operates offline after the user enables it. Zotero 10+ local object versions are scoped to that instance and expose a server ID; older clients need an explicit conservative policy when that identity evidence is absent. They are not comparable to web versions. Browser-to-localhost behavior must be tested in the actual hosted draft origin and browser; a successful shell request would not prove it.
 
 Source references: [Web API](https://www.zotero.org/support/dev/web_api/v3/basics), [item types/fields](https://www.zotero.org/support/dev/web_api/v3/types_and_fields), [OAuth](https://www.zotero.org/support/dev/web_api/v3/oauth), [local API](https://www.zotero.org/support/dev/web_api/v3/local_api), [full text](https://www.zotero.org/support/dev/web_api/v3/fulltext_content), [interchange formats](https://www.zotero.org/support/dev/data_formats). These describe capability; they do not establish our implementation acceptance.
 
@@ -295,4 +295,4 @@ Bring Randal into four product decisions with recommendations, not an implementa
 3. Choose3–5 real writing fixtures, including an ordinary article, an edited/translated book and a chapter, to define metadata fidelity. Missing identifiers and edition ambiguity should appear among them if they occur in Randal’s work.
 4. Give the insertion/Save/offline/reuse loop its own reviewable preview. Keep refresh, exports, quote privacy and source maintenance on the roadmap without making them all prerequisites to trying that loop. This does not silently reduce the agreed0.6 scope.
 
-The next step is this maintainer discussion. Do not resume integration implementation before Randal has had that discussion. The pending working-tree preparation remains intact; it does not constitute a Zotero implementation.
+Randal endorsed the modest first loop, said offline uncited-library discovery is not immediately required, offered the BEST library and selected connecting running Zotero. He asked us to investigate the connection alternatives and recommend a route; no additional implementation-scope approval is needed for that bounded work. The current implementation/evidence and remaining host gates are recorded in the [milestone](../milestones/0.6.0.md), and the [adapter guide](../zotero.md) describes the proposed handoff. Private web authentication and actual daily-use acceptance remain pending.

@@ -28,7 +28,7 @@ test('all source tools flag placeholders without changing or fabricating notes o
 test('mixed groups retain every work and use parser-owned text for the missing item',()=>{
  const r=run(doc('Both (see Rivera, 2020a, p. 4; Bell, 1992).'),a=>[{citationIndex:0,action:'accept',targets:[{placeholder:true},{recordId:a.review.matches[0].items[1].candidates[0].recordId}]}]);
  assert.equal(r.edits.length,1);assert.equal(r.cache.records.filter(r=>r.unresolvedText).length,1);assert.match(r.edits[0].text,/unresolved:"see Rivera, 2020a, p. 4"/);assert.match(r.html,/>see Rivera, 2020a, p. 4<\/a>/);assert.doesNotMatch(r.html,/see see/);assert.equal(r.diagnostics.filter(d=>d.code==='citation-unresolved-placeholder').length,1);
- assert.throws(()=>run(doc('Both (Rivera, 2020; Bell, 1992).'),[placeholder]),/unmatched/);
+ const all=run(doc('Both (Rivera, 2020; Bell, 1992).'),[placeholder]);assert.equal(all.outcomes[0].placeholderRecordIds.length,2);assert.equal(all.diagnostics.filter(d=>d.code==='citation-unresolved-placeholder').length,2);
 });
 test('narrative text is preserved without extra brackets or duplicated author',()=>{
  const r=run(doc('Rivera (2020) wrote this.'),[placeholder]);assert.equal(r.edits.length,1);assert.equal(describeCitation(r.edits[0].text,r.cache).text,'Rivera (2020)');assert.match(r.html,/>Rivera \(2020\)<\/a>/);
@@ -64,4 +64,29 @@ test('configured keywords survive import, site reuse, host allocation, marker cl
  }
  assert.equal(compileCitations(r.source,r.cache,options).diagnostics.filter(d=>d.code==='citation-unresolved-placeholder').length,2);
  }
+});
+
+
+test('explicit placeholders retain matched reference text as unverified evidence without identity',()=>{
+ const input={...doc('Masks recur (Okafor, 2019), and (Bell, 1992).'),style:'auto'};
+ const a=processImportRequest(input),before=JSON.stringify(a);
+ const r=processImportRequest({...input,action:'preview',review:a.review,reviewId:a.review.reviewId,decisions:a.review.matches.map((_,citationIndex)=>({citationIndex,action:'placeholder'}))});
+ assert.equal(JSON.stringify(a),before);assert.equal(r.edits.length,2);
+ const pending=r.outcomes.flatMap(outcome=>outcome.placeholderRecordIds).map(id=>r.cache.records.find(record=>record.id===id));
+ for(const record of pending){assert.equal(record.state,'unresolved');assert.equal(record.title,'');assert.deepEqual(record.authors,[]);assert.deepEqual(record.identifiers,[]);assert.equal(record.issued,null);}
+ const bell=pending.find(record=>record.unresolvedText==='(Bell, 1992)');
+ assert.equal(bell.original,'Bell, C. (1992). Ritual theory, ritual practice. Oxford University Press.');
+ assert(bell.provenance.some(item=>item.note.includes('Unverified candidate reference')&&item.note.includes(bell.original)));
+ assert.equal(compileCitations(r.source,r.cache).diagnostics.filter(d=>d.code==='citation-unresolved-placeholder').length,2);
+ const ordinary=run(input,x=>[{citationIndex:1,action:'accept',recordIds:[x.review.matches[1].items[0].candidates[0].recordId]}]);
+ assert.equal(ordinary.outcomes[0].placeholderRecordIds,undefined);assert(!ordinary.cache.records.some(record=>record.unresolvedText));
+});
+
+test('ambiguous placeholder preserves every candidate as unverified without choosing one',()=>{
+ const input={mode:'document',style:'apa',source:'Both books (Bell, 1992).\n\nReferences\nBell, C. (1992). First book. Oxford University Press.\n\nBell, C. (1992). Second book. Oxford University Press.'};
+ const a=processImportRequest(input);assert.equal(a.review.matches[0].items[0].state,'ambiguous');
+ const r=run(input,[{citationIndex:0,action:'accept',targets:[{placeholder:true}]}],{recordId:record=>'host-'+record.id});
+ const record=r.cache.records.find(record=>record.id===r.outcomes[0].placeholderRecordIds[0]);
+ assert.equal(record.original,'(Bell, 1992)');assert.equal(record.state,'unresolved');
+ const notes=record.provenance.filter(item=>item.note.startsWith('Unverified candidate reference'));assert.equal(notes.length,2);assert(notes.some(item=>item.note.includes('First book')));assert(notes.some(item=>item.note.includes('Second book')));assert.deepEqual(record.identifiers,[]);assert.equal(record.title,'');
 });
