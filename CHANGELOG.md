@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0-preview.8 — In development
+
+- Protect completed narrative citation spans from crossing opaque regions; keep classifier and preview placeholder allocation consistent in host decision order.
+- Close unfinished HTTP error bodies and abort failed metadata transports.
+- Accept HTML-encoded cue delimiters while retaining source-comment ownership across non-element markup and excluded HTML/Markdown/literal examples.
+- Share import decision and source-span invariants, clarify the reviewed import implementation and remove dead bindings.
+- Adopt optional Commons quality collection and independent code-health/test critics, with portable-module negative controls, bounded scanner cleanup and no code-size quotas. Preserve scanner attention findings and raw reviews rather than claiming universal quality.
+- Clarify explicit Markdown/HTML format selection and migration-before-upgrade for former note fields.
+
 ## 0.6.0-preview.7 — In development
 
 - Add validated opaque source ranges and revision binding for composed import. Preserve math/code regions, adjacent prose/captions and original source; retain opaque bibliography entries for review without invented metadata.

@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {inspectBibliography,applyBibliographyImport,reviewMetadataRefresh,applyMetadataRefresh,checkSourceLink,reviewCrossrefNotices,applyNoticeReview,exportBibliography} from '../src/library-tools.mjs';
 import {makeCache} from '../src/records.mjs';
 const csl={type:'article-journal',title:'Study of evidence',author:[{family:'Rivera',given:'Ana'}],issued:{'date-parts':[[2020]]},DOI:'10.1234/study'};
-const options={format:'csl-json'},source=JSON.stringify([csl]),empty=makeCache([]);
+const options={format:'csl-json'},source=JSON.stringify([csl]);
 const imported=()=>{const review=inspectBibliography(source,options);return applyBibliographyImport(source,review,{...options,decisions:[{index:0,action:'import',recordId:'rivera-2020'}]}).cache;};
 test('local file import uses explicit decisions and stable host IDs, excluding source-manager identifiers',()=>{
  const text=JSON.stringify([{...csl,id:'PRIVATE_MANAGER_ID',note:'PRIVATE_NOTE'}]),review=inspectBibliography(text,options);assert.equal(review.items[0].requiresReview,false);

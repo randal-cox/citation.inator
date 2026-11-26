@@ -1,4 +1,4 @@
-/*! cite-inator library v0.6.0-preview.7 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator library v0.6.0-preview.8 | MIT | See THIRD_PARTY_LICENSES.txt */
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -21796,21 +21796,47 @@ var norm = (value) => String(value || "").normalize("NFKC").toLocaleLowerCase("e
 var present = (value) => Array.isArray(value) ? value.length > 0 : Boolean(value);
 var initials = (value) => norm(value).split(" ").map((word) => word[0]).join("");
 function authorEqual(a, b) {
-  if (a.id && a.id !== b.id || norm(a.suffix) !== norm(b.suffix)) return false;
-  if (a.literal || b.literal) return norm(a.literal || [a.given, a.family].filter(Boolean).join(" ")) === norm(b.literal || [b.given, b.family].filter(Boolean).join(" "));
-  if (!a.family || norm(a.family) !== norm(b.family) || !a.given || !b.given) return false;
+  if (a.id && a.id !== b.id || norm(a.suffix) !== norm(b.suffix))
+    return false;
+  if (a.literal || b.literal)
+    return norm(a.literal || [a.given, a.family].filter(Boolean).join(" ")) === norm(b.literal || [b.given, b.family].filter(Boolean).join(" "));
+  if (!a.family || norm(a.family) !== norm(b.family) || !a.given || !b.given)
+    return false;
   const x = norm(a.given).split(" "), y = norm(b.given).split(" ");
-  return initials(a.given) === initials(b.given) && x.length === y.length && x.every((word, i) => word === y[i] || word.length === 1 || y[i].length === 1);
+  return initials(a.given) === initials(b.given) && x.length === y.length && x.every(
+    (word, i) => word === y[i] || word.length === 1 || y[i].length === 1
+  );
 }
 function compareIdentity(source, candidate) {
   const comparisons = {
     title: present(source.title) && norm(source.title) === norm(candidate.title),
-    authors: source.authorsComplete !== false && source.authors?.length > 0 && source.authors.length === candidate.authors?.length && source.authors.every((author, i) => authorEqual(author, candidate.authors[i])),
-    year: Boolean(source.issued?.[0] && source.issued[0] === candidate.issued?.[0]),
+    authors: source.authorsComplete !== false && source.authors?.length > 0 && source.authors.length === candidate.authors?.length && source.authors.every(
+      (author, i) => authorEqual(author, candidate.authors[i])
+    ),
+    year: Boolean(
+      source.issued?.[0] && source.issued[0] === candidate.issued?.[0]
+    ),
     type: present(source.type) && source.type !== "document" && source.type === candidate.type && !candidate.version && !candidate.noticeRelations?.length
   };
-  for (const key of ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "originalIssued", "language", "format"]) if (present(source[key])) comparisons[key] = present(candidate[key]) && norm(source[key]) === norm(candidate[key]);
-  return { policy: ENRICHMENT_POLICY, comparisons, exact: Object.values(comparisons).every(Boolean) };
+  for (const key of [
+    "containerTitle",
+    "publisher",
+    "volume",
+    "issue",
+    "pages",
+    "articleNumber",
+    "edition",
+    "originalIssued",
+    "language",
+    "format"
+  ])
+    if (present(source[key]))
+      comparisons[key] = present(candidate[key]) && norm(source[key]) === norm(candidate[key]);
+  return {
+    policy: ENRICHMENT_POLICY,
+    comparisons,
+    exact: Object.values(comparisons).every(Boolean)
+  };
 }
 var editionQualifier = /\s*\((?:(?:\d+(?:st|nd|rd|th)?|first|second|third|fourth|revised|rev\.?|updated|expanded)\s+(?:ed\.?|edition)\b[^)]*|repr\.?|reprint(?:ed)?(?:\s+\d{4})?)\)\s*\.?$/iu;
 function importSearchTitle(source) {
@@ -21818,7 +21844,8 @@ function importSearchTitle(source) {
   return typeof title === "string" ? title.replace(editionQualifier, "").trim() : "";
 }
 function rankingAuthorEqual(a, b) {
-  if (a.id && b.id && a.id !== b.id || a.suffix && b.suffix && norm(a.suffix) !== norm(b.suffix)) return false;
+  if (a.id && b.id && a.id !== b.id || a.suffix && b.suffix && norm(a.suffix) !== norm(b.suffix))
+    return false;
   if (authorEqual(a, b)) return true;
   const family = norm(a.family), otherFamily = norm(b.family);
   if (family && otherFamily) {
@@ -21830,8 +21857,10 @@ function rankingAuthorEqual(a, b) {
   if (!structured || !literal) return false;
   const name3 = norm(literal), surname = norm(structured.family);
   let given;
-  if (name3.endsWith(" " + surname)) given = name3.slice(0, -surname.length).trim();
-  else if (name3.startsWith(surname + " ")) given = name3.slice(surname.length).trim();
+  if (name3.endsWith(" " + surname))
+    given = name3.slice(0, -surname.length).trim();
+  else if (name3.startsWith(surname + " "))
+    given = name3.slice(surname.length).trim();
   else return false;
   const required2 = norm(structured.given);
   return !required2 || initials(required2) === initials(given) || given.startsWith(required2 + " ") || required2.startsWith(given + " ");
@@ -21843,38 +21872,72 @@ function assessImportCandidate(source, candidate) {
   const title = rankingTitle(source.title), otherTitle = rankingTitle(candidate.title), a = new Set(title.split(" ").filter(Boolean)), b = new Set(otherTitle.split(" ").filter(Boolean));
   const overlap = [...a].filter((word) => b.has(word)).length, titleSimilarity = a.size && b.size ? overlap / Math.max(a.size, b.size) : 0;
   if (!title || !otherTitle) missing.push("title");
-  else if (title !== otherTitle && titleSimilarity < 0.8) conflicts.push("title");
+  else if (title !== otherTitle && titleSimilarity < 0.8)
+    conflicts.push("title");
   else if (title !== otherTitle) differences.push("title");
   const authors = source.authors || [], otherAuthors = candidate.authors || [];
   let authorsMatch = false;
   if (!authors.length || !otherAuthors.length) missing.push("authors");
   else {
-    authorsMatch = (source.authorsComplete === false ? otherAuthors.length >= authors.length : otherAuthors.length === authors.length) && authors.every((author, index) => rankingAuthorEqual(author, otherAuthors[index]));
+    authorsMatch = (source.authorsComplete === false ? otherAuthors.length >= authors.length : otherAuthors.length === authors.length) && authors.every(
+      (author, index) => rankingAuthorEqual(author, otherAuthors[index])
+    );
     if (!authorsMatch) conflicts.push("authors");
   }
-  const expectedType = publicationType(source.type === "document" && (present(source.edition) || editionQualifier.test(source.title || "")) ? "book" : source.type), actualType = publicationType(candidate.type);
-  if (!expectedType || expectedType === "document" || !actualType || actualType === "document") missing.push("type");
+  const expectedType = publicationType(
+    source.type === "document" && (present(source.edition) || editionQualifier.test(source.title || "")) ? "book" : source.type
+  ), actualType = publicationType(candidate.type);
+  if (!expectedType || expectedType === "document" || !actualType || actualType === "document")
+    missing.push("type");
   else if (expectedType !== actualType) conflicts.push("type");
   const sourceYear = source.issued?.[0], candidateYear = candidate.issued?.[0], yearDistance = sourceYear && candidateYear ? Math.abs(sourceYear - candidateYear) : null;
   if (sourceYear && !candidateYear) missing.push("year");
   else if (yearDistance) differences.push("year");
-  for (const key of ["containerTitle", "publisher", "volume", "issue", "pages", "articleNumber", "edition", "originalIssued", "language", "format"]) {
+  for (const key of [
+    "containerTitle",
+    "publisher",
+    "volume",
+    "issue",
+    "pages",
+    "articleNumber",
+    "edition",
+    "originalIssued",
+    "language",
+    "format"
+  ]) {
     if (!present(source[key])) continue;
     if (!present(candidate[key])) missing.push(key);
-    else if (norm(source[key]) !== norm(candidate[key])) (key === "originalIssued" ? conflicts : differences).push(key);
+    else if (norm(source[key]) !== norm(candidate[key]))
+      (key === "originalIssued" ? conflicts : differences).push(key);
   }
-  if (expectedType === "document" && actualType === "chapter") reasons.push("unconfirmed-chapter");
+  if (expectedType === "document" && actualType === "chapter")
+    reasons.push("unconfirmed-chapter");
   if (candidate.version || candidate.noticeRelations?.length) {
     conflicts.push("version");
     reasons.push("version-or-notice");
   }
   if (conflicts.includes("authors")) reasons.push("different-authors");
-  if (conflicts.includes("type")) reasons.push(actualType === "chapter" ? "different-work-type-chapter" : "different-work-type");
+  if (conflicts.includes("type"))
+    reasons.push(
+      actualType === "chapter" ? "different-work-type-chapter" : "different-work-type"
+    );
   if (conflicts.includes("title")) reasons.push("different-title");
   if (yearDistance > 2) reasons.push("distant-year");
   const primary = !conflicts.length && !reasons.includes("unconfirmed-chapter") && authorsMatch && titleSimilarity >= 0.8 && (yearDistance === null || yearDistance <= 2);
   const score = (primary ? 1e3 : 0) + (authorsMatch ? 200 : 0) + (expectedType && expectedType !== "document" && expectedType === actualType ? 100 : 0) + Math.round(titleSimilarity * 100) - (yearDistance === null ? 0 : Math.min(yearDistance, 100)) - conflicts.length * 100;
-  return { policy: "candidate-ranking-v1", comparisons: strict.comparisons, exact: strict.exact, conflicts, differences, missing, reasons, primary, score, titleSimilarity, yearDistance };
+  return {
+    policy: "candidate-ranking-v1",
+    comparisons: strict.comparisons,
+    exact: strict.exact,
+    conflicts,
+    differences,
+    missing,
+    reasons,
+    primary,
+    score,
+    titleSimilarity,
+    yearDistance
+  };
 }
 
 // src/import-sites.mjs

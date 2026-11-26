@@ -12,6 +12,11 @@ This procedure applies to cite.inator commits and milestone releases. The curren
 
 The fast check reads the staged snapshot. It checks whitespace, version consistency, copied assets, the current milestone record's structure and local documentation file links. It can detect a missing record or broken link. The author still reviews whether the prose and evidence accurately describe the work.
 
+Use the optional [repository Commons quality profile](https://github.com/randal-cox/cite.inator/blob/codex/cite-0.6-zotero/docs/quality.md) for coherent maintenance
+slices, with independent code-health/test critics where warranted. It records
+tool failures and incomplete/manual checks as observations; it does not replace
+the existing test, browser, adopter or publication gates.
+
 ## Install the local hook
 
 From the repository root, run:

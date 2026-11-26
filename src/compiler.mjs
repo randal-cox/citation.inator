@@ -208,7 +208,6 @@ export function parseDirectives(source, { citationKeyword = "cite" } = {}) {
     } else if (match[1] === citationKeyword && /^(?:list|nocite)\s/.test(bodyText.trim())) {
       const [, type, body] = /^(list|nocite)\s+([\s\S]+)$/.exec(bodyText.trim()) || [];
       const [keys, ...options] = optionParts(body || "");
-      const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
       const listOptions = {};
       let valid = true;
       for (const option of options) {
@@ -286,7 +285,6 @@ export function authorLabel(record, narrative = false) {
 const hasDefaultCitationText = (record, suffix) =>
   record.citationText && (!suffix || record.citationText.includes(` (${yearFor(record)}).`));
 
-function defaultBibliography(record,suffix=''){return defaultBibliographyParts(record,suffix).map(p=>p.text).join('');}
 function defaultBibliographyParts(record,suffix=''){
  if(record.state==='unresolved')return [{text:titleFor(record)}];
  const year=yearFor(record);
@@ -682,7 +680,7 @@ function safeFallback(value) {
   return value;
 }
 
-function renderBibliographyPart({ text, emphasis, href, strong }, record) {
+function renderBibliographyPart({ text, emphasis, href, strong }) {
   const escaped = escapeHTML(text);
   let formatted = emphasis === "italic" ? `<em>${escaped}</em>` : emphasis === "bold" ? `<strong>${escaped}</strong>` : escaped;
   if(strong)formatted=`<strong>${formatted}</strong>`;
@@ -1017,7 +1015,7 @@ function compileBlocks(blocks, cache, {
     const rows = items.map(item => {
       const { record } = item.entry;
       const formatted = bibliography(item.entry);
-      const text = formatted.map(value => renderBibliographyPart(value, record)).join("");
+      const text = formatted.map(value => renderBibliographyPart(value)).join("");
       const title = titleOffset(formatted, record, item.entry.suffix);
       const titleAttributes = title ? ` data-ci-title-start="${title.start}" data-ci-title-length="${title.length}"` : "";
       const status = [record.state === "unresolved" || provisionalCue(record,item) || record.state!=='resolved' && record.unresolvedText ? messages.text("ui.unresolvedBadge") : "", record.integrity?.state].filter(Boolean).join(" · ");

@@ -1,4 +1,4 @@
-/*! cite-inator compiler v0.6.0-preview.7 | MIT | See LICENSE */
+/*! cite-inator compiler v0.6.0-preview.8 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -829,7 +829,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.7",
+  version: "0.6.0-preview.8",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -887,6 +887,8 @@ var package_default = {
     "CHANGELOG.md",
     "CITATION.cff",
     "docs",
+    "!docs/quality/**",
+    "!docs/quality.md",
     "dist/citation-import.mjs",
     "dist/citation-import-files.mjs",
     "dist/citation-pdf.worker.mjs",
@@ -897,6 +899,10 @@ var package_default = {
     "scripts/library-workflow-example.mjs"
   ],
   scripts: {
+    quality: "node scripts/quality.mjs run quick",
+    "quality:full": "node scripts/quality.mjs run full",
+    "quality:prepare": "node scripts/quality.mjs prepare",
+    "quality:history": "node scripts/quality.mjs history",
     build: "node scripts/build.mjs",
     test: "node --test test/*.test.mjs",
     "test:browser": "node test/browser.mjs && node test/zotero-browser.mjs && node test/library-browser.mjs && node test/import-composition-browser.mjs",
@@ -1233,7 +1239,6 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
     } else if (match[1] === citationKeyword && /^(?:list|nocite)\s/.test(bodyText.trim())) {
       const [, type, body] = /^(list|nocite)\s+([\s\S]+)$/.exec(bodyText.trim()) || [];
       const [keys, ...options] = optionParts(body || "");
-      const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
       const listOptions = {};
       let valid = true;
       for (const option of options) {
@@ -1726,7 +1731,7 @@ function safeFallback(value) {
   if (value.startsWith("//") || /^[a-z][a-z0-9+.-]*:/i.test(value)) return "";
   return value;
 }
-function renderBibliographyPart({ text, emphasis, href, strong }, record) {
+function renderBibliographyPart({ text, emphasis, href, strong }) {
   const escaped = escapeHTML(text);
   let formatted = emphasis === "italic" ? `<em>${escaped}</em>` : emphasis === "bold" ? `<strong>${escaped}</strong>` : escaped;
   if (strong) formatted = `<strong>${formatted}</strong>`;
@@ -2053,7 +2058,7 @@ function compileBlocks(blocks, cache, {
     const rows = items.map((item) => {
       const { record } = item.entry;
       const formatted = bibliography(item.entry);
-      const text = formatted.map((value) => renderBibliographyPart(value, record)).join("");
+      const text = formatted.map((value) => renderBibliographyPart(value)).join("");
       const title2 = titleOffset(formatted, record, item.entry.suffix);
       const titleAttributes = title2 ? ` data-ci-title-start="${title2.start}" data-ci-title-length="${title2.length}"` : "";
       const status = [record.state === "unresolved" || provisionalCue(record, item) || record.state !== "resolved" && record.unresolvedText ? messages.text("ui.unresolvedBadge") : "", record.integrity?.state].filter(Boolean).join(" \xB7 ");
@@ -11230,7 +11235,24 @@ var interactiveRoles = /* @__PURE__ */ new Set([
   "textbox",
   "treeitem"
 ]);
-var blockParents = /* @__PURE__ */ new Set(["body", "article", "aside", "blockquote", "dd", "div", "figcaption", "figure", "footer", "header", "li", "main", "section", "td", "th", "#document-fragment"]);
+var blockParents = /* @__PURE__ */ new Set([
+  "body",
+  "article",
+  "aside",
+  "blockquote",
+  "dd",
+  "div",
+  "figcaption",
+  "figure",
+  "footer",
+  "header",
+  "li",
+  "main",
+  "section",
+  "td",
+  "th",
+  "#document-fragment"
+]);
 var proseBoundaries = /* @__PURE__ */ new Set([
   ...blockParents,
   "blockquote",
@@ -11254,8 +11276,12 @@ var proseBoundaries = /* @__PURE__ */ new Set([
   "ul"
 ]);
 var attr = (node, name2) => node.attrs?.find((item) => item.name === name2);
-var skip = (node) => excluded.has(node.tagName) || attr(node, "role")?.value.split(/\s+/).some((role) => interactiveRoles.has(role)) || ["", "true", "plaintext-only"].includes(attr(node, "contenteditable")?.value.toLowerCase()) || attr(node, "data-ci-record") || attr(node, "data-citation-part");
-var standalone = (tokens) => tokens.filter((token) => token.type !== "text" || token.text.trim()).length === 1 && tokens.some((token) => token.type === "endnotes" || token.type === "list" || token.type === "tags");
+var skip = (node) => excluded.has(node.tagName) || attr(node, "role")?.value.split(/\s+/).some((role) => interactiveRoles.has(role)) || ["", "true", "plaintext-only"].includes(
+  attr(node, "contenteditable")?.value.toLowerCase()
+) || attr(node, "data-ci-record") || attr(node, "data-citation-part");
+var standalone = (tokens) => tokens.filter((token) => token.type !== "text" || token.text.trim()).length === 1 && tokens.some(
+  (token) => token.type === "endnotes" || token.type === "list" || token.type === "tags"
+);
 function visit(node, callback) {
   if (callback(node) === false) return;
   for (const child of node.childNodes || []) visit(child, callback);
@@ -11263,7 +11289,9 @@ function visit(node, callback) {
 function inlineProse(node, options) {
   if (node.nodeName === "#text") {
     if (!node.value.includes("{")) return node.value;
-    return parseDirectives(node.value, options).map((token) => token.type === "text" && !token.malformed ? token.text : " ").join("");
+    return parseDirectives(node.value, options).map(
+      (token) => token.type === "text" && !token.malformed ? token.text : " "
+    ).join("");
   }
   if (skip(node) || proseBoundaries.has(node.nodeName)) return "";
   return (node.childNodes || []).map((child) => inlineProse(child, options)).join("");
@@ -11291,20 +11319,25 @@ function renderSourceMarker(raw, options, diagnostics, forceMalformed = false) {
   const marker = all.hasComments ? scanCitationMarkers(raw, { ...options, firstOnly: true })[0] : null;
   if (forceMalformed || marker?.token?.malformed) {
     const safe = "{" + (options.citationKeyword || "cite") + " \u2026}";
-    diagnostics.push({ state: "malformed", code: "citation-malformed", source: safe });
+    diagnostics.push({
+      state: "malformed",
+      code: "citation-malformed",
+      source: safe
+    });
     return `<code>${escapeHTML(safe)}</code>`;
   }
   return sourceHTML(stripSourceComments(raw).text);
 }
-function projectMarkerBraces(source) {
+function projectMarkerBraces(source, options = {}, eligible, blocked = []) {
   const pattern = /&(?:#(?:x[0-9a-f]+|[0-9]+);?|[a-z][a-z0-9]*;)/giu;
   const matches = [...source.matchAll(pattern)].flatMap((match) => {
     const value = parseFragment(match[0]).childNodes.map((node) => node.value || "").join("");
-    return value && !/["'\\]/u.test(value) && value !== match[0] ? [{ ...match, at: match.index, raw: match[0], value }] : [];
+    return value && (!/["'\\]/u.test(value) || value === '"') && value !== match[0] ? [{ ...match, at: match.index, raw: match[0], value }] : [];
   });
-  if (!matches.length) return { text: source, toRaw: (index) => index, toLex: (index) => index };
+  if (!matches.length)
+    return { text: source, toRaw: (index) => index, toLex: (index) => index };
   let text = "", cursor = 0;
-  const offsets = [];
+  const offsets = [], entityQuotes = /* @__PURE__ */ new Set();
   for (const match of matches) {
     while (cursor < match.at) {
       offsets.push(cursor);
@@ -11312,6 +11345,7 @@ function projectMarkerBraces(source) {
     }
     for (let i = 0; i < match.value.length; i++) {
       offsets.push(cursor);
+      if (match.value[i] === '"') entityQuotes.add(text.length);
       text += match.value[i];
     }
     cursor += match.raw.length;
@@ -11321,76 +11355,195 @@ function projectMarkerBraces(source) {
     text += source[cursor++];
   }
   offsets.push(source.length);
-  return { text, toRaw: (index) => offsets[index], toLex: (index) => {
-    let low = 0, high = offsets.length - 1;
-    while (low < high) {
-      const middle = low + high >> 1;
-      if (offsets[middle] < index) low = middle + 1;
-      else high = middle;
+  const start = new RegExp(
+    "^\\{\\s*" + (options.citationKeyword || "cite") + "(?=[\\s}]|$)",
+    "u"
+  );
+  let projected = "", active = false, quoteOrigin = null, escaped = false;
+  const projectedOffsets = [];
+  for (let i = 0; i < text.length; i++) {
+    const character = text[i];
+    let slashCount = 0;
+    if (character === "{")
+      for (let before = i - 1; before >= 0 && text[before] === "\\"; before--)
+        slashCount++;
+    if (!active && character === "{" && slashCount % 2 === 0 && start.test(text.slice(i)) && (!eligible || eligible.some(
+      (range) => offsets[i] >= range.startOffset && offsets[i] < range.endOffset
+    )) && !blocked.some(([start2, end]) => offsets[i] >= start2 && offsets[i] < end))
+      active = true;
+    if (active) {
+      if (escaped) escaped = false;
+      else if (character === "\\") escaped = true;
+      else if (character === '"') {
+        const origin = entityQuotes.has(i) ? "entity" : "literal";
+        if (quoteOrigin && quoteOrigin !== origin) {
+          projectedOffsets.push(offsets[i]);
+          projected += "\\";
+        } else quoteOrigin = quoteOrigin ? null : origin;
+      } else if (character === "}" && !quoteOrigin) active = false;
     }
-    return low;
-  } };
+    projectedOffsets.push(offsets[i]);
+    projected += character;
+  }
+  projectedOffsets.push(source.length);
+  return {
+    text: projected,
+    toRaw: (index) => projectedOffsets[index],
+    toLex: (index) => {
+      let low = 0, high = projectedOffsets.length - 1;
+      while (low < high) {
+        const middle = low + high >> 1;
+        if (projectedOffsets[middle] < index) low = middle + 1;
+        else high = middle;
+      }
+      return low;
+    }
+  };
 }
-function annotationAtoms(tree) {
+function annotationAtoms(tree, source) {
   const atoms = [];
   visit(tree, (node) => {
     const location = node.sourceCodeLocation;
-    if (node.tagName && location?.startTag && location.endOffset > location.startOffset) atoms.push({ start: location.startOffset, end: location.endOffset });
+    if (node.tagName && location?.startTag && location.endOffset > location.startOffset)
+      atoms.push({ start: location.startOffset, end: location.endOffset });
   });
+  if (source.includes("<!") || source.includes("<?")) {
+    const ignore = () => {
+    }, remember = (token) => {
+      const range = token.location;
+      if (range && range.endOffset > range.startOffset)
+        atoms.push({ start: range.startOffset, end: range.endOffset });
+    };
+    new Tokenizer(
+      { sourceCodeLocationInfo: true },
+      {
+        onStartTag: ignore,
+        onEndTag: ignore,
+        onComment: remember,
+        onDoctype: remember,
+        onCharacter: ignore,
+        onWhitespaceCharacter: ignore,
+        onNullCharacter: ignore,
+        onEof: ignore,
+        onParseError: null
+      }
+    ).write(source, true);
+  }
   return atoms;
+}
+function eligibleMarkerRanges(tree, options) {
+  const ranges = [], keyword = options.citationKeyword || "cite", start = new RegExp("\\{\\s*" + keyword + "(?=[\\s}]|$)");
+  visit(tree, (node) => {
+    if (skip(node)) return false;
+    if (node.nodeName === "#text" && node.sourceCodeLocation && start.test(node.value))
+      ranges.push(node.sourceCodeLocation);
+  });
+  return ranges;
+}
+function markdownLiteralRanges(source) {
+  const ranges = [];
+  const walk = (tokens, start, end) => {
+    let cursor = start;
+    for (const token of tokens || []) {
+      if (!token.raw) continue;
+      const at = source.indexOf(token.raw, cursor);
+      if (at < cursor || at + token.raw.length > end) {
+        ranges.push([start, end]);
+        return;
+      }
+      cursor = at + token.raw.length;
+      if (["code", "codespan"].includes(token.type)) ranges.push([at, cursor]);
+      else if (token.items) walk(token.items, at, cursor);
+      else if (token.tokens) walk(token.tokens, at, cursor);
+    }
+  };
+  walk(x.lex(source), 0, source.length);
+  return ranges;
+}
+function excludedHTMLChunks(source) {
+  const chunks = [];
+  visit(parse(source, { sourceCodeLocationInfo: true }), (node) => {
+    if (!skip(node)) return;
+    const location = node.sourceCodeLocation;
+    if (location) {
+      chunks.push(source.slice(location.startOffset, location.endOffset));
+      return false;
+    }
+  });
+  return [...new Set(chunks)].filter(Boolean).sort((a, b2) => b2.length - a.length);
 }
 function ownedMarker(projection, cursor, atoms, options) {
   let lexical = projection.text.slice(cursor), marker = scanCitationMarkers(lexical, { ...options, firstOnly: true })[0];
   if (!marker) return null;
   const from = projection.toRaw(cursor + marker.start), covered = /* @__PURE__ */ new Set();
   for (let pass = 0; pass < 32; pass++) {
-    const end = projection.toRaw(cursor + marker.end), annotations = stripSourceComments(marker.raw, { fields: ["comment", "cue", "note"] }).ranges;
-    const next = atoms.filter((atom) => atom.start > from && atom.start < end && !covered.has(atom) && annotations.some((range) => {
-      const at = projection.toLex(atom.start) - cursor - marker.start;
-      return at >= range.start && at < range.end;
-    }));
+    const end = projection.toRaw(cursor + marker.end), annotations = stripSourceComments(marker.raw, {
+      fields: ["comment", "cue", "note"]
+    }).ranges;
+    const next = atoms.filter(
+      (atom) => atom.start > from && atom.start < end && !covered.has(atom) && annotations.some((range) => {
+        const at = projection.toLex(atom.start) - cursor - marker.start;
+        return at >= range.start && at < range.end;
+      })
+    );
     if (!next.length) break;
     const ranges = next.map((atom) => {
       covered.add(atom);
-      return { start: Math.max(0, projection.toLex(atom.start) - cursor), end: projection.toLex(atom.end) - cursor };
+      return {
+        start: Math.max(0, projection.toLex(atom.start) - cursor),
+        end: projection.toLex(atom.end) - cursor
+      };
     }).sort((a, b2) => b2.start - a.start);
-    for (const range of ranges) lexical = lexical.slice(0, range.start) + lexical.slice(range.start, range.end).replace(/[^\r\n]/g, " ") + lexical.slice(range.end);
+    for (const range of ranges)
+      lexical = lexical.slice(0, range.start) + lexical.slice(range.start, range.end).replace(/[^\r\n]/g, " ") + lexical.slice(range.end);
     marker = scanCitationMarkers(lexical, { ...options, firstOnly: true })[0];
     if (!marker) return null;
     if (pass === 31) {
-      marker = { ...marker, end: lexical.length, raw: lexical.slice(marker.start), token: { type: "text", malformed: true, incomplete: true } };
+      marker = {
+        ...marker,
+        end: lexical.length,
+        raw: lexical.slice(marker.start),
+        token: { type: "text", malformed: true, incomplete: true }
+      };
     }
   }
-  if (!stripSourceComments(marker.raw).valid) marker = { ...marker, end: lexical.length, raw: lexical.slice(marker.start), token: { type: "text", malformed: true, incomplete: true } };
+  if (!stripSourceComments(marker.raw).valid)
+    marker = {
+      ...marker,
+      end: lexical.length,
+      raw: lexical.slice(marker.start),
+      token: { type: "text", malformed: true, incomplete: true }
+    };
   return marker;
 }
 function redactHTMLSourceAnnotations(source, options) {
-  const edits = [], diagnostics = [], ranges = [], projection = projectMarkerBraces(source);
-  const tree = parse(source, { sourceCodeLocationInfo: true }), atoms = annotationAtoms(tree), keyword = options.citationKeyword || "cite";
-  visit(tree, (node) => {
-    if (skip(node)) return false;
-    if (node.nodeName === "#text" && node.sourceCodeLocation && new RegExp("\\{\\s*" + keyword + "(?=[\\s}]|$)").test(node.value)) ranges.push(node.sourceCodeLocation);
-  });
+  const edits = [], diagnostics = [], tree = parse(source, { sourceCodeLocationInfo: true }), ranges = eligibleMarkerRanges(tree, options), atoms = annotationAtoms(tree, source), projection = projectMarkerBraces(source, options, ranges);
   for (const range of ranges.sort((a, b2) => a.startOffset - b2.startOffset)) {
     let cursor = projection.toLex(range.startOffset);
     while (projection.toRaw(cursor) < range.endOffset) {
       const marker = ownedMarker(projection, cursor, atoms, options);
-      if (!marker || projection.toRaw(cursor + marker.start) >= range.endOffset) break;
+      if (!marker || projection.toRaw(cursor + marker.start) >= range.endOffset)
+        break;
       const start = projection.toRaw(cursor + marker.start), end = projection.toRaw(cursor + marker.end);
       cursor += marker.end;
-      if (edits.some((edit) => start >= edit.start && start < edit.end)) continue;
-      const clean = stripSourceComments(marker.raw, { fields: ["comment", "cue", "note"] });
+      if (edits.some((edit) => start >= edit.start && start < edit.end))
+        continue;
+      const clean = stripSourceComments(marker.raw, {
+        fields: ["comment", "cue", "note"]
+      });
       if (clean.hasComments && (marker.token?.malformed || stripSourceComments(marker.raw).hasComments || marker.raw.includes("<"))) {
         const text = marker.token?.malformed ? renderSourceMarker(marker.raw, options, diagnostics, true) : sourceHTML(stripSourceComments(marker.raw).text);
         edits.push({ start, end, text });
       }
     }
   }
-  for (const edit of edits.sort((a, b2) => b2.start - a.start)) source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
+  for (const edit of edits.sort((a, b2) => b2.start - a.start))
+    source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
   return { source, diagnostics };
 }
 function compileHTML(source, cache, options = {}) {
-  if (typeof source !== "string") throw new TypeError("Supply HTML as a string.");
+  if (typeof source !== "string")
+    throw new TypeError("Supply HTML as a string.");
   parseDirectives("", options);
   const annotations = redactHTMLSourceAnnotations(source, options);
   source = annotations.source;
@@ -11404,18 +11557,27 @@ function compileHTML(source, cache, options = {}) {
     if (skip(node)) return false;
     if (node.nodeName !== "#text" || !node.sourceCodeLocation) return;
     const tokens = parseDirectives(node.value, options);
-    if (tokens.every((token) => token.type === "text" && !token.malformed) && tokens.map((token) => token.text).join("") === node.value) return;
+    if (tokens.every((token) => token.type === "text" && !token.malformed) && tokens.map((token) => token.text).join("") === node.value)
+      return;
     const first = tokens[0]?.type === "text" ? tokens[1] : tokens[0];
     const last = tokens.at(-1)?.type === "text" ? tokens.at(-2) : tokens.at(-1);
-    if (first?.type === "citation") first.leadingContext = surroundingProse(node, -1, options);
-    if (last?.type === "citation") last.trailingContext = surroundingProse(node, 1, options);
+    if (first?.type === "citation")
+      first.leadingContext = surroundingProse(node, -1, options);
+    if (last?.type === "citation")
+      last.trailingContext = surroundingProse(node, 1, options);
     const parent = node.parentNode;
     if (standalone(tokens) && parent.tagName === "p" && parent.childNodes.length === 1 && parent.sourceCodeLocation && blockParents.has(parent.parentNode.nodeName)) {
       edits.push({ ...parent.sourceCodeLocation, tokens });
     } else {
       if (standalone(tokens) && !blockParents.has(parent.nodeName)) {
-        const marker = tokens.find((token) => token.type === "endnotes" || token.type === "list" || token.type === "tags");
-        Object.assign(marker, { type: "text", text: marker.raw, misplaced: true });
+        const marker = tokens.find(
+          (token) => token.type === "endnotes" || token.type === "list" || token.type === "tags"
+        );
+        Object.assign(marker, {
+          type: "text",
+          text: marker.raw,
+          misplaced: true
+        });
       }
       edits.push({ ...node.sourceCodeLocation, tokens });
     }
@@ -11424,27 +11586,50 @@ function compileHTML(source, cache, options = {}) {
   const blocks = [];
   let cursor = 0;
   for (const edit of edits) {
-    blocks.push([{ type: "markup", text: source.slice(cursor, edit.startOffset) }], edit.tokens);
+    blocks.push(
+      [{ type: "markup", text: source.slice(cursor, edit.startOffset) }],
+      edit.tokens
+    );
     cursor = edit.endOffset;
   }
   const insertAt = Math.max(cursor, bodyEnd);
   blocks.push([{ type: "markup", text: source.slice(cursor, insertAt) }]);
-  const result = compileCitationBlocks(blocks, cache, { ...options, markup: true, closingMarkup: source.slice(insertAt) });
-  return { ...result, diagnostics: [...annotations.diagnostics, ...result.diagnostics] };
+  const result = compileCitationBlocks(blocks, cache, {
+    ...options,
+    markup: true,
+    closingMarkup: source.slice(insertAt)
+  });
+  return {
+    ...result,
+    diagnostics: [...annotations.diagnostics, ...result.diagnostics]
+  };
 }
 function prepareEncodedMarkdownMarkers(source, options, diagnostics) {
-  const projection = projectMarkerBraces(source);
+  const tree = parse(source, { sourceCodeLocationInfo: true }), eligible = eligibleMarkerRanges(tree, options), literals = markdownLiteralRanges(source), projection = projectMarkerBraces(source, options, eligible, literals);
   if (projection.text === source && !/[<&]/u.test(source)) return source;
-  const atoms = annotationAtoms(parse(source, { sourceCodeLocationInfo: true })), markers = [];
+  const atoms = annotationAtoms(tree, source), markers = [];
   let markerCursor = 0;
   while (markerCursor < projection.text.length) {
     const marker = ownedMarker(projection, markerCursor, atoms, options);
     if (!marker) break;
-    markers.push({ ...marker, sourceStart: projection.toRaw(markerCursor + marker.start), sourceEnd: projection.toRaw(markerCursor + marker.end) });
+    const sourceStart = projection.toRaw(markerCursor + marker.start);
+    if (!eligible.some(
+      (range) => sourceStart >= range.startOffset && sourceStart < range.endOffset
+    ) || literals.some(([start, end]) => sourceStart >= start && sourceStart < end)) {
+      markerCursor += marker.start + 1;
+      continue;
+    }
+    markers.push({
+      ...marker,
+      sourceStart,
+      sourceEnd: projection.toRaw(markerCursor + marker.end)
+    });
     markerCursor += marker.end;
   }
   let lexical = source;
-  for (const marker of [...markers].reverse()) if (!marker.token?.incomplete) lexical = lexical.slice(0, marker.sourceStart) + "x".repeat(marker.sourceEnd - marker.sourceStart) + lexical.slice(marker.sourceEnd);
+  for (const marker of [...markers].reverse())
+    if (!marker.token?.incomplete)
+      lexical = lexical.slice(0, marker.sourceStart) + "x".repeat(marker.sourceEnd - marker.sourceStart) + lexical.slice(marker.sourceEnd);
   const blocked = [];
   const walk = (tokens, start, end) => {
     let cursor = start;
@@ -11456,69 +11641,115 @@ function prepareEncodedMarkdownMarkers(source, options, diagnostics) {
         return;
       }
       cursor = at + token.raw.length;
-      if (["code", "codespan", "html", "link", "image"].includes(token.type)) blocked.push([at, cursor]);
+      if (["code", "codespan", "html", "link", "image"].includes(token.type))
+        blocked.push([at, cursor]);
       else if (token.items) walk(token.items, at, cursor);
       else if (token.tokens) walk(token.tokens, at, cursor);
     }
   };
   walk(x.lex(lexical), 0, lexical.length);
   for (const marker of [...markers].reverse()) {
-    if (blocked.some(([start, end]) => marker.sourceStart >= start && marker.sourceStart < end)) continue;
-    if (source.slice(marker.sourceStart, marker.sourceEnd) === marker.raw && !(marker.token?.malformed && stripSourceComments(marker.raw, { fields: ["comment", "cue", "note"] }).hasComments)) continue;
-    const clean = stripSourceComments(marker.raw, { fields: ["comment", "cue", "note"] });
+    if (blocked.some(
+      ([start, end]) => marker.sourceStart >= start && marker.sourceStart < end
+    ))
+      continue;
+    if (source.slice(marker.sourceStart, marker.sourceEnd) === marker.raw && !(marker.token?.malformed && stripSourceComments(marker.raw, { fields: ["comment", "cue", "note"] }).hasComments))
+      continue;
+    const clean = stripSourceComments(marker.raw, {
+      fields: ["comment", "cue", "note"]
+    });
     const replacement = marker.token?.malformed && clean.hasComments ? renderSourceMarker(marker.raw, options, diagnostics, true) : marker.raw;
     source = source.slice(0, marker.sourceStart) + replacement + source.slice(marker.sourceEnd);
   }
   return source;
 }
 function compileMarkdown(source, cache, options = {}) {
-  if (typeof source !== "string") throw new TypeError("Supply Markdown as a string.");
+  if (typeof source !== "string")
+    throw new TypeError("Supply Markdown as a string.");
   const keyword = options.citationKeyword ?? "cite";
   parseDirectives("", options);
   const starts = new RegExp(String.raw`\\[{}\\]|\{\s*(?:${keyword})[ \t\r\n]`);
   const annotationDiagnostics = [];
-  source = prepareEncodedMarkdownMarkers(source, options, annotationDiagnostics);
+  source = prepareEncodedMarkdownMarkers(
+    source,
+    options,
+    annotationDiagnostics
+  );
+  const literalHTML = excludedHTMLChunks(source);
   const markdown = new B({
-    extensions: [{
-      name: "citationBlockDirective",
-      level: "block",
-      start(input) {
-        const match = new RegExp(String.raw`\n {0,3}\{\s*(?:${keyword})[ \t\r\n]+(?:endnote|list)(?=[ \t|}])`).exec(input);
-        return match ? match.index + 1 : void 0;
-      },
-      tokenizer(input) {
-        if (/^(?: {4}|\t)/.test(input)) return;
-        const indent = /^ {0,3}/.exec(input)[0].length;
-        const marker = scanCitationMarkers(input.slice(indent), { citationKeyword: keyword })[0];
-        if (!marker || marker.start !== 0 || marker.token?.incomplete) return;
-        const end = indent + marker.end, tail = /^[ \t]*(?:\r?\n|$)/.exec(input.slice(end));
-        if (!tail) return;
-        return { type: "citationBlockDirective", kind: marker.token.type, raw: input.slice(0, end + tail[0].length) };
-      },
-      renderer(token) {
-        return `<p>${renderSourceMarker(token.raw.trimEnd(), options, annotationDiagnostics)}</p>
+    extensions: [
+      {
+        name: "citationBlockDirective",
+        level: "block",
+        start(input) {
+          const match = new RegExp(
+            String.raw`\n {0,3}\{\s*(?:${keyword})[ \t\r\n]+(?:endnote|list)(?=[ \t|}])`
+          ).exec(input);
+          return match ? match.index + 1 : void 0;
+        },
+        tokenizer(input) {
+          if (/^(?: {4}|\t)/.test(input)) return;
+          const indent = /^ {0,3}/.exec(input)[0].length;
+          const marker = scanCitationMarkers(input.slice(indent), {
+            citationKeyword: keyword
+          })[0];
+          if (!marker || marker.start !== 0 || marker.token?.incomplete) return;
+          const end = indent + marker.end, tail = /^[ \t]*(?:\r?\n|$)/.exec(input.slice(end));
+          if (!tail) return;
+          return {
+            type: "citationBlockDirective",
+            kind: marker.token.type,
+            raw: input.slice(0, end + tail[0].length)
+          };
+        },
+        renderer(token) {
+          return `<p>${renderSourceMarker(token.raw.trimEnd(), options, annotationDiagnostics)}</p>
 `;
-      }
-    }, {
-      name: "citationDirective",
-      level: "inline",
-      start(input) {
-        return starts.exec(input)?.index;
+        }
       },
-      tokenizer(input) {
-        if (starts.exec(input)?.index !== 0) return;
-        const first = parseDirectives(input, { citationKeyword: keyword })[0];
-        if (first?.raw && input.startsWith(first.raw)) return { type: "citationDirective", raw: first.raw };
-        if (first?.malformed && input.startsWith(first.text)) return { type: "citationDirective", raw: first.text };
-        if (/^\\[{}\\]/.test(input)) return { type: "citationDirective", raw: input.slice(0, 2) };
+      {
+        name: "citationDirective",
+        level: "inline",
+        start(input) {
+          return starts.exec(input)?.index;
+        },
+        tokenizer(input) {
+          if (this.lexer.state.inRawBlock || this.lexer.state.inLink) return;
+          if (starts.exec(input)?.index !== 0) return;
+          if (/^\\[{}\\]/.test(input))
+            return { type: "citationDirective", raw: input.slice(0, 2) };
+          const first = parseDirectives(input, { citationKeyword: keyword })[0];
+          if (first?.raw && input.startsWith(first.raw))
+            return { type: "citationDirective", raw: first.raw };
+          if (first?.malformed && input.startsWith(first.text))
+            return { type: "citationDirective", raw: first.text };
+        },
+        renderer(token) {
+          return renderSourceMarker(token.raw, options, annotationDiagnostics);
+        }
       },
-      renderer(token) {
-        return renderSourceMarker(token.raw, options, annotationDiagnostics);
+      {
+        name: "citationLiteralHTML",
+        level: "inline",
+        start(input) {
+          const at = literalHTML.map((raw) => input.indexOf(raw)).filter((index) => index >= 0);
+          return at.length ? Math.min(...at) : void 0;
+        },
+        tokenizer(input) {
+          const raw = literalHTML.find((raw2) => input.startsWith(raw2));
+          if (raw) return { type: "citationLiteralHTML", raw };
+        },
+        renderer(token) {
+          return token.raw;
+        }
       }
-    }]
+    ]
   });
   const result = compileHTML(markdown.parse(source), cache, options);
-  return { ...result, diagnostics: [...annotationDiagnostics, ...result.diagnostics] };
+  return {
+    ...result,
+    diagnostics: [...annotationDiagnostics, ...result.diagnostics]
+  };
 }
 export {
   CITATION_OPTION_POLICIES,

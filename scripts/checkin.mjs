@@ -72,9 +72,14 @@ for (const path of files) {
     const markdown = (await read(path)).replace(/^\s*```[^]*?^\s*```[^\n]*$/gm, "");
     for (const [, target] of markdown.matchAll(/\]\(([^\s)]+)\)/g)) {
       if (target.startsWith("#") || /^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith("//")) continue;
-      const raw = target.split("#")[0];
+      const raw = decodeURIComponent(target.split("#")[0]).replace(/:\d+$/, "");
       if (!raw) continue;
-      const destination = posix.normalize(posix.join(posix.dirname(path), decodeURIComponent(raw)));
+      // Immutable critic reports retain app file links from their original checkout.
+      const projectMarker = raw.includes("/cite.inator/") ? "/cite.inator/" : "/" + posix.basename(root) + "/";
+      const projectAt = raw.startsWith("/") ? raw.lastIndexOf(projectMarker) : -1;
+      const destination = projectAt >= 0
+        ? posix.normalize(raw.slice(projectAt + projectMarker.length))
+        : posix.normalize(posix.join(posix.dirname(path), raw));
       if (!files.has(destination)) {
         const generated = path.startsWith('learn/')
           ? posix.normalize(posix.join(posix.dirname(path.slice('learn/'.length).replace(/\.md$/, '.html')), decodeURIComponent(raw))) : null;

@@ -27,8 +27,8 @@ function wordInline(node){
  return value;
 }
 function officeText(bytes,format,limits){
- const target=format==='docx'?'word/document.xml':'content.xml',relationships='word/_rels/document.xml.rels',cap=Math.min(limits.archiveEntryBytes,limits.sourceCharacters*12);let found=false;const seen=new Set();
- const files=unzipSync(bytes,{filter:entry=>{if(![target,relationships].includes(entry.name))return false;if(seen.has(entry.name))throw Error('Duplicate document content.');seen.add(entry.name);if(entry.name===target)found=true;if(entry.originalSize>cap||entry.size>limits.fileBytes)throw Error('Document content exceeds the extraction limit.');return true;}});
+ const target=format==='docx'?'word/document.xml':'content.xml',relationships='word/_rels/document.xml.rels',cap=Math.min(limits.archiveEntryBytes,limits.sourceCharacters*12);const seen=new Set();
+ const files=unzipSync(bytes,{filter:entry=>{if(![target,relationships].includes(entry.name))return false;if(seen.has(entry.name))throw Error('Duplicate document content.');seen.add(entry.name);if(entry.originalSize>cap||entry.size>limits.fileBytes)throw Error('Document content exceeds the extraction limit.');return true;}});
  if(!files[target])throw Error('The document has no readable main content.');if(files[target].length>cap)throw Error('Document content exceeds the extraction limit.');
  const root=xmlTree(files[target]);const expected=format==='docx'?'http://schemas.openxmlformats.org/wordprocessingml/2006/main':'urn:oasis:names:tc:opendocument:xmlns:office:1.0';if(root.documentElement.namespaceURI!==expected)throw Error('Unsupported document namespace.');
  const paragraphs=[],markdownParagraphs=[],fields=[],links=[],excludedContent=[],relations=new Map();let count=0,metadataSize=0;

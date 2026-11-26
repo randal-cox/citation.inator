@@ -1,0 +1,130 @@
+{
+  "schema": "inator.quality-config.v1",
+  "projectId": "cite.inator",
+  "policyId": "cite-code-quality-v1-no-size-quotas",
+  "defaultMilestoneId": "0.6.0",
+  "sourcePaths": [
+    "src",
+    "scripts",
+    "test",
+    "learn",
+    "docs",
+    "package.json",
+    "package-lock.json",
+    "quality.config.json",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "CHANGELOG.md"
+  ],
+  "checks": [
+    {
+      "id": "unit-tests",
+      "label": "Behavioral library and adapter tests",
+      "group": "Tests",
+      "method": "node-test-canonical-shallow",
+      "adapter": "node-test",
+      "directories": ["test"],
+      "recursive": false,
+      "profiles": ["quick", "full"]
+    },
+    {
+      "id": "correctness-lint",
+      "label": "JavaScript correctness and review signals",
+      "group": "Code quality",
+      "method": "eslint-10-product-contexts-no-size-rules",
+      "adapter": "command",
+      "command": ["$NODE", "scripts/quality.mjs", "scan", "eslint"],
+      "profiles": ["quick", "full"],
+      "timeoutMs": 125000
+    },
+    {
+      "id": "module-boundaries",
+      "label": "Module cycles and portable runtime boundaries",
+      "group": "Code quality",
+      "method": "dependency-cruiser-product-boundaries",
+      "adapter": "command",
+      "command": ["$NODE", "scripts/quality.mjs", "scan", "dependencies"],
+      "profiles": ["quick", "full"],
+      "timeoutMs": 125000
+    },
+    {
+      "id": "boundary-negative-controls",
+      "label": "Architecture-check positive and negative controls",
+      "group": "Tests",
+      "method": "depcruise-accept-valid-reject-node-and-tooling-specimens",
+      "adapter": "command",
+      "command": ["$NODE", "scripts/quality/verify-boundaries.mjs"],
+      "profiles": ["quick", "full"],
+      "timeoutMs": 45000
+    },
+    {
+      "id": "css-correctness",
+      "label": "CSS correctness",
+      "group": "Code quality",
+      "method": "stylelint-invalid-and-duplicate-declarations",
+      "adapter": "command",
+      "command": ["$NODE", "scripts/quality.mjs", "scan", "stylelint"],
+      "profiles": ["full"],
+      "timeoutMs": 125000
+    },
+    {
+      "id": "second-lint-engine",
+      "label": "Independent JavaScript rules engine",
+      "group": "Code quality",
+      "method": "biome-lint-discovery",
+      "adapter": "command",
+      "command": ["$NODE", "scripts/quality.mjs", "scan", "biome"],
+      "profiles": ["full"],
+      "timeoutMs": 125000
+    },
+    {
+      "id": "unused-code",
+      "label": "Unused code and dependency candidates",
+      "group": "Code quality",
+      "method": "knip-public-entry-aware-discovery",
+      "adapter": "command",
+      "command": ["$NODE", "scripts/quality.mjs", "scan", "knip"],
+      "profiles": ["full"],
+      "timeoutMs": 125000
+    },
+    {
+      "id": "formatting",
+      "label": "Formatting consistency survey",
+      "group": "Readability",
+      "method": "prettier-check-only-no-autofix",
+      "adapter": "command",
+      "command": ["$NODE", "scripts/quality.mjs", "scan", "formatting"],
+      "profiles": ["full"],
+      "timeoutMs": 125000
+    },
+    {
+      "id": "duplication",
+      "label": "Exact duplication discovery",
+      "group": "Readability",
+      "method": "jscpd-candidates-not-refactor-verdict",
+      "adapter": "command",
+      "command": ["$NODE", "scripts/quality.mjs", "scan", "duplicates"],
+      "profiles": ["full"],
+      "timeoutMs": 125000
+    },
+    {
+      "id": "coverage",
+      "label": "Node branch coverage observation",
+      "group": "Tests",
+      "method": "c8-canonical-unit-scope-no-global-percentage-gate",
+      "adapter": "command",
+      "command": ["$NODE", "scripts/quality.mjs", "scan", "coverage"],
+      "profiles": ["full"],
+      "timeoutMs": 305000
+    },
+    {
+      "id": "semantic-review",
+      "label": "Independent code health and test sensitivity review",
+      "group": "Human review",
+      "method": "commons-code-health-critic-test-critic-verifier",
+      "adapter": "manual",
+      "reason": "Read the current raw reports and independently retested findings in docs/quality; tool success does not establish semantic quality or close findings.",
+      "profiles": ["quick", "full"]
+    }
+  ]
+}

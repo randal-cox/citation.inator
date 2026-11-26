@@ -40,6 +40,13 @@ Native Safari, VoiceOver and physical-phone checks remain open. The milestone re
 
 ## Check-in practice
 
+The current 0.6 preview also has an optional [Commons-backed quality inventory](https://github.com/randal-cox/cite.inator/blob/codex/cite-0.6-zotero/docs/quality.md)
+and [independent code-health review](https://github.com/randal-cox/cite.inator/blob/codex/cite-0.6-zotero/docs/quality/2026-11-26/review.md). Confirmed
+protected-span, decision-allocation, transport and encoded-annotation defects are
+repaired in preview.8; meaningful readability follow-ups and static discovery
+signals remain explicit. No file-length target or new runtime framework is part
+of that work.
+
 Review the milestone record and roadmap before every check-in. The [repository procedure](docs/checkin-procedure.md) defines the fast staged checks, milestone verification, independent review and release record. The local pre-commit hook runs the fast checks.
 
 ## Earlier completed work

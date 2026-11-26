@@ -100,7 +100,7 @@ function inspect(text,format,name){
 async function readWorkingFile(file){if(file.size>limits.requestBytes)throw Error('The working copy exceeds the 12 MB limit.');const text=await file.text();if(new TextEncoder().encode(text).length>limits.requestBytes)throw Error('The working copy exceeds the 12 MB limit.');return text;}
 async function readText(file){if(file.size>limits.fileBytes)throw Error('The file exceeds the '+Math.round(limits.fileBytes/1000000)+' MB limit.');const text=await file.text();if(text.length>limits.sourceCharacters)throw Error('The bibliography text is too long.');return text;}
 async function openFile(file){if(!file)return;const epoch=++fileEpoch;cancelRequests();clearPending();render();message('Reading '+file.name+'…');const text=await readText(file);if(epoch!==fileEpoch)return;const format=/\.ris$/i.test(file.name)?'ris':/\.bib(?:tex)?$/i.test(file.name)?'bibtex':'csl-json';inspect(text,format,file.name);message('');}
-function renderRefresh(panel,record){
+function renderRefresh(panel){
  const current=refresh;panel.append(el('h3','Review metadata changes'));
  if(current.review.identity.state==='conflict'){panel.append(el('p','The identifiers point to different works or editions. Keep them separate; this reference cannot be refreshed from that entry.',{class:'danger'}));panel.append(button('Cancel metadata review',()=>{refresh=null;render();focusDetail();}));return;}
  if(current.diagnostics.length){const note=el('div',null,{class:'warning'});diagnostics(current.diagnostics,note);panel.append(note);}

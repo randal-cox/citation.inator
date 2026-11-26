@@ -1,3 +1,4 @@
 *.pdf binary
 *.docx binary
 *.odt binary
+docs/quality/** whitespace=-blank-at-eol

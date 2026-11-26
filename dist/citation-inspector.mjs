@@ -1,4 +1,4 @@
-/*! cite-inator v0.6.0-preview.7 | MIT | See LICENSE */
+/*! cite-inator v0.6.0-preview.8 | MIT | See LICENSE */
 
 // src/i18n.mjs
 var en = {
@@ -947,7 +947,6 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
     } else if (match[1] === citationKeyword && /^(?:list|nocite)\s/.test(bodyText.trim())) {
       const [, type, body] = /^(list|nocite)\s+([\s\S]+)$/.exec(bodyText.trim()) || [];
       const [keys, ...options] = optionParts(body || "");
-      const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
       const listOptions = {};
       let valid = true;
       for (const option of options) {

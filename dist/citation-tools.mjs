@@ -1,4 +1,4 @@
-/*! cite-inator tools v0.6.0-preview.7 | MIT | See LICENSE */
+/*! cite-inator tools v0.6.0-preview.8 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -9975,7 +9975,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.7",
+  version: "0.6.0-preview.8",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -10033,6 +10033,8 @@ var package_default = {
     "CHANGELOG.md",
     "CITATION.cff",
     "docs",
+    "!docs/quality/**",
+    "!docs/quality.md",
     "dist/citation-import.mjs",
     "dist/citation-import-files.mjs",
     "dist/citation-pdf.worker.mjs",
@@ -10043,6 +10045,10 @@ var package_default = {
     "scripts/library-workflow-example.mjs"
   ],
   scripts: {
+    quality: "node scripts/quality.mjs run quick",
+    "quality:full": "node scripts/quality.mjs run full",
+    "quality:prepare": "node scripts/quality.mjs prepare",
+    "quality:history": "node scripts/quality.mjs history",
     build: "node scripts/build.mjs",
     test: "node --test test/*.test.mjs",
     "test:browser": "node test/browser.mjs && node test/zotero-browser.mjs && node test/library-browser.mjs && node test/import-composition-browser.mjs",
@@ -10421,7 +10427,6 @@ function parseDirectives(source, { citationKeyword = "cite" } = {}) {
     } else if (match[1] === citationKeyword && /^(?:list|nocite)\s/.test(bodyText.trim())) {
       const [, type, body] = /^(list|nocite)\s+([\s\S]+)$/.exec(bodyText.trim()) || [];
       const [keys, ...options] = optionParts(body || "");
-      const sort = options[0]?.match(/^sort:(author|year)$/)?.[1];
       const listOptions = {};
       let valid = true;
       for (const option of options) {
@@ -10907,7 +10912,7 @@ function safeFallback(value) {
   if (value.startsWith("//") || /^[a-z][a-z0-9+.-]*:/i.test(value)) return "";
   return value;
 }
-function renderBibliographyPart({ text, emphasis, href, strong }, record) {
+function renderBibliographyPart({ text, emphasis, href, strong }) {
   const escaped2 = escapeHTML(text);
   let formatted = emphasis === "italic" ? `<em>${escaped2}</em>` : emphasis === "bold" ? `<strong>${escaped2}</strong>` : escaped2;
   if (strong) formatted = `<strong>${formatted}</strong>`;
@@ -11234,7 +11239,7 @@ function compileBlocks(blocks, cache, {
     const rows = items.map((item) => {
       const { record } = item.entry;
       const formatted = bibliography(item.entry);
-      const text = formatted.map((value) => renderBibliographyPart(value, record)).join("");
+      const text = formatted.map((value) => renderBibliographyPart(value)).join("");
       const title2 = titleOffset(formatted, record, item.entry.suffix);
       const titleAttributes = title2 ? ` data-ci-title-start="${title2.start}" data-ci-title-length="${title2.length}"` : "";
       const status = [record.state === "unresolved" || provisionalCue(record, item) || record.state !== "resolved" && record.unresolvedText ? messages.text("ui.unresolvedBadge") : "", record.integrity?.state].filter(Boolean).join(" \xB7 ");
@@ -11390,7 +11395,24 @@ var interactiveRoles = /* @__PURE__ */ new Set([
   "textbox",
   "treeitem"
 ]);
-var blockParents = /* @__PURE__ */ new Set(["body", "article", "aside", "blockquote", "dd", "div", "figcaption", "figure", "footer", "header", "li", "main", "section", "td", "th", "#document-fragment"]);
+var blockParents = /* @__PURE__ */ new Set([
+  "body",
+  "article",
+  "aside",
+  "blockquote",
+  "dd",
+  "div",
+  "figcaption",
+  "figure",
+  "footer",
+  "header",
+  "li",
+  "main",
+  "section",
+  "td",
+  "th",
+  "#document-fragment"
+]);
 var proseBoundaries = /* @__PURE__ */ new Set([
   ...blockParents,
   "blockquote",
@@ -11414,7 +11436,9 @@ var proseBoundaries = /* @__PURE__ */ new Set([
   "ul"
 ]);
 var attr = (node, name3) => node.attrs?.find((item) => item.name === name3);
-var skip = (node) => excluded.has(node.tagName) || attr(node, "role")?.value.split(/\s+/).some((role) => interactiveRoles.has(role)) || ["", "true", "plaintext-only"].includes(attr(node, "contenteditable")?.value.toLowerCase()) || attr(node, "data-ci-record") || attr(node, "data-citation-part");
+var skip = (node) => excluded.has(node.tagName) || attr(node, "role")?.value.split(/\s+/).some((role) => interactiveRoles.has(role)) || ["", "true", "plaintext-only"].includes(
+  attr(node, "contenteditable")?.value.toLowerCase()
+) || attr(node, "data-ci-record") || attr(node, "data-citation-part");
 
 // src/tools.mjs
 var escaped = (value) => value.replace(/[\\"{};|]/g, (character) => "\\" + character);

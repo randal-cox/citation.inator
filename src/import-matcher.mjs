@@ -1,240 +1,674 @@
-import {normalizeOpaqueRanges,maskOpaqueRanges} from './import-opaque.mjs';
+import {
+  normalizeOpaqueRanges,
+  maskOpaqueRanges,
+  intersectsOpaque,
+} from "./import-opaque.mjs";
 // Experimental 0.4.0 source API. Recognition and matching propose review items only.
-import { normalizeRecord } from './records.mjs';
-import {parseOrganizationAuthor} from './import-references.mjs';
-import { scanCitationMarkers } from './compiler.mjs';
+import { normalizeRecord } from "./records.mjs";
+import { parseOrganizationAuthor } from "./import-references.mjs";
+import { scanCitationMarkers } from "./compiler.mjs";
 
-const styles = new Set(['apa', 'chicago-author-date', 'vancouver']);
-const particles = new Set(['de', 'del', 'da', 'dos', 'van', 'von', 'der', 'den', 'la', 'le']);
-const nonNames = new Set(['in', 'see', 'however', 'according', 'figure', 'table', 'equation', 'appendix', 'since', 'from', 'between']);
-const folded = text => text.normalize('NFKC').toLocaleLowerCase('en').replace(/’/g, "'").replace(/\s+/g, ' ').trim();
-const year = '(?:1[5-9]\\d{2}|20\\d{2})';
+const styles = new Set(["apa", "chicago-author-date", "vancouver"]);
+const particles = new Set([
+  "de",
+  "del",
+  "da",
+  "dos",
+  "van",
+  "von",
+  "der",
+  "den",
+  "la",
+  "le",
+]);
+const nonNames = new Set([
+  "in",
+  "see",
+  "however",
+  "according",
+  "figure",
+  "table",
+  "equation",
+  "appendix",
+  "since",
+  "from",
+  "between",
+]);
+const folded = (text) =>
+  text
+    .normalize("NFKC")
+    .toLocaleLowerCase("en")
+    .replace(/’/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+const year = "(?:1[5-9]\\d{2}|20\\d{2})";
 
 function authors(text) {
   const etAl = /\s+et\s+al\.?$/i.test(text);
-  const raw = text.replace(/\s+et\s+al\.?$/i, '').replace(/,\s*$/, '').trim();
+  const raw = text
+    .replace(/\s+et\s+al\.?$/i, "")
+    .replace(/,\s*$/, "")
+    .trim();
   const names = raw.split(/\s*(?:,\s*(?:(?:and|&)\s*)?|\s+and\s+|&)\s*/u);
-  if (!names.length || names.some(name => !name || name.split(/\s+/).some(word =>
-    nonNames.has(folded(word)) || !particles.has(folded(word)) && !/^\p{Lu}[\p{L}\p{M}'’.\-]*$/u.test(word)))) return parseOrganizationAuthor(raw)?{names:[raw],etAl}:null;
+  if (
+    !names.length ||
+    names.some(
+      (name) =>
+        !name ||
+        name
+          .split(/\s+/)
+          .some(
+            (word) =>
+              nonNames.has(folded(word)) ||
+              (!particles.has(folded(word)) &&
+                !/^\p{Lu}[\p{L}\p{M}'’.\-]*$/u.test(word)),
+          ),
+    )
+  )
+    return parseOrganizationAuthor(raw) ? { names: [raw], etAl } : null;
   return { names, etAl };
 }
 
 function dated(text) {
   const undated = /^\s*n\.d\.(?:-?([a-z]))?(.*)$/iu.exec(text);
   if (undated) {
-    const tail=undated[2].trim();
-    const location=tail && /^(?:,|:)\s*((?:pp?\.\s*)?\d+(?:\s*[-–—]\s*\d+)?)$/u.exec(tail);
-    if (tail && (!location || new RegExp(`^${year}$`).test(location[1]))) return null;
-    return {year:null,undated:true,sourceSuffix:(undated[1] || "").toLowerCase(),...(location && {locator:location[1]})};
+    const tail = undated[2].trim();
+    const location =
+      tail && /^(?:,|:)\s*((?:pp?\.\s*)?\d+(?:\s*[-–—]\s*\d+)?)$/u.exec(tail);
+    if (tail && (!location || new RegExp(`^${year}$`).test(location[1])))
+      return null;
+    return {
+      year: null,
+      undated: true,
+      sourceSuffix: (undated[1] || "").toLowerCase(),
+      ...(location && { locator: location[1] }),
+    };
   }
-  const match = new RegExp(`^\\s*(?:\\[(${year})\\]\\s*)?(${year})([a-z]?)(.*)$`, 'u').exec(text);
+  const match = new RegExp(
+    `^\\s*(?:\\[(${year})\\]\\s*)?(${year})([a-z]?)(.*)$`,
+    "u",
+  ).exec(text);
   if (!match) return null;
-  let printedYear = Number(match[2]), sourceSuffix = match[3], originalYear = match[1] ? Number(match[1]) : undefined;
+  let printedYear = Number(match[2]),
+    sourceSuffix = match[3],
+    originalYear = match[1] ? Number(match[1]) : undefined;
   let tail = match[4].trim();
-  const slash = new RegExp(`^/(${year})([a-z]?)(.*)$`, 'u').exec(tail);
+  const slash = new RegExp(`^/(${year})([a-z]?)(.*)$`, "u").exec(tail);
   if (slash) {
     if (originalYear !== undefined || sourceSuffix) return null;
-    originalYear = printedYear; printedYear = Number(slash[1]); sourceSuffix = slash[2]; tail = slash[3].trim();
+    originalYear = printedYear;
+    printedYear = Number(slash[1]);
+    sourceSuffix = slash[2];
+    tail = slash[3].trim();
   }
-  let locator = '';
+  let locator = "";
   if (tail) {
-    const location = /^(?:,|:)\s*((?:pp?\.\s*)?\d+(?:\s*[-–—]\s*\d+)?)$/u.exec(tail);
+    const location = /^(?:,|:)\s*((?:pp?\.\s*)?\d+(?:\s*[-–—]\s*\d+)?)$/u.exec(
+      tail,
+    );
     if (!location) return null;
     // A bare four-digit number can be a second cited year. Do not choose a page silently.
     if (new RegExp(`^${year}$`).test(location[1])) return null;
     locator = location[1];
   }
-  return { year: printedYear, sourceSuffix, ...(originalYear !== undefined && { originalYear }), ...(locator && { locator }) };
+  return {
+    year: printedYear,
+    sourceSuffix,
+    ...(originalYear !== undefined && { originalYear }),
+    ...(locator && { locator }),
+  };
 }
 
 function datedList(text) {
- const one=dated(text);if(one)return [one];
- const parts=text.trim().split(/\s*,\s*/u);
- return parts.length>1&&parts.every(part=>new RegExp(`^${year}[a-z]?$`,'u').test(part))?parts.map(part=>dated(part)):null;
+  const one = dated(text);
+  if (one) return [one];
+  const parts = text.trim().split(/\s*,\s*/u);
+  return parts.length > 1 &&
+    parts.every((part) => new RegExp(`^${year}[a-z]?$`, "u").test(part))
+    ? parts.map((part) => dated(part))
+    : null;
 }
 
 function parentheticalItem(text) {
-  const secondary=/^(.*?)\s+as cited in\s+(.+)$/iu.exec(text.trim());
-  if(secondary){const original=parentheticalItem(secondary[1].replace(/,\s*$/u,'')),cited=parentheticalItem(secondary[2]);if(!original||original.length!==1||!cited)return null;return cited.map(item=>({...item,prefix:secondary[1].trim().replace(/,\s*$/u,'')+', as cited in'+(item.prefix?' '+item.prefix:''),secondarySource:{raw:secondary[1].trim().replace(/,\s*$/u,''),authors:original[0].authors,year:original[0].year},requiresRelationshipReview:true}));}
+  const secondary = /^(.*?)\s+as cited in\s+(.+)$/iu.exec(text.trim());
+  if (secondary) {
+    const original = parentheticalItem(secondary[1].replace(/,\s*$/u, "")),
+      cited = parentheticalItem(secondary[2]);
+    if (!original || original.length !== 1 || !cited) return null;
+    return cited.map((item) => ({
+      ...item,
+      prefix:
+        secondary[1].trim().replace(/,\s*$/u, "") +
+        ", as cited in" +
+        (item.prefix ? " " + item.prefix : ""),
+      secondarySource: {
+        raw: secondary[1].trim().replace(/,\s*$/u, ""),
+        authors: original[0].authors,
+        year: original[0].year,
+      },
+      requiresRelationshipReview: true,
+    }));
+  }
   const prefix = /^(see also|see|cf\.|e\.g\.,?)\s+/i.exec(text.trim());
   const body = text.trim().slice(prefix?.[0].length || 0);
-  const dateAt = new RegExp(`(?:(?:\\[${year}\\]\\s*)?${year}[a-z]?|n\\.d\\.(?:-?[a-z])?)`, 'iu').exec(body);
+  const dateAt = new RegExp(
+    `(?:(?:\\[${year}\\]\\s*)?${year}[a-z]?|n\\.d\\.(?:-?[a-z])?)`,
+    "iu",
+  ).exec(body);
   if (!dateAt) return null;
-  const byline = authors(body.slice(0, dateAt.index).replace(/,\s*$/, '').trim());
+  const byline = authors(
+    body.slice(0, dateAt.index).replace(/,\s*$/, "").trim(),
+  );
   const dates = datedList(body.slice(dateAt.index));
   if (!byline || !dates) return null;
-  return dates.map(date=>({ authors: byline.names, etAl: byline.etAl, ...date, ...(prefix && { prefix: prefix[1] }) }));
+  return dates.map((date) => ({
+    authors: byline.names,
+    etAl: byline.etAl,
+    ...date,
+    ...(prefix && { prefix: prefix[1] }),
+  }));
 }
 
 /** Initial plain-text author-date detector. All matches retain original UTF-16 spans. */
 export function parseInTextCitations(text, options = {}) {
-  if (typeof options === 'string') options = { style: options };
-  const { style = 'apa', range = { start: 0, end: text?.length }, citationKeyword, format = 'text', maxCitations = Infinity, maxItems = Infinity } = options;
-  if (typeof text !== 'string') throw new TypeError('Supply visible plain text.');
-  if (format !== 'text') throw new TypeError('Initial detection accepts visible plain text, not markup or files.');
-  if (!styles.has(style)) throw new TypeError('Initial detection supports apa, chicago-author-date and vancouver.');
-  if (!range || !Number.isInteger(range.start) || !Number.isInteger(range.end) || range.start < 0 || range.end < range.start || range.end > text.length) throw new TypeError('Supply a valid source range.');
-  if (![maxCitations,maxItems].every(value=>value === Infinity || Number.isSafeInteger(value) && value>0)) throw new TypeError('Citation limits must be positive integers.');
-  const limits={maxCitations,maxItems};let itemCount=0;
-  const opaque=normalizeOpaqueRanges(text,options.opaque);
-  const protectedRanges = [...scanCitationMarkers(maskOpaqueRanges(text,opaque), { citationKeyword }),...opaque];
-  const citations = [], diagnostics = [];
+  if (typeof options === "string") options = { style: options };
+  const {
+    style = "apa",
+    range = { start: 0, end: text?.length },
+    citationKeyword,
+    format = "text",
+    maxCitations = Infinity,
+    maxItems = Infinity,
+  } = options;
+  if (typeof text !== "string")
+    throw new TypeError("Supply visible plain text.");
+  if (format !== "text")
+    throw new TypeError(
+      "Initial detection accepts visible plain text, not markup or files.",
+    );
+  if (!styles.has(style))
+    throw new TypeError(
+      "Initial detection supports apa, chicago-author-date and vancouver.",
+    );
+  if (
+    !range ||
+    !Number.isInteger(range.start) ||
+    !Number.isInteger(range.end) ||
+    range.start < 0 ||
+    range.end < range.start ||
+    range.end > text.length
+  )
+    throw new TypeError("Supply a valid source range.");
+  if (
+    ![maxCitations, maxItems].every(
+      (value) =>
+        value === Infinity || (Number.isSafeInteger(value) && value > 0),
+    )
+  )
+    throw new TypeError("Citation limits must be positive integers.");
+  const limits = { maxCitations, maxItems };
+  let itemCount = 0;
+  const opaque = normalizeOpaqueRanges(text, options.opaque);
+  const protectedRanges = [
+    ...scanCitationMarkers(maskOpaqueRanges(text, opaque), { citationKeyword }),
+    ...opaque,
+  ];
+  const citations = [],
+    diagnostics = [];
   const source = text.slice(range.start, range.end);
-  if (style === 'vancouver') return detectNumeric(source,range.start,protectedRanges,style,limits);
+  if (style === "vancouver")
+    return detectNumeric(source, range.start, protectedRanges, style, limits);
   for (const match of source.matchAll(/\(([^()]*)\)/gu)) {
     let start = range.start + match.index;
     const end = start + match[0].length;
-    if (protectedRanges.some(item => start < item.end && end > item.start)) continue;
+    if (protectedRanges.some((item) => start < item.end && end > item.start))
+      continue;
     if (/\n\s*\n/.test(match[1])) continue;
-    const parts = match[1].split(';');
-    let partOffset=1;
-    const grouped=parts.map(part=>{
-      const parsed=parentheticalItem(part),rawText=part.trim();
-      const rawStart=partOffset+(part.length-part.trimStart().length);
-      partOffset+=part.length+1;
-      return parsed?.length===1 ? [{...parsed[0],rawText,rawRange:{start:rawStart,end:rawStart+rawText.length}}] : parsed;
+    const parts = match[1].split(";");
+    let partOffset = 1;
+    const grouped = parts.map((part) => {
+      const parsed = parentheticalItem(part),
+        rawText = part.trim();
+      const rawStart = partOffset + (part.length - part.trimStart().length);
+      partOffset += part.length + 1;
+      return parsed?.length === 1
+        ? [
+            {
+              ...parsed[0],
+              rawText,
+              rawRange: { start: rawStart, end: rawStart + rawText.length },
+            },
+          ]
+        : parsed;
     });
-    let items = grouped.every(Boolean)?grouped.flat():[null];
-    let form = 'parenthetical';
-    if (items.some(item => !item)) {
+    let items = grouped.every(Boolean) ? grouped.flat() : [null];
+    let form = "parenthetical";
+    if (items.some((item) => !item)) {
       const dates = parts.length === 1 && datedList(match[1]);
       if (dates) {
-        let beforeStart = Math.max(range.start, start - 180, citations.at(-1)?.end ?? range.start);
+        let beforeStart = Math.max(
+          range.start,
+          start - 180,
+          citations.at(-1)?.end ?? range.start,
+        );
         let before = text.slice(beforeStart, start);
         const paragraph = [...before.matchAll(/\r?\n[ \t]*\r?\n/gu)].at(-1);
-        if (paragraph) { beforeStart += paragraph.index + paragraph[0].length; before = text.slice(beforeStart, start); }
+        if (paragraph) {
+          beforeStart += paragraph.index + paragraph[0].length;
+          before = text.slice(beforeStart, start);
+        }
         const words = [...before.matchAll(/\S+/gu)];
         const alternatives = [];
-        for (let index = Math.max(0, words.length - 8); index < words.length; index++) {
-          if (index>1 && /^(?:and|&)$/i.test(words[index - 1][0])) continue;
-          if (index && (/^(?:\p{Lu}\.)+$/u.test(words[index - 1][0]) || particles.has(folded(words[index - 1][0])))) continue;
+        for (
+          let index = Math.max(0, words.length - 8);
+          index < words.length;
+          index++
+        ) {
+          if (index > 1 && /^(?:and|&)$/i.test(words[index - 1][0])) continue;
+          if (
+            index &&
+            (/^(?:\p{Lu}\.)+$/u.test(words[index - 1][0]) ||
+              particles.has(folded(words[index - 1][0])))
+          )
+            continue;
           const raw = before.slice(words[index].index).trim();
           const parsed = authors(raw);
-          if (parsed) alternatives.push({ authors: parsed.names, etAl: parsed.etAl, start: beforeStart + words[index].index });
+          if (parsed)
+            alternatives.push({
+              authors: parsed.names,
+              etAl: parsed.etAl,
+              start: beforeStart + words[index].index,
+            });
         }
-        if (!alternatives.length) {diagnostics.push({code:'import-unparsed-author-date',start,end,raw:match[0]});continue;}
+        if (!alternatives.length) {
+          diagnostics.push({
+            code: "import-unparsed-author-date",
+            start,
+            end,
+            raw: match[0],
+          });
+          continue;
+        }
         const byline = alternatives.at(-1);
         start = byline.start;
-        items = dates.map(date=>({ authors: byline.authors, etAl: byline.etAl, ...date,
-          ...(alternatives.length > 1 && { authorAlternatives: alternatives, boundaryUncertain: true }) }));
-        if (alternatives.length > 1) diagnostics.push({ code: 'import-uncertain-narrative-boundary', start: alternatives[0].start, end });
-        form = 'narrative';
+        items = dates.map((date) => ({
+          authors: byline.authors,
+          etAl: byline.etAl,
+          ...date,
+          ...(alternatives.length > 1 && {
+            authorAlternatives: alternatives,
+            boundaryUncertain: true,
+          }),
+        }));
+        if (alternatives.length > 1)
+          diagnostics.push({
+            code: "import-uncertain-narrative-boundary",
+            start: alternatives[0].start,
+            end,
+          });
+        form = "narrative";
       } else {
-        if (new RegExp(year, 'u').test(match[1]) || /n\.d\./iu.test(match[1])) diagnostics.push({ code: 'import-unparsed-author-date', start, end, raw: match[0] });
+        if (new RegExp(year, "u").test(match[1]) || /n\.d\./iu.test(match[1]))
+          diagnostics.push({
+            code: "import-unparsed-author-date",
+            start,
+            end,
+            raw: match[0],
+          });
         continue;
       }
     }
-    if(items.some(item=>item.requiresRelationshipReview))diagnostics.push({code:'import-secondary-source-review-required',start,end,raw:text.slice(start,end)});
-    itemCount+=items.length;
-    if(citations.length>=maxCitations || itemCount>maxItems)throw new RangeError('Citation review budget exceeded. Use a shorter source or smaller groups.');
-    citations.push({ start, end, raw: text.slice(start, end), form, items, requiresReview: true });
+    // Narrative recognition may extend the start beyond the parentheses. Protect the completed span too.
+    if (intersectsOpaque(start, end, protectedRanges)) continue;
+    if (items.some((item) => item.requiresRelationshipReview))
+      diagnostics.push({
+        code: "import-secondary-source-review-required",
+        start,
+        end,
+        raw: text.slice(start, end),
+      });
+    itemCount += items.length;
+    if (citations.length >= maxCitations || itemCount > maxItems)
+      throw new RangeError(
+        "Citation review budget exceeded. Use a shorter source or smaller groups.",
+      );
+    citations.push({
+      start,
+      end,
+      raw: text.slice(start, end),
+      form,
+      items,
+      requiresReview: true,
+    });
   }
-  return { schema: 'citation-inator.import-detection.v1', style, citations, diagnostics };
+  return {
+    schema: "citation-inator.import-detection.v1",
+    style,
+    citations,
+    diagnostics,
+  };
 }
 
 function* bracketGroups(source) {
-  let start = -1, depth = 0, nested = false;
-  for (let index=0;index<source.length;index++) {
-    if (source[index] === '[') {
-      if (!depth) { start=index; nested=false; } else nested=true;
+  let start = -1,
+    depth = 0,
+    nested = false;
+  for (let index = 0; index < source.length; index++) {
+    if (source[index] === "[") {
+      if (!depth) {
+        start = index;
+        nested = false;
+      } else nested = true;
       depth++;
-    } else if (source[index] === ']' && depth) {
+    } else if (source[index] === "]" && depth) {
       depth--;
       if (!depth) {
-        let end=index+1;
-        while (source[end] === ']') { nested=true; end++; }
-        yield {index:start,raw:source.slice(start,end),body:source.slice(start+1,index),malformed:nested};
-        index=end-1;
+        let end = index + 1;
+        while (source[end] === "]") {
+          nested = true;
+          end++;
+        }
+        yield {
+          index: start,
+          raw: source.slice(start, end),
+          body: source.slice(start + 1, index),
+          malformed: nested,
+        };
+        index = end - 1;
       }
     }
   }
-  if (depth) yield {index:start,raw:source.slice(start),body:source.slice(start+1),malformed:true};
+  if (depth)
+    yield {
+      index: start,
+      raw: source.slice(start),
+      body: source.slice(start + 1),
+      malformed: true,
+    };
 }
 
 // Bracket shapes are proposals; only the caller's document-local labels map them.
-function detectNumeric(source,offset,protectedRanges,style,limits) {
-  let itemCount=0;
-  const citations = [], diagnostics = [];
+function detectNumeric(source, offset, protectedRanges, style, limits) {
+  let itemCount = 0;
+  const citations = [],
+    diagnostics = [];
   for (const match of bracketGroups(source)) {
-    const start = offset+match.index, end = start+match.raw.length;
-    if (protectedRanges.some(item=>start<item.end && end>item.start) || /\n\s*\n/.test(match.body)) continue;
+    const start = offset + match.index,
+      end = start + match.raw.length;
+    if (
+      protectedRanges.some((item) => start < item.end && end > item.start) ||
+      /\n\s*\n/.test(match.body)
+    )
+      continue;
     if (match.malformed) {
-      if (/\d/.test(match.body)) diagnostics.push({code:'import-unparsed-numeric-citation',start,end,raw:match.raw});
+      if (/\d/.test(match.body))
+        diagnostics.push({
+          code: "import-unparsed-numeric-citation",
+          start,
+          end,
+          raw: match.raw,
+        });
       continue;
     }
     if (!/^\s*\d[\d\s,–—-]*$/u.test(match.body)) continue;
-    const numbers = []; let valid = true;
-    for (const part of match.body.split(',')) {
-      const span = /^\s*([1-9]\d{0,3})(?:\s*[-–—]\s*([1-9]\d{0,3}))?\s*$/u.exec(part);
-      if (!span) { valid=false; break; }
-      const first = Number(span[1]), last = Number(span[2] || span[1]);
-      if (last < first || last-first+1+numbers.length > 100) { valid=false; break; }
-      for (let number=first;number<=last;number++) numbers.push(number);
+    const numbers = [];
+    let valid = true;
+    for (const part of match.body.split(",")) {
+      const span = /^\s*([1-9]\d{0,3})(?:\s*[-–—]\s*([1-9]\d{0,3}))?\s*$/u.exec(
+        part,
+      );
+      if (!span) {
+        valid = false;
+        break;
+      }
+      const first = Number(span[1]),
+        last = Number(span[2] || span[1]);
+      if (last < first || last - first + 1 + numbers.length > 100) {
+        valid = false;
+        break;
+      }
+      for (let number = first; number <= last; number++) numbers.push(number);
     }
-    if (!valid) { diagnostics.push({code:'import-unparsed-numeric-citation',start,end,raw:match.raw}); continue; }
-    if (new Set(numbers).size !== numbers.length) diagnostics.push({code:'import-repeated-reference-number',start,end,raw:match.raw});
-    itemCount+=numbers.length;
-    if(citations.length>=limits.maxCitations || itemCount>limits.maxItems)throw new RangeError('Citation review budget exceeded. Use a shorter source or smaller groups.');
-    citations.push({start,end,raw:match.raw,form:'numeric',items:numbers.map(referenceNumber=>({referenceNumber})),requiresReview:true});
+    if (!valid) {
+      diagnostics.push({
+        code: "import-unparsed-numeric-citation",
+        start,
+        end,
+        raw: match.raw,
+      });
+      continue;
+    }
+    if (new Set(numbers).size !== numbers.length)
+      diagnostics.push({
+        code: "import-repeated-reference-number",
+        start,
+        end,
+        raw: match.raw,
+      });
+    itemCount += numbers.length;
+    if (citations.length >= limits.maxCitations || itemCount > limits.maxItems)
+      throw new RangeError(
+        "Citation review budget exceeded. Use a shorter source or smaller groups.",
+      );
+    citations.push({
+      start,
+      end,
+      raw: match.raw,
+      form: "numeric",
+      items: numbers.map((referenceNumber) => ({ referenceNumber })),
+      requiresReview: true,
+    });
   }
-  return {schema:'citation-inator.import-detection.v1',style,citations,diagnostics};
+  return {
+    schema: "citation-inator.import-detection.v1",
+    style,
+    citations,
+    diagnostics,
+  };
 }
 
-function organizationAlias(name,author){return Boolean(author.literal&&/^[A-Z]{2,12}$/u.test(name)&&![author.literal,author.short].filter(Boolean).some(label=>folded(label)===folded(name))&&author.literal.split(/[^\p{L}\p{N}]+/u).filter(word=>word&&!['of','the','and','for','in'].includes(folded(word))).map(word=>[...word][0]).join('').toUpperCase()===name);}
+function organizationAlias(name, author) {
+  return Boolean(
+    author.literal &&
+    /^[A-Z]{2,12}$/u.test(name) &&
+    ![author.literal, author.short]
+      .filter(Boolean)
+      .some((label) => folded(label) === folded(name)) &&
+    author.literal
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter(
+        (word) =>
+          word && !["of", "the", "and", "for", "in"].includes(folded(word)),
+      )
+      .map((word) => [...word][0])
+      .join("")
+      .toUpperCase() === name,
+  );
+}
 
 function authorMatches(name, author) {
   const initials = /^(?:(?:\p{Lu}\.\s*)+)(.+)$/u.exec(name);
   const family = initials ? initials[1] : name;
   const labels = [author.family, author.literal, author.short].filter(Boolean);
-  if (!labels.some(label => folded(label) === folded(family))) return organizationAlias(name,author);
+  if (!labels.some((label) => folded(label) === folded(family)))
+    return organizationAlias(name, author);
   if (!initials) return true;
-  const required = (name.slice(0, name.length - family.length).match(/\p{Lu}/gu) || []).join('');
-  const actual = ((author.given || '').match(/\p{L}[\p{L}\p{M}]*/gu) || []).map(word => [...word][0]).join('');
+  const required = (
+    name.slice(0, name.length - family.length).match(/\p{Lu}/gu) || []
+  ).join("");
+  const actual = ((author.given || "").match(/\p{L}[\p{L}\p{M}]*/gu) || [])
+    .map((word) => [...word][0])
+    .join("");
   return Boolean(actual) && folded(actual).startsWith(folded(required));
 }
 
 /** Match against supplied records only. Unique results are proposals, never applied edits. */
 export function matchCitations(detection, references) {
-  if (detection?.schema !== 'citation-inator.import-detection.v1' || !Array.isArray(detection.citations)) throw new TypeError('Supply a detection result.');
-  if (!Array.isArray(references)) throw new TypeError('Supply an array of bibliographic records.');
+  if (
+    detection?.schema !== "citation-inator.import-detection.v1" ||
+    !Array.isArray(detection.citations)
+  )
+    throw new TypeError("Supply a detection result.");
+  if (!Array.isArray(references))
+    throw new TypeError("Supply an array of bibliographic records.");
   const seen = new Set();
-  const records = references.map(input => {
+  const records = references.map((input) => {
     const record = normalizeRecord(input);
-    if (seen.has(record.id)) throw new TypeError('Reference IDs must be unique.');
+    if (seen.has(record.id))
+      throw new TypeError("Reference IDs must be unique.");
     seen.add(record.id);
-    if (input.sourceSuffix !== undefined && !/^[a-z]+$/.test(input.sourceSuffix)) throw new TypeError('A sourceSuffix must be a lowercase year letter.');
-    if (input.referenceNumber !== undefined && (!Number.isInteger(input.referenceNumber) || input.referenceNumber < 1 || input.referenceNumber > 9999)) throw new TypeError('A referenceNumber must be an integer from 1 to 9999.');
-    if (input.undated === true && record.issued) throw new TypeError('An explicitly undated record cannot also have an issued date.');
-    return { record, sourceSuffix: input.sourceSuffix || '', referenceNumber:input.referenceNumber, undated:input.undated === true };
+    if (
+      input.sourceSuffix !== undefined &&
+      !/^[a-z]+$/.test(input.sourceSuffix)
+    )
+      throw new TypeError("A sourceSuffix must be a lowercase year letter.");
+    if (
+      input.referenceNumber !== undefined &&
+      (!Number.isInteger(input.referenceNumber) ||
+        input.referenceNumber < 1 ||
+        input.referenceNumber > 9999)
+    )
+      throw new TypeError(
+        "A referenceNumber must be an integer from 1 to 9999.",
+      );
+    if (input.undated === true && record.issued)
+      throw new TypeError(
+        "An explicitly undated record cannot also have an issued date.",
+      );
+    return {
+      record,
+      sourceSuffix: input.sourceSuffix || "",
+      referenceNumber: input.referenceNumber,
+      undated: input.undated === true,
+    };
   });
-  return { schema: 'citation-inator.import-matches.v1', matches: detection.citations.map(citation => ({
-    citation,
-    items: citation.items.map(item => {
-      if (item.referenceNumber !== undefined) {
-        const candidates = records.filter(entry=>entry.referenceNumber === item.referenceNumber).map(({record})=>({
-          recordId:record.id,title:record.title,evidence:{matchKind:'bibliography-entry',identifierVerification:'not-checked',referenceNumber:item.referenceNumber,identity:'document-local-label'}
-        }));
-        return {item,state:!candidates.length ? 'unmatched' : candidates.length === 1 ? 'unique' : 'ambiguous',candidates,requiresReview:true};
-      }
-      let uncertain = Boolean(item.boundaryUncertain||item.requiresRelationshipReview);
-      const candidates = records.flatMap(({ record, sourceSuffix, undated }) => {
-        if (record.state === 'unresolved' || !item.undated && !record.issued || item.undated && record.issued) return [];
-        const bylines = (item.authorAlternatives || [item]).filter(byline =>
-          byline.authors.every((name, index) => record.authors[index] && authorMatches(name, record.authors[index])) &&
-          (byline.etAl ? record.authors.length > byline.authors.length || record.authorsComplete === false && record.authors.length >= byline.authors.length
-            : record.authors.length === byline.authors.length));
-        if (!bylines.length) return [];
-        const yearField = item.undated ? (undated ? 'explicitly-undated' : 'date-not-recorded') : record.issued[0] === item.year ? 'issued' : record.originalIssued?.[0] === item.year ? 'originalIssued' : '';
-        if (!yearField || item.originalYear && (record.originalIssued?.[0] !== item.originalYear || record.issued[0] !== item.year)) return [];
-        if (item.sourceSuffix && sourceSuffix && item.sourceSuffix !== sourceSuffix) return [];
-        const missingSuffix = Boolean(item.sourceSuffix && !sourceSuffix),abbreviated=bylines.some(byline=>byline.authors.some((name,index)=>organizationAlias(name,record.authors[index])));
-        uncertain ||= abbreviated || missingSuffix || record.authorsComplete === false || item.undated && !undated;
-        return [{ recordId: record.id, title: record.title, ...(item.authorAlternatives && { authorStarts: bylines.map(byline => byline.start) }), evidence: {
-          matchKind:'bibliography-entry',identifierVerification:'not-checked',
-          authors: abbreviated?'possible-organization-abbreviation':record.authorsComplete === false ? 'incomplete-byline' : item.boundaryUncertain ? 'uncertain-narrative-span' : 'exact-normalized', year: yearField,
-          suffix: missingSuffix ? 'unknown-source-suffix' : item.sourceSuffix ? 'exact-source-suffix' : 'not-specified' } }];
-      });
-      return { item, state: !candidates.length ? 'unmatched' : candidates.length === 1 && !uncertain ? 'unique' : 'ambiguous', candidates, requiresReview: true };
-    })
-  })), diagnostics: detection.diagnostics };
+  return {
+    schema: "citation-inator.import-matches.v1",
+    matches: detection.citations.map((citation) => ({
+      citation,
+      items: citation.items.map((item) => {
+        if (item.referenceNumber !== undefined) {
+          const candidates = records
+            .filter((entry) => entry.referenceNumber === item.referenceNumber)
+            .map(({ record }) => ({
+              recordId: record.id,
+              title: record.title,
+              evidence: {
+                matchKind: "bibliography-entry",
+                identifierVerification: "not-checked",
+                referenceNumber: item.referenceNumber,
+                identity: "document-local-label",
+              },
+            }));
+          return {
+            item,
+            state: !candidates.length
+              ? "unmatched"
+              : candidates.length === 1
+                ? "unique"
+                : "ambiguous",
+            candidates,
+            requiresReview: true,
+          };
+        }
+        let uncertain = Boolean(
+          item.boundaryUncertain || item.requiresRelationshipReview,
+        );
+        const candidates = records.flatMap(
+          ({ record, sourceSuffix, undated }) => {
+            if (
+              record.state === "unresolved" ||
+              (!item.undated && !record.issued) ||
+              (item.undated && record.issued)
+            )
+              return [];
+            const bylines = (item.authorAlternatives || [item]).filter(
+              (byline) =>
+                byline.authors.every(
+                  (name, index) =>
+                    record.authors[index] &&
+                    authorMatches(name, record.authors[index]),
+                ) &&
+                (byline.etAl
+                  ? record.authors.length > byline.authors.length ||
+                    (record.authorsComplete === false &&
+                      record.authors.length >= byline.authors.length)
+                  : record.authors.length === byline.authors.length),
+            );
+            if (!bylines.length) return [];
+            const yearField = item.undated
+              ? undated
+                ? "explicitly-undated"
+                : "date-not-recorded"
+              : record.issued[0] === item.year
+                ? "issued"
+                : record.originalIssued?.[0] === item.year
+                  ? "originalIssued"
+                  : "";
+            if (
+              !yearField ||
+              (item.originalYear &&
+                (record.originalIssued?.[0] !== item.originalYear ||
+                  record.issued[0] !== item.year))
+            )
+              return [];
+            if (
+              item.sourceSuffix &&
+              sourceSuffix &&
+              item.sourceSuffix !== sourceSuffix
+            )
+              return [];
+            const missingSuffix = Boolean(item.sourceSuffix && !sourceSuffix),
+              abbreviated = bylines.some((byline) =>
+                byline.authors.some((name, index) =>
+                  organizationAlias(name, record.authors[index]),
+                ),
+              );
+            uncertain ||=
+              abbreviated ||
+              missingSuffix ||
+              record.authorsComplete === false ||
+              (item.undated && !undated);
+            return [
+              {
+                recordId: record.id,
+                title: record.title,
+                ...(item.authorAlternatives && {
+                  authorStarts: bylines.map((byline) => byline.start),
+                }),
+                evidence: {
+                  matchKind: "bibliography-entry",
+                  identifierVerification: "not-checked",
+                  authors: abbreviated
+                    ? "possible-organization-abbreviation"
+                    : record.authorsComplete === false
+                      ? "incomplete-byline"
+                      : item.boundaryUncertain
+                        ? "uncertain-narrative-span"
+                        : "exact-normalized",
+                  year: yearField,
+                  suffix: missingSuffix
+                    ? "unknown-source-suffix"
+                    : item.sourceSuffix
+                      ? "exact-source-suffix"
+                      : "not-specified",
+                },
+              },
+            ];
+          },
+        );
+        return {
+          item,
+          state: !candidates.length
+            ? "unmatched"
+            : candidates.length === 1 && !uncertain
+              ? "unique"
+              : "ambiguous",
+          candidates,
+          requiresReview: true,
+        };
+      }),
+    })),
+    diagnostics: detection.diagnostics,
+  };
 }

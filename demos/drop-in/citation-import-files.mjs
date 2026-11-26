@@ -1,4 +1,4 @@
-/*! cite-inator native import v0.6.0-preview.7 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator native import v0.6.0-preview.8 | MIT | See THIRD_PARTY_LICENSES.txt */
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -40519,13 +40519,11 @@ function wordInline(node) {
 }
 function officeText(bytes, format, limits) {
   const target = format === "docx" ? "word/document.xml" : "content.xml", relationships = "word/_rels/document.xml.rels", cap = Math.min(limits.archiveEntryBytes, limits.sourceCharacters * 12);
-  let found = false;
   const seen = /* @__PURE__ */ new Set();
   const files = unzipSync(bytes, { filter: (entry) => {
     if (![target, relationships].includes(entry.name)) return false;
     if (seen.has(entry.name)) throw Error("Duplicate document content.");
     seen.add(entry.name);
-    if (entry.name === target) found = true;
     if (entry.originalSize > cap || entry.size > limits.fileBytes) throw Error("Document content exceeds the extraction limit.");
     return true;
   } });

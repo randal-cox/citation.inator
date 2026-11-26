@@ -301,4 +301,9 @@ const result = migrateCitationCues(source, {format:'markdown'});
 
 The helper renames recognized quoted field keys and preserves code, prose, quoted comment text and source layout. The old `note:` source option is diagnosed as malformed rather than silently accepted. Bibliographic `record.note` metadata and the `noteContext` JavaScript option keep their names.
 
+The default `format` is `text`. Pass `format:'markdown'` for Markdown files so
+inline and fenced code examples remain literal, or `format:'html'` for HTML.
+Run and review this migration before, or together with, upgrading a host that
+still stores `note:` markers; the compiler has no implicit legacy-field alias.
+
 Use `comment:"Your annotation"` for author reminders or original import context. Cue refresh preserves comments; replacing the actual work requires reviewing them, just as it requires reviewing a page locator. Compiled reader output omits comments; original Markdown retains them.

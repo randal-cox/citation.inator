@@ -12,6 +12,8 @@ Final milestone publication requires explicit maintainer approval as well as any
 
 For milestone check-ins, follow the full procedure, run `npm run milestone:check`, and complete the independent reviews in [the adversarial plan](docs/adversarial-testing.md). Record explicit verdicts and any pending checks in the milestone record. Apply the user's existing authorization when deciding release steps.
 
+Use the optional Commons-backed [code-quality inventory](docs/quality.md) for meaningful maintenance slices. Keep scanner findings and semantic review separate; do not impose code-size quotas or turn diagnostic counts into a quality score. Preserve raw critic reports and independently retest confirmed repairs.
+
 Keep version changes deliberate. Choose the milestone version with the maintainer, use distinct prerelease versions for shared preview packages, and retain published artifacts as the record of their release.
 
 ## Cross-project coordination

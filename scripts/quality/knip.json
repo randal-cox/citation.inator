@@ -1,0 +1,50 @@
+{
+  "entry": [
+    "src/compiler.mjs",
+    "src/compiler-browser.mjs",
+    "src/records.mjs",
+    "src/crossref.mjs",
+    "src/browser.mjs",
+    "src/markup.mjs",
+    "src/openlibrary.mjs",
+    "src/access.mjs",
+    "src/tools.mjs",
+    "src/import-api.mjs",
+    "src/import-files.mjs",
+    "src/i18n.mjs",
+    "src/pubmed.mjs",
+    "src/zotero.mjs",
+    "src/bibliography-export.mjs",
+    "src/library-tools.mjs",
+    "scripts/*.mjs",
+    "scripts/quality/*.mjs",
+    "scripts/quality/*.cjs",
+    "test/*.test.mjs",
+    "test/*browser.mjs",
+    "learn/**/*.js",
+    "learn/**/*.mjs",
+    "!**/* [0-9]*.*",
+    "!**/vendor/**"
+  ],
+  "project": [
+    "src/**/*.mjs",
+    "scripts/**/*.mjs",
+    "test/**/*.mjs",
+    "learn/**/*.js",
+    "learn/**/*.mjs",
+    "!**/* [0-9]*.*",
+    "!**/vendor/**"
+  ],
+  "ignore": [
+    "dist/**",
+    "site/**",
+    "demos/drop-in/**",
+    "learn/vendor/**",
+    "**/* [0-9]*.*"
+  ],
+  "ignoreDependencies": [
+    "@citation-js/plugin-bibtex",
+    "@citation-js/plugin-ris"
+  ],
+  "ignoreExportsUsedInFile": true
+}
