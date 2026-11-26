@@ -1,4 +1,4 @@
-/*! cite-inator library v0.6.0-preview.4 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator library v0.6.0-preview.5 | MIT | See THIRD_PARTY_LICENSES.txt */
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -21937,7 +21937,17 @@ function settings(options2) {
 function parse9(source, format9, limits) {
   if (typeof source !== "string" || source.length > limits.sourceCharacters || new TextEncoder().encode(source).length > limits.fileBytes) throw RangeError("Supply a bounded bibliography text file.");
   if (!source.trim()) throw TypeError("The bibliography file is empty.");
-  const items = format9 === "csl-json" ? JSON.parse(source) : new Cite_default(source, { forceType: format9 === "bibtex" ? "@biblatex/text" : "@ris/file", generateGraph: false }).data;
+  const items = format9 === "csl-json" ? JSON.parse(source) : format9 === "bibtex" ? new Cite_default(source, { forceType: "@biblatex/text", generateGraph: false }).data : plugins_exports.input.data(source, "@ris/file").map((raw) => {
+    const item = new Cite_default(raw, { forceType: "@ris/record", generateGraph: false }).data[0];
+    const book = item.type === "book", series = book || item.type === "report";
+    const editorTags = [raw.ED, book ? raw.A3 : series ? void 0 : raw.A2].flat().filter(Boolean);
+    if (editorTags.length) item.editor = new Cite_default({ TY: "JOUR", TI: "Creator projection", ED: editorTags }, { forceType: "@ris/old+record", generateGraph: false }).data[0].editor;
+    const seriesTags = [series ? raw.A2 : raw.A3].flat().filter(Boolean);
+    if (seriesTags.length) item["collection-editor"] = new Cite_default({ TY: "JOUR", TI: "Creator projection", ED: seriesTags }, { forceType: "@ris/old+record", generateGraph: false }).data[0].editor;
+    const legacy = new Cite_default(raw, { forceType: "@ris/old+record", generateGraph: false }).data[0], present2 = item.issued?.["date-parts"]?.[0], alternate = legacy.issued?.["date-parts"]?.[0];
+    if (alternate && (!present2 || present2[0] === alternate[0] && alternate.length > present2.length)) item.issued = legacy.issued;
+    return item;
+  });
   if (!Array.isArray(items) || !items.length || items.length > limits.references) throw RangeError("Supply a nonempty bounded bibliography array.");
   return items;
 }
@@ -21988,6 +21998,7 @@ function applyBibliographyImport(source, review, { decisions, ...options2 } = {}
   }
   const site = importSiteContext(selected, options2.siteCache, normalizeImportLimits(options2.limits));
   const allocated = allocateImportRecords(selected, site, { recordIds, recordDecisions });
+  if (allocated.records.length > normalizeImportLimits(options2.limits).references) throw RangeError("The combined bibliography exceeds the reference limit. Import fewer entries or increase the configured limit.");
   const cache = makeCache(allocated.records);
   return { cache, newRecordIds: allocated.newRecordIds, reusedRecordIds: allocated.reusedRecordIds, skippedIndexes: current.items.filter((i) => choices.get(i.index).action === "skip").map((i) => i.index) };
 }
@@ -22140,7 +22151,7 @@ function applyNoticeReview(cache, envelopes, review, { proposalIndex, action = "
   if (!["retain", "accept"].includes(action)) throw TypeError("Choose retain or accept; absence of a notice cannot clear prior integrity evidence.");
   if (action === "retain") return { cache: current, changed: false };
   if (!Number.isSafeInteger(proposalIndex) || !fresh.proposals[proposalIndex]) throw TypeError("Choose one verified notice relation.");
-  const proposal = fresh.proposals[proposalIndex], next = normalizeRecord({ ...record, integrity: proposal.integrity, provenance: [...record.provenance, { provider: "Crossref", url: proposal.integrity.url, retrievedAt: fresh.checkedAt, note: `Reviewed ${proposal.relationType} notice ${proposal.noticeDOI} targeting ${proposal.targetDOI}.` }] });
+  const proposal = fresh.proposals[proposalIndex], next = normalizeRecord({ ...record, integrity: proposal.integrity, provenance: [...record.provenance, ...record.integrity && JSON.stringify(record.integrity) !== JSON.stringify(proposal.integrity) ? [{ provider: "Prior integrity decision", url: record.integrity.url, retrievedAt: fresh.checkedAt, note: "Explicitly replaced " + record.integrity.state + " flag from " + record.integrity.source + "." }] : [], { provider: "Crossref", url: proposal.integrity.url, retrievedAt: fresh.checkedAt, note: `Reviewed ${proposal.relationType} notice ${proposal.noticeDOI} targeting ${proposal.targetDOI}.` }] });
   return { cache: makeCache(current.records.map((r) => r.id === next.id ? next : r)), changed: true, record: next };
 }
 
@@ -22216,10 +22227,10 @@ ${Object.entries(fields2).filter(([, v]) => v !== void 0 && v !== "").map(([key,
     add7("ID", r.id);
     add7("TI", r.title);
     for (const person of r.authors) add7("AU", person.literal || [person.family, person.given].filter(Boolean).join(", "));
-    for (const person of r.editors || []) add7("A2", person.literal || [person.family, person.given].filter(Boolean).join(", "));
+    for (const person of r.editors || []) add7(r.type === "book" ? "A3" : "A2", person.literal || [person.family, person.given].filter(Boolean).join(", "));
     if ([...r.authors, ...r.editors || []].some((p) => p.literal || p.suffix)) warn(r, "export-creator-structure-reader-dependent", "creators");
     for (const [field, value] of [["translator", r.translators?.length], ["original-date", r.originalIssued], ["version", r.releaseVersion], ["PMID", c.PMID], ["PMCID", c.PMCID], ["medium", r.medium], ["archive", r.holdingInstitution], ["number", r.number]]) if (value) warn(r, "export-field-omitted", field);
-    add7("PY", r.issued?.join("/") || r.displayDate);
+    add7(r.issued?.length > 1 ? "Y1" : "PY", r.issued?.join("/") || r.displayDate);
     add7(r.type === "chapter" ? "T2" : "JO", r.containerTitle);
     add7("PB", r.publisher);
     add7("CY", r.publisherPlace);

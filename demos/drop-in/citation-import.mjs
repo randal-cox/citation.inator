@@ -1,4 +1,4 @@
-/*! cite-inator import v0.6.0-preview.4 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator import v0.6.0-preview.5 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/title-parts.mjs
 function normalizeTitleParts(parts, title) {
@@ -8169,7 +8169,7 @@ function parseFragment(fragmentContext, html, options) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.4",
+  version: "0.6.0-preview.5",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -8246,7 +8246,7 @@ var package_default = {
     "milestone:check": "npm test && npm run build && npm run test:browser && npm run test:learn && node scripts/checkin.mjs",
     "hooks:install": "git config --local core.hooksPath .githooks",
     "build:learn": "npm run build && node scripts/build-learning.mjs",
-    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs",
+    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs && node test/bibliography-workspace-browser.mjs",
     "test:zotero": "node --test test/zotero.test.mjs && node test/zotero-browser.mjs",
     "example:library": "node scripts/library-workflow-example.mjs"
   },
@@ -9153,6 +9153,35 @@ function numberedAuthors(raw) {
 }
 function numberedFields(text, fields, propose, diagnostics) {
   const flat = text.replace(/\s/gu, " "), start = /^\s*[1-9]\d{0,3}\.\s+/u.exec(flat)?.[0].length ?? 0;
+  const parenthesized = new RegExp("^(.+?)\\s+\\((" + year2 + ")\\)\\s+(.+)$", "u").exec(flat.slice(start));
+  if (parenthesized) {
+    const authorText2 = parenthesized[1], people2 = numberedAuthors(authorText2) || (() => {
+      const authors2 = parseOrganizationAuthor(authorText2);
+      return authors2 ? { authors: authors2, authorsComplete: true } : null;
+    })();
+    propose("authorText", authorText2, start, start + authorText2.length, "numbered-parenthesized-byline");
+    if (people2) {
+      Object.assign(fields, people2);
+      propose("authors", people2.authors, start, start + authorText2.length, "numbered-parenthesized-authors");
+    } else diagnostics.push({ code: "import-reference-byline-unparsed" });
+    const yearAt = start + parenthesized[0].indexOf("(" + parenthesized[2] + ")") + 1;
+    propose("issued", [Number(parenthesized[2])], yearAt, yearAt + 4, "numbered-parenthesized-date");
+    const tail = parenthesized[3], after2 = start + parenthesized[0].length - tail.length;
+    const journal = /[.!?]\s+([^!?]{2,150}?)\s+(\d+)(?:\s*\(([^)]+)\))?\s*:\s*([a-z]?\d+(?:[-–][a-z]?\d+)?)(?=\.|\s|$)/iu.exec(tail);
+    const titleEnd = journal ? journal.index : /[.!?](?=\s|$)/u.exec(tail)?.index;
+    if (titleEnd !== void 0 && titleEnd > 0) propose("title", tail.slice(0, titleEnd).trim(), after2, after2 + titleEnd, "numbered-parenthesized-title");
+    else diagnostics.push({ code: "import-reference-fields-unsupported" });
+    if (journal) {
+      const containerStart = after2 + journal.index + journal[0].indexOf(journal[1]);
+      propose("containerTitle", journal[1], containerStart, containerStart + journal[1].length, "numbered-parenthesized-journal");
+      fields.type = "article-journal";
+      fields.volume = journal[2];
+      if (journal[3]) fields.issue = journal[3];
+      if (/^e/i.test(journal[4])) fields.articleNumber = journal[4];
+      else fields.pages = journal[4];
+    }
+    return;
+  }
   const byline = /^(.+?)\.\s+/u.exec(flat.slice(start));
   if (!byline) {
     diagnostics.push({ code: "import-reference-fields-unsupported" });
@@ -12819,8 +12848,11 @@ function bibliographyEntries(source, document, style, limits) {
   const { entriesStart, end } = document.bibliography;
   const entries = [];
   const appendEntry = (entry) => {
-    const previous = entries.at(-1);
-    if (style === "vancouver" && previous && /^(?:1[5-9]\d{2}|20\d{2})\.$/u.test(source.slice(entry.start, entry.end).trim()) && /^\s*[1-9]\d{0,3}\.\s+\S/u.test(source.slice(previous.start, previous.end)) && !source.slice(previous.end, entry.start).trim()) previous.end = entry.end;
+    const previous = entries.at(-1), text = source.slice(entry.start, entry.end).trim(), prior = previous ? source.slice(previous.start, previous.end).trimEnd() : "";
+    const numericTail = /^\d{1,6}\.(?:\s+(?:https?:\/\/(?:dx\.)?doi\.org\/)?10\.\d{4,9}\/\S+)?$/u.test(text);
+    const wrappedPage = numericTail && /[-–]$/u.test(prior), wrappedDOI = /^\d{1,6}\.$/u.test(text) && /10\.\d{4,9}\/[^\s]*[.\/-]$/u.test(prior);
+    const wrappedYear = /^(?:1[5-9]\d{2}|20\d{2})\.$/u.test(text);
+    if (style === "vancouver" && previous && (wrappedYear || wrappedPage || wrappedDOI) && /^\s*[1-9]\d{0,3}\.\s+\S/u.test(prior) && !source.slice(previous.end, entry.start).trim()) previous.end = entry.end;
     else entries.push(entry);
   };
   for (const block of document.blocks.filter((block2) => block2.end > entriesStart && block2.start < end)) {
@@ -12828,7 +12860,7 @@ function bibliographyEntries(source, document, style, limits) {
       for (const item of block.items) if (item.start >= entriesStart && item.start < end) appendEntry({ start: item.start, end: Math.min(item.end, end) });
     } else if (block.type === "paragraph" && block.eligible) {
       const lines = document.lines.filter((line2) => line2.start >= Math.max(block.start, entriesStart) && line2.start < Math.min(block.end, end) && line2.text.trim());
-      const starts = (text) => style === "vancouver" ? /^\s*[1-9]\d{0,3}\.\s+/u.test(text) : style === "apa" ? /^(?:[^,\n]+,.*|[\p{L}\p{M} .&’'-]{1,150})\s*\((?:1[5-9]\d{2}|20\d{2}|n\.d\.)[a-z]?\)\.\s+/iu.test(text) : /^[^,\n]+,.*\.\s+(?:1[5-9]\d{2}|20\d{2})/u.test(text);
+      const starts = (text) => style === "vancouver" ? /^\s*[1-9]\d{0,3}\.\s+(?=[‘’“"']?\p{L})/u.test(text) : style === "apa" ? /^(?:[^,\n]+,.*|[\p{L}\p{M} .&’'-]{1,150})\s*\((?:1[5-9]\d{2}|20\d{2}|n\.d\.)[a-z]?\)\.\s+/iu.test(text) : /^[^,\n]+,.*\.\s+(?:1[5-9]\d{2}|20\d{2})/u.test(text);
       const boundaries = lines.filter((line2) => starts(referenceExtraction(line2.text, style).text.trim()));
       if (boundaries.length > 1) {
         const beginning = Math.max(block.start, entriesStart);

@@ -1,4 +1,4 @@
-import {Cite} from '@citation-js/core';
+import {Cite,plugins} from '@citation-js/core';
 import '@citation-js/plugin-bibtex';
 import '@citation-js/plugin-ris';
 import {fromCSLJSON} from './csl-json.mjs';
@@ -17,7 +17,17 @@ function parse(source,format,limits){
  if(typeof source!=='string'||source.length>limits.sourceCharacters||new TextEncoder().encode(source).length>limits.fileBytes)throw RangeError('Supply a bounded bibliography text file.');
  if(!source.trim())throw TypeError('The bibliography file is empty.');
  // Force a local parser. Source text must never select a URL/DOI network adapter.
- const items=format==='csl-json'?JSON.parse(source):new Cite(source,{forceType:format==='bibtex'?'@biblatex/text':'@ris/file',generateGraph:false}).data;
+ const items=format==='csl-json'?JSON.parse(source):format==='bibtex'?new Cite(source,{forceType:'@biblatex/text',generateGraph:false}).data:plugins.input.data(source,'@ris/file').map(raw=>{
+  const item=new Cite(raw,{forceType:'@ris/record',generateGraph:false}).data[0];
+  const book=item.type==='book',series=book||item.type==='report';
+  const editorTags=[raw.ED,book?raw.A3:series?undefined:raw.A2].flat().filter(Boolean);
+  if(editorTags.length)item.editor=new Cite({TY:'JOUR',TI:'Creator projection',ED:editorTags},{forceType:'@ris/old+record',generateGraph:false}).data[0].editor;
+  const seriesTags=[series?raw.A2:raw.A3].flat().filter(Boolean);
+  if(seriesTags.length)item['collection-editor']=new Cite({TY:'JOUR',TI:'Creator projection',ED:seriesTags},{forceType:'@ris/old+record',generateGraph:false}).data[0].editor;
+  const legacy=new Cite(raw,{forceType:'@ris/old+record',generateGraph:false}).data[0],present=item.issued?.['date-parts']?.[0],alternate=legacy.issued?.['date-parts']?.[0];
+  if(alternate&&(!present||present[0]===alternate[0]&&alternate.length>present.length))item.issued=legacy.issued;
+  return item;
+ });
  if(!Array.isArray(items)||!items.length||items.length>limits.references)throw RangeError('Supply a nonempty bounded bibliography array.');
  return items;
 }
@@ -50,6 +60,7 @@ export function applyBibliographyImport(source,review,{decisions,...options}={})
  const site=importSiteContext(selected,options.siteCache,normalizeImportLimits(options.limits));
  const allocated=allocateImportRecords(selected,site,{recordIds,recordDecisions});
  // Full-cache validation rejects shared DOI/ISBN ownership; never drop identifiers to force a merge.
+ if(allocated.records.length>normalizeImportLimits(options.limits).references)throw RangeError('The combined bibliography exceeds the reference limit. Import fewer entries or increase the configured limit.');
  const cache=makeCache(allocated.records);
  return {cache,newRecordIds:allocated.newRecordIds,reusedRecordIds:allocated.reusedRecordIds,skippedIndexes:current.items.filter(i=>choices.get(i.index).action==='skip').map(i=>i.index)};
 }

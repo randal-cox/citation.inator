@@ -1,4 +1,4 @@
-/*! cite-inator manager v0.6.0-preview.4 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator manager v0.6.0-preview.5 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/title-parts.mjs
 function normalizeTitleParts(parts, title) {
@@ -389,10 +389,10 @@ ${Object.entries(fields).filter(([, v]) => v !== void 0 && v !== "").map(([key, 
     add("ID", r.id);
     add("TI", r.title);
     for (const person of r.authors) add("AU", person.literal || [person.family, person.given].filter(Boolean).join(", "));
-    for (const person of r.editors || []) add("A2", person.literal || [person.family, person.given].filter(Boolean).join(", "));
+    for (const person of r.editors || []) add(r.type === "book" ? "A3" : "A2", person.literal || [person.family, person.given].filter(Boolean).join(", "));
     if ([...r.authors, ...r.editors || []].some((p) => p.literal || p.suffix)) warn(r, "export-creator-structure-reader-dependent", "creators");
     for (const [field, value] of [["translator", r.translators?.length], ["original-date", r.originalIssued], ["version", r.releaseVersion], ["PMID", c.PMID], ["PMCID", c.PMCID], ["medium", r.medium], ["archive", r.holdingInstitution], ["number", r.number]]) if (value) warn(r, "export-field-omitted", field);
-    add("PY", r.issued?.join("/") || r.displayDate);
+    add(r.issued?.length > 1 ? "Y1" : "PY", r.issued?.join("/") || r.displayDate);
     add(r.type === "chapter" ? "T2" : "JO", r.containerTitle);
     add("PB", r.publisher);
     add("CY", r.publisherPlace);

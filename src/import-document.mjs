@@ -99,12 +99,18 @@ function bibliographyEntries(source,document,style,limits) {
  const {entriesStart,end}=document.bibliography;
  const entries=[];
  // A bare wrapped year continues the preceding numbered entry before applying record caps.
- const appendEntry=entry=>{const previous=entries.at(-1);if(style==='vancouver'&&previous&&/^(?:1[5-9]\d{2}|20\d{2})\.$/u.test(source.slice(entry.start,entry.end).trim())&&/^\s*[1-9]\d{0,3}\.\s+\S/u.test(source.slice(previous.start,previous.end))&&!source.slice(previous.end,entry.start).trim())previous.end=entry.end;else entries.push(entry);};
+ const appendEntry=entry=>{
+  const previous=entries.at(-1),text=source.slice(entry.start,entry.end).trim(),prior=previous?source.slice(previous.start,previous.end).trimEnd():'';
+  const numericTail=/^\d{1,6}\.(?:\s+(?:https?:\/\/(?:dx\.)?doi\.org\/)?10\.\d{4,9}\/\S+)?$/u.test(text);
+  const wrappedPage=numericTail&&/[-–]$/u.test(prior),wrappedDOI=/^\d{1,6}\.$/u.test(text)&&/10\.\d{4,9}\/[^\s]*[.\/-]$/u.test(prior);
+  const wrappedYear=/^(?:1[5-9]\d{2}|20\d{2})\.$/u.test(text);
+  if(style==='vancouver'&&previous&&(wrappedYear||wrappedPage||wrappedDOI)&&/^\s*[1-9]\d{0,3}\.\s+\S/u.test(prior)&&!source.slice(previous.end,entry.start).trim())previous.end=entry.end;else entries.push(entry);
+ };
  for(const block of document.blocks.filter(block=>block.end>entriesStart&&block.start<end)){
   if(block.type==='list'){for(const item of block.items)if(item.start>=entriesStart&&item.start<end)appendEntry({start:item.start,end:Math.min(item.end,end)});}
   else if(block.type==='paragraph'&&block.eligible){
    const lines=document.lines.filter(line=>line.start>=Math.max(block.start,entriesStart)&&line.start<Math.min(block.end,end)&&line.text.trim());
-   const starts=text=>style==='vancouver'?/^\s*[1-9]\d{0,3}\.\s+/u.test(text):style==='apa'?/^(?:[^,\n]+,.*|[\p{L}\p{M} .&’'-]{1,150})\s*\((?:1[5-9]\d{2}|20\d{2}|n\.d\.)[a-z]?\)\.\s+/iu.test(text):/^[^,\n]+,.*\.\s+(?:1[5-9]\d{2}|20\d{2})/u.test(text);
+   const starts=text=>style==='vancouver'?/^\s*[1-9]\d{0,3}\.\s+(?=[‘’“"']?\p{L})/u.test(text):style==='apa'?/^(?:[^,\n]+,.*|[\p{L}\p{M} .&’'-]{1,150})\s*\((?:1[5-9]\d{2}|20\d{2}|n\.d\.)[a-z]?\)\.\s+/iu.test(text):/^[^,\n]+,.*\.\s+(?:1[5-9]\d{2}|20\d{2})/u.test(text);
    const boundaries=lines.filter(line=>starts(referenceExtraction(line.text,style).text.trim()));
    if(boundaries.length>1){
     const beginning=Math.max(block.start,entriesStart);if(boundaries[0].start>beginning&&source.slice(beginning,boundaries[0].start).trim())appendEntry({start:beginning,end:boundaries[0].start});

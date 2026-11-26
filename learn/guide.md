@@ -16,7 +16,7 @@ The DOI identifies the work. `note:` is a generated work label, hidden from read
 
 ## Load, compile, initialize
 
-This Guide documents `0.6.0-preview.2`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
+This Guide documents `0.6.0-preview.5`. Start with a complete project. Both downloads include the article, saved bibliographic metadata, configuration and the matching library assets.
 
 ### Without a package installation
 
@@ -242,6 +242,18 @@ Use `processImportRequest` from `cite-inator/import`, or the browser `citation-i
 The library never edits your document or cache: preview returns proposed text and records. Bind a host revision token when review begins; immediately before saving, re-check that revision (also after asynchronous lookups) and commit text and accepted new records together. Discard previews on cancel. The worked draft host stages records in memory; its Undo reverts text only.
 
 Preview's `cache` can include the supplied site library and uncited source entries. `newRecordIds` means newly allocated, not necessarily cited. Preserve the original site records and persist only new records referenced by the accepted final text; do not replace your site library wholesale with `result.cache`. The [worked download handler](./host/integration-source.mjs) compiles the final Markdown and filters staged additions by the referenced record IDs, covering later deletion and Undo. Removing the old bibliography is a separate reviewed source edit owned by the host; the API does not remove it for you.
+
+## Review a bibliography
+
+Use [Bibliography review](import/bibliography.html) when you already have a reference list exported from Zotero or another manager. Choose CSL-JSON, BibTeX or RIS, or try **Article and translated book**. Review conflicts before applying; **Add entries without conflicts** handles the ordinary entries together. A shared DOI or ISBN is evidence to inspect, not permission to merge editions.
+
+Choose a reference to compare an updated CSL-JSON snapshot. Keep current values or accept individual fields, then confirm that both entries describe the same work and edition. **Cancel** leaves the bibliography alone; **Undo** reverses an applied change.
+
+**Check sources** requires permission for that reference. A failed link check can mean browser restrictions or restricted access. A notice search covers only the provider's available evidence; finding no notice does not certify a work. Recording a notice keeps the original reference and its earlier evidence.
+
+Download CSL-JSON, BibTeX or RIS to take the bibliography elsewhere. Download a working copy to preserve review history, or choose **Keep in this browser** explicitly. Reopening the page offers the saved copy rather than replacing current work silently. Files stay local until you request an online check.
+
+For an offline copy, download **Offline learning site**, unzip it, run `node server.mjs` with Node 22.13 or newer, and open the printed local address. No package installation is needed. Bibliography import, comparison and downloads work offline; online source checks require a connection.
 
 ## Translation
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0-preview.5 — In development
+
+- Add a local bibliography workspace: reviewed file import, metadata comparison, explicit source checks, Undo, working-copy recovery and CSL-JSON/BibTeX/RIS downloads.
+- Preserve book editors and full dates through RIS round trips.
+- Keep wrapped PDF page/DOI tails with their bibliography entry; recognize conservative PLOS author/year proposals without treating them as verified metadata.
+- Retain prior integrity evidence when a writer explicitly replaces a notice flag.
+
 ## 0.6.0-preview.4 — In development
 
 - Add reviewed local CSL-JSON, BibTeX and RIS ingestion with explicit row decisions, host IDs and existing-site identity review.

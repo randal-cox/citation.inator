@@ -1,4 +1,4 @@
-/*! cite-inator tools v0.6.0-preview.4 | MIT | See LICENSE */
+/*! cite-inator tools v0.6.0-preview.5 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -484,10 +484,10 @@ ${Object.entries(fields).filter(([, v2]) => v2 !== void 0 && v2 !== "").map(([ke
     add("ID", r.id);
     add("TI", r.title);
     for (const person of r.authors) add("AU", person.literal || [person.family, person.given].filter(Boolean).join(", "));
-    for (const person of r.editors || []) add("A2", person.literal || [person.family, person.given].filter(Boolean).join(", "));
+    for (const person of r.editors || []) add(r.type === "book" ? "A3" : "A2", person.literal || [person.family, person.given].filter(Boolean).join(", "));
     if ([...r.authors, ...r.editors || []].some((p) => p.literal || p.suffix)) warn(r, "export-creator-structure-reader-dependent", "creators");
     for (const [field, value] of [["translator", r.translators?.length], ["original-date", r.originalIssued], ["version", r.releaseVersion], ["PMID", c.PMID], ["PMCID", c.PMCID], ["medium", r.medium], ["archive", r.holdingInstitution], ["number", r.number]]) if (value) warn(r, "export-field-omitted", field);
-    add("PY", r.issued?.join("/") || r.displayDate);
+    add(r.issued?.length > 1 ? "Y1" : "PY", r.issued?.join("/") || r.displayDate);
     add(r.type === "chapter" ? "T2" : "JO", r.containerTitle);
     add("PB", r.publisher);
     add("CY", r.publisherPlace);
@@ -9911,7 +9911,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.4",
+  version: "0.6.0-preview.5",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -9988,7 +9988,7 @@ var package_default = {
     "milestone:check": "npm test && npm run build && npm run test:browser && npm run test:learn && node scripts/checkin.mjs",
     "hooks:install": "git config --local core.hooksPath .githooks",
     "build:learn": "npm run build && node scripts/build-learning.mjs",
-    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs",
+    "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs && node test/bibliography-workspace-browser.mjs",
     "test:zotero": "node --test test/zotero.test.mjs && node test/zotero-browser.mjs",
     "example:library": "node scripts/library-workflow-example.mjs"
   },

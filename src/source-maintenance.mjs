@@ -46,6 +46,6 @@ export function applyNoticeReview(cache,envelopes,review,{proposalIndex,action='
  if(!['retain','accept'].includes(action))throw TypeError('Choose retain or accept; absence of a notice cannot clear prior integrity evidence.');
  if(action==='retain')return {cache:current,changed:false};
  if(!Number.isSafeInteger(proposalIndex)||!fresh.proposals[proposalIndex])throw TypeError('Choose one verified notice relation.');
- const proposal=fresh.proposals[proposalIndex],next=normalizeRecord({...record,integrity:proposal.integrity,provenance:[...record.provenance,{provider:'Crossref',url:proposal.integrity.url,retrievedAt:fresh.checkedAt,note:`Reviewed ${proposal.relationType} notice ${proposal.noticeDOI} targeting ${proposal.targetDOI}.`}]});
+ const proposal=fresh.proposals[proposalIndex],next=normalizeRecord({...record,integrity:proposal.integrity,provenance:[...record.provenance,...(record.integrity&&JSON.stringify(record.integrity)!==JSON.stringify(proposal.integrity)?[{provider:'Prior integrity decision',url:record.integrity.url,retrievedAt:fresh.checkedAt,note:'Explicitly replaced '+record.integrity.state+' flag from '+record.integrity.source+'.'}]:[]),{provider:'Crossref',url:proposal.integrity.url,retrievedAt:fresh.checkedAt,note:`Reviewed ${proposal.relationType} notice ${proposal.noticeDOI} targeting ${proposal.targetDOI}.`}]});
  return {cache:makeCache(current.records.map(r=>r.id===next.id?next:r)),changed:true,record:next};
 }

@@ -51,10 +51,10 @@ export function exportBibliography(cache,{format='csl-json'}={}){
   const type=risTypes[r.type];add('TY',type||'GEN');if(!type||type==='GEN')warn(r,'export-type-fallback','type');
   add('ID',r.id);add('TI',r.title);
   for(const person of r.authors)add('AU',person.literal||[person.family,person.given].filter(Boolean).join(', '));
-  for(const person of r.editors||[])add('A2',person.literal||[person.family,person.given].filter(Boolean).join(', '));
+  for(const person of r.editors||[])add(r.type==='book'?'A3':'A2',person.literal||[person.family,person.given].filter(Boolean).join(', '));
   if([...r.authors,...(r.editors||[])].some(p=>p.literal||p.suffix))warn(r,'export-creator-structure-reader-dependent','creators');
   for(const [field,value] of [['translator',r.translators?.length],['original-date',r.originalIssued],['version',r.releaseVersion],['PMID',c.PMID],['PMCID',c.PMCID],['medium',r.medium],['archive',r.holdingInstitution],['number',r.number]])if(value)warn(r,'export-field-omitted',field);
-  add('PY',r.issued?.join('/')||r.displayDate);add(r.type==='chapter'?'T2':'JO',r.containerTitle);add('PB',r.publisher);add('CY',r.publisherPlace);add('VL',r.volume);add('IS',r.issue);add('ET',r.edition);
+  add(r.issued?.length>1?'Y1':'PY',r.issued?.join('/')||r.displayDate);add(r.type==='chapter'?'T2':'JO',r.containerTitle);add('PB',r.publisher);add('CY',r.publisherPlace);add('VL',r.volume);add('IS',r.issue);add('ET',r.edition);
   // A range only when both endpoints are unambiguous; e-locators remain a single SP.
   const pages=r.pages||r.articleNumber,range=/^(\d+)\s*[-–—]\s*(\d+)$/.exec(pages);
   add('SP',range?range[1]:pages);if(range)add('EP',range[2]);add('DO',c.DOI);add('SN',c.ISBN);add('UR',c.URL);

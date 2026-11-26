@@ -29,6 +29,22 @@ function numberedAuthors(raw){
 }
 function numberedFields(text,fields,propose,diagnostics){
  const flat=text.replace(/\s/gu,' '),start=/^\s*[1-9]\d{0,3}\.\s+/u.exec(flat)?.[0].length ?? 0;
+ // PLOS-style numbered entries use a compact byline followed by a parenthesized year.
+ const parenthesized=new RegExp('^(.+?)\\s+\\(('+year+')\\)\\s+(.+)$','u').exec(flat.slice(start));
+ if(parenthesized){
+  const authorText=parenthesized[1],people=numberedAuthors(authorText)||(()=>{const authors=parseOrganizationAuthor(authorText);return authors?{authors,authorsComplete:true}:null;})();
+  propose('authorText',authorText,start,start+authorText.length,'numbered-parenthesized-byline');
+  if(people){Object.assign(fields,people);propose('authors',people.authors,start,start+authorText.length,'numbered-parenthesized-authors');}else diagnostics.push({code:'import-reference-byline-unparsed'});
+  const yearAt=start+parenthesized[0].indexOf('('+parenthesized[2]+')')+1;
+  propose('issued',[Number(parenthesized[2])],yearAt,yearAt+4,'numbered-parenthesized-date');
+  const tail=parenthesized[3],after=start+parenthesized[0].length-tail.length;
+  const journal=/[.!?]\s+([^!?]{2,150}?)\s+(\d+)(?:\s*\(([^)]+)\))?\s*:\s*([a-z]?\d+(?:[-–][a-z]?\d+)?)(?=\.|\s|$)/iu.exec(tail);
+  const titleEnd=journal?journal.index:(/[.!?](?=\s|$)/u.exec(tail)?.index);
+  if(titleEnd!==undefined&&titleEnd>0)propose('title',tail.slice(0,titleEnd).trim(),after,after+titleEnd,'numbered-parenthesized-title');
+  else diagnostics.push({code:'import-reference-fields-unsupported'});
+  if(journal){const containerStart=after+journal.index+journal[0].indexOf(journal[1]);propose('containerTitle',journal[1],containerStart,containerStart+journal[1].length,'numbered-parenthesized-journal');fields.type='article-journal';fields.volume=journal[2];if(journal[3])fields.issue=journal[3];if(/^e/i.test(journal[4]))fields.articleNumber=journal[4];else fields.pages=journal[4];}
+  return;
+ }
  // Initials in the common compact byline have no periods; organisation names may.
  const byline=/^(.+?)\.\s+/u.exec(flat.slice(start));
  if(!byline){diagnostics.push({code:'import-reference-fields-unsupported'});return;}

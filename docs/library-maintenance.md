@@ -12,6 +12,10 @@ import {
 
 For copied files use `./citation-library.mjs`, alongside its same-version `THIRD_PARTY_LICENSES.txt`. It is a separate self-contained optional module; existing reader/compiler pages do not need it. The bundle uses maintained Citation.js BibTeX/RIS parsers, parse5 and the existing cite identity/hash helpers. No worker, account, backend service or LLM is required for local inspection. Copied browser modules must be served over HTTP(S), including a local static server; file:// is not supported. The Node engine remains at least22.13.0.
 
+## Writer workspace
+
+The generated learning site includes `import/bibliography.html`, linked from Import → Bibliography. It presents these APIs as a local file/review workflow, with explicit browser storage, portable working copies, metadata field choices and permission-gated checks. Run `npm run build:learn`, then `npm start` and open `/site/import/bibliography.html`. The offline learning archive includes the same workspace. See the [corpus review](https://github.com/randal-cox/cite.inator/blob/codex/cite-0.6-zotero/docs/corpus-review-0.6.md) for measured fidelity and remaining limits. This interface does not connect to a private Zotero account or write to a Zotero library.
+
 ## Import a bibliography file
 
 ```js

@@ -16,6 +16,8 @@ The gallery starts with DOI/ISBN markers and optional source-only `note:` text; 
 
 All generated HTML pages group Playground, Import and Guide together, with GitHub and its version subtitle at the far right. The masthead opens `about.html`, a concise overview of the library, getting started and its free MIT license. Source and Result are independently collapsible and open by default; advanced reference metadata and Configuration sit below the workbench just before Diagnostics. Card titles come first; excerpts follow with an ellipsis and a complete-line clamp. The Guide combines the quick start, worked examples, notation links and API reference. `tutorials.html` remains a compatibility redirect. The generated import shell uses the same light appearance; the standalone import demo retains its separate dark-mode support.
 
+The Import area has Document and Bibliography views. Bibliography review adds local interchange-file import, metadata comparison, explicit source checks and recoverable working copies; its dedicated browser regression runs with `npm run test:learn`.
+
 ## Downloads
 
 The Playground also downloads the current document’s bibliography in CSL-JSON, BibTeX or RIS. These contain the used references, not every cached library item. Format-loss warnings link to Diagnostics. [Export API and limits](zotero.md#bibliography-files).
