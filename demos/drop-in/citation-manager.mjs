@@ -1,4 +1,4 @@
-/*! cite-inator manager v0.6.0-preview.3 | MIT | See THIRD_PARTY_LICENSES.txt */
+/*! cite-inator manager v0.6.0-preview.4 | MIT | See THIRD_PARTY_LICENSES.txt */
 
 // src/title-parts.mjs
 function normalizeTitleParts(parts, title) {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0-preview.4 — In development
+
+- Add reviewed local CSL-JSON, BibTeX and RIS ingestion with explicit row decisions, host IDs and existing-site identity review.
+- Add revision-bound current/incoming metadata review; keep curated fields by default and retain accepted-field source receipts.
+- Add explicit-transport HEAD observations and supplied Crossref notice-to-work validation; no automatic source removal or integrity overwrite.
+- Distribute the optional library module separately with parser dependency notices and a runnable local example.
+
 ## 0.6.0-preview.3 — In development
 
 - Clarify host responsibilities for stale identity bindings, failed staging callbacks and save-time exclusion of unused staged records; record the independent draft prototype rehearsal.

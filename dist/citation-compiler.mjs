@@ -1,4 +1,4 @@
-/*! cite-inator compiler v0.6.0-preview.3 | MIT | See LICENSE */
+/*! cite-inator compiler v0.6.0-preview.4 | MIT | See LICENSE */
 /* Bundled dependency notices:
 parse5 7.3.0
 Copyright (c) 2013-2019 Ivan Nikulin (ifaaan@gmail.com, https://github.com/inikulin)
@@ -765,7 +765,7 @@ function partClassNames(prefix, parts) {
 // package.json
 var package_default = {
   name: "cite-inator",
-  version: "0.6.0-preview.3",
+  version: "0.6.0-preview.4",
   description: "Portable citations, endnotes, and source inspection",
   type: "module",
   license: "MIT",
@@ -802,7 +802,9 @@ var package_default = {
     "./pubmed": "./src/pubmed.mjs",
     "./zotero": "./src/zotero.mjs",
     "./zotero-browser": "./dist/citation-manager.mjs",
-    "./bibliography": "./src/bibliography-export.mjs"
+    "./bibliography": "./src/bibliography-export.mjs",
+    "./library": "./src/library-tools.mjs",
+    "./library-browser": "./dist/citation-library.mjs"
   },
   bin: {
     "cite-inator": "./scripts/compile.mjs",
@@ -826,12 +828,14 @@ var package_default = {
     "dist/citation-pdf.worker.mjs",
     "scripts/import.mjs",
     "dist/citation-compiler.mjs",
-    "dist/citation-manager.mjs"
+    "dist/citation-manager.mjs",
+    "dist/citation-library.mjs",
+    "scripts/library-workflow-example.mjs"
   ],
   scripts: {
     build: "node scripts/build.mjs",
     test: "node --test test/*.test.mjs",
-    "test:browser": "node test/browser.mjs && node test/zotero-browser.mjs",
+    "test:browser": "node test/browser.mjs && node test/zotero-browser.mjs && node test/library-browser.mjs",
     start: "node scripts/serve.mjs",
     prepack: "npm run build",
     "checkin:check": "node scripts/checkin.mjs --staged",
@@ -839,7 +843,8 @@ var package_default = {
     "hooks:install": "git config --local core.hooksPath .githooks",
     "build:learn": "npm run build && node scripts/build-learning.mjs",
     "test:learn": "node scripts/build-learning.mjs && node test/learning-browser.mjs",
-    "test:zotero": "node --test test/zotero.test.mjs && node test/zotero-browser.mjs"
+    "test:zotero": "node --test test/zotero.test.mjs && node test/zotero-browser.mjs",
+    "example:library": "node scripts/library-workflow-example.mjs"
   },
   devDependencies: {
     "axe-core": "4.14.0",
@@ -848,6 +853,9 @@ var package_default = {
     "playwright-core": "1.65.1"
   },
   dependencies: {
+    "@citation-js/core": "0.9.0",
+    "@citation-js/plugin-bibtex": "0.9.0",
+    "@citation-js/plugin-ris": "0.9.0",
     "@noble/hashes": "2.4.0",
     "@xmldom/xmldom": "0.9.12",
     fflate: "0.8.3",

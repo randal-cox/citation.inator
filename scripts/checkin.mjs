@@ -38,6 +38,7 @@ try {
   for (const path of ["dist/citation-tools.mjs", "demos/drop-in/citation-tools.mjs"]) {
     if (!(await read(path)).startsWith("/*! cite-inator tools v" + pkg.version + " |")) fail(path + " has a stale tools version banner. Run npm run build.");
   }
+  for(const path of ['dist/citation-library.mjs','demos/drop-in/citation-library.mjs'])if(!(await read(path)).startsWith('/*! cite-inator library v'+pkg.version+' |'))fail(path+' has a stale library banner. Run npm run build.');
   for(const path of ['dist/citation-manager.mjs','demos/drop-in/citation-manager.mjs'])if(!(await read(path)).startsWith('/*! cite-inator manager v'+pkg.version+' |'))fail(path+' has a stale manager banner. Run npm run build.');
   for(const path of ['dist/citation-compiler.mjs','demos/drop-in/citation-compiler.mjs'])if(!(await read(path)).startsWith('/*! cite-inator compiler v'+pkg.version+' |'))fail(path+' has a stale compiler banner. Run npm run build.');
   for (const [source, copy] of [
@@ -45,10 +46,10 @@ try {
     ["dist/citation-inspector.css", "demos/drop-in/citation-inspector.css"],
     ["dist/citation-inspector.mjs", "demos/drop-in/citation-inspector.mjs"],
     ["dist/citation-tools.mjs", "demos/drop-in/citation-tools.mjs"],
-    ...["citation-manager.mjs","citation-compiler.mjs","citation-import.mjs","citation-import-files.mjs","citation-pdf.worker.mjs"].map(name=>["dist/"+name,"demos/drop-in/"+name]),
+    ...["citation-library.mjs","citation-manager.mjs","citation-compiler.mjs","citation-import.mjs","citation-import-files.mjs","citation-pdf.worker.mjs"].map(name=>["dist/"+name,"demos/drop-in/"+name]),
     ["dist/THIRD_PARTY_LICENSES.txt", "demos/drop-in/THIRD_PARTY_LICENSES.txt"],
     ["CITATION.cff", "demos/drop-in/CITATION.cff"],
-    ...["zotero.md", "authoring.md", "integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "naming-migration.md", "notation-migration.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
+    ...["library-maintenance.md", "zotero.md", "authoring.md", "integration.md", "reader-access.md", "media-support.md", "article-tools.md", "citation-styles.md", "import-api.md", "naming-migration.md", "notation-migration.md"].map(name => ["docs/" + name, "demos/drop-in/" + name])
   ]) {
     if (await read(source) !== await read(copy)) fail(copy + " differs from " + source + ". Run npm run build.");
   }

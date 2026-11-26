@@ -124,3 +124,7 @@ Attributes, other tags and mixed nested emphasis require review and fall back to
 Stage selected portable records separately from committed article data, then save source and its included records together. A source Undo can leave an unused record staged; filter through the compiler’s returned cache at save or explicitly roll back staging. Losing a Zotero binding or session credential must not prevent saved references from rendering or being reused locally.
 
 A failed staging callback must leave the prior source and available works intact and show an actionable error. Define whether the host callback is synchronous or awaited; a caller must not silently rely on an async save completing when the integration does not await it. The initial draft picker rehearsal found these boundaries need fixes: [identity conflict53](https://github.com/randal-cox/draft.inator/issues/53) and [staging failure54](https://github.com/randal-cox/draft.inator/issues/54). This is host integration evidence, not a change to cite’s pure adapter or serializer APIs.
+
+## File import, refresh and source checks
+
+Preview.4 adds the separate [library-maintenance module](library-maintenance.md): reviewed CSL-JSON/BibTeX/RIS file ingestion, explicit metadata refresh, opt-in link observations and supplied Crossref-notice review. These are host APIs; they neither write to Zotero nor imply draft/KR adoption.

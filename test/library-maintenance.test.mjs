@@ -1,0 +1,59 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {inspectBibliography,applyBibliographyImport,reviewMetadataRefresh,applyMetadataRefresh,checkSourceLink,reviewCrossrefNotices,applyNoticeReview,exportBibliography} from '../src/library-tools.mjs';
+import {makeCache} from '../src/records.mjs';
+const csl={type:'article-journal',title:'Study of evidence',author:[{family:'Rivera',given:'Ana'}],issued:{'date-parts':[[2020]]},DOI:'10.1234/study'};
+const options={format:'csl-json'},source=JSON.stringify([csl]),empty=makeCache([]);
+const imported=()=>{const review=inspectBibliography(source,options);return applyBibliographyImport(source,review,{...options,decisions:[{index:0,action:'import',recordId:'rivera-2020'}]}).cache;};
+test('local file import uses explicit decisions and stable host IDs, excluding source-manager identifiers',()=>{
+ const text=JSON.stringify([{...csl,id:'PRIVATE_MANAGER_ID',note:'PRIVATE_NOTE'}]),review=inspectBibliography(text,options);assert.equal(review.items[0].requiresReview,false);
+ assert.throws(()=>applyBibliographyImport(text,review,{...options,decisions:[]}),/every/);
+ const result=applyBibliographyImport(text,review,{...options,decisions:[{index:0,action:'import',recordId:'host-record'}]});assert.equal(result.cache.records[0].id,'host-record');assert(!JSON.stringify(result).includes('PRIVATE_'));assert.deepEqual(result.newRecordIds,['host-record']);
+ assert.throws(()=>applyBibliographyImport(text+' ',review,{...options,decisions:[{index:0,action:'skip'}]}),/changed/);
+});
+test('BibTeX and RIS round trip selected fields, flag projection review, and never fetch',()=>{
+ const original=imported();for(const format of ['bibtex','ris']){const file=exportBibliography(original,{format}),review=inspectBibliography(file.text,{format});assert.equal(review.items.length,1);assert.equal(review.items[0].record.title,csl.title);assert.equal(review.items[0].record.authors[0].family,'Rivera');assert(review.items[0].requiresReview);assert.throws(()=>applyBibliographyImport(file.text,review,{format,decisions:[{index:0,action:'import',recordId:'new'}]}),/diagnostics/);assert.equal(applyBibliographyImport(file.text,review,{format,decisions:[{index:0,action:'import',recordId:'new',acceptDiagnostics:true}]}).cache.records.length,1);}
+ assert.throws(()=>inspectBibliography('https://example.org/remote.bib',{format:'bibtex'}));
+});
+test('shared identifiers remain conflicts, explicit reuse preserves curation, malformed rows can be skipped',()=>{
+ const duplicate=JSON.stringify([csl,{...csl,title:'Another edition?'}]),r=inspectBibliography(duplicate,options);assert.equal(r.conflicts.length,1);assert.throws(()=>applyBibliographyImport(duplicate,r,{...options,decisions:[0,1].map(index=>({index,action:'import',recordId:'record-'+index}))}),/Conflicting records/);
+ const cache=imported(),review=inspectBibliography(source,{...options,siteCache:cache});const result=applyBibliographyImport(source,review,{...options,siteCache:cache,decisions:[{index:0,action:'reuse',siteRecordId:'rivera-2020'}]});assert.deepEqual(result.cache,cache);
+ const broken=JSON.stringify([{},csl]),mixed=inspectBibliography(broken,options);assert.equal(mixed.items[0].record,null);assert.equal(applyBibliographyImport(broken,mixed,{...options,decisions:[{index:0,action:'skip'},{index:1,action:'import',recordId:'good'}]}).cache.records.length,1);
+ assert.throws(()=>inspectBibliography(source,{...options,limits:{sourceCharacters:4}}),/bounded/);
+});
+test('refresh keeps curated metadata unless explicitly taken, with stale revisions and identity conflicts rejected',()=>{
+ const cache=imported(),before=cache.records[0],incoming={...before,id:'provider-id',title:'Provider title',publisher:'A Press',note:'PRIVATE_PROVIDER_NOTE'},review=reviewMetadataRefresh(before,incoming);
+ const decisions=review.changes.map(c=>({field:c.field,action:c.field==='publisher'?'take':'keep'}));const result=applyMetadataRefresh(cache,incoming,review,{confirmIdentity:true,decisions});assert.equal(result.record.title,before.title);assert.equal(result.record.publisher,'A Press');assert.equal(result.record.id,before.id);assert(!JSON.stringify(result).includes('PRIVATE_PROVIDER_NOTE'));
+ assert.throws(()=>applyMetadataRefresh(cache,incoming,review,{decisions}),/Confirm/);assert.throws(()=>applyMetadataRefresh(cache,{...incoming,title:'Changed again'},review,{confirmIdentity:true,decisions}),/changed/);
+ const conflict={...incoming,identifiers:[{scheme:'doi',value:'10.1234/other'}]},r=reviewMetadataRefresh(before,conflict);assert.equal(r.identity.state,'conflict');assert.throws(()=>applyMetadataRefresh(cache,conflict,r,{confirmIdentity:true,decisions:r.changes.map(c=>({field:c.field,action:'take'}))}),/Conflicting/);
+});
+test('refresh validates whole-cache ownership and keeps existing provenance/integrity',()=>{
+ const cache=imported(),before={...cache.records[0],integrity:{state:'corrected',source:'Curator',url:'https://example.org/notice'}};cache.records[0]=before;cache.records.push({...before,id:'other',identifiers:[{scheme:'url',value:'https://example.org/owned'}]});const incoming={...before,identifiers:[...before.identifiers,{scheme:'url',value:'https://example.org/owned'}]},r=reviewMetadataRefresh(before,incoming);assert.throws(()=>applyMetadataRefresh(cache,incoming,r,{confirmIdentity:true,decisions:r.changes.map(c=>({field:c.field,action:'take'}))}),/Conflicting records/);
+});
+test('link checks are explicit HEAD observations with no redirect following or false unavailable conclusion',async()=>{
+ const record=imported().records[0],url='https://doi.org/10.1234/study';assert.rejects(()=>checkSourceLink(record,{url}),/authorized/);
+ for(const [status,state] of [[200,'reachable'],[403,'restricted'],[404,'not-found'],[429,'rate-limited'],[405,'head-unsupported'],[500,'indeterminate']]){const r=await checkSourceLink(record,{url,fetch:async(target,init)=>{assert.equal(target,url);assert.equal(init.method,'HEAD');assert.equal(init.redirect,'manual');assert.equal(init.credentials,'omit');return new Response(null,{status});}});assert.equal(r.state,state);assert(!JSON.stringify(r).includes('unavailable'));}
+ const failure=await checkSourceLink(record,{url,fetch:async()=>{throw TypeError('PRIVATE_ERROR');}});assert.equal(failure.state,'indeterminate');assert(!JSON.stringify(failure).includes('PRIVATE_ERROR'));await assert.rejects(()=>checkSourceLink(record,{url:'https://unrelated.org/',fetch:async()=>{throw Error('should not run');}}),/belonging/);
+});
+const notice={message:{DOI:'10.1234/notice','update-to':[{DOI:'10.1234/study',type:'retraction',source:'publisher'}]}};
+test('notice reviews verify outgoing target DOI and preserve original citations until explicit acceptance',()=>{
+ const cache=imported(),record=cache.records[0],r=reviewCrossrefNotices(record,[notice]);assert.equal(r.proposals.length,1);assert.equal(applyNoticeReview(cache,[notice],r).changed,false);const accepted=applyNoticeReview(cache,[notice],r,{action:'accept',proposalIndex:0});assert.equal(accepted.record.integrity.state,'retracted');assert.equal(accepted.record.title,record.title);assert.deepEqual(accepted.record.identifiers,record.identifiers);
+ const wrong={message:{DOI:'10.1234/notice','update-to':[{DOI:'10.1234/unrelated',type:'retraction'}]}};assert.equal(reviewCrossrefNotices(record,[wrong]).proposals.length,0);assert.throws(()=>applyNoticeReview(cache,[wrong],r,{action:'accept',proposalIndex:0}),/changed/);
+ const own={message:{DOI:'10.1234/study','update-to':[{DOI:'10.1234/other',type:'retraction'}]}};assert.equal(reviewCrossrefNotices(record,[own]).proposals.length,0);const absent=reviewCrossrefNotices(accepted.record,[]);const retained=applyNoticeReview(accepted.cache,[],absent);assert.equal(retained.cache.records[0].integrity.state,'retracted');assert.match(absent.conclusion,/no-confirmed/);
+});
+test('refresh retains incoming-source field receipts and notice acceptance retains supplied check date',()=>{
+ const cache=imported(),before=cache.records[0],incoming={...before,title:'New title',provenance:[{provider:'Curated library',url:'https://example.org/metadata',retrievedAt:'2026-11-25T12:00:00Z',note:'PRIVATE_SOURCE_COMMENT'}]},r=reviewMetadataRefresh(before,incoming);const applied=applyMetadataRefresh(cache,incoming,r,{confirmIdentity:true,decisions:r.changes.map(c=>({field:c.field,action:'take'}))});assert(applied.record.provenance.some(s=>s.provider==='Curated library'&&s.note.includes('title')));assert(!JSON.stringify(applied.record).includes('PRIVATE_SOURCE_COMMENT'));
+ const checkedAt='2026-11-25T12:00:00.000Z',review=reviewCrossrefNotices(before,[notice],{checkedAt});const result=applyNoticeReview(cache,[notice],review,{action:'accept',proposalIndex:0});assert.equal(result.record.provenance.at(-1).retrievedAt,checkedAt);
+ assert.throws(()=>applyNoticeReview(cache,[notice],{...review,checkedAt:'2020-01-01'},{action:'accept',proposalIndex:0}),/changed/);
+});
+test('maintenance respects schema/budgets and bounded transport even when cancellation is ignored',async()=>{
+ const cache=imported(),r=reviewMetadataRefresh(cache.records[0],{...cache.records[0],title:'Change'});assert.throws(()=>applyMetadataRefresh({...cache,schema:'other'},cache.records[0],r,{}),/bounded/);
+ const record=cache.records[0],url='https://doi.org/10.1234/study',start=Date.now();assert.equal((await checkSourceLink(record,{url,timeoutMs:5,fetch:()=>new Promise(()=>{})})).reason,'timeout');assert(Date.now()-start<1000);
+ const redirect=await checkSourceLink(record,{url,fetch:async()=>new Response(null,{status:302})});assert.equal(redirect.state,'redirect');assert(!redirect.redirectURL);
+ const duplicates={message:{...notice.message,'update-to':Array(10).fill(notice.message['update-to'][0])}};assert.equal(reviewCrossrefNotices(record,[duplicates],{limits:{candidateChoices:1}}).proposals.length,1);
+ const second={message:{...notice.message,DOI:'10.1234/notice2'}};assert.throws(()=>reviewCrossrefNotices(record,[notice,second],{limits:{candidateChoices:1}}),/Too many/);
+});
+test('refresh rejects contradictory title/format choices and pre-cancelled checks perform no transport call',async()=>{
+ const cache=imported(),before={...cache.records[0],titleParts:[{text:'Study of ',emphasis:'italic'},{text:'evidence'}]};cache.records[0]=before;const incoming={...before,title:'New title',titleParts:[{text:'New title',emphasis:'bold'}]},review=reviewMetadataRefresh(before,incoming);assert.throws(()=>applyMetadataRefresh(cache,incoming,review,{confirmIdentity:true,decisions:review.changes.map(c=>({field:c.field,action:c.field==='title'?'take':'keep'}))}),/together/);
+ let calls=0;const controller=new AbortController();controller.abort();const result=await checkSourceLink(before,{url:'https://doi.org/10.1234/study',signal:controller.signal,fetch:async()=>{calls++;return new Response();}});assert.equal(calls,0);assert.equal(result.reason,'cancelled');
+});
+test('immediate cancellation never starts an uncooperative transport',async()=>{let calls=0;const controller=new AbortController(),pending=checkSourceLink(imported().records[0],{url:'https://doi.org/10.1234/study',signal:controller.signal,fetch:async()=>{calls++;return new Response();}});controller.abort();assert.equal((await pending).reason,'cancelled');assert.equal(calls,0);});

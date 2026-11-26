@@ -16,7 +16,7 @@ import {zipSync} from 'fflate';
 await rm('site',{recursive:true,force:true});
 await mkdir('site/assets',{recursive:true});
 for(const file of ['index.html','learning.css'])await copyFile(`learn/${file}`,`site/${file}`);
-for(const file of ['citation-inspector.mjs','citation-inspector.css','citation-compiler.mjs','citation-tools.mjs','citation-import.mjs','citation-import-files.mjs','citation-pdf.worker.mjs','LICENSE','THIRD_PARTY_LICENSES.txt'])await copyFile(`dist/${file}`,`site/assets/${file}`);
+for(const file of ['citation-library.mjs','citation-inspector.mjs','citation-inspector.css','citation-compiler.mjs','citation-tools.mjs','citation-import.mjs','citation-import-files.mjs','citation-pdf.worker.mjs','LICENSE','THIRD_PARTY_LICENSES.txt'])await copyFile(`dist/${file}`,`site/assets/${file}`);
 await copyFile('demos/static/tag-book.svg','site/assets/book.svg');
 const {version}=JSON.parse(await readFile('package.json','utf8'));
 const sourceRef=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
@@ -79,7 +79,7 @@ for(const file of ['article-1.html','article-2.html','bibliography.html','editor
   await writeFile('site/tools/'+file,content);
 }
 await writeFile('site/tools/learning-scope.mjs',`import {initializeCitationInspector} from '../assets/citation-inspector.mjs';\nfor(const element of document.querySelectorAll('citation-inspector'))initializeCitationInspector(element,{accessStorageKey:'citation-inator-learning-access'});`);
-const referenceNames=['zotero','authoring','integration','article-tools','reader-access','media-support','citation-styles','import-api','import-demo','i18n','draft-integration','naming-migration','notation-migration'];
+const referenceNames=['library-maintenance','zotero','authoring','integration','article-tools','reader-access','media-support','citation-styles','import-api','import-demo','i18n','draft-integration','naming-migration','notation-migration'];
 const page=(title,body)=>`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHTML(title)} · cite.inator</title><link rel="stylesheet" href="../learning.css"></head><body><header><a class="brand" href="../">${brandIconMarkup}cite.inator</a><nav aria-label="Learning"><a href="../tutorials.html">Tutorials</a><a href="../import/">Import</a><a href="../guide.html">Guide</a></nav></header><main class="guide">${body}</main><footer>cite.inator ${version} · <a href="https://github.com/randal-cox/cite.inator/tree/${sourceRef}">Source</a></footer></body></html>`;
 await mkdir('site/reference',{recursive:true});
 for(const name of referenceNames){
